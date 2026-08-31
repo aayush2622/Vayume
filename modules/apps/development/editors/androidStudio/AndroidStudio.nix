@@ -19,13 +19,17 @@ in {
   flake.pluginPins.AndroidStudio = androidStudioManualPluginsSpec
     ++ (lib.concatMap (l: l.androidStudio.manualPlugins or [ ]) (lib.attrValues self.devLanguages));
 
-  flake.homeModules.apps.AndroidStudio = { pkgs, lib, config, vayoriTheme, vayoriApps, ... }:
+  flake.homeModules.apps.AndroidStudio = { pkgs, lib, config, vayoriTheme, vayoriApps, vayoriSecrets, ... }:
   let
+    hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
+
     enabledLanguages = lib.filterAttrs (name: _: builtins.elem name vayoriApps) self.devLanguages;
     languageAndroidStudio = lib.mapAttrsToList (_: l: l.androidStudio or { }) enabledLanguages;
 
     allAutoPlugins = androidStudioAutoPlugins ++ (lib.concatMap (v: v.autoPlugins or [ ]) languageAndroidStudio);
-    allManualPluginsSpec = androidStudioManualPluginsSpec ++ (lib.concatMap (v: v.manualPlugins or [ ]) languageAndroidStudio);
+    allManualPluginsSpec = lib.filter (p: hasWakatime || p.id != "com.wakatime.intellij.plugin") (
+      androidStudioManualPluginsSpec ++ (lib.concatMap (v: v.manualPlugins or [ ]) languageAndroidStudio)
+    );
 
     configDataDir = "AndroidStudio2026.1.3";
     pluginsDir = ".local/share/Google/${configDataDir}";
@@ -156,11 +160,11 @@ in {
 
     home.file = pluginFiles // optionFiles // matugenFiles;
 
-    home.activation.androidStudioWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" "seedVayoriSecrets" ] ''
-      SECRETS_FILE="$HOME/.config/vayori/session/secrets.json"
-      WAKATIME_KEY="$(${pkgs.jq}/bin/jq -r '.WAKATIME_API_KEY // empty' "$SECRETS_FILE" 2>/dev/null || true)"
-      run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key "$WAKATIME_KEY"
-    '';
+    home.activation.androidStudioWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+      lib.optionalString hasWakatime ''
+        run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key ${lib.escapeShellArg vayoriSecrets.WAKATIME_API_KEY}
+      ''
+    );
 
     vayori.matugenTemplates.androidStudio = ''
       [templates.androidStudio]

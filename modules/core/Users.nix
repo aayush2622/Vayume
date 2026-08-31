@@ -44,13 +44,19 @@
           type = lib.types.attrsOf lib.types.anything;
           default = { };
           description = ''
-            Seeds this user's ~/.config/vayori/session/secrets.json the
-            first time their home-manager activation runs (see
-            seedVayoriSecrets below). Left-out keys - or the whole
-            attrset - fall back to "REPLACE_ME" placeholders instead.
-            Same trust model as the file it seeds: plain values, no
-            encryption layer, fine given _user.nix is already gitignored
-            and root/owner-only on disk.
+            Small per-app credentials (WakaTime key, rbw email, Free
+            Claude Code provider keys - see docs/core.md for the full
+            shape) passed straight to every app module as the
+            `vayoriSecrets` argument. Left-out keys, or the whole
+            attrset, fall back to "REPLACE_ME" placeholders - a key
+            still equal to that disables whatever it would've
+            configured (no WakaTime extension installed, no rbw email
+            written, that Free Claude Code provider skipped) instead of
+            configuring it with a useless value. Plain values, no
+            encryption layer - fine given _user.nix is already
+            gitignored and owner-only on disk; lands in the
+            world-readable Nix store wherever a consuming app module
+            writes it out, same as any other Nix-declared value.
           '';
         };
 
@@ -112,10 +118,9 @@
       home-manager.extraSpecialArgs = { inherit inputs self; vayoriTheme = config.vayori.theme; vayoriApps = config.vayori.apps; };
       home-manager.backupFileExtension = "backup";
 
-      home-manager.users = lib.mapAttrs (name: u: { lib, pkgs, ... }: let
-        userSecrets = if u.secrets != { } then u.secrets else defaultUserSecrets;
-        secretsSeed = pkgs.writeText "vayori-secrets-seed.json" (builtins.toJSON userSecrets);
-      in {
+      home-manager.users = lib.mapAttrs (name: u: { lib, pkgs, ... }: {
+        _module.args.vayoriSecrets = lib.recursiveUpdate defaultUserSecrets u.secrets;
+
         imports = [
           self.homeModules.Baseline
         ] ++ (map (app: self.homeModules.apps.${app}) config.vayori.apps);
@@ -125,15 +130,6 @@
         home.file = lib.mkIf (u.avatar != null) {
           ".face".source = u.avatar;
         };
-
-        home.activation.seedVayoriSecrets = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          SECRETS_FILE="$HOME/.config/vayori/session/secrets.json"
-          if [ ! -f "$SECRETS_FILE" ]; then
-            run mkdir -p "$(dirname "$SECRETS_FILE")"
-            run cp ${secretsSeed} "$SECRETS_FILE"
-            run chmod 600 "$SECRETS_FILE"
-          fi
-        '';
       }) cfg;
 
       systemd.services = lib.mapAttrs' (name: u: lib.nameValuePair "home-manager-${name}" {

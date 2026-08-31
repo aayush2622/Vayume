@@ -1,6 +1,8 @@
 { self, ... }: {
-  flake.homeModules.apps.Zed = { pkgs, lib, vayoriTheme, vayoriApps, ... }:
+  flake.homeModules.apps.Zed = { pkgs, lib, vayoriTheme, vayoriApps, vayoriSecrets, ... }:
   let
+    hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
+
     enabledLanguages = lib.filterAttrs (name: _: builtins.elem name vayoriApps) self.devLanguages;
     languageZed = lib.mapAttrsToList (_: l: l.zed or { }) enabledLanguages;
 
@@ -15,8 +17,7 @@
       "html"
       "one-dark-pro-enhanced"
       "toml"
-      "wakatime"
-    ] ++ languageExtensions;
+    ] ++ languageExtensions ++ lib.optional hasWakatime "wakatime";
 
     settings = lib.recursiveUpdate {
       git = {
@@ -59,19 +60,20 @@
       userSettings = settings;
     };
 
-    home.activation.zedWakatimeKey = lib.hm.dag.entryAfter [ "writeBoundary" "seedVayoriSecrets" "zedSettingsActivation" ] ''
-      SETTINGS_FILE="$HOME/.config/zed/settings.json"
-      SECRETS_FILE="$HOME/.config/vayori/session/secrets.json"
-      WAKATIME_KEY="$(${pkgs.jq}/bin/jq -r '.WAKATIME_API_KEY // empty' "$SECRETS_FILE" 2>/dev/null || true)"
-      SETTINGS_TMP="$(mktemp)"
+    home.activation.zedWakatimeKey = lib.hm.dag.entryAfter [ "writeBoundary" "zedSettingsActivation" ] (
+      lib.optionalString hasWakatime ''
+        SETTINGS_FILE="$HOME/.config/zed/settings.json"
+        WAKATIME_KEY=${lib.escapeShellArg vayoriSecrets.WAKATIME_API_KEY}
+        SETTINGS_TMP="$(mktemp)"
 
-      ${pkgs.jq}/bin/jq \
-        --arg key "$WAKATIME_KEY" \
-        '.lsp.wakatime.initialization_options."api-key" = $key' \
-        "$SETTINGS_FILE" > "$SETTINGS_TMP" \
-        && run cp "$SETTINGS_TMP" "$SETTINGS_FILE"
+        ${pkgs.jq}/bin/jq \
+          --arg key "$WAKATIME_KEY" \
+          '.lsp.wakatime.initialization_options."api-key" = $key' \
+          "$SETTINGS_FILE" > "$SETTINGS_TMP" \
+          && run cp "$SETTINGS_TMP" "$SETTINGS_FILE"
 
-      rm -f "$SETTINGS_TMP"
-    '';
+        rm -f "$SETTINGS_TMP"
+      ''
+    );
   };
 }

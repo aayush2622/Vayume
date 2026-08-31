@@ -13,8 +13,10 @@ let
 in {
   flake.pluginPins.Vscode = lib.concatMap (l: l.vscode.manualExtensions or [ ]) (lib.attrValues self.devLanguages);
 
-  flake.homeModules.apps.Vscode = { pkgs, lib, vayoriTheme, vayoriApps, ... }:
+  flake.homeModules.apps.Vscode = { pkgs, lib, vayoriTheme, vayoriApps, vayoriSecrets, ... }:
   let
+    hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
+
     enabledLanguages = lib.filterAttrs (name: _: builtins.elem name vayoriApps) self.devLanguages;
     languageVscode = lib.mapAttrsToList (_: l: l.vscode or { }) enabledLanguages;
 
@@ -45,9 +47,8 @@ in {
       mskelton.one-dark-theme
       oderwat.indent-rainbow
       pkief.material-icon-theme
-      wakatime.vscode-wakatime
       zainchen.json
-    ] ++ languageNixpkgsExtensions;
+    ] ++ languageNixpkgsExtensions ++ lib.optional hasWakatime pkgs.vscode-extensions.wakatime.vscode-wakatime;
 
     manualMarketplaceExtensions = pkgs.vscode-utils.extensionsFromVscodeMarketplace languageManualExtensions;
     autoMarketplaceExtensions = map (e: pkgs.vscode-marketplace.${e.publisher}.${e.name}) (vscodeAutoExtensions ++ languageMarketplaceExtensions);
@@ -191,10 +192,10 @@ in {
       fi
     '';
 
-    home.activation.vscodeWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" "seedVayoriSecrets" ] ''
-      SECRETS_FILE="$HOME/.config/vayori/session/secrets.json"
-      WAKATIME_KEY="$(${pkgs.jq}/bin/jq -r '.WAKATIME_API_KEY // empty' "$SECRETS_FILE" 2>/dev/null || true)"
-      run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key "$WAKATIME_KEY"
-    '';
+    home.activation.vscodeWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+      lib.optionalString hasWakatime ''
+        run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key ${lib.escapeShellArg vayoriSecrets.WAKATIME_API_KEY}
+      ''
+    );
   };
 }

@@ -33,6 +33,7 @@ in {
       pkgs,
       lib,
       config,
+      vayoriSecrets,
       ...
     }:
     let
@@ -52,6 +53,12 @@ in {
         lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "${n}=${v}") fccSeedEnv) + "\n"
       );
       claudeAcpEnv = self.freeClaudeCode.clientEnv;
+
+      realProviders = lib.filterAttrs (n: v: v != "REPLACE_ME") (vayoriSecrets.PROVIDERS or { });
+
+      providersEnvFile = pkgs.writeText "fcc-providers.env" (
+        lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "${n}=${v}") realProviders) + "\n"
+      );
 
       fccBootstrapScript = pkgs.writeShellScript "free-claude-code-bootstrap" ''
         set -e
@@ -73,7 +80,7 @@ in {
         pkgs.python314
       ];
 
-      home.activation.freeClaudeCodeSetup = lib.hm.dag.entryAfter [ "writeBoundary" "seedVayoriSecrets" ] ''
+      home.activation.freeClaudeCodeSetup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         FCC_CONFIG_DIR=${lib.escapeShellArg fccConfigDir}
 
         run mkdir -p "$FCC_CONFIG_DIR"
@@ -82,18 +89,15 @@ in {
           run sh -c "cat ${fccSeedEnvFile} > '$FCC_CONFIG_DIR/.env'"
         fi
 
-        SECRETS_FILE="$HOME/.config/vayori/session/secrets.json"
         ENV_TMP="$(mktemp)"
         cp "$FCC_CONFIG_DIR/.env" "$ENV_TMP"
 
-        if [ -f "$SECRETS_FILE" ]; then
-          ${pkgs.jq}/bin/jq -r '.PROVIDERS // {} | to_entries[] | "\(.key)\t\(.value)"' "$SECRETS_FILE" \
-            | while IFS=$'\t' read -r providerKey providerValue; do
-                grep -v "^''${providerKey}=" "$ENV_TMP" > "$ENV_TMP.next" || true
-                mv "$ENV_TMP.next" "$ENV_TMP"
-                printf '%s=%s\n' "$providerKey" "$providerValue" >> "$ENV_TMP"
-              done
-        fi
+        while IFS='=' read -r providerKey providerValue; do
+          [ -z "$providerKey" ] && continue
+          grep -v "^''${providerKey}=" "$ENV_TMP" > "$ENV_TMP.next" || true
+          mv "$ENV_TMP.next" "$ENV_TMP"
+          printf '%s=%s\n' "$providerKey" "$providerValue" >> "$ENV_TMP"
+        done < ${providersEnvFile}
 
         run cp "$ENV_TMP" "$FCC_CONFIG_DIR/.env"
         rm -f "$ENV_TMP"

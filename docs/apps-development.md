@@ -79,11 +79,20 @@ machine, pinned as real Nix packages instead of fetched live every time:
   plugins for virtually every editor read from, JetBrains included, so
   it's the correct place regardless of what this repo does elsewhere.
   An activation script sets just the `api_key` line via `crudini`
-  (reads `WAKATIME_API_KEY` from
-  `~/.config/vayori/session/secrets.json`), leaving any other settings
-  already in that file - proxy config, excluded projects - untouched.
-  VS Code's own WakaTime extension reads the exact same file, so both
-  editors end up correctly configured from one shared mechanism.
+  (from `vayoriSecrets.WAKATIME_API_KEY`, see
+  [core/Users.nix](core.md#modulescoreusersnix)), leaving any other
+  settings already in that file - proxy config, excluded projects -
+  untouched. VS Code's own WakaTime extension reads the exact same
+  file, so both editors end up correctly configured from one shared
+  mechanism.
+- **No real key, no plugin - `allManualPluginsSpec` filters the
+  `com.wakatime.intellij.plugin` entry out entirely** (by `id`, so it
+  doesn't disturb `androidStudioManualPluginsSpec`'s own use as the
+  `flake.pluginPins` source, which stays complete regardless of any one
+  user's secrets) when `vayoriSecrets.WAKATIME_API_KEY` is still
+  `"REPLACE_ME"`, and the `crudini` activation above becomes a no-op via
+  `lib.optionalString` - so there's no plugin sitting there pointed at a
+  placeholder key that would just fail every heartbeat.
 
 ---
 
@@ -138,7 +147,12 @@ grew enough config to earn its own module.
   WakaTime plugin uses - see
   [AndroidStudio.nix](#modulesappsdevelopmenteditorsandroidstudioandroidstudionix)
   above. Nothing extension-specific to configure here; WakaTime's own
-  plugins across editors all read that one file by convention.
+  plugins across editors all read that one file by convention. Same
+  disable-when-missing rule too: `wakatime.vscode-wakatime` only gets
+  appended to `nixpkgsExtensions` (`lib.optional hasWakatime ...`) when
+  `vayoriSecrets.WAKATIME_API_KEY` is a real value, so a fresh setup
+  with no key yet doesn't install an extension that would just sit
+  there erroring.
 - **One Dark syntax highlighting sits on top of the matugen theme,
   rather than replacing it.** The overall UI theme stays matugen-driven,
   tracking the current wallpaper; a separate, VS Code-documented
@@ -172,14 +186,20 @@ specific settings of its own to begin with.
   and editable in between, the way Zed itself expects to be able to
   write to it from its own UI.
 - **The WakaTime API key isn't declared in this file's own settings** -
-  it's a real credential, and even outside a public repo, a plain Nix
-  value here would end up baked into the world-readable `/nix/store`
-  forever. It's spliced in separately, after Zed's own settings merge
-  has run, by a small `jq` patch reading `WAKATIME_API_KEY` straight out
-  of `~/.config/vayori/session/secrets.json` - see
-  [core/Users.nix](core.md#modulescoreusersnix) for that file's
-  mechanism, which Free Claude Code's API key and VS Code/Android
-  Studio's own WakaTime setup all go through too.
+  it's spliced in separately, after Zed's own settings merge has run, by
+  a small `jq` patch that sets it from the `vayoriSecrets.WAKATIME_API_KEY`
+  argument (see [core/Users.nix](core.md#modulescoreusersnix) - the same
+  mechanism Free Claude Code's provider keys and VS Code/Android
+  Studio's own WakaTime setup all go through), so it lands after
+  `zedSettingsActivation`'s own merge onto the real settings file rather
+  than getting folded into the `settings` attrset above and merged in
+  the same pass.
+- **No real key, no extension.** `"wakatime"` only gets appended to
+  `extensions` (`lib.optional hasWakatime "wakatime"`) and the `jq`
+  patch above only runs (`lib.optionalString hasWakatime`) when
+  `vayoriSecrets.WAKATIME_API_KEY` is a real value - a fresh setup with
+  no key yet gets neither, instead of an extension configured with a
+  key that would just fail.
 - Fonts here track the one shared theme font setting, not a hardcoded
   copy of whatever the real config happened to say - same reasoning as
   every other themed app in this repo.
@@ -323,21 +343,25 @@ and Android Studio's plugin.
   (`MODEL`, `PROXY_AUTH_ENABLED`, the auth token, `FCC_OPEN_BROWSER`) is
   only written if the file doesn't exist yet, same "seed once" pattern
   as the Papirus icon copy elsewhere. Provider API keys are handled
-  separately, and *do* re-sync every rebuild: every entry under
-  `PROVIDERS` in `~/.config/vayori/session/secrets.json` (see
-  [core/Users.nix](core.md#modulescoreusersnix) for the full schema)
-  gets merged in as its own `.env` line, keyed by whatever name is
-  already in `PROVIDERS` - FCC itself supports 17+ providers, each
-  needing its own correctly-named key (`NVIDIA_NIM_API_KEY`,
-  `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, and so on, straight from
-  FCC's own naming, not something this repo invents), so this is a real
-  loop over however many keys are actually there, not three hardcoded
-  ones. Verified for real: four providers merged correctly, then a fifth
-  added and one existing key changed, re-ran clean with no stale
-  duplicates and no lines lost. Generating a key itself still isn't
-  something this repo can do for you - grab one from whichever provider
-  and drop it into `PROVIDERS`, or set it through FCC's own admin UI
-  instead.
+  separately, and *do* re-sync every rebuild: `PROVIDERS` from
+  `vayoriSecrets` (see [core/Users.nix](core.md#modulescoreusersnix) for
+  the full schema) is first filtered down to entries that aren't still
+  `"REPLACE_ME"` (`lib.filterAttrs`), then that survivors-only set gets
+  baked into a flat `KEY=value` file at eval time and merged into `.env`
+  as its own line per entry - a provider nobody's given a real key
+  disables itself, rather than writing a key that would just fail every
+  request. Keyed by whatever name is already in `PROVIDERS` - FCC itself
+  supports 17+ providers, each needing its own correctly-named key
+  (`NVIDIA_NIM_API_KEY`, `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, and so
+  on, straight from FCC's own naming, not something this repo invents),
+  so this is a real loop over however many real keys are actually there,
+  not three hardcoded ones. Verified for real: four providers merged
+  correctly, then a fifth added and one existing key changed, re-ran
+  clean with no stale duplicates and no lines lost; with none set at
+  all, the generated file comes out empty and nothing gets written.
+  Generating a key itself still isn't something this repo can do for
+  you - grab one from whichever provider and drop it into `PROVIDERS`,
+  or set it through FCC's own admin UI instead.
 - **Claude Code's own state file gets one specific flag merged in** -
   documented upstream as the fix for Claude Code still prompting a real
   Anthropic login even with FCC's URL/token already set. Merged in with

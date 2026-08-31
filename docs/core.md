@@ -292,21 +292,15 @@ that's never committed:
   standing up an account nobody asked for - copy `_user.nix.example` and
   pick a real username before the first rebuild, every time.
 - **Read at plain Nix module-evaluation time**, not through
-  home-manager activation like `secrets.json` below - it has to be,
-  since NixOS needs to know who the users even are before any of their
-  home directories, let alone home-manager, exist.
-- **`secrets`, per user, optional**: if set (non-empty), it becomes that
-  user's *initial* `secrets.json` content the first time their
-  home-manager activation runs (see `seedVayoriSecrets` below) - a way
-  to have a brand new account come up already configured instead of
-  starting from `"REPLACE_ME"` placeholders. Left out entirely, it falls
-  through to the same placeholder object every user got before this
-  existed - checked directly, both for a user with an explicit `secrets`
-  block and one without.
-- **Same trust model as `secrets.json` itself** (see below for why
-  that's an acceptable trade here) - plain Nix values, no encryption
-  layer. Fine, since `_user.nix` is gitignored and only ever readable by
-  whoever already has read access to this checkout.
+  home-manager activation - it has to be, since NixOS needs to know who
+  the users even are before any of their home directories, let alone
+  home-manager, exist.
+- **`secrets`, per user, optional**: passed to every app module as
+  `vayoriSecrets` (see below) - missing keys, or the whole block, fall
+  back to `"REPLACE_ME"` placeholders instead of erroring.
+- **Plain Nix values, no encryption layer.** Fine, since `_user.nix` is
+  gitignored and only ever readable by whoever already has read access
+  to this checkout - see below for the one real trade-off this makes.
 
 Field meanings:
 
@@ -335,37 +329,38 @@ Field meanings:
   genuinely hung activation still gets caught, just not one that's
   simply taking a while.
 
-**Also where the secrets file gets seeded**, one activation script for
-every user (`seedVayoriSecrets`): if `~/.config/vayori/session/secrets.json`
-doesn't exist yet, it writes one - that user's `secrets` block from
-`_user.nix` if one was provided, otherwise the usual `"REPLACE_ME"`
-placeholders - and stops; never touches it again after that, so anything
-you fill in survives every future rebuild untouched.
+**Also where secrets reach the apps that need them - no runtime file any
+more, straight from `_user.nix`.** `home-manager.users`'s per-user module
+sets `_module.args.vayoriSecrets = lib.recursiveUpdate defaultUserSecrets
+u.secrets;` - a plain module argument, the exact same mechanism
+`vayoriTheme`/`vayoriApps` already use via `extraSpecialArgs`, just
+per-user instead of shared. Any app module that needs a secret just adds
+`vayoriSecrets` to its own function signature and reads
+`vayoriSecrets.WAKATIME_API_KEY` (etc.) directly - no file, no `jq`
+lookup, no activation-ordering dance.
 
-- **Plain JSON, on purpose.** `secrets.json` holds small values individual
-  apps need, no encryption layer, no separate keypair to manage or lose.
-  This repo used to run these through
-  [sops-nix](https://github.com/Mic92/sops-nix) (age-encrypted at rest,
-  decrypted at activation time); that added a whole extra moving part -
-  a keypair to generate, back up, and copy to every new machine before
-  anything else would work - for values that aren't actually that
-  sensitive (a self-hosted proxy key, a time-tracking token, an email
-  address) and already live inside a folder
-  ([session/](apps-utils.md#modulesappsutilsstatebackupstatebackupnix))
-  that isn't committed to git and has its own password-encrypted
-  backup/restore path already. Fewer moving parts, same practical
-  protection for what's actually at stake here. Started as a flat
-  `.env` file, moved to JSON specifically for the `PROVIDERS` object
-  below - a real object beats parsing `KEY=value` lines by hand once
-  the number of keys stops being fixed in advance.
-  ```json
-  {
-    "WAKATIME_API_KEY": "REPLACE_ME",
-    "RBW_EMAIL": "REPLACE_ME",
-    "PROVIDERS": {
-      "NVIDIA_NIM_API_KEY": "REPLACE_ME"
-    }
-  }
+- **`lib.recursiveUpdate defaultUserSecrets u.secrets`, not a plain
+  fallback swap.** Merges key-by-key, so setting only
+  `secrets.WAKATIME_API_KEY` in `_user.nix` still leaves `RBW_EMAIL` and
+  `PROVIDERS.NVIDIA_NIM_API_KEY` resolving to their `"REPLACE_ME"`
+  defaults instead of erroring on a missing attribute - every consumer
+  can access `vayoriSecrets.<key>` unconditionally, always. This repo
+  previously ran these through
+  [sops-nix](https://github.com/Mic92/sops-nix) (age-encrypted at rest),
+  then through a hand-rolled JSON file seeded once and edited by hand;
+  both added a moving part (a keypair, or a second file to keep in
+  sync) for values that aren't actually that sensitive (a proxy token, a
+  time-tracking key, an email address) and already live in a file
+  (`_user.nix`) that's gitignored and required on its own.
+  ```nix
+  # in _user.nix, per user
+  secrets = {
+    WAKATIME_API_KEY = "...";
+    RBW_EMAIL = "...";
+    PROVIDERS = {
+      NVIDIA_NIM_API_KEY = "...";
+    };
+  };
   ```
 - **`PROVIDERS` is open-ended, on purpose - this is the actual answer to
   "where do I put a second/third/Nth API key."** Free Claude Code
@@ -375,41 +370,42 @@ you fill in survives every future rebuild untouched.
   key - `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`,
   whatever matches the provider prefix in `MODEL`, straight from
   upstream's own naming, not something this repo invents. Add as many
-  as you want directly in `PROVIDERS`, no Nix edit, no rebuild required
-  for the value to exist - the activation script that merges them in
-  loops over *whatever's actually in that object*, so it's genuinely
-  N keys, not three hardcoded ones. Checked this for real: a
-  four-provider object, then a fifth added and one existing key changed
-  on the next pass, applied correctly with no stale duplicates.
-- **Edit it directly, any time**: `$EDITOR
-  ~/.config/vayori/session/secrets.json`. No CLI, no re-encrypt step, no
-  key to have on hand first - just a text file, just make sure it's
-  still valid JSON when you're done.
-- **Consumers read the value at *activation* time, never at build
-  time.** Each app that needs one does a small `jq` read against
-  `secrets.json` in its own `home.activation` script and applies it
-  however that app natively expects (JSON merge for Zed/rbw, a
-  `.wakatime.cfg` edit via `crudini` for VS Code/Android Studio, merged
-  `.env` lines - one per `PROVIDERS` entry - for Free Claude Code) -
-  never baked into a Nix string, since that would put the value in the
-  world-readable `/nix/store` forever. Each of those scripts orders
-  itself `entryAfter [ "writeBoundary" "seedVayoriSecrets" ]`, the same
-  cross-module dag-ordering trick this repo already relied on for
-  sops-nix - a node from a different, always-present module, referenced
-  by name.
-- **Missing a value isn't a hard failure.** No key file, no assertion,
-  nothing to set up before the rest of the build works - a blank or
-  placeholder value just means that one integration (WakaTime tracking,
-  Free Claude Code's model access, rbw's email) doesn't do anything
-  useful yet, exactly like before you'd filled in the real value. Fill
-  it in and rebuild whenever you're ready.
-- **Survives reinstalls the same way everything else in `session/`
-  does** - it's not one of the app paths
-  [StateBackup.nix](apps-utils.md#modulesappsutilsstatebackupstatebackupnix)
-  symlinks in from elsewhere (there's no pre-existing app default to
-  migrate from), it's just a plain file written directly inside
-  `session/` from the start - so a `cp -r`, or `vayori-app-state
-  backup`/`restore`, carries it along with everything else automatically.
+  as you want directly to `PROVIDERS` in `_user.nix` - `FreeClaudeCode.nix`
+  filters out any entry still equal to `"REPLACE_ME"`
+  (`lib.filterAttrs`), builds a flat `KEY=value` file from whatever's
+  left at eval time, and merges it into `.fcc/.env` on every activation,
+  replacing only matching keys - so it's genuinely N real keys, not
+  three hardcoded ones, and a provider nobody's set a key for never gets
+  written at all.
+- **Read at build time, not activation time - the trade this made.**
+  Every consumer (`crudini` for VS Code/Android Studio's WakaTime key,
+  `jq`-merged JSON for Zed/rbw, the `PROVIDERS` loop above for Free
+  Claude Code) gets its value baked in as a literal by Nix, since
+  there's no runtime file left to read from. That means every value in
+  `secrets` ends up sitting somewhere in `/nix/store` - world-readable
+  on this machine, same as any other Nix-built config - which the old
+  `secrets.json` design deliberately avoided. Acceptable for what's
+  actually in here (see above); genuinely not the place for anything
+  higher-stakes.
+- **A missing secret disables the thing that needed it, instead of
+  configuring it with a useless placeholder.** Every consumer checks
+  `vayoriSecrets.<key> != "REPLACE_ME"` before doing anything: no real
+  `WAKATIME_API_KEY` means the `wakatime` extension/plugin is left out
+  of Zed's `extensions`, VS Code's `nixpkgsExtensions`, and Android
+  Studio's `allManualPluginsSpec` entirely (not installed with a broken
+  key - not installed at all), and the WakaTime-config activation script
+  for whichever editor becomes a no-op (`lib.optionalString`). Same
+  pattern for `RBW_EMAIL` (the `rbwEmail` activation script no-ops, so
+  `rbw`'s config file is left alone rather than seeded with
+  `"REPLACE_ME"` as an email) and each `PROVIDERS` entry individually
+  (filtered out above, so a provider `MODEL` never actually points at
+  doesn't clutter `.fcc/.env` with a key that would just fail auth).
+  Checked directly: with no `secrets` block set at all, the built
+  activation script has zero `WAKATIME_KEY=`/rbw-config lines and
+  `fcc-providers.env` comes out as an empty file, and VS Code's
+  extensions manifest has no `wakatime` entry. Fill the value in in
+  `_user.nix` and rebuild to turn it back on - takes effect immediately,
+  no first-run-only seeding step to work around.
 
 ---
 

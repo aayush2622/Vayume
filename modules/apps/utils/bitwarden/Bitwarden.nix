@@ -1,31 +1,32 @@
 { self, inputs, ... }: {
-  flake.homeModules.apps.Bitwarden = { pkgs, lib, ... }: {
+  flake.homeModules.apps.Bitwarden = { pkgs, lib, vayoriSecrets, ... }: {
     home.packages = [ pkgs.bitwarden-desktop pkgs.pinentry-gtk2 ];
 
     programs.rbw = {
       enable = true;
     };
 
-    home.activation.rbwEmail = lib.hm.dag.entryAfter [ "writeBoundary" "seedVayoriSecrets" ] ''
-      CONFIG_FILE="$HOME/.config/rbw/config.json"
-      SECRETS_FILE="$HOME/.config/vayori/session/secrets.json"
-      EMAIL="$(${pkgs.jq}/bin/jq -r '.RBW_EMAIL // empty' "$SECRETS_FILE" 2>/dev/null || true)"
+    home.activation.rbwEmail = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+      lib.optionalString (vayoriSecrets.RBW_EMAIL != "REPLACE_ME") ''
+        CONFIG_FILE="$HOME/.config/rbw/config.json"
+        EMAIL=${lib.escapeShellArg vayoriSecrets.RBW_EMAIL}
 
-      run mkdir -p "$(dirname "$CONFIG_FILE")"
+        run mkdir -p "$(dirname "$CONFIG_FILE")"
 
-      if [ ! -f "$CONFIG_FILE" ]; then
-        run sh -c "printf '{}' > '$CONFIG_FILE'"
-      fi
+        if [ ! -f "$CONFIG_FILE" ]; then
+          run sh -c "printf '{}' > '$CONFIG_FILE'"
+        fi
 
-      CONFIG_TMP="$(mktemp)"
+        CONFIG_TMP="$(mktemp)"
 
-      ${pkgs.jq}/bin/jq \
-        --arg email "$EMAIL" \
-        '.email = $email' \
-        "$CONFIG_FILE" > "$CONFIG_TMP" \
-        && run cp "$CONFIG_TMP" "$CONFIG_FILE"
+        ${pkgs.jq}/bin/jq \
+          --arg email "$EMAIL" \
+          '.email = $email' \
+          "$CONFIG_FILE" > "$CONFIG_TMP" \
+          && run cp "$CONFIG_TMP" "$CONFIG_FILE"
 
-      rm -f "$CONFIG_TMP"
-    '';
+        rm -f "$CONFIG_TMP"
+      ''
+    );
   };
 }

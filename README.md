@@ -132,45 +132,55 @@ sudo nixos-rebuild switch --flake path:.#Diablo
 
 A handful of small credentials (Free Claude Code's model-provider API
 keys, a WakaTime key for Zed/VS Code/Android Studio, a Bitwarden CLI
-email) live in one plain JSON file:
-`~/.config/vayori/session/secrets.json`. It gets seeded on first rebuild
-- with that user's `secrets` block from `_user.nix` if you put one there
-(see [Using this on your own machine](#using-this-on-your-own-machine)), or
-placeholder values otherwise - just open it and fill in the real ones:
+email) live directly in that user's `secrets` block in `_user.nix`:
 
-```bash
-$EDITOR ~/.config/vayori/session/secrets.json
+```nix
+ash = {
+  # ...
+  secrets = {
+    WAKATIME_API_KEY = "...";
+    RBW_EMAIL = "...";
+    PROVIDERS = {
+      NVIDIA_NIM_API_KEY = "...";
+    };
+  };
+};
 ```
 
-```json
-{
-  "WAKATIME_API_KEY": "REPLACE_ME",
-  "RBW_EMAIL": "REPLACE_ME",
-  "PROVIDERS": {
-    "NVIDIA_NIM_API_KEY": "REPLACE_ME"
-  }
-}
-```
+Edit `_user.nix` and rebuild to apply - see
+[Using this on your own machine](#using-this-on-your-own-machine). No
+separate runtime file, no `$EDITOR` step; each app module reads its own
+key straight from there at build time and writes it into whatever
+config format that app natively wants (`crudini` for WakaTime,
+`jq`-merged JSON for Zed/rbw, `.env` lines for Free Claude Code). Left
+out entirely, a key falls back to a `"REPLACE_ME"` placeholder instead
+of a Nix error - and whichever plugin/extension needed it (WakaTime in
+Zed/VS Code/Android Studio) just doesn't get installed, rather than
+sitting there configured with a key that would only fail. Same for rbw's
+email and each `PROVIDERS` entry individually - only the ones with a
+real value get written anywhere.
 
 `PROVIDERS` is open-ended - Free Claude Code supports 17+ model
 providers, and adding another one (`OPENROUTER_API_KEY`,
 `DEEPSEEK_API_KEY`, whatever matches the provider) is just another line
-in that object, no Nix edit or rebuild needed for the key to exist. No
-encryption layer, no keypair to generate or lose, either - these aren't
-high-stakes secrets (a proxy token, a time-tracking key, an email
-address), and the file already lives somewhere that's never committed
-to git and has its own backup story - see below - so a whole extra
-layer for them wasn't buying much.
+in that attrset. No encryption layer, no keypair to generate or lose,
+either - these aren't high-stakes secrets (a proxy token, a
+time-tracking key, an email address), and `_user.nix` already lives
+somewhere that's never committed to git - so a whole extra layer for
+them wasn't buying much. Worth knowing: since these values flow through
+normal Nix derivations to reach the files apps read, each one does end
+up readable in `/nix/store` (world-readable on this machine, same as
+any other Nix-built config) - fine for the low-stakes values above, not
+a place to put anything you'd consider a real secret.
 
 Actual login sessions (Zen Browser, Vesktop, VS Code/Zed accounts, rbw,
-Bitwarden desktop, Free Claude Code's `.env`) - and that same
-`secrets.json` - all get symlinked into one fixed folder,
-`~/.config/vayori/session`, automatically on every rebuild, regardless
-of where this repo happens to be checked out. So that one folder is the
-only thing that ever needs to move for a fresh install to come back
-already logged into everything. Copy it directly (`cp -r`) for a
-same-trust move, or use a password-encrypted archive for anywhere less
-trusted:
+Bitwarden desktop, Free Claude Code's `.env`) get symlinked into one
+fixed folder, `~/.config/vayori/session`, automatically on every
+rebuild, regardless of where this repo happens to be checked out. So
+that one folder is the only thing that ever needs to move for a fresh
+install to come back already logged into everything. Copy it directly
+(`cp -r`) for a same-trust move, or use a password-encrypted archive
+for anywhere less trusted:
 
 ```bash
 vayori-app-state backup ~/vayori-session.enc    # on the old machine
@@ -178,8 +188,8 @@ vayori-app-state restore ~/vayori-session.enc   # on the new one
 ```
 
 Full mechanism is in
-[docs/core.md](docs/core.md#modulescoreusersnix) (what's in
-`secrets.json` and how each app reads it) and
+[docs/core.md](docs/core.md#modulescoreusersnix) (the `secrets` shape and
+how each app reads it) and
 [docs/apps-utils.md](docs/apps-utils.md#modulesappsutilsstatebackupstatebackupnix)
 (the session folder + CLI).
 

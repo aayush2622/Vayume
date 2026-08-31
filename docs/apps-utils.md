@@ -124,16 +124,23 @@ makes sure the app itself is there.
 **`programs.rbw`** is a separate CLI vault, unrelated to the desktop
 app's own login - it's what the Bitwarden launcher plugin in DMS actually
 talks to behind the scenes. Its account email now comes from
-`RBW_EMAIL` in `~/.config/vayori/session/secrets.json` (see
+`vayoriSecrets.RBW_EMAIL` (see
 [core/Users.nix](core.md#modulescoreusersnix)) rather than a manual
-`rbw config set email`, merged into `~/.config/rbw/config.json` the same
-"seed once, don't fight a live file" way the WakaTime key does for the
-editors below - not through `programs.rbw.settings` directly, since that
+`rbw config set email`, merged into `~/.config/rbw/config.json` every
+rebuild via `jq`, leaving everything else already in that file
+untouched - not through `programs.rbw.settings` directly, since that
 writes an immutable store-linked file and a value that changes per
 machine should never sit in one of those. `rbw login` (the actual vault
 unlock) still needs doing by hand - the master password itself never
-goes through this file, or anywhere else in this repo. That one stays a
+goes through Nix, or anywhere else in this repo. That one stays a
 manual, interactive step on purpose.
+
+**No real email, no config write.** The whole `rbwEmail` activation
+script is wrapped in `lib.optionalString (vayoriSecrets.RBW_EMAIL !=
+"REPLACE_ME")` - `programs.rbw` still gets enabled either way (the CLI
+itself doesn't need an email to exist), but `rbw`'s config file is left
+exactly as it is rather than getting seeded with a literal
+`"REPLACE_ME"` as the account email.
 
 ---
 
@@ -142,8 +149,7 @@ manual, interactive step on purpose.
 One canonical folder - `~/.config/vayori/session` - for every app's real
 login/session state (Zen Browser's profile, Vesktop, VS Code/Zed account
 sign-ins, the JetBrains/Android Studio data dir, rbw's own session, the
-Bitwarden desktop app's local storage, Free Claude Code's `.env`, and
-`secrets.json` itself - see
+Bitwarden desktop app's local storage, Free Claude Code's `.env` - see
 [core.md](core.md#modulescoreusersnix)), plus one command to move that
 folder around safely. Fixed under `$HOME`, on purpose - completely
 independent of wherever this flake repo happens to be checked out, so
