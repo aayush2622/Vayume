@@ -198,9 +198,11 @@ specific settings of its own to begin with.
   nothing here actually uses it.
 - **Zed uses DMS's own matugen-driven theme now, not a custom one** -
   `theme = "DankShell Dark"` names a theme straight out of DMS's own
-  `dank-zed-theme.json`, which `matugenTemplateZed = true` in
-  [Dms.nix](desktop.md#modulesdesktopdmsnix) keeps DMS regenerating
-  at `~/.config/zed/themes/dank-zed-theme.json` on every theme change.
+  `dank-zed-theme.json`, which DMS keeps regenerating at
+  `~/.config/zed/themes/dank-zed-theme.json` on every theme change -
+  `matugenTemplateZed` isn't even declared in
+  [Dms.nix](desktop.md#modulesdesktopdmsnix) any more, since `true` is
+  DMS's own default too.
   This repo used to hand-author its own ~140-key theme against Zed's
   published schema instead; DMS's own file covers the same ground (it
   ships four ready variants - `DankShell Dark`/`Light`, plus

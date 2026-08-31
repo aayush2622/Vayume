@@ -13,6 +13,12 @@ secrets/
 .env
 .env.*
 
+# Machine-specific config - real usernames, password hashes, disk UUIDs.
+# Copy the matching *.nix.example next to these and fill it in; the build
+# refuses to evaluate without them (see modules/hosts/Diablo/Host.nix).
+modules/hosts/*/_hardware.nix
+modules/hosts/*/_user.nix
+
 # Editor files
 .vscode/
 .claude/

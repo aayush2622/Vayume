@@ -104,11 +104,23 @@ folder and it works - see [Extending it](#extending-it).
 
 ## Quick start (on the reference machine's exact hardware)
 
+Two files never get committed - real disk UUIDs and a real username/password
+hash aren't something to publish - so the build refuses to evaluate until
+you've created them from their templates:
+
 ```bash
 git clone https://github.com/aayush2622/Vayori-Rice.git vayori
 cd vayori
-sudo nixos-rebuild switch --flake .#Diablo
+cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
+cp modules/hosts/Diablo/_user.nix.example modules/hosts/Diablo/_user.nix
+$EDITOR modules/hosts/Diablo/_user.nix   # at least pick a username
+sudo nixos-rebuild switch --flake path:.#Diablo
 ```
+
+> [!NOTE]
+> `path:.#Diablo`, not `.#Diablo` - see
+> [Using this on your own machine](#using-this-on-your-own-machine) below for
+> why that matters.
 
 > [!NOTE]
 > Any user without a `hashedPassword` set logs in with `changeme` the first
@@ -121,8 +133,10 @@ sudo nixos-rebuild switch --flake .#Diablo
 A handful of small credentials (Free Claude Code's model-provider API
 keys, a WakaTime key for Zed/VS Code/Android Studio, a Bitwarden CLI
 email) live in one plain JSON file:
-`~/.config/vayori/session/secrets.json`. It gets seeded with placeholder
-values on first rebuild - just open it and fill in the real ones:
+`~/.config/vayori/session/secrets.json`. It gets seeded on first rebuild
+- with that user's `secrets` block from `_user.nix` if you put one there
+(see [Using this on your own machine](#using-this-on-your-own-machine)), or
+placeholder values otherwise - just open it and fill in the real ones:
 
 ```bash
 $EDITOR ~/.config/vayori/session/secrets.json
@@ -173,16 +187,30 @@ Full mechanism is in
 
 ## Using this on your own machine
 
-A host is just **two files** under `modules/hosts/<name>/`: `Host.nix`
-(everything - users, apps, timezone, bootloader) and `_hardware.nix` (your
-disks and GPU, basically `hardware-configuration.nix` with a different
-name). Nothing else in the repo cares which machine it's running on.
+A host is **three files** under `modules/hosts/<name>/`: `Host.nix`
+(apps, timezone, bootloader), `_hardware.nix` (your disks and GPU,
+basically `hardware-configuration.nix` with a different name), and
+`_user.nix` (who logs in - usernames, groups, password hash, secrets).
+Nothing else in the repo cares which machine it's running on.
 
 > [!TIP]
-> `_hardware.nix` starts with an underscore on purpose. `import-tree`
-> auto-imports everything under `modules/` *except* paths containing `/_`,
-> so this stays a plain NixOS module instead of turning into its own thing.
-> Keep the underscore if you rename it.
+> `_hardware.nix`/`_user.nix` start with an underscore on purpose.
+> `import-tree` auto-imports everything under `modules/` *except* paths
+> containing `/_`, so these stay plain NixOS modules, imported explicitly
+> by `Host.nix`, instead of turning into their own thing. They're also
+> **gitignored** - real disk UUIDs and a real username/password hash
+> aren't something to publish - and required: `Host.nix` refuses to
+> evaluate without both actually present, with a clear error pointing at
+> the matching `*.nix.example` template if one's missing. Keep the
+> underscore if you rename either.
+
+> [!IMPORTANT]
+> Build with `path:.#<host>`, not bare `.#<host>`. Nix resolves a bare
+> flake ref through git's tracked-files-only view of the repo, which
+> would make these two gitignored files look "missing" even when they're
+> sitting right there on disk - `path:` uses the real directory as-is
+> instead. Every command below already does this; the rebuild button in
+> the bar does too.
 
 1. **Copy the host folder**:
 
@@ -190,7 +218,12 @@ name). Nothing else in the repo cares which machine it's running on.
    cp -r modules/hosts/Diablo modules/hosts/<yourhostname>
    ```
 
-2. **Generate your own `_hardware.nix`**, replacing the one you just copied:
+   (This also copies your already-filled-in `_hardware.nix`/`_user.nix` if
+   Diablo's got them - fine if it's the same machine under a new name,
+   replace them in the next two steps if it's actually different hardware
+   or different people.)
+
+2. **Generate your own `_hardware.nix`**:
 
    ```bash
    sudo nixos-generate-config --show-hardware-config > modules/hosts/<yourhostname>/_hardware.nix
@@ -200,24 +233,32 @@ name). Nothing else in the repo cares which machine it's running on.
    Nvidia laptop - `intelBusId`/`nvidiaBusId` are PCI addresses specific to
    my machine, not yours.
 
-3. **Edit `Host.nix`**:
+3. **Write your own `_user.nix`**, starting from the template:
+
+   ```bash
+   cp modules/hosts/<yourhostname>/_user.nix.example modules/hosts/<yourhostname>/_user.nix
+   mkpasswd -m sha-512   # paste the result in as hashedPassword
+   $EDITOR modules/hosts/<yourhostname>/_user.nix
+   ```
+
+   One entry per person - `fullName`/`hashedPassword`/`extraGroups`/
+   `secrets`, see [docs/core.md](docs/core.md#modulescoreusersnix) for the
+   full shape and what each field does. Leave `hashedPassword` out and
+   that person gets the `changeme` initial-password fallback instead.
+
+4. **Edit `Host.nix`**:
    - Rename `Diablo` to `<yourhostname>` (the `nixosConfigurations` line and
      `networking.hostName`).
-   - Swap the `vayori.users` block for your own people. Each entry takes
-     `fullName`/`hashedPassword`/`extraGroups`/`shell`/`avatar`/
-     `extraPackages` - see
-     [docs/core.md](docs/core.md#modulescoreusersnix) for what each field
-     does. `mkpasswd -m sha-512` makes the hash.
    - Adjust `vayori.apps` - just a list of app names pulled from
      `modules/apps/{development,gaming,utils}/**/*.nix`. `Host.nix` groups
      them by category for readability, but that's purely cosmetic - it
      flattens to a plain list before anything reads it.
    - Fix up timezone/locale/bootloader further down.
 
-4. **Rebuild**:
+5. **Rebuild**:
 
    ```bash
-   sudo nixos-rebuild switch --flake .#<yourhostname>
+   sudo nixos-rebuild switch --flake path:.#<yourhostname>
    ```
 
 ---
@@ -238,8 +279,9 @@ modules/
     PluginPins.nix                declares flake.pluginPins - pinned-plugin specs, per app
     PluginUpdateCheck.nix         checks pinned plugins/extensions for updates, no extra commands needed
   hosts/<name>/               everything for one machine - just these two files:
-    Host.nix                    nixosConfigurations.<name>: users, apps, timezone, bootloader, packages
-    _hardware.nix                hardware-configuration.nix equivalent (disks, GPU) - leading `_` = import-tree ignores it
+    Host.nix                    nixosConfigurations.<name>: apps, timezone, bootloader, packages
+    _hardware.nix                hardware-configuration.nix equivalent (disks, GPU) - gitignored + required, see .example
+    _user.nix                    who logs in - usernames, groups, password hash, secrets - gitignored + required, see .example
   desktop/                    the DE stack: compositor, shell, login theme, fonts, portals
     Niri.nix / Dms.nix / Fonts.nix / Portals.nix / Baseline.nix (GTK/Qt theming every user gets)
     Matugen.nix                 shared matugen template content, one attr per themed app
@@ -263,9 +305,10 @@ modules/
 
 ## Extending it
 
-**Add a person**: another entry in `vayori.users`, in that host's
-`Host.nix`. Apps are picked once per *machine*, not per person - everyone
-on a host gets the same set.
+**Add a person**: another entry in `_user.nix`'s `vayori.users` attrset (see
+[Using this on your own machine](#using-this-on-your-own-machine) above) -
+not in `Host.nix`, which doesn't declare users at all. Apps are picked once
+per *machine*, not per person - everyone on a host gets the same set.
 
 **Add an app**: drop a folder anywhere under `modules/apps/development/`,
 `modules/apps/gaming/`, or `modules/apps/utils/` that sets

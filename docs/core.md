@@ -79,9 +79,13 @@ the grouping exists, it's purely cosmetic at the call site.
 [Gaming.nix](apps-gaming.md#modulesappsgaminggamingnix) - see that page
 for why.
 
-**Users** (`vayori.users`): one entry per real person. Field meanings are
-in [core/Users.nix](#modulescoreusersnix) below. `mkpasswd -m sha-512`
-makes the password hash.
+**Users** (`vayori.users`) - **not set here any more.** It used to be a
+plain block in this file, but that meant real usernames, group
+memberships, and a password hash sat in git history the moment the repo
+went public. It's set from `_user.nix` instead now - a gitignored sibling
+of `_hardware.nix`, never committed, required (the build refuses to
+evaluate without it). Full story in [core/Users.nix](#modulescoreusersnix)
+below.
 
 ---
 
@@ -91,6 +95,36 @@ The one file in this repo that isn't a proper flake-parts module - no
 `flake.nixosModules.X` wrapper, just a plain NixOS module. The leading
 underscore keeps import-tree from trying anyway; it only ever gets pulled
 in through `Host.nix`'s own `./_hardware.nix` import.
+
+**Gitignored and required**, along with its sibling `_user.nix` (usernames,
+groups, password hash, secrets - full shape under
+[core/Users.nix](#modulescoreusersnix) below, mechanics shared with this
+file explained here). Both hold exactly the two things that made this repo
+unsafe to publish before - real disk UUIDs here, a real password hash
+there - so neither is ever committed. `Host.nix` wraps both imports in a
+small `requireLocalFile` helper that checks `builtins.pathExists` first
+and throws a message pointing at the matching `*.nix.example` template
+(also under `modules/hosts/<name>/`, committed as normal) instead of
+letting it fail with Nix's generic "path does not exist" - checked for
+real: deleting `_hardware.nix` and running `nix flake check` prints the
+`cp .../_hardware.nix.example ...` instruction, not a raw Nix trace.
+
+> [!IMPORTANT]
+> This only actually works with a `path:` flake ref
+> (`nixos-rebuild switch --flake path:.#Diablo`, not bare `.#Diablo`).
+> Nix resolves a bare ref for a git-repo directory through git's
+> tracked-files-only view of the tree - which is exactly what makes a
+> committed `_hardware.nix` disappear the moment `.gitignore` starts
+> covering it, "missing" or not. `path:` copies the real directory as-is
+> instead, so both files are visible once they actually exist on disk.
+> Confirmed directly: `nix eval .#nixosConfigurations.Diablo...` hit the
+> `requireLocalFile` throw with real `_hardware.nix`/`_user.nix` sitting
+> right there on disk; `nix eval path:$PWD#nixosConfigurations.Diablo...`
+> evaluated clean. The rebuild button
+> ([Dms.nix](desktop.md#modulesdesktopdmsnix)'s `vayoriRebuildScript`)
+> and every command in the README already use `path:` - this is only a
+> trap if you type a `nixos-rebuild`/`nix build` command by hand and
+> forget it.
 
 To make one for a different machine:
 
@@ -215,12 +249,70 @@ don't catch that kind of thing - only an actual build (or boot) does.
 ## `modules/core/Users.nix`
 
 The shared framework behind every `vayori.users.<name>` entry - what
-fields exist, what they do. Add an actual *person* in a host's
-`Host.nix`; only touch this file if you want to change what a person
-entry can contain.
+fields exist, what they do, and (new) where the whole list actually
+comes from now.
 
-- `hashedPassword`: generate with `mkpasswd -m sha-512`. Leave it `null`
-  and you get `changeme` as a fallback initial password instead.
+**`vayori.users` defaults to `{ }` here and gets its real value from
+`_user.nix`**, a plain NixOS module living next to `Host.nix` (see
+[_hardware.nix](#moduleshostsname_hardwarenix) above for the
+gitignored/required/`path:` mechanics, shared with `_user.nix`). This used
+to live directly in `Host.nix` - real usernames, group memberships, a
+password hash, all committed to git. That's fine for a private repo,
+genuinely not fine for a public one, so it moved out to its own file
+that's never committed:
+
+```nix
+# modules/hosts/Diablo/_user.nix
+{
+  vayori.users = {
+    ash = {
+      fullName = "Ash";
+      extraGroups = [ "networkmanager" "wheel" "video" "input" ];
+      hashedPassword = "$6$...";
+      secrets = {
+        WAKATIME_API_KEY = "...";
+        RBW_EMAIL = "...";
+        PROVIDERS = { OPENROUTER_API_KEY = "..."; };
+      };
+    };
+
+    random = {
+      fullName = "Random";
+      extraGroups = [ "networkmanager" "video" "input" ];
+    };
+  };
+}
+```
+
+- **No fallback test user any more.** Earlier versions of this repo read
+  an out-of-repo `/etc/vayori/config.json` at eval time and fell back to
+  a single passwordless account if it didn't exist, so a fresh public
+  clone could still evaluate with zero setup. That's gone: the build now
+  hard-fails with a clear message (see above) instead of silently
+  standing up an account nobody asked for - copy `_user.nix.example` and
+  pick a real username before the first rebuild, every time.
+- **Read at plain Nix module-evaluation time**, not through
+  home-manager activation like `secrets.json` below - it has to be,
+  since NixOS needs to know who the users even are before any of their
+  home directories, let alone home-manager, exist.
+- **`secrets`, per user, optional**: if set (non-empty), it becomes that
+  user's *initial* `secrets.json` content the first time their
+  home-manager activation runs (see `seedVayoriSecrets` below) - a way
+  to have a brand new account come up already configured instead of
+  starting from `"REPLACE_ME"` placeholders. Left out entirely, it falls
+  through to the same placeholder object every user got before this
+  existed - checked directly, both for a user with an explicit `secrets`
+  block and one without.
+- **Same trust model as `secrets.json` itself** (see below for why
+  that's an acceptable trade here) - plain Nix values, no encryption
+  layer. Fine, since `_user.nix` is gitignored and only ever readable by
+  whoever already has read access to this checkout.
+
+Field meanings:
+
+- `hashedPassword`: generate with `mkpasswd -m sha-512`. Leave it unset
+  (`null`) in `_user.nix` and you get `changeme` as a fallback initial
+  password instead.
 - `extraGroups`: `"wheel"` for sudo, `"adbusers"` for Android debugging.
 - The list of valid app names auto-discovers from every `.nix` file under
   `modules/apps/`, at any depth - add an app by dropping a folder in,
@@ -245,9 +337,10 @@ entry can contain.
 
 **Also where the secrets file gets seeded**, one activation script for
 every user (`seedVayoriSecrets`): if `~/.config/vayori/session/secrets.json`
-doesn't exist yet, it writes one with placeholder values and stops -
-never touches it again after that, so anything you fill in survives
-every future rebuild untouched.
+doesn't exist yet, it writes one - that user's `secrets` block from
+`_user.nix` if one was provided, otherwise the usual `"REPLACE_ME"`
+placeholders - and stops; never touches it again after that, so anything
+you fill in survives every future rebuild untouched.
 
 - **Plain JSON, on purpose.** `secrets.json` holds small values individual
   apps need, no encryption layer, no separate keypair to manage or lose.

@@ -1,0 +1,84 @@
+# Template for _hardware.nix, this machine's hardware-configuration.nix
+# equivalent - disks, GPU, swap. It's gitignored (real disk UUIDs aren't
+# something to publish) and required: Host.nix refuses to evaluate without
+# a real _hardware.nix sitting next to it. To make your own:
+#
+#   cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
+#   sudo nixos-generate-config --show-hardware-config
+#
+# then paste the fileSystems/swapDevices/boot.initrd bits nixos-generate-config
+# printed over the placeholders below. The Nvidia/ASUS block is this specific
+# machine's hardware (an ASUS ROG laptop with Optimus) - delete it entirely
+# unless you're on the same setup; `lspci` finds your own PCI bus IDs if you
+# are.
+{ config, lib, pkgs, modulesPath, ... }: {
+  imports =
+    [ (modulesPath + "/installer/scan/not-detected.nix")
+    ];
+
+  boot.initrd.availableKernelModules = [ "vmd" "xhci_pci" "nvme" "usb_storage" "usbhid" "sd_mod" ];
+  boot.initrd.kernelModules = [ ];
+  boot.kernelModules = [ "kvm-intel" ];
+  boot.extraModulePackages = [ ];
+
+  fileSystems."/" =
+    { device = "/dev/disk/by-uuid/REPLACE-WITH-ROOT-UUID";
+      fsType = "btrfs";
+      options = [ "subvol=@" "compress=zstd" ];
+    };
+
+  fileSystems."/home" =
+    { device = "/dev/disk/by-uuid/REPLACE-WITH-ROOT-UUID";
+      fsType = "btrfs";
+      options = [ "subvol=@home" "compress=zstd" ];
+    };
+
+  fileSystems."/boot" =
+    { device = "/dev/disk/by-uuid/REPLACE-WITH-BOOT-UUID";
+      fsType = "vfat";
+      options = [ "fmask=0077" "dmask=0077" ];
+    };
+
+  swapDevices = [
+    { device = "/dev/disk/by-uuid/REPLACE-WITH-SWAP-UUID"; }
+  ];
+
+  boot.resumeDevice = "/dev/disk/by-uuid/REPLACE-WITH-SWAP-UUID";
+
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+
+  services.xserver.videoDrivers = [ "nvidia" ];
+
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+  };
+
+  hardware.nvidia = {
+    modesetting.enable = true;
+
+    powerManagement.enable = true;
+    powerManagement.finegrained = true;
+
+    open = false;
+    nvidiaSettings = true;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+  };
+
+  hardware.nvidia.prime = {
+    offload.enable = true;
+    offload.enableOffloadCmd = true;
+
+    intelBusId = "PCI:0:2:0";
+    nvidiaBusId = "PCI:1:0:0";
+  };
+
+  services.asusd = {
+    enable = true;
+  };
+  services.supergfxd = {
+    enable = true;
+  };
+  systemd.services.supergfxd.path = [ pkgs.pciutils ];
+}

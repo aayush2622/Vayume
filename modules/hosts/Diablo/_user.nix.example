@@ -1,0 +1,39 @@
+# Template for _user.nix - who logs into this machine. It's gitignored (a
+# real username, group list, and password hash aren't something to publish)
+# and required: Host.nix refuses to evaluate without a real _user.nix sitting
+# next to it. To make your own:
+#
+#   cp modules/hosts/Diablo/_user.nix.example modules/hosts/Diablo/_user.nix
+#   mkpasswd -m sha-512          # paste the result in as hashedPassword
+#
+# then edit the attrset below - one entry per person, keyed by their Linux
+# username. Every field except the name itself is optional; see
+# modules/core/Users.nix's `userSubmodule` for the full list and defaults.
+{
+  vayori.users = {
+    ash = {
+      fullName = "Ash";
+      extraGroups = [ "networkmanager" "wheel" "video" "input" ];
+      # mkpasswd -m sha-512 - leave unset for a "changeme" initial password.
+      hashedPassword = "$6$REPLACE$ME";
+
+      # Optional: seeds ~/.config/vayori/session/secrets.json the first
+      # time this user's home-manager activation runs. Leave the whole
+      # block out (or any key inside it) for "REPLACE_ME" placeholders
+      # instead - see docs/core.md for what reads each one.
+      secrets = {
+        WAKATIME_API_KEY = "REPLACE_ME";
+        RBW_EMAIL = "REPLACE_ME";
+        PROVIDERS = {
+          NVIDIA_NIM_API_KEY = "REPLACE_ME";
+        };
+      };
+    };
+
+    random = {
+      fullName = "Random";
+      extraGroups = [ "networkmanager" "video" "input" ];
+      # No hashedPassword -> logs in with the "changeme" initial password.
+    };
+  };
+}

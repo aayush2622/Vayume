@@ -1,4 +1,19 @@
-{ self, inputs, ... }: {
+{ self, inputs, ... }:
+let
+  requireLocalFile = path: name:
+    if builtins.pathExists path
+    then path
+    else throw ''
+      modules/hosts/Diablo/${name} is missing.
+
+      It's gitignored on purpose (real machine-specific data) and required -
+      copy the template and fill it in:
+
+        cp modules/hosts/Diablo/${name}.example modules/hosts/Diablo/${name}
+
+      See docs/core.md for what belongs in it.
+    '';
+in {
   flake.nixosConfigurations.Diablo = inputs.nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs self; };
     modules = [
@@ -16,7 +31,8 @@
       self.nixosModules.VmTesting
       self.nixosModules.PluginUpdateCheck
 
-      ./_hardware.nix
+      (requireLocalFile ./_hardware.nix "_hardware.nix")
+      (requireLocalFile ./_user.nix "_user.nix")
 
       ({ pkgs, lib, config, ... }: {
         options.vayori.theme = lib.mkOption {
@@ -69,19 +85,6 @@
         };
 
         config = {
-          vayori.users = {
-            ash = {
-              fullName = "Ash";
-              extraGroups = [ "networkmanager" "wheel" "video" "input" "adbusers" "docker" ];
-              hashedPassword = "$6$REDACTED$REDACTEDREDACTEDREDACTED";
-            };
-
-            random = {
-              fullName = "Random";
-              extraGroups = [ "networkmanager" "video" "input" ];
-            };
-          };
-
           vayori.apps =
             let
               appsByCategory = {

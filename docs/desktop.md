@@ -54,13 +54,31 @@ goes back to needing a manual GTK theme reselect (or reopen) to pick up
 a new wallpaper's colors immediately, which is the trade DMS's own
 maintainers made by defaulting this off in the first place.
 
-**Section order in the settings block**, if you're hunting for
-something: theme, compositor, weather, animation, blur, wallpaper, bar
-widgets, control center, workspaces, media, greeter, launcher, dashboard,
-fonts, notepad, sounds, power, matugen (per-app toggles - also themes
-niri's own window borders), dock, notifications, lock screen, OSD, power
-menu, updater, displays, desktop clock, system monitor, desktop widgets,
-frame.
+**The settings block only lists what actually differs from DMS's own
+defaults** - it used to declare all ~530 keys DMS's `settings.json`
+schema has, mirroring upstream's own section order (theme, compositor,
+weather, animation, blur, wallpaper, bar widgets, control center,
+workspaces, media, greeter, launcher, dashboard, fonts, notepad, sounds,
+power, matugen, dock, notifications, lock screen, OSD, power menu,
+updater, displays, desktop clock, system monitor, desktop widgets,
+frame), but 494 of those were just typing DMS's own upstream default
+back at it. Confirmed via DMS's own `SettingsStore.js`: any key missing
+from `settings.json` gets filled in with `SettingsSpec.js`'s `def` value
+at load time (`if (!(k in jsonObj)) root[k] = SPEC[k].def;`), so leaving
+a key out is provably identical to declaring it as its own default, not
+a guess. The trim was scripted, not hand-edited - extracted DMS's real
+default for all ~530 keys straight out of the actual installed
+`SettingsSpec.js`, diffed against this repo's own built `settings.json`,
+and only removed keys that matched byte-for-byte; the ~35 that remain
+are every actual customization (theme mode, blur, dock, fonts, matugen
+scheme, per-app theming toggles, widget layout, and similar). Verified
+by re-simulating DMS's own fill-in-the-defaults logic against the
+trimmed file and diffing the result against the original 530-key
+version - identical on every key, then confirmed against a real
+`nixosConfigurations.Diablo.config.system.build.toplevel` build. If
+you're hunting for a specific upstream default this repo isn't
+overriding, `SettingsSpec.js` in the fetched `dms` flake input is the
+source of truth, not this file.
 
 **Vesktop and Zed use DMS's own built-in themes, not a custom one.**
 This repo used to ship its own matugen templates for both (a
@@ -80,8 +98,10 @@ own are used directly:
   here). Zed just scans `~/.config/zed/themes/*.json` for a matching
   `name`, so this needs nothing beyond the string matching what DMS
   writes.
-- **Vesktop**: `matugenTemplateVesktop = true` lets DMS keep writing
-  `dank-discord.css` (the well-known
+- **Vesktop**: `matugenTemplateVesktop` isn't declared at all any more
+  (it matches DMS's own default of `true`, so it was trimmed along with
+  every other default-matching setting - see the settings-block note
+  above) - DMS keeps writing `dank-discord.css` (the well-known
   [midnight-discord](https://github.com/refact0r/midnight-discord)
   community theme, matugen-recolored), but Vesktop only *auto-loads*
   a theme through QuickCSS, not the `themes/` folder DMS writes to -
@@ -168,6 +188,70 @@ enabling it alone isn't enough.
   command searches a short list of likely spots at runtime instead of
   guessing once, and fails loudly if none of them match rather than
   silently doing nothing.
+- **The rebuild button was actually broken - a real, confirmed bug, not
+  a hypothesis.** Reproduced end-to-end in a real VM boot: `sudo`
+  resets `$HOME` to `/root` for the process it runs (standard sudo
+  behavior, `env_reset` on by default), so the script's old `"$HOME/vayori"`
+  search always looked in `/root/vayori` - which never exists - and
+  failed with "vayori flake not found" every single time the button was
+  clicked, regardless of where the flake actually lived. This is also
+  why the generation count looked stuck: the plugin only calls
+  `refreshData()` after a rebuild exits 0, so a rebuild that never gets
+  past this check never refreshes anything, which just looks like "the
+  number doesn't update." Fixed by resolving the *invoking* user's home
+  directory instead of trusting `$HOME` - `vayoriHomeByUser` builds a
+  `case` statement mapping every `config.vayori.users` name to its real
+  `config.users.users.<name>.home` at eval time (correct even if a
+  user's home is ever customized off the `/home/<name>` default), keyed
+  off `$SUDO_USER` (sudo's own record of who invoked it, unaffected by
+  the `$HOME` reset). A second, related failure was waiting right behind
+  the first one: once the flake dir resolves correctly, `nixos-rebuild`
+  running *as root* against a git repo it doesn't own trips libgit2's
+  safe-directory check ("repository path ... is not owned by current
+  user") - also reproduced for real in the same VM boot. Fixed with a
+  single scoped `git config --global --add safe.directory "$flakeDir"`
+  right before the rebuild, trusting only the one path this script
+  itself found rather than a blanket `safe.directory = *`. A third fix
+  landed here later, for a different reason: the final
+  `nixos-rebuild switch --flake` call uses a `path:$flakeDir` ref, not a
+  bare one, so `_hardware.nix`/`_user.nix` (gitignored, see
+  [core.md](core.md#moduleshostsname_hardwarenix)) actually resolve
+  instead of looking "missing" through git's tracked-files-only view of
+  the repo.
+- **Nix monitor logs a harmless "manifest load failed" warning for
+  `.../plugins/NixMonitor/config.json`** on every login - that capital-N
+  `NixMonitor` directory only exists because the plugin's own bundled
+  QML hardcodes that exact (capital-N) path to read its config from,
+  which happens to match this repo's own `xdg.configFile` declaration
+  above (also capital-N, intentionally). DMS's plugin loader scans every
+  subdirectory under `~/.config/DankMaterialShell/plugins/` looking for
+  a `plugin.json` in each; the *real* plugin installs lowercase at
+  `plugins/nixMonitor/` (from the Nix attribute name), so the capital-N
+  directory only ever has a bare `config.json` and no manifest - hence
+  the warning. Harmless (the actual widget reads its config fine, from
+  the same capital-N path its own QML expects), just noisy; not
+  something this repo can clean up without patching the plugin's own
+  hardcoded path.
+- **`desktopWidgetInstances` widgets size themselves via a separate
+  `positions` field, not `config`** - confirmed by reading DMS's
+  `DesktopPluginWrapper.qml`: `config` only reaches the plugin's own
+  `pluginData`, while position/size for an instance-based widget (any
+  entry with a unique `id` here, like Pure Lyrics) lives in
+  `positions.<screenKey>.{x,y,width,height}` on that same instance,
+  `_synced` being the key when `syncPositionAcrossScreens` is on. `x`/`y`
+  are fractions of screen size when synced; `width`/`height` are always
+  raw pixels and get clamped to the real screen size regardless
+  (`Math.min(effectiveW, screenWidth)`), so an oversized `width` (`9999`
+  here) is a resolution-independent way to say "full screen width"
+  without hardcoding an actual monitor size. One real trade-off found
+  the hard way: the wrapper only auto-computes a first-run default
+  size when `positions.width` is entirely absent - setting `width`
+  explicitly without also setting `height` would've made the *height*
+  fall back to a hardcoded `180` instead of the plugin's own computed
+  `fontSize * lineCount * 1.4 + 8`, so `height` is pinned here too
+  (`253`, matching the configured `fontSize`/`lineCount` at the time -
+  needs updating by hand if either changes, since it's no longer
+  auto-computed once pinned).
 - **A scoped sudo rule** lets every user run `nixos-rebuild`/
   `nix-collect-garbage` without a password - and *only* those two
   commands, with any arguments. Not blanket passwordless sudo, just
