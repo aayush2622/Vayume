@@ -9,16 +9,25 @@
 
   perSystem = { pkgs, lib, ... }:
   let
-    niriBinds = {
-      "Mod+Return".spawn = [ "kitty" ];
-      "Mod+E".spawn = [ "nautilus" ];
-      "Mod+C".spawn = [ "code" ];
-      "Mod+B".spawn = [ "zen" ];
-      "Control+Shift+Escape".spawn = [ "kitty" "-e" "btop" ];
+    # niri's hotkey-overlay only shows a good label for its own recognized
+    # actions - a bare `spawn` bind falls back to just the program name, so
+    # every "dms ipc call ..." entry showed up as an indistinguishable
+    # "dms". `hotkey-overlay-title` is a real KDL node property, not a
+    # child, so it can only reach the output through this repo's "special
+    # function" bind shape (props + content) - see wlib.toKdl - rather than
+    # the plain `"Key".action = value;` sugar used everywhere else below.
+    titled = title: content: _: { props.hotkey-overlay-title = title; inherit content; };
 
-      "Mod+S".spawn = [ "dms" "ipc" "call" "spotlight" "toggle" ];
-      "Mod+V".spawn = [ "dms" "ipc" "call" "clipboard" "toggle" ];
-      "Mod+Comma".spawn = [ "dms" "ipc" "call" "settings" "toggle" ];
+    niriBinds = {
+      "Mod+Return" = titled "Open Terminal" { spawn = [ "kitty" ]; };
+      "Mod+E" = titled "Open File Manager" { spawn = [ "nautilus" ]; };
+      "Mod+C" = titled "Open VS Code" { spawn = [ "code" ]; };
+      "Mod+B" = titled "Open Browser" { spawn = [ "zen" ]; };
+      "Control+Shift+Escape" = titled "Open System Monitor" { spawn = [ "kitty" "-e" "btop" ]; };
+
+      "Mod+S" = titled "Toggle App Launcher" { spawn = [ "dms" "ipc" "call" "spotlight" "toggle" ]; };
+      "Mod+V" = titled "Toggle Clipboard History" { spawn = [ "dms" "ipc" "call" "clipboard" "toggle" ]; };
+      "Mod+Comma" = titled "Open Settings" { spawn = [ "dms" "ipc" "call" "settings" "toggle" ]; };
       "Mod+Tab".toggle-overview = _: { };
 
       "Mod+Q".close-window = _: { };
@@ -31,10 +40,10 @@
       "Mod+G".consume-window-into-column = _: { };
       "Mod+Shift+G".expel-window-from-column = _: { };
       "Mod+K".switch-layout = "next";
-      "Mod+L".spawn = [ "dms" "ipc" "call" "lock" "lock" ];
+      "Mod+L" = titled "Lock Screen" { spawn = [ "dms" "ipc" "call" "lock" "lock" ]; };
 
-      "Mod+Shift+W".spawn = [ "dms" "ipc" "wallpaperCarousel" "open" ];
-      "Mod+A".spawn = [ "dms" "ipc" "call" "spotlight" "toggle" ];
+      "Mod+Shift+W" = titled "Open Wallpaper Carousel" { spawn = [ "dms" "ipc" "wallpaperCarousel" "open" ]; };
+      "Mod+A" = titled "Toggle App Launcher" { spawn = [ "dms" "ipc" "call" "spotlight" "toggle" ]; };
 
       "Mod+Left".focus-column-left = _: { };
       "Mod+Right".focus-column-right = _: { };
@@ -52,23 +61,25 @@
       "Mod+Shift+Ctrl+Down".set-window-height = "+10%";
       "Mod+R".switch-preset-column-width = _: { };
 
-      "Mod+Shift+P".spawn = [ "hyprpicker" "-a" ];
+      "Mod+Shift+P" = titled "Pick Color" { spawn = [ "hyprpicker" "-a" ]; };
       "Print".screenshot = _: { };
       "Shift+Print".screenshot-screen = _: { };
-      "Mod+Shift+S".spawn = [ "dms" "ipc" "call" "niri" "screenshot" ];
+      "Mod+Shift+S" = titled "Screenshot (DMS)" { spawn = [ "dms" "ipc" "call" "niri" "screenshot" ]; };
 
-      "XF86AudioMute".spawn = [ "dms" "ipc" "call" "audio" "mute" ];
-      "XF86AudioLowerVolume".spawn = [ "dms" "ipc" "call" "audio" "decrement" "5" ];
-      "XF86AudioRaiseVolume".spawn = [ "dms" "ipc" "call" "audio" "increment" "5" ];
-      "XF86AudioMicMute".spawn = [ "dms" "ipc" "call" "mic" "mute" ];
-      "XF86AudioPlay".spawn = [ "playerctl" "play-pause" ];
-      "XF86AudioPause".spawn = [ "playerctl" "play-pause" ];
-      "XF86AudioNext".spawn = [ "playerctl" "next" ];
-      "XF86AudioPrev".spawn = [ "playerctl" "previous" ];
-      "XF86MonBrightnessUp".spawn-sh =
-        ''dms ipc call brightness increment 5 "$(dms ipc call brightness list | awk '$1 ~ /^backlight:/ {print $1; exit}')" '';
-      "XF86MonBrightnessDown".spawn-sh =
-        ''dms ipc call brightness decrement 5 "$(dms ipc call brightness list | awk '$1 ~ /^backlight:/ {print $1; exit}')" '';
+      "XF86AudioMute" = titled "Mute Audio" { spawn = [ "dms" "ipc" "call" "audio" "mute" ]; };
+      "XF86AudioLowerVolume" = titled "Volume Down" { spawn = [ "dms" "ipc" "call" "audio" "decrement" "5" ]; };
+      "XF86AudioRaiseVolume" = titled "Volume Up" { spawn = [ "dms" "ipc" "call" "audio" "increment" "5" ]; };
+      "XF86AudioMicMute" = titled "Mute Microphone" { spawn = [ "dms" "ipc" "call" "mic" "mute" ]; };
+      "XF86AudioPlay" = titled "Play/Pause Media" { spawn = [ "playerctl" "play-pause" ]; };
+      "XF86AudioPause" = titled "Play/Pause Media" { spawn = [ "playerctl" "play-pause" ]; };
+      "XF86AudioNext" = titled "Next Track" { spawn = [ "playerctl" "next" ]; };
+      "XF86AudioPrev" = titled "Previous Track" { spawn = [ "playerctl" "previous" ]; };
+      "XF86MonBrightnessUp" = titled "Brightness Up" {
+        spawn-sh = ''dms ipc call brightness increment 5 "$(dms ipc call brightness list | awk '$1 ~ /^backlight:/ {print $1; exit}')" '';
+      };
+      "XF86MonBrightnessDown" = titled "Brightness Down" {
+        spawn-sh = ''dms ipc call brightness decrement 5 "$(dms ipc call brightness list | awk '$1 ~ /^backlight:/ {print $1; exit}')" '';
+      };
       "Mod+1".focus-workspace = 1;
       "Mod+2".focus-workspace = 2;
       "Mod+3".focus-workspace = 3;

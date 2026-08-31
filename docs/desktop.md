@@ -291,6 +291,22 @@ not a dGPU. Looks basically identical, costs noticeably less.
 shell first. Most binds use the direct one; the brightness binds need the
 shell version since they pipe one command's output through `awk`.
 
+**The startup hotkey overlay used to just say "dms" for every DMS bind** -
+spotlight, clipboard, settings, lock, wallpaper carousel, screenshot, all
+indistinguishable, since niri's overlay falls back to the bare program
+name for any `spawn` it doesn't recognize as one of its own built-in
+actions. Real fix, not a workaround: niri supports a `hotkey-overlay-title`
+property per bind (confirmed in its own docs and by running the built
+config through `niri validate`), but it's a KDL node *property*, not a
+child - `wlib.toKdl` (this repo's Nix→KDL layer, from
+`nix-wrapper-modules`) only emits properties for binds written in its
+"special function" shape (`_: { props; content; }`), not the plain
+`"Key".action = value;` sugar used everywhere else in this file. Every
+`spawn`/`spawn-sh` bind now goes through a small `titled` helper that
+builds that shape, so each one carries a real, distinct label
+(`"Open App Launcher"`, `"Lock Screen"`, ...) instead of the generic
+executable name.
+
 The keybind list lives as its own named binding instead of buried three
 levels deep in the config attrset - purely for readability, doesn't
 change the built output at all.
