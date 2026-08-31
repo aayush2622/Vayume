@@ -1,4 +1,3 @@
-{ self, ... }:
 let
   cppManualExtensionsSpec = [
     { name = "cpp-extentions-pack"; publisher = "boundarystudio"; version = "0.3.0"; hash = "sha256-UX7+sjlqfWUINtye2XYOndMvya2j0TMXEUbnJ9CDBig="; }

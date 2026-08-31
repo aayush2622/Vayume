@@ -67,7 +67,52 @@ none of them guesses - all traced through the actual source:
 
 Small caveat: QEMU's screenshot tool doesn't reliably capture the
 hardware cursor, so a screenshot with no visible cursor isn't proof
-anything's actually broken.
+anything's actually broken - which is exactly why the next bullet was
+hard to be sure about without a real machine.
+
+**...and it still wasn't enough.** On real hardware the greeter really
+did have no cursor. Traced through weston's own C source
+(`frontend/main.c`, `kiosk-shell/kiosk-shell.c`) before touching
+anything: Wayland cursor rendering is 100% client-side (a
+`wl_pointer.set_cursor` call) - the compositor never draws a fallback
+cursor of its own. Weston's `[shell] cursor-theme`/`cursor-size` config
+keys only apply to its *nested* "wayland backend" (weston-inside-a-
+compositor, for testing); the real DRM-backend path SDDM actually uses
+has no cursor-theme option of any kind, and `kiosk-shell.c` - the shell
+plugin SDDM selects - has zero cursor-handling code at all. So the whole
+chain came down to whether the greeter's own Qt/QML process reliably
+resolves `XCURSOR_THEME`/`XCURSOR_SIZE` into an actual `set_cursor` call
+over Wayland specifically - the three fixes above get the env vars to
+the process, but that resolution step turned out not to be reliable
+enough to depend on.
+
+Fix: stop depending on it. [`Theme/Main.qml`](sddm/Theme/Main.qml) now
+draws its own cursor - a `HoverHandler` on the root item tracks the
+pointer position (observe-only, doesn't grab clicks, so it can't break
+the password field or the session/reboot/power buttons underneath it),
+and a `Canvas` paints a simple arrow at that position every frame. Every
+`MouseArea` in the file that used to request a native `cursorShape`
+(`Qt.ArrowCursor`/`Qt.PointingHandCursor`) now requests `Qt.BlankCursor`
+instead, so there's nothing left trying to use the uncertain
+resolve-and-set_cursor path at all - the custom-drawn one is the only
+cursor, everywhere, unconditionally. This renders exactly like the rest
+of the greeter's own visible UI, so it doesn't depend on Xcursor
+resolution, Wayland's cursor-surface protocol, or a hardware cursor
+plane existing at all.
+
+**Still `vayori.theme`-driven, not hardcoded**: the arrow's *size* comes
+from `config.vayori.theme.cursorSize`, threaded through via a
+`cursorSize=` key [`SddmTheme.nix`](sddm/SddmTheme.nix) now writes into
+`theme.conf` (SDDM's own QML API exposes every `[General]` key as
+`config.<key>` - the same mechanism the theme could already use for
+`background`/`font`/`themeMode`, just not exercised for anything
+Nix-driven until now). The shape itself is a plain drawn arrow, not a
+pixel-accurate reproduction of Bibata-Modern-Ice - the cursor package
+only ships compiled Xcursor binaries, no plain image assets, so
+matching it exactly would mean decoding that binary format at build
+time. Given the actual goal (a visible, theme-sized cursor that works
+regardless of the Wayland-cursor-protocol uncertainty above), that
+trade felt like the wrong place to spend more risk.
 
 **Apps** (`vayori.apps`) is the one setting most new machines actually
 need to touch - just filenames under `modules/apps/`. Written here

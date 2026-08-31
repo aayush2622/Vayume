@@ -1,4 +1,4 @@
-{ self, inputs, ... }: {
+{ self, ... }: {
   flake.nixosModules.PluginUpdateCheck = { config, lib, pkgs, ... }:
   let
     checkerScript = pkgs.writers.writePython3Bin "vayori-check-plugin-updates" { } ''

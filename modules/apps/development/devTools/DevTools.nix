@@ -1,4 +1,4 @@
-{ self, inputs, ... }: {
+{
   flake.homeModules.apps.DevTools = { pkgs, ... }: {
     home.packages = with pkgs; [
       gh

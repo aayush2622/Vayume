@@ -1,4 +1,4 @@
-{ self, inputs, ... }: {
+{
   flake.homeModules.Baseline = { pkgs, lib, config, vayoriTheme, ... }:
   let
     theme = vayoriTheme;

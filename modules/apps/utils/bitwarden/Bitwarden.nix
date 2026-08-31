@@ -1,5 +1,9 @@
-{ self, inputs, ... }: {
-  flake.homeModules.apps.Bitwarden = { pkgs, lib, vayoriSecrets, ... }: {
+{
+  flake.homeModules.apps.Bitwarden = { pkgs, lib, vayoriSecrets, ... }:
+  let
+    hasEmail = vayoriSecrets.RBW_EMAIL != "REPLACE_ME";
+  in
+  {
     home.packages = [ pkgs.bitwarden-desktop pkgs.pinentry-gtk2 ];
 
     programs.rbw = {
@@ -7,7 +11,7 @@
     };
 
     home.activation.rbwEmail = lib.hm.dag.entryAfter [ "writeBoundary" ] (
-      lib.optionalString (vayoriSecrets.RBW_EMAIL != "REPLACE_ME") ''
+      lib.optionalString hasEmail ''
         CONFIG_FILE="$HOME/.config/rbw/config.json"
         EMAIL=${lib.escapeShellArg vayoriSecrets.RBW_EMAIL}
 

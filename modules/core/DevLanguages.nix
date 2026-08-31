@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{ self, lib, ... }: {
   options.flake.devLanguages = lib.mkOption {
     type = lib.types.lazyAttrsOf lib.types.unspecified;
     default = { };
@@ -22,10 +22,26 @@
           };
         }
 
-      Editors (Vscode.nix, AndroidStudio.nix) filter `self.devLanguages` down to
-      whichever language app names are actually in `vayori.apps` before reading
-      any of this, so removing a language app strips its extensions/plugins from
-      every editor automatically - editors never hardcode a language's existence.
+      Editors (Vscode.nix, AndroidStudio.nix, Zed.nix) filter `self.devLanguages`
+      down to whichever language app names are actually in `vayori.apps` before
+      reading any of this, so removing a language app strips its
+      extensions/plugins from every editor automatically - editors never
+      hardcode a language's existence. They do it via `self.enabledDevLanguages`
+      below rather than each repeating the filter themselves.
     '';
   };
+
+  options.flake.enabledDevLanguages = lib.mkOption {
+    type = lib.types.functionTo (lib.types.lazyAttrsOf lib.types.unspecified);
+    default = vayoriApps: { };
+    description = ''
+      `vayoriApps -> devLanguages`, filtered down to just the languages
+      actually enabled for this host. The one filter every editor module
+      needs, shared here instead of each repeating
+      `lib.filterAttrs (name: _: builtins.elem name vayoriApps) self.devLanguages`.
+    '';
+  };
+
+  config.flake.enabledDevLanguages =
+    vayoriApps: lib.filterAttrs (name: _: builtins.elem name vayoriApps) self.devLanguages;
 }

@@ -1,4 +1,4 @@
-{ self, inputs, ... }:
+{ inputs, ... }:
 let
   zenExtensionsSpec = [
     { name = "uBlock Origin"; slug = "ublock-origin"; guid = "uBlock0@raymondhill.net"; }
@@ -38,186 +38,187 @@ in {
 
   flake.homeModules.apps.ZenBrowser = { pkgs, lib, vayoriTheme, ... }:
   let
-  theme = vayoriTheme;
+    theme = vayoriTheme;
 
-  mkPrefLines = fn: prefs: lib.concatLines (
-    lib.mapAttrsToList (name: value: "${fn}(${builtins.toJSON name}, ${builtins.toJSON value});") prefs
-  );
+    mkPrefLines = fn: prefs: lib.concatLines (
+      lib.mapAttrsToList (name: value: "${fn}(${builtins.toJSON name}, ${builtins.toJSON value});") prefs
+    );
 
-  zenPrefs = {
-    "extensions.autoDisableScopes" = 0;
-    "extensions.pocket.enabled" = false;
-    "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
-  };
+    zenPrefs = {
+      "extensions.autoDisableScopes" = 0;
+      "extensions.pocket.enabled" = false;
+      "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+    };
 
-  zenExtensions = zenExtensionsSpec;
+    zenExtensions = zenExtensionsSpec;
 
-  guidOf = name: (lib.findFirst (e: e.name == name)
-    (throw "zen-browser.nix: no zenExtensions entry named \"${name}\"")
-    zenExtensions).guid;
+    guidOf = name: (lib.findFirst (e: e.name == name)
+      (throw "zen-browser.nix: no zenExtensions entry named \"${name}\"")
+      zenExtensions).guid;
 
-  zen-browser = pkgs.wrapFirefox
-  inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped
-  {
-    extraPrefs = mkPrefLines "lockPref" zenPrefs;
+    zen-browser = pkgs.wrapFirefox
+      inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped
+      {
+        extraPrefs = mkPrefLines "lockPref" zenPrefs;
 
-    extraPolicies = {
-      DisableTelemetry = true;
-      ExtensionSettings = builtins.listToAttrs (map (e: {
+        extraPolicies = {
+          DisableTelemetry = true;
+          ExtensionSettings = builtins.listToAttrs (map (e: {
             name = e.guid;
             value = {
               install_url = "https://addons.mozilla.org/en-US/firefox/downloads/latest/${e.slug}/latest.xpi";
               installation_mode = "normal_installed";
             };
-        }) zenExtensions);
+          }) zenExtensions);
+        };
+      };
+
+    zenModsRoot = "https://raw.githubusercontent.com/zen-browser/theme-store/main";
+    zenModsBaseUrl = "${zenModsRoot}/themes";
+    zenModsIndexUrl = "${zenModsRoot}/themes.json";
+
+    zenMods = zenModsSpec;
+
+    zenSidebarExtensionIds = lib.concatStringsSep "," (
+      map guidOf [ "Bitwarden Password Manager" "MAL-Sync" ]
+    );
+
+    zenUserPrefs = {
+      "zen.urlbar.behavior" = "float";
+      "zen.view.compact.enable-at-startup" = true;
+      "zen.view.compact.hide-toolbar" = true;
+      "zen.view.compact.should-enable-at-startup" = true;
+      "zen.view.use-single-toolbar" = false;
+      "zen.widget.linux.transparency" = true;
+      "zen.view.window.scheme" = 0;
+
+      "sidebar.visibility" = "hide-sidebar";
+      "sidebar.installed.extensions" = zenSidebarExtensionIds;
+      "sidebar.main.tools" = zenSidebarExtensionIds;
+
+      "browser.tabs.allow_transparent_browser" = true;
+      "browser.tabs.loadInBackground" = false;
+      "browser.toolbars.bookmarks.visibility" = "always";
+      "browser.newtabpage.enabled" = false;
+      "browser.ml.enable" = true;
+
+      "signon.rememberSignons" = false;
+      "network.prefetch-next" = false;
+      "privacy.popups.showBrowserMessage" = false;
+
+      "font.name.serif.x-western" = theme.font;
+      "layout.css.prefers-color-scheme.content-override" = 0;
+
+      "mod.cleanedurlbar.customcolor" = "hsl(0 0 10)";
+      "mod.cleanedurlbar.customselectcolor" = "rgba(80, 80, 250, 0.75)";
+      "mod.cleanedurlbar.customselectfontcolor" = "rgba(255,255,255,1)";
+      "mod.cleanedurlbar.customtransparency" = "40%";
+
+      "mod.sameerasw_zen_animations" = "1";
+      "mod.sameerasw.zen_bg_blur" = "3px";
+      "mod.sameerasw.zen_bg_color_enabled" = false;
+      "mod.sameerasw.zen_bg_img_enabled" = false;
+      "mod.sameerasw.zen_bg_img_not_fullscreen" = false;
+      "mod.sameerasw.zen_bg_img" = "url('https://github.com/sameerasw/my-internet/blob/main/wallpapers/zen-coral-01.jpeg?raw=true')";
+      "mod.sameerasw.zen_bg_opacity" = "0.8";
+      "mod.sameerasw_zen_compact_sidebar_type" = "0";
+      "mod.sameerasw.zen_compact_sidebar_width" = "165px";
+      "mod.sameerasw_zen_empty_tab_logo" = "0";
+      "mod.sameerasw_zen_light_tint" = "2";
+      "mod.sameerasw.zen_no_shadow" = false;
+      "mod.sameerasw.zen_notab_img_enabled" = true;
+      "mod.sameerasw.zen_notab_img_invert" = false;
+      "mod.sameerasw.zen_notab_img_opacity" = "1";
+      "mod.sameerasw.zen_notab_img_saturate" = false;
+      "mod.sameerasw.zen_notab_img_size" = "150px";
+      "mod.sameerasw.zen_notab_img" = "url('https://github.com/sameerasw/my-internet/blob/main/wave-light.png?raw=true')";
+      "mod.sameerasw.zen_tab_switch_anim" = true;
+      "mod.sameerasw.zen_trackpad_anim" = false;
+      "mod.sameerasw.zen_transparency_color" = "#00000000";
+      "mod.sameerasw.zen_transparent_glance_enabled" = true;
+      "mod.sameerasw.zen_transparent_sidebar_enabled" = true;
+      "mod.sameerasw.zen_urlbar_zoom_anim" = false;
+
+      "psu.better_ctrltab.background" = "light-dark(rgba(144, 144, 144, 0.94), rgba(22, 22, 22, 0.92))";
+      "psu.better_ctrltab.padding" = "16px";
+      "psu.better_ctrltab.preview_border_color" = "light-dark(rgba(255, 255, 255, 0.1), rgba(1, 1, 1, 0.1))";
+      "psu.better_ctrltab.preview_border_width" = "1px";
+      "psu.better_ctrltab.preview_favicon_outdent" = "12px";
+      "psu.better_ctrltab.preview_favicon_size" = "36px";
+      "psu.better_ctrltab.preview_focus_background" = "light-dark(rgba(77, 77, 77, 0.8), rgba(204, 204, 204, 0.33))";
+      "psu.better_ctrltab.preview_font_size" = "13px";
+      "psu.better_ctrltab.preview_letter_spacing" = "0px";
+      "psu.better_ctrltab.roundness" = "28px";
+      "psu.better_ctrltab.shadow_size" = "18px";
+      "psu.better_ctrltab.zoom" = "0.8";
+      "network.trr.mode" = 2;
+      "network.trr.uri" = "https://mozilla.cloudflare-dns.com/dns-query";
+      "theme.custom_uifont.custom" = theme.font;
+      "theme.custom_uifont.default" = "Custom";
+      "theme.custom_uifont.shadow" = "none";
+      "theme.nosidebarscrollbar.before125b" = true;
+      "theme.smaller_compact_mode.sidebar_height" = "50";
+
+      "uc.tabs.custom_color_hex" = "#ffffff";
+      "uc.tabs.dim_unloaded" = false;
     };
-  };
 
-  zenModsRoot = "https://raw.githubusercontent.com/zen-browser/theme-store/main";
-  zenModsBaseUrl = "${zenModsRoot}/themes";
-  zenModsIndexUrl = "${zenModsRoot}/themes.json";
-
-  zenMods = zenModsSpec;
-
-  zenSidebarExtensionIds = lib.concatStringsSep "," (
-    map guidOf [ "Bitwarden Password Manager" "MAL-Sync" ]
-  );
-
-  zenUserPrefs = {
-    "zen.urlbar.behavior" = "float";
-    "zen.view.compact.enable-at-startup" = true;
-    "zen.view.compact.hide-toolbar" = true;
-    "zen.view.compact.should-enable-at-startup" = true;
-    "zen.view.use-single-toolbar" = false;
-    "zen.widget.linux.transparency" = true;
-    "zen.view.window.scheme" = 0;
-
-    "sidebar.visibility" = "hide-sidebar";
-    "sidebar.installed.extensions" = zenSidebarExtensionIds;
-    "sidebar.main.tools" = zenSidebarExtensionIds;
-
-    "browser.tabs.allow_transparent_browser" = true;
-    "browser.tabs.loadInBackground" = false;
-    "browser.toolbars.bookmarks.visibility" = "always";
-    "browser.newtabpage.enabled" = false;
-    "browser.ml.enable" = true;
-
-    "signon.rememberSignons" = false;
-    "network.prefetch-next" = false;
-    "privacy.popups.showBrowserMessage" = false;
-
-    "font.name.serif.x-western" = theme.font;
-    "layout.css.prefers-color-scheme.content-override" = 0;
-
-    "mod.cleanedurlbar.customcolor" = "hsl(0 0 10)";
-    "mod.cleanedurlbar.customselectcolor" = "rgba(80, 80, 250, 0.75)";
-    "mod.cleanedurlbar.customselectfontcolor" = "rgba(255,255,255,1)";
-    "mod.cleanedurlbar.customtransparency" = "40%";
-
-    "mod.sameerasw_zen_animations" = "1";
-    "mod.sameerasw.zen_bg_blur" = "3px";
-    "mod.sameerasw.zen_bg_color_enabled" = false;
-    "mod.sameerasw.zen_bg_img_enabled" = false;
-    "mod.sameerasw.zen_bg_img_not_fullscreen" = false;
-    "mod.sameerasw.zen_bg_img" = "url('https://github.com/sameerasw/my-internet/blob/main/wallpapers/zen-coral-01.jpeg?raw=true')";
-    "mod.sameerasw.zen_bg_opacity" = "0.8";
-    "mod.sameerasw_zen_compact_sidebar_type" = "0";
-    "mod.sameerasw.zen_compact_sidebar_width" = "165px";
-    "mod.sameerasw_zen_empty_tab_logo" = "0";
-    "mod.sameerasw_zen_light_tint" = "2";
-    "mod.sameerasw.zen_no_shadow" = false;
-    "mod.sameerasw.zen_notab_img_enabled" = true;
-    "mod.sameerasw.zen_notab_img_invert" = false;
-    "mod.sameerasw.zen_notab_img_opacity" = "1";
-    "mod.sameerasw.zen_notab_img_saturate" = false;
-    "mod.sameerasw.zen_notab_img_size" = "150px";
-    "mod.sameerasw.zen_notab_img" = "url('https://github.com/sameerasw/my-internet/blob/main/wave-light.png?raw=true')";
-    "mod.sameerasw.zen_tab_switch_anim" = true;
-    "mod.sameerasw.zen_trackpad_anim" = false;
-    "mod.sameerasw.zen_transparency_color" = "#00000000";
-    "mod.sameerasw.zen_transparent_glance_enabled" = true;
-    "mod.sameerasw.zen_transparent_sidebar_enabled" = true;
-    "mod.sameerasw.zen_urlbar_zoom_anim" = false;
-
-    "psu.better_ctrltab.background" = "light-dark(rgba(144, 144, 144, 0.94), rgba(22, 22, 22, 0.92))";
-    "psu.better_ctrltab.padding" = "16px";
-    "psu.better_ctrltab.preview_border_color" = "light-dark(rgba(255, 255, 255, 0.1), rgba(1, 1, 1, 0.1))";
-    "psu.better_ctrltab.preview_border_width" = "1px";
-    "psu.better_ctrltab.preview_favicon_outdent" = "12px";
-    "psu.better_ctrltab.preview_favicon_size" = "36px";
-    "psu.better_ctrltab.preview_focus_background" = "light-dark(rgba(77, 77, 77, 0.8), rgba(204, 204, 204, 0.33))";
-    "psu.better_ctrltab.preview_font_size" = "13px";
-    "psu.better_ctrltab.preview_letter_spacing" = "0px";
-    "psu.better_ctrltab.roundness" = "28px";
-    "psu.better_ctrltab.shadow_size" = "18px";
-    "psu.better_ctrltab.zoom" = "0.8";
-    "network.trr.mode" = 2;
-    "network.trr.uri" = "https://mozilla.cloudflare-dns.com/dns-query";
-    "theme.custom_uifont.custom" = theme.font;
-    "theme.custom_uifont.default" = "Custom";
-    "theme.custom_uifont.shadow" = "none";
-    "theme.nosidebarscrollbar.before125b" = true;
-    "theme.smaller_compact_mode.sidebar_height" = "50";
-
-    "uc.tabs.custom_color_hex" = "#ffffff";
-    "uc.tabs.dim_unloaded" = false;
-  };
-
-  zenUserJs = pkgs.writeText "user.js" (mkPrefLines "user_pref" zenUserPrefs);
-  in {
+    zenUserJs = pkgs.writeText "user.js" (mkPrefLines "user_pref" zenUserPrefs);
+  in
+  {
     home.packages = [ zen-browser ];
 
     home.activation.zenBrowserConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    fetch_if_missing() {
-      if [ -f "$1" ]; then
-        echo "  already have $3, skipping"
-      else
-        echo "  downloading $3..."
-        $DRY_RUN_CMD ${pkgs.curl}/bin/curl -fsSL --retry 2 --max-time 15 -o "$1" "$2" || true
-      fi
-    }
-
-    ZEN_BASE="$HOME/.zen"
-    PROFILE_DIR="$ZEN_BASE/default"
-    $DRY_RUN_CMD mkdir -p "$ZEN_BASE"
-    if [ -f "$PROFILE_DIR/times.json" ]; then
-      echo "Zen profile already exists, skipping -CreateProfile"
-    else
-      echo "Creating Zen Browser profile (launches the browser once under a virtual display, up to 120s)..."
-      $DRY_RUN_CMD ${pkgs.coreutils}/bin/timeout 120s ${pkgs.xvfb-run}/bin/xvfb-run -a ${lib.getExe zen-browser} -CreateProfile "default $PROFILE_DIR" >/dev/null 2>&1 || true
-      if [ -f "$PROFILE_DIR/times.json" ]; then
-        echo "Zen profile created."
-      else
-        echo "Zen profile creation did not finish in time - mods/settings will be skipped this run, retried next rebuild."
-      fi
-    fi
-
-    if [ -f "$PROFILE_DIR/times.json" ]; then
-    $DRY_RUN_CMD mkdir -p "$PROFILE_DIR/chrome"
-    $DRY_RUN_CMD ln -sf "$HOME/.config/DankMaterialShell/zen.css" "$PROFILE_DIR/chrome/userChrome.css"
-    $DRY_RUN_CMD ln -sf ${zenUserJs} "$PROFILE_DIR/user.js"
-
-    echo "Fetching Zen mods index..."
-    ZEN_MODS_INDEX="$(mktemp)"
-    if $DRY_RUN_CMD ${pkgs.curl}/bin/curl -fsSL --retry 2 --max-time 15 -o "$ZEN_MODS_INDEX" "${zenModsIndexUrl}"; then
-    $DRY_RUN_CMD ${pkgs.jq}/bin/jq --argjson ids ${lib.escapeShellArg (builtins.toJSON (builtins.attrValues zenMods))} '
-    to_entries
-    | map(select(.key as $k | $ids | index($k) != null))
-    | map(.value += {enabled: true})
-    | from_entries
-    ' "$ZEN_MODS_INDEX" > "$PROFILE_DIR/zen-themes.json"
-    else
-    echo "  could not reach the mods index, skipping"
-    fi
-    rm -f "$ZEN_MODS_INDEX"
-
-    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: id: ''
-        echo "Zen mod: ${name}"
-        $DRY_RUN_CMD mkdir -p "$PROFILE_DIR/chrome/zen-themes/${id}"
-        fetch_if_missing "$PROFILE_DIR/chrome/zen-themes/${id}/chrome.css" "${zenModsBaseUrl}/${id}/chrome.css" "${name} (chrome.css)"
-        fetch_if_missing "$PROFILE_DIR/chrome/zen-themes/${id}/preferences.json" "${zenModsBaseUrl}/${id}/preferences.json" "${name} (preferences.json)"
-        '') zenMods)}
+      fetch_if_missing() {
+        if [ -f "$1" ]; then
+          echo "  already have $3, skipping"
+        else
+          echo "  downloading $3..."
+          run ${pkgs.curl}/bin/curl -fsSL --retry 2 --max-time 15 -o "$1" "$2" || true
         fi
-        '';
-      };
-    }
+      }
+
+      ZEN_BASE="$HOME/.zen"
+      PROFILE_DIR="$ZEN_BASE/default"
+      run mkdir -p "$ZEN_BASE"
+      if [ -f "$PROFILE_DIR/times.json" ]; then
+        echo "Zen profile already exists, skipping -CreateProfile"
+      else
+        echo "Creating Zen Browser profile (launches the browser once under a virtual display, up to 120s)..."
+        run ${pkgs.coreutils}/bin/timeout 120s ${pkgs.xvfb-run}/bin/xvfb-run -a ${lib.getExe zen-browser} -CreateProfile "default $PROFILE_DIR" >/dev/null 2>&1 || true
+        if [ -f "$PROFILE_DIR/times.json" ]; then
+          echo "Zen profile created."
+        else
+          echo "Zen profile creation did not finish in time - mods/settings will be skipped this run, retried next rebuild."
+        fi
+      fi
+
+      if [ -f "$PROFILE_DIR/times.json" ]; then
+        run mkdir -p "$PROFILE_DIR/chrome"
+        run ln -sf "$HOME/.config/DankMaterialShell/zen.css" "$PROFILE_DIR/chrome/userChrome.css"
+        run ln -sf ${zenUserJs} "$PROFILE_DIR/user.js"
+
+        echo "Fetching Zen mods index..."
+        ZEN_MODS_INDEX="$(mktemp)"
+        if run ${pkgs.curl}/bin/curl -fsSL --retry 2 --max-time 15 -o "$ZEN_MODS_INDEX" "${zenModsIndexUrl}"; then
+          run ${pkgs.jq}/bin/jq --argjson ids ${lib.escapeShellArg (builtins.toJSON (builtins.attrValues zenMods))} '
+            to_entries
+            | map(select(.key as $k | $ids | index($k) != null))
+            | map(.value += {enabled: true})
+            | from_entries
+          ' "$ZEN_MODS_INDEX" > "$PROFILE_DIR/zen-themes.json"
+        else
+          echo "  could not reach the mods index, skipping"
+        fi
+        rm -f "$ZEN_MODS_INDEX"
+
+        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: id: ''
+          echo "Zen mod: ${name}"
+          run mkdir -p "$PROFILE_DIR/chrome/zen-themes/${id}"
+          fetch_if_missing "$PROFILE_DIR/chrome/zen-themes/${id}/chrome.css" "${zenModsBaseUrl}/${id}/chrome.css" "${name} (chrome.css)"
+          fetch_if_missing "$PROFILE_DIR/chrome/zen-themes/${id}/preferences.json" "${zenModsBaseUrl}/${id}/preferences.json" "${name} (preferences.json)"
+        '') zenMods)}
+      fi
+    '';
+  };
+}

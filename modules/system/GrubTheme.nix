@@ -1,4 +1,4 @@
-{ self, inputs, ... }: {
+{ inputs, ... }: {
   flake.nixosModules.GrubTheme = { lib, ... }: {
     imports = [ inputs.elegant-grub2-themes.nixosModules.default ];
 

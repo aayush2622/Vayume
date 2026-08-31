@@ -1,5 +1,17 @@
-{ self, inputs, ... }: {
-  flake.homeModules.apps.Nautilus = { pkgs, ... }: {
+{
+  flake.homeModules.apps.Nautilus = { pkgs, ... }:
+  let
+    baseFileChooserSettings = {
+      sort-directories-first = true;
+      show-hidden = true;
+      location-mode = "path-bar";
+      clock-format = "12h";
+      date-format = "regular";
+      sort-column = "name";
+      sort-order = "ascending";
+    };
+  in
+  {
     home.packages = with pkgs; [
       nautilus
 
@@ -61,24 +73,9 @@
         new-tab = true;
       };
 
-      "org/gtk/settings/file-chooser" = {
-        sort-directories-first = true;
-        show-hidden = true;
-        location-mode = "path-bar";
-        clock-format = "12h";
-        date-format = "regular";
-        sort-column = "name";
-        sort-order = "ascending";
-      };
+      "org/gtk/settings/file-chooser" = baseFileChooserSettings;
 
-      "org/gtk/gtk4/settings/file-chooser" = {
-        sort-directories-first = true;
-        show-hidden = true;
-        location-mode = "path-bar";
-        clock-format = "12h";
-        date-format = "regular";
-        sort-column = "name";
-        sort-order = "ascending";
+      "org/gtk/gtk4/settings/file-chooser" = baseFileChooserSettings // {
         view-type = "list";
       };
     };

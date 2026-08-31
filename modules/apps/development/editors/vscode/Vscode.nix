@@ -17,8 +17,7 @@ in {
   let
     hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
-    enabledLanguages = lib.filterAttrs (name: _: builtins.elem name vayoriApps) self.devLanguages;
-    languageVscode = lib.mapAttrsToList (_: l: l.vscode or { }) enabledLanguages;
+    languageVscode = lib.mapAttrsToList (_: l: l.vscode or { }) (self.enabledDevLanguages vayoriApps);
 
     resolveNixpkgsExtension = dotted:
       lib.attrByPath (lib.splitString "." dotted)
@@ -33,7 +32,7 @@ in {
     languageManualExtensions =
       lib.concatMap (v: v.manualExtensions or [ ]) languageVscode;
     languageSettings =
-      lib.foldl' (a: b: a // b) { } (map (v: v.settings or { }) languageVscode);
+      lib.foldl' lib.recursiveUpdate { } (map (v: v.settings or { }) languageVscode);
 
     nixpkgsExtensions = with pkgs.vscode-extensions; [
       anthropic.claude-code
@@ -54,7 +53,7 @@ in {
     autoMarketplaceExtensions = map (e: pkgs.vscode-marketplace.${e.publisher}.${e.name}) (vscodeAutoExtensions ++ languageMarketplaceExtensions);
     marketplaceExtensions = manualMarketplaceExtensions ++ autoMarketplaceExtensions;
 
-    vscodeSettings = {
+    vscodeSettings = lib.recursiveUpdate ({
       "security.workspace.trust.untrustedFiles" = "open";
       "files.autoSave" = "onWindowChange";
 
@@ -117,8 +116,25 @@ in {
       "editor.tokenColorCustomizations" = {
         textMateRules = [
           { scope = "comment"; settings.fontStyle = "italic"; }
-          { scope = [ "entity.name.type" "entity.other.inherited-class" "keyword.other.type" "punctuation.definition.annotation" "storage.modifier.import" "storage.modifier.package" "storage.type.annotation" "storage.type.built-in" "storage.type.generic" "storage.type.java" "storage.type.groovy" "storage.type.primitive" "support.class" "support.other.namespace" "support.type" "variable.language.this" ]; settings.foreground = "#e5c07b"; }
-          { scope = [ "constant.other.character-class" "entity.name.tag" "heading" "meta.object-literal.key" "punctuation.definition.list.begin.markdown" "punctuation.definition.list.end.markdown" "punctuation.definition.template-expression" "punctuation.section.embedded" "support.type.property-name" "variable.object.property" "variable.other.enummember" ]; settings.foreground = "#e06c75"; }
+          {
+            scope = [
+              "entity.name.type" "entity.other.inherited-class" "keyword.other.type"
+              "punctuation.definition.annotation" "storage.modifier.import" "storage.modifier.package"
+              "storage.type.annotation" "storage.type.built-in" "storage.type.generic"
+              "storage.type.java" "storage.type.groovy" "storage.type.primitive"
+              "support.class" "support.other.namespace" "support.type" "variable.language.this"
+            ];
+            settings.foreground = "#e5c07b";
+          }
+          {
+            scope = [
+              "constant.other.character-class" "entity.name.tag" "heading" "meta.object-literal.key"
+              "punctuation.definition.list.begin.markdown" "punctuation.definition.list.end.markdown"
+              "punctuation.definition.template-expression" "punctuation.section.embedded"
+              "support.type.property-name" "variable.object.property" "variable.other.enummember"
+            ];
+            settings.foreground = "#e06c75";
+          }
           { scope = [ "constant.character.escape" "keyword.operator" "markup.underline.link" "string.regexp" "string.url" ]; settings.foreground = "#56b6c2"; }
           { scope = [ "entity.name.function" "entity.other.attribute-name.id.css" "meta.function-call.generic" "string.other.link" "support.function" "variable.language.super" ]; settings.foreground = "#61afef"; }
           { scope = [ "meta.brace" "punctuation.accessor" "punctuation.definition.block" "punctuation.separator" "support.type.property-name.css" ]; settings.foreground = "#abb2bf"; }
@@ -153,7 +169,7 @@ in {
       "claudeCode.disableLoginPrompt" = true;
       "claudeCode.environmentVariables" =
         lib.mapAttrsToList (name: value: { inherit name value; }) self.freeClaudeCode.clientEnv;
-    } // languageSettings;
+    }) languageSettings;
 
     vscodeKeybindings = [
       {

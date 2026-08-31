@@ -35,8 +35,8 @@
   home.activation.gamesBookmark = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     BOOKMARKS="$HOME/.config/gtk-3.0/bookmarks"
     GAMES_URI="file://${gamesDir} Games"
-    $DRY_RUN_CMD mkdir -p "$(dirname "$BOOKMARKS")"
-    $DRY_RUN_CMD touch "$BOOKMARKS"
-    grep -qxF "$GAMES_URI" "$BOOKMARKS" 2>/dev/null || $DRY_RUN_CMD sh -c "printf '%s\n' \"$GAMES_URI\" >> \"$BOOKMARKS\""
+    run mkdir -p "$(dirname "$BOOKMARKS")"
+    run touch "$BOOKMARKS"
+    grep -qxF "$GAMES_URI" "$BOOKMARKS" 2>/dev/null || run sh -c "printf '%s\n' \"$GAMES_URI\" >> \"$BOOKMARKS\""
   '';
 }

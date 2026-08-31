@@ -13,11 +13,17 @@ secrets/
 .env
 .env.*
 
-# Machine-specific config - real usernames, password hashes, disk UUIDs.
-# Copy the matching *.nix.example next to these and fill it in; the build
-# refuses to evaluate without them (see modules/hosts/Diablo/Host.nix).
-modules/hosts/*/_hardware.nix
-modules/hosts/*/_user.nix
+# A host's own directory is personal by default - real usernames, password
+# hashes, disk UUIDs, avatar images, whatever else ends up in there. Deny
+# everything, then explicitly allow just the files actually meant to be
+# tracked, so a new personal file dropped in here doesn't need a new
+# .gitignore line to stay untracked. _hardware.nix/_user.nix (required, see
+# modules/hosts/Diablo/Host.nix) fall out of this automatically - copy the
+# matching *.nix.example next to them and fill it in.
+modules/hosts/*/*
+!modules/hosts/*/Host.nix
+!modules/hosts/*/Vm.nix
+!modules/hosts/*/*.nix.example
 
 # Editor files
 .vscode/

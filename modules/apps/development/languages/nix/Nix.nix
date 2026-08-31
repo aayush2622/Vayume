@@ -13,7 +13,9 @@
         "nix.enableLanguageServer" = true;
         "nix.serverPath" = "nil";
         "nix.formatterPath" = "nixfmt";
-        "[nix]"."editor.defaultFormatter" = "ZiYyun.nix-forge";
+        "[nix]" = {
+          "editor.defaultFormatter" = "ZiYyun.nix-forge";
+        };
       };
     };
     androidStudio = {

@@ -5,12 +5,6 @@ import SddmComponents 2.0
 
 // Theme
 Rectangle {
-    // Wayland Cursor Fix
-    MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.ArrowCursor
-        z: -1
-    }
     id: root
     width: Screen.width; height: Screen.height
     readonly property real s: height / 768
@@ -27,6 +21,10 @@ Rectangle {
     property int sessionIndex: (typeof sessionModel !== "undefined" && sessionModel.lastIndex >= 0) ? sessionModel.lastIndex : 0
     property int userIndex: (typeof userModel !== "undefined" && userModel.lastIndex >= 0) ? userModel.lastIndex : 0
     property real ui: 0
+
+    // Cursor size, from vayori.theme.cursorSize via theme.conf (see SddmTheme.nix) -
+    // falls back to a sane default if the config key isn't there for any reason.
+    readonly property real cursorSizePx: (typeof config !== "undefined" && config.cursorSize) ? Number(config.cursorSize) : 24
 
     // Assets
     FolderListModel { id: fontFolder; folder: Qt.resolvedUrl("font"); nameFilters: ["*.ttf", "*.otf"] }
@@ -94,7 +92,7 @@ Rectangle {
                 text: ((userHelper.currentItem && userHelper.currentItem.uName) ? userHelper.currentItem.uName : (typeof userModel !== "undefined" ? userModel.lastUser : "user")).toUpperCase()
                 color: userMa.containsMouse ? root.cPink : root.cInk; font.family: mainFont.name; font.pixelSize: 18 * s; font.letterSpacing: 4 * s
                 Behavior on color { ColorAnimation { duration: 200 } }
-                MouseArea { id: userMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { if (typeof userModel !== "undefined") root.userIndex = (root.userIndex + 1) % userModel.rowCount() } }
+                MouseArea { id: userMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.BlankCursor; onClicked: { if (typeof userModel !== "undefined") root.userIndex = (root.userIndex + 1) % userModel.rowCount() } }
             }
 
             // Input
@@ -125,7 +123,7 @@ Rectangle {
                     }
                 }
                 
-                MouseArea { anchors.fill: parent; cursorShape: Qt.ArrowCursor; onClicked: pwd.forceActiveFocus() }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.BlankCursor; onClicked: pwd.forceActiveFocus() }
             }
 
             // Error
@@ -149,7 +147,7 @@ Rectangle {
                         color: actMa.containsMouse ? root.cPink : root.cSub; font.family: mainFont.name; font.pixelSize: 11 * s; font.letterSpacing: 2 * s
                         Behavior on color { ColorAnimation { duration: 200 } }
                         MouseArea {
-                            id: actMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            id: actMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.BlankCursor
                             onClicked: {
                                 if (modelData.a === 0) { if (typeof sessionModel !== "undefined") root.sessionIndex = (root.sessionIndex + 1) % sessionModel.rowCount() }
                                 else if (modelData.a === 1) { if (typeof sddm !== "undefined") sddm.reboot() }
@@ -159,6 +157,48 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    // Cursor - drawn here in QML instead of relying on the greeter picking up
+    // XCURSOR_THEME over Wayland, which has been unreliable (see docs/core.md).
+    // HoverHandler only observes position, it never grabs clicks - safe to sit
+    // on root without breaking the password field or the buttons below it.
+    HoverHandler {
+        id: pointerTracker
+        target: root
+        cursorShape: Qt.BlankCursor
+        onPointChanged: {
+            cursorCanvas.x = point.position.x
+            cursorCanvas.y = point.position.y
+        }
+    }
+
+    Canvas {
+        id: cursorCanvas
+        readonly property real size: Math.max(12, root.cursorSizePx) * root.s * 0.85
+        width: size; height: size
+        z: 1000
+        visible: pointerTracker.hovered
+        onSizeChanged: requestPaint()
+        Component.onCompleted: requestPaint()
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.reset()
+            ctx.beginPath()
+            ctx.moveTo(0, 0)
+            ctx.lineTo(0, size * 0.75)
+            ctx.lineTo(size * 0.28, size * 0.58)
+            ctx.lineTo(size * 0.45, size)
+            ctx.lineTo(size * 0.62, size * 0.92)
+            ctx.lineTo(size * 0.43, size * 0.48)
+            ctx.lineTo(size * 0.72, size * 0.48)
+            ctx.closePath()
+            ctx.fillStyle = "#f5f5f5"
+            ctx.fill()
+            ctx.lineWidth = Math.max(1, size * 0.05)
+            ctx.strokeStyle = root.cInk
+            ctx.stroke()
         }
     }
 

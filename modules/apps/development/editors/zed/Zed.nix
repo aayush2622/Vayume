@@ -3,8 +3,7 @@
   let
     hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
-    enabledLanguages = lib.filterAttrs (name: _: builtins.elem name vayoriApps) self.devLanguages;
-    languageZed = lib.mapAttrsToList (_: l: l.zed or { }) enabledLanguages;
+    languageZed = lib.mapAttrsToList (_: l: l.zed or { }) (self.enabledDevLanguages vayoriApps);
 
     languageExtensions = lib.unique (lib.concatMap (v: v.extensions or [ ]) languageZed);
     languageSettings = lib.foldl' lib.recursiveUpdate { } (map (v: v.settings or { }) languageZed);

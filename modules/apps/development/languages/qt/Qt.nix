@@ -18,6 +18,6 @@
   };
 
   flake.homeModules.apps.Qt = { pkgs, ... }: {
-    home.packages = [ pkgs.kdePackages.qtdeclarative ];
+    home.packages = with pkgs; [ kdePackages.qtdeclarative ];
   };
 }

@@ -20,6 +20,6 @@
   };
 
   flake.homeModules.apps.Python = { pkgs, ... }: {
-    home.packages = [ pkgs.python3 ];
+    home.packages = with pkgs; [ python3 ];
   };
 }

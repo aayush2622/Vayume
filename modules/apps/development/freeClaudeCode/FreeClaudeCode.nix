@@ -1,4 +1,4 @@
-{ self, inputs, lib, ... }:
+{ self, lib, ... }:
 let
   freeClaudeCodeSpec = {
     baseUrl = "http://localhost:8082";
@@ -28,14 +28,7 @@ in {
 
   config.flake.freeClaudeCode = freeClaudeCodeSpec;
 
-  config.flake.homeModules.apps.FreeClaudeCode =
-    {
-      pkgs,
-      lib,
-      config,
-      vayoriSecrets,
-      ...
-    }:
+  config.flake.homeModules.apps.FreeClaudeCode = { pkgs, lib, config, vayoriSecrets, ... }:
     let
       fccDir = "${config.home.homeDirectory}/.local/share/free-claude-code";
       fccConfigDir = "${config.home.homeDirectory}/.fcc";
@@ -59,6 +52,17 @@ in {
       providersEnvFile = pkgs.writeText "fcc-providers.env" (
         lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "${n}=${v}") realProviders) + "\n"
       );
+
+      # mktemp, run jq with the given args/filter against `file` (a shell
+      # variable reference, e.g. "$CLAUDE_JSON"), cp the result back over it
+      # on success, clean up the tmpfile either way. Callers run sequentially
+      # in the same script, so reusing one $JQ_TMP name between calls is fine.
+      jqPatchInPlace = file: jqArgs: filter: ''
+        JQ_TMP="$(mktemp)"
+        ${pkgs.jq}/bin/jq ${jqArgs} '${filter}' "${file}" > "$JQ_TMP" \
+          && run cp "$JQ_TMP" "${file}"
+        rm -f "$JQ_TMP"
+      '';
 
       fccBootstrapScript = pkgs.writeShellScript "free-claude-code-bootstrap" ''
         set -e
@@ -108,14 +112,7 @@ in {
           run sh -c "printf '{}' > '$CLAUDE_JSON'"
         fi
 
-        CLAUDE_JSON_TMP="$(mktemp)"
-
-        ${pkgs.jq}/bin/jq \
-          '. + {hasCompletedOnboarding: true}' \
-          "$CLAUDE_JSON" > "$CLAUDE_JSON_TMP" \
-          && run cp "$CLAUDE_JSON_TMP" "$CLAUDE_JSON"
-
-        rm -f "$CLAUDE_JSON_TMP"
+        ${jqPatchInPlace "$CLAUDE_JSON" "" ". + {hasCompletedOnboarding: true}"}
 
         ACP_JSON=${lib.escapeShellArg jetbrainsAcpFile}
 
@@ -125,17 +122,10 @@ in {
           run sh -c "printf '{}' > '$ACP_JSON'"
         fi
 
-        ACP_JSON_TMP="$(mktemp)"
-
-        ${pkgs.jq}/bin/jq \
-          --argjson env ${lib.escapeShellArg (builtins.toJSON claudeAcpEnv)} '
-            .acp.registry."claude-acp".env =
-              ((.acp.registry."claude-acp".env // {}) + $env)
-          ' \
-          "$ACP_JSON" > "$ACP_JSON_TMP" \
-          && run cp "$ACP_JSON_TMP" "$ACP_JSON"
-
-        rm -f "$ACP_JSON_TMP"
+        ${jqPatchInPlace "$ACP_JSON" "--argjson env ${lib.escapeShellArg (builtins.toJSON claudeAcpEnv)}" ''
+          .acp.registry."claude-acp".env =
+            ((.acp.registry."claude-acp".env // {}) + $env)
+        ''}
 
         run ${pkgs.systemd}/bin/systemctl --user --no-block restart free-claude-code.service || true
       '';

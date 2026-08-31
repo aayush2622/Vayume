@@ -1,4 +1,4 @@
-{ self, inputs, ... }: {
+{
   flake.homeModules.apps.StateBackup = { pkgs, lib, ... }:
   let
     statePaths = [

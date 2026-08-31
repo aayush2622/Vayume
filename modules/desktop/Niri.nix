@@ -7,7 +7,7 @@
     };
   };
 
-  perSystem = { pkgs, lib, self', ... }:
+  perSystem = { pkgs, lib, ... }:
   let
     niriBinds = {
       "Mod+Return".spawn = [ "kitty" ];

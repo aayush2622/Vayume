@@ -11,10 +11,15 @@ let
     { dirName = "vcs-svn"; id = "Subversion"; }
   ];
 
-  androidStudioManualPluginsSpec = [
-    { dirName = "WakaTime.jar"; id = "com.wakatime.intellij.plugin"; version = "16.1.2"; hash = "sha256-KnHRvFUtsH4vJDF+YhSoP7YpV52Jqoe2AiMwORDiPOQ="; isJar = true; }
+  wakatimeManualPlugin = {
+    dirName = "WakaTime.jar"; id = "com.wakatime.intellij.plugin"; version = "16.1.2"; hash = "sha256-KnHRvFUtsH4vJDF+YhSoP7YpV52Jqoe2AiMwORDiPOQ="; isJar = true;
+  };
+
+  otherManualPluginsSpec = [
     { dirName = "github-copilot-intellij"; id = "com.github.copilot"; version = "1.16.1-251"; hash = "sha256-LM2pLbOyOc2R3E90LSlbBxiGNWkzqG5pimKxvswaPQg="; }
   ];
+
+  androidStudioManualPluginsSpec = [ wakatimeManualPlugin ] ++ otherManualPluginsSpec;
 in {
   flake.pluginPins.AndroidStudio = androidStudioManualPluginsSpec
     ++ (lib.concatMap (l: l.androidStudio.manualPlugins or [ ]) (lib.attrValues self.devLanguages));
@@ -23,13 +28,12 @@ in {
   let
     hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
-    enabledLanguages = lib.filterAttrs (name: _: builtins.elem name vayoriApps) self.devLanguages;
-    languageAndroidStudio = lib.mapAttrsToList (_: l: l.androidStudio or { }) enabledLanguages;
+    languageAndroidStudio = lib.mapAttrsToList (_: l: l.androidStudio or { }) (self.enabledDevLanguages vayoriApps);
 
     allAutoPlugins = androidStudioAutoPlugins ++ (lib.concatMap (v: v.autoPlugins or [ ]) languageAndroidStudio);
-    allManualPluginsSpec = lib.filter (p: hasWakatime || p.id != "com.wakatime.intellij.plugin") (
-      androidStudioManualPluginsSpec ++ (lib.concatMap (v: v.manualPlugins or [ ]) languageAndroidStudio)
-    );
+    allManualPluginsSpec = otherManualPluginsSpec
+      ++ lib.optional hasWakatime wakatimeManualPlugin
+      ++ (lib.concatMap (v: v.manualPlugins or [ ]) languageAndroidStudio);
 
     configDataDir = "AndroidStudio2026.1.3";
     pluginsDir = ".local/share/Google/${configDataDir}";

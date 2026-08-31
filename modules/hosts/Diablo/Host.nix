@@ -34,7 +34,15 @@ in {
       (requireLocalFile ./_hardware.nix "_hardware.nix")
       (requireLocalFile ./_user.nix "_user.nix")
 
-      ({ pkgs, lib, config, ... }: {
+      ({ pkgs, lib, config, ... }:
+      let
+        cursorEnvVars = {
+          XCURSOR_THEME = config.vayori.theme.cursorTheme;
+          XCURSOR_SIZE = toString config.vayori.theme.cursorSize;
+          XCURSOR_PATH = "${config.vayori.theme.cursorPackage}/share/icons";
+        };
+      in
+      {
         options.vayori.theme = lib.mkOption {
           description = "System-wide look & feel - one place to set the font, cursor theme, and icon theme, used everywhere they're needed.";
           default = { };
@@ -214,8 +222,7 @@ in {
             config.vayori.theme.cursorPackage
           ];
           environment.sessionVariables = {
-            XCURSOR_THEME = config.vayori.theme.cursorTheme;
-            XCURSOR_SIZE = toString config.vayori.theme.cursorSize;
+            inherit (cursorEnvVars) XCURSOR_THEME XCURSOR_SIZE;
           };
 
           services.displayManager.sddm.settings.Theme = {
@@ -224,13 +231,9 @@ in {
           };
 
           services.displayManager.sddm.settings.General.GreeterEnvironment =
-            "XCURSOR_THEME=${config.vayori.theme.cursorTheme},XCURSOR_SIZE=${toString config.vayori.theme.cursorSize},XCURSOR_PATH=${config.vayori.theme.cursorPackage}/share/icons";
+            "XCURSOR_THEME=${cursorEnvVars.XCURSOR_THEME},XCURSOR_SIZE=${cursorEnvVars.XCURSOR_SIZE},XCURSOR_PATH=${cursorEnvVars.XCURSOR_PATH}";
 
-          systemd.services.display-manager.environment = {
-            XCURSOR_THEME = config.vayori.theme.cursorTheme;
-            XCURSOR_SIZE = toString config.vayori.theme.cursorSize;
-            XCURSOR_PATH = "${config.vayori.theme.cursorPackage}/share/icons";
-          };
+          systemd.services.display-manager.environment = cursorEnvVars;
 
           system.stateVersion = "25.11";
         };

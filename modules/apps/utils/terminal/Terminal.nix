@@ -100,8 +100,8 @@
       };
 
       extraConfig = ''
-      include dank-tabs.conf
-      include dank-theme.conf
+        include dank-tabs.conf
+        include dank-theme.conf
       '';
 
       shellIntegration.enableZshIntegration = true;
@@ -164,48 +164,47 @@
       };
 
       initContent = ''
-      # ─────────────────────────────────────────────
-      # Plugin update check
-      # ─────────────────────────────────────────────
+        # ─────────────────────────────────────────────
+        # Plugin update check
+        # ─────────────────────────────────────────────
 
-      vayori_check_plugin_updates_preexec() {
-        case "$1" in
-          *nixos-rebuild*|*"home-manager switch"*|*"nix build"*|*"nix flake"*|*"nix run"*)
-            timeout 10s vayori-check-plugin-updates
-            ;;
-        esac
-      }
-      autoload -Uz add-zsh-hook
-      add-zsh-hook preexec vayori_check_plugin_updates_preexec
+        vayori_check_plugin_updates_preexec() {
+          case "$1" in
+            *nixos-rebuild*|*"home-manager switch"*|*"nix build"*|*"nix flake"*|*"nix run"*)
+              timeout 10s vayori-check-plugin-updates
+              ;;
+          esac
+        }
+        autoload -Uz add-zsh-hook
+        add-zsh-hook preexec vayori_check_plugin_updates_preexec
 
-      # ─────────────────────────────────────────────
-      # Fastfetch
-      # ─────────────────────────────────────────────
+        # ─────────────────────────────────────────────
+        # Fastfetch
+        # ─────────────────────────────────────────────
 
-      # Image list is computed once at build time (see fastfetchImagePaths) -
-      # no filesystem walk on every new shell, just an array pick.
-      FASTFETCH_IMAGES=(${lib.concatStringsSep " " (map (p: "'${p}'") fastfetchImagePaths)})
-      FASTFETCH_IMAGE=""
-      if [ ''${#FASTFETCH_IMAGES[@]} -gt 0 ]; then
-        FASTFETCH_IMAGE="''${FASTFETCH_IMAGES[$RANDOM % ''${#FASTFETCH_IMAGES[@]}]}"
-      fi
-      if [ -n "$FASTFETCH_IMAGE" ]; then
-        fastfetch \
-          --logo-type kitty \
-          --logo "$FASTFETCH_IMAGE" \
-          --logo-width 32 \
-          --logo-height 16
-      else
-        fastfetch
-      fi
-    '';
+        # Image list is computed once at build time (see fastfetchImagePaths) -
+        # no filesystem walk on every new shell, just an array pick.
+        FASTFETCH_IMAGES=(${lib.concatStringsSep " " (map (p: "'${p}'") fastfetchImagePaths)})
+        FASTFETCH_IMAGE=""
+        if [ ''${#FASTFETCH_IMAGES[@]} -gt 0 ]; then
+          FASTFETCH_IMAGE="''${FASTFETCH_IMAGES[$RANDOM % ''${#FASTFETCH_IMAGES[@]}]}"
+        fi
+        if [ -n "$FASTFETCH_IMAGE" ]; then
+          fastfetch \
+            --logo-type kitty \
+            --logo "$FASTFETCH_IMAGE" \
+            --logo-width 32 \
+            --logo-height 16
+        else
+          fastfetch
+        fi
+      '';
     };
     programs.fastfetch = {
       enable = true;
 
       settings = {
-        "$schema" =
-        "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json";
+        "$schema" = "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json";
 
         display.separator = " 󰁔 ";
 

@@ -17,6 +17,11 @@
       # mkpasswd -m sha-512 - leave unset for a "changeme" initial password.
       hashedPassword = "$6$REPLACE$ME";
 
+      # Optional: a .face avatar image (Noctalia profile card + qylock).
+      # Drop the image file anywhere under this Diablo folder (gitignored
+      # by default, see .gitignore) and point at it here, e.g.:
+      # avatar = ./someimage.png;
+
       # Optional: passed straight to every app module as `vayoriSecrets`.
       # Leave the whole block out (or any key inside it) for
       # "REPLACE_ME" placeholders instead, which disables whatever that

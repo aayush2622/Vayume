@@ -1,4 +1,4 @@
-{ self, inputs, ... }: {
+{
   flake.homeModules.apps.Gaming = { config, ... }:
   let
     gamesDir = "${config.home.homeDirectory}/Games";
