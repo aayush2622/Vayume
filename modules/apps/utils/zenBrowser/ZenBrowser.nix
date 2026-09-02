@@ -107,6 +107,11 @@ in {
       "privacy.popups.showBrowserMessage" = false;
 
       "font.name.serif.x-western" = theme.font;
+      "font.name.sans-serif.x-western" = theme.font;
+      "font.name.monospace.x-western" = theme.font;
+      "font.name.cursive.x-western" = theme.font;
+      "font.name.fantasy.x-western" = theme.font;
+      "browser.display.use_document_fonts" = 0;
       "layout.css.prefers-color-scheme.content-override" = 0;
 
       "mod.cleanedurlbar.customcolor" = "hsl(0 0 10)";

@@ -35,21 +35,6 @@
           ${patchScript}
         '';
 
-      dankDiskUsagePatched = mkPatchedPlugin "dankDiskUsage" registryPlugins.dankDiskUsage ''
-        substituteInPlace $out/DankDiskUsageWidget.qml \
-          --replace-quiet "size: Theme.fontSizeLarge" "size: root.iconSize"
-        sed -i '312s/Theme\.spacingS/Theme.spacingXS/' $out/DankDiskUsageWidget.qml
-        substituteInPlace $out/DankDiskUsageWidget.qml \
-          --replace-quiet 'return "#ff4444"' 'return Theme.error' \
-          --replace-quiet 'return "#ffaa00"' 'return Theme.warning' \
-          --replace-quiet 'return Theme.primary' 'return Theme.widgetIconColor'
-        ${assertPatched "$out/DankDiskUsageWidget.qml" "size: root.iconSize"}
-        ${assertPatchedLine "$out/DankDiskUsageWidget.qml" 312 "Theme.spacingXS"}
-        ${assertPatched "$out/DankDiskUsageWidget.qml" "return Theme.error"}
-        ${assertPatched "$out/DankDiskUsageWidget.qml" "return Theme.warning"}
-        ${assertPatched "$out/DankDiskUsageWidget.qml" "return Theme.widgetIconColor"}
-      '';
-
       nixMonitorPatched = mkPatchedPlugin "nixMonitor" registryPlugins.nixMonitor ''
         sed -i '110s/Theme\.primary$/Theme.widgetIconColor/' $out/NixMonitor.qml
         ${assertPatchedLine "$out/NixMonitor.qml" 110 "Theme.widgetIconColor"}
@@ -81,7 +66,7 @@
       };
 
       vayoriHomeByUser = lib.concatMapStringsSep "\n" (
-        name: ''  "${name}") echo "${config.users.users.${name}.home}" ;;''
+        name: ''"${name}") echo "${config.users.users.${name}.home}" ;;''
       ) (builtins.attrNames config.vayori.users);
 
       vayoriRebuildScript = pkgs.writeShellScript "vayori-rebuild" ''
@@ -104,6 +89,8 @@
       vayoriGcScript = pkgs.writeShellScript "vayori-gc" "exec nix-collect-garbage -d";
     in
     {
+      services.accounts-daemon.enable = true;
+
       security.sudo.extraRules =
         map
           (name: {
@@ -256,20 +243,6 @@
                   updateCheckInterval = 3600;
                 };
               };
-
-              dankDiskUsage = {
-                enable = true;
-                src = lib.mkForce dankDiskUsagePatched;
-                settings = {
-                  refreshInterval = 30;
-                  warningThreshold = 80;
-                  criticalThreshold = 95;
-                  showPartitions = true;
-                  showZfs = false;
-                  showNixStore = false;
-                  excludeMounts = [ ];
-                };
-              };
             };
 
             settings = {
@@ -335,6 +308,13 @@
                   id = "idleInhibitor";
                   enabled = true;
                   width = 50;
+                }
+                {
+                  id = "diskUsage";
+                  enabled = true;
+                  width = 50;
+                  mountPath = "/";
+                  showMountPath = true;
                 }
               ];
 
@@ -446,11 +426,6 @@
                     "clipboard"
                     "cpuUsage"
                     "memUsage"
-
-                    {
-                      id = "dankDiskUsage";
-                      enabled = true;
-                    }
 
                     "notificationButton"
 
@@ -602,7 +577,6 @@
                   };
                 }
               ];
-
 
               builtInPluginSettings = {
                 dms_settings_search = {

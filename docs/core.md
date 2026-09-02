@@ -114,6 +114,35 @@ time. Given the actual goal (a visible, theme-sized cursor that works
 regardless of the Wayland-cursor-protocol uncertainty above), that
 trade felt like the wrong place to spend more risk.
 
+**`GSETTINGS_SCHEMA_DIR`, found by actually booting the VM.** `programs.dconf.enable = true;` only installs the `dconf` binary - it
+never installs `gsettings-desktop-schemas`, the package that actually
+owns `org.gnome.desktop.interface` and every other GNOME-namespaced
+schema. Without it, `gsettings get/set` against those keys fails
+outright, silently if the caller doesn't check (DMS's own portal-based
+dark/light sync, and this repo's own GTK matugen reload hook in
+[Baseline.nix](desktop.md#modulesdesktopbaselinenix), both call
+`gsettings` this way). A plain `nix flake check`/`nix build` never
+catches this - schema lookup is a pure runtime thing, invisible to
+evaluation. Only booting the real VM and running `gsettings get` by hand
+surfaced it (`"No schemas installed"`).
+
+The fix isn't just adding the package to `environment.systemPackages` -
+modern nixpkgs ships schema files under a namespaced
+`share/gsettings-schemas/<pname>/glib-2.0/schemas`, not the classic
+`share/glib-2.0/schemas` NixOS's own profile builder auto-compiles into
+`/run/current-system/sw`, so simply installing the package changes
+nothing a plain shell can see. Confirmed empty-handed - genuinely no
+`gschemas.compiled` anywhere in the filesystem - before adding this.
+The real GNOME/Budgie/Pantheon desktop-manager modules
+(`nixos/modules/services/desktop-managers/gnome.nix` et al.) point
+straight at that namespaced path via `XDG_DATA_DIRS`, additive across
+however many schema-providing packages a full desktop environment pulls
+in. This repo only needs the one package, so `GSETTINGS_SCHEMA_DIR` -
+narrower, but exactly enough for `gsettings-desktop-schemas` alone -
+gets pointed at it directly via `environment.sessionVariables` instead.
+Verified live: `gsettings get org.gnome.desktop.interface gtk-theme`
+failed before this, returned the real `adw-gtk3` value after.
+
 **Apps** (`vayori.apps`) is the one setting most new machines actually
 need to touch - just filenames under `modules/apps/`. Written here
 grouped by category for readability, then flattened to a plain list

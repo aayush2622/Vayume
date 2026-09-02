@@ -90,10 +90,27 @@ widget does the same thing but laptop-wide instead of per-game.
 recoloring ported from
 [InioX/matugen-themes](https://github.com/InioX/matugen-themes); Wine's
 came the same way. Heroic has no fixed theme location - it only reads a
-user-picked "custom themes folder," so this writes the CSS there and you
-still have to point Heroic at it and pick "Matugen" from the dropdown
-once, manually. Steam gets patched by `adwsteamgtk` (also a one-time
-manual run) since it has no CSS hook of its own. Wine's theme writes a
-`.reg` file and imports it with `wine regedit` against the shared prefix
-only - Lutris/Heroic's own prefixes are out of reach for the same reason
+user-picked "custom themes folder" and a user-picked selection from its
+theme dropdown, both stored in its own settings file, not anywhere
+matugen or this repo would otherwise touch. Used to mean pointing Heroic
+at the folder and picking "Matugen" from the dropdown once, by hand.
+
+Now declarative, but the real settings file didn't match what its own
+upstream source says: Heroic's `src/backend/config.ts` describes
+`config.json` with a `defaultSettings` key, but the actual file this
+install writes and reads is `~/.config/heroic/store/config.json` (an
+`electron-store` instance, different shape entirely) -
+`customThemesPath` under a top-level `settings` key, `theme` at the top
+level next to it, set to the theme's CSS filename. Confirmed by reading
+the real file directly rather than trusting the docs, and confirmed the
+exact value Heroic expects for `theme` by grepping the compiled
+frontend's own `app.asar` for how its theme dropdown resolves a custom
+entry (straight to `getThemeCSS()` with whatever `getCustomThemes()`
+returned - the filename, unmodified). `home.activation.heroicMatugenTheme`
+merges just these two keys into the real file via `jq`, leaving the
+rest - wine prefixes, install paths, every other real setting - alone.
+Steam gets patched by `adwsteamgtk` (still a one-time manual run) since
+it has no CSS hook of its own. Wine's theme writes a `.reg` file and
+imports it with `wine regedit` against the shared prefix only -
+Lutris/Heroic's own prefixes are out of reach for the same reason
 `$WINEPREFIX` doesn't reach them either.

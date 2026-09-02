@@ -137,7 +137,6 @@
         xwayland-satellite.path = lib.getExe pkgs.xwayland-satellite;
         input = {
           keyboard.xkb.layout = "us";
-          focus-follows-mouse = _: { };
 
           touchpad = {
             tap = _: { };

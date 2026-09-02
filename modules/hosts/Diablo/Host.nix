@@ -194,6 +194,7 @@ in {
           services.tumbler.enable = true;
 
           environment.systemPackages = with pkgs; [
+            gsettings-desktop-schemas
             vim
             wget
             curl
@@ -223,6 +224,8 @@ in {
           ];
           environment.sessionVariables = {
             inherit (cursorEnvVars) XCURSOR_THEME XCURSOR_SIZE;
+
+            GSETTINGS_SCHEMA_DIR = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
           };
 
           services.displayManager.sddm.settings.Theme = {

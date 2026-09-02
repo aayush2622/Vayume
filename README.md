@@ -24,6 +24,14 @@ maintain.
 
 If this saves you an evening, a star costs nothing. ⭐
 
+<p>
+  <img src="screenshots/desktop.png" width="49%">
+  <img src="screenshots/dev.png" width="49%">
+</p>
+<p align="center">
+  <img src="screenshots/media.png" width="60%">
+</p>
+
 ## Contents
 
 [Quick start](#quick-start) · [Secrets](#secrets) ·

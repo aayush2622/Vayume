@@ -15,7 +15,7 @@
       fullName = "Ash";
       extraGroups = [ "networkmanager" "wheel" "video" "input" ];
       # mkpasswd -m sha-512 - leave unset for a "changeme" initial password.
-      hashedPassword = "$6$REPLACE$ME";
+      hashedPassword = "REPLACE_ME";
 
       # Optional: a .face avatar image (Noctalia profile card + qylock).
       # Drop the image file anywhere under this Diablo folder (gitignored

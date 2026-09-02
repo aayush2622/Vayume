@@ -126,6 +126,7 @@
         [templates.btop]
         input_path = '${config.home.homeDirectory}/.config/matugen/templates/btop-matugen.theme'
         output_path = '${config.home.homeDirectory}/.config/btop/themes/matugen.theme'
+        post_hook = 'pkill -USR2 btop || true'
       '';
 
       cava = ''

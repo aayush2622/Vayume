@@ -11,6 +11,25 @@ version had this hardcoded, and the bug it caused was exactly what you'd
 expect: a second account logged into a niri session with no shell
 running in it at all.
 
+**The user avatar never showed up anywhere in DMS - not a `.face` bug,
+`accounts-daemon` was never running at all.** `Users.nix` already
+correctly symlinks `avatar` to `~/.face`; the missing piece was
+`services.accounts-daemon.enable`, never set anywhere in this repo. DMS
+doesn't read `~/.face` directly - `UserInfoCard.qml` reads
+`PortalService.profileImage`, which comes from a live D-Bus query to
+`org.freedesktop.Accounts` (`PortalService.qml`'s
+`freedesktop.accounts.getUserIconFile`). With the daemon not running,
+every query just silently returns empty - no error, just a blank
+circle, exactly what showed up in practice. Once it's running,
+accountsservice's own `user_reset_icon_file()` (checked directly in its
+C source, `src/user.c`) auto-defaults a fresh user's `IconFile` to
+`<home>/.face` with no extra wiring needed - `users.mutableUsers =
+false`'s `NIXOS_USERS_PURE` env var (set automatically alongside
+`services.accounts-daemon.enable`) only blocks the *mutating* D-Bus
+methods (`SetRealName`, `SetPassword`, etc., confirmed by reading the
+actual nixpkgs patch line by line) - reading the icon file was never
+among them.
+
 **`settings = { ... }` is the only key that actually does anything.** An
 older `default.settings = { ... }` shape looks plausible and just quietly
 does nothing if you type it by accident.
@@ -476,6 +495,74 @@ opt-in pick, it's just part of what this desktop *is*.
   `dank-colors.css`: produces the identical `gtk.css -> dank-colors.css`
   symlink, `assets` symlink, and `@import` line the real button
   produces.
+- **"GTK theme doesn't live-reload" - GTK3 actually does have a fix,
+  pushed back into twice before it turned up.** `dank-colors.css`
+  genuinely does get rewritten with fresh colors on every wallpaper/theme
+  change (matugen's own `RunUnconditionally: true` for these templates,
+  same as everywhere else). What doesn't happen on its own is an
+  *already-running* GTK app noticing that file changed underneath it and
+  repainting.
+  - DMS's own official docs (danklinux.com, "Application Themes" page)
+    say GTK apps "reflect these changes dynamically once the symlinks
+    are properly configured" - true, but not the claim it sounds like.
+    Grepped every call site of `Theme.applyGtkColors()` (the function
+    that actually runs `gtk.sh`) across the whole DMS QML tree: there is
+    exactly one, a `Settings -> Theme -> "Apply GTK Colors"` button
+    click. It is never called from the wallpaper-change/matugen
+    pipeline. So "dynamically" means the *symlink* only ever needs
+    setting up once (this repo's own `applyDmsGtkColors` does that, at
+    every rebuild) - after that, `dank-colors.css`'s *content* updates
+    automatically, and any *newly opened* GTK window picks it up
+    immediately. An already-open window, on its own, does not.
+  - This was the point an earlier pass in this session stopped and
+    called it a real GTK limitation - GTK genuinely gives no CSS-file
+    watcher by default, confirmed against
+    [GNOME/gtk#3409](https://gitlab.gnome.org/GNOME/gtk/-/work_items/3409),
+    "Custom CSS with dynamic reloading," a real, still-open GTK4 feature
+    request. That much is true. It missed a different, real lever:
+    matugen's own documented GTK recipe
+    ([InioX/matugen-themes](https://github.com/InioX/matugen-themes))
+    doesn't wait on a CSS watcher at all - it toggles the `gtk-theme`
+    gsettings key off and back on in a `post_hook`. GTK3 apps *do*
+    listen for that specific change notification (it's how live theme
+    switching has always worked in GTK3/GNOME), and reacting to it means
+    fully re-applying the theme - which re-reads `gtk.css`, and with it
+    the `@import`ed `dank-colors.css`, picking up the new colors as a
+    side effect of a toggle that isn't really changing anything.
+  - Confirmed DMS's own bundled templates (`gtk3-dark.toml`,
+    `gtk3-light.toml` under `$DMS/share/quickshell/dms/matugen/configs/`)
+    genuinely have no `post_hook` at all - this is a real gap in DMS's
+    own pipeline, not a misreading of it.
+  - Wired the fix in as its own template, `gtkLiveReload` in
+    `Baseline.nix`, using the exact `vayori.matugenTemplates` mechanism
+    already proven elsewhere in this repo (`papirusFolders` here,
+    `cava`/`btop` in `Terminal.nix`) rather than patching DMS's package.
+    `runUserMatugenTemplates` (`SettingsSpec.js`, on by default) is what
+    makes DMS's own `dms matugen queue` run pick up this repo's
+    `~/.config/matugen/config.toml` alongside its bundled templates in
+    the same run, so this needed no DMS changes at all. The template
+    writes no real CSS - it's a trivial input file purely to get a
+    `post_hook`, same shape as `papirusFolders`. The toggle targets plain
+    `adw-gtk3` (the exact name `gtk.theme.name` sets above), not the
+    docs' mode-suffixed `adw-gtk3-{{mode}}` example - this repo's theme
+    already follows the system light/dark preference on its own, and
+    hardcoding a suffixed variant at matugen-run-time would freeze it at
+    whatever mode was active then instead.
+  - GTK4 does not get the same fix here. libadwaita apps ignore the
+    legacy `gtk-theme` key for styling, and there's no equivalent
+    GTK4-wide "re-read your CSS" signal to toggle - checked
+    `syncModeWithPortal` (`SettingsSpec.js`) as a possible broader
+    "refresh everything" knob in case it doubled as one; it doesn't, it
+    only governs light/dark *mode* following the xdg-desktop-portal
+    signal, debounced against exactly the kind of false-positive revert
+    an earlier session hit and disabled entirely (see
+    `PortalService.qml`'s own comment on this). Toggling the portal's
+    `color-scheme` key to force a GTK4 refresh was considered and
+    deliberately left out - it's the same signal that debounce guards,
+    and reusing it here wasn't worth risking that regression without a
+    way to test it live first. A GTK4 app still needs a restart, or its
+    own reload signal if it exposes one (the `pkill -USR2 btop`-style
+    fix already used for btop is exactly that, done per-app).
 - **Qt theming deliberately has no separate style override set.** An
   earlier version forced every Qt app onto a totally different theming
   engine regardless of the palette settings below, and matugen has no

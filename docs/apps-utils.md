@@ -35,6 +35,37 @@ It gets reused and re-synced on every rebuild.
   the activation script symlinks it into the profile, and the one prefs
   flag that makes custom stylesheets legal gets locked so there's no
   manual `about:config` step.
+- **"No live reload" isn't a bug in that wiring - it's Firefox's (and
+  Zen's own) genuinely unsolved limitation. Pushed back on this once,
+  checked three independent, authoritative sources instead of one, same
+  answer from all three:**
+  1. Mozilla's own tracker:
+     [bugzilla 1409065](https://bugzilla.mozilla.org/show_bug.cgi?id=1409065),
+     "Reload userChrome.css without restarting," open since 2017, no fix.
+  2. Zen's own maintainers, directly: a 2025 Zen GitHub discussion
+     states plainly that "hot reloading for themes in Zen Browser isn't
+     currently built in" and that a `--reload-userchrome`-style flag is
+     a requested-but-unimplemented feature - so this isn't a vanilla-
+     Firefox-only gap Zen's own fork happens to have fixed; it doesn't
+     have it either.
+  3. Zen's own official docs, the "Live Editing Zen Theme" guide
+     (docs.zen-browser.app) - the *only* documented way to see a
+     `userChrome.css` change without restarting is editing it live
+     inside the Browser Toolbox's Style Editor (after three specific
+     `about:config` flags), with the change applied by the Style Editor
+     itself, in that moment. The guide never claims an externally
+     rewritten file (which is what matugen produces here) gets picked
+     up the same way - and the two points above confirm it doesn't.
+
+  DMS *does* regenerate the stylesheet's colors live on every wallpaper
+  change (same `RunUnconditionally: true` matugen path as everywhere
+  else) - Firefox's (and Zen's) chrome loader just never rereads
+  `userChrome.css` for a window that's already open, full stop, and
+  there's no signal or file-watcher to hook the way a handful of GTK
+  apps can be given one. The only known workaround is the manual Style
+  Editor flow above - not something a `home.activation` script can
+  trigger from outside the running browser. A new window (or restart)
+  is what actually picks up the new colors.
 - **First-run bootstrap**: if the profile doesn't exist, the script runs
   Zen's own `-CreateProfile` command. That command still tries to talk to
   GTK even with no window to show, so it fails with "no DISPLAY" if run
