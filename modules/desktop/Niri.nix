@@ -132,6 +132,7 @@
         environment = {
           QT_QPA_PLATFORMTHEME = "qt6ct";
           QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
+          WLR_NO_HARDWARE_CURSORS = "1";
         };
 
         xwayland-satellite.path = lib.getExe pkgs.xwayland-satellite;
@@ -142,6 +143,8 @@
             tap = _: { };
             natural-scroll = _: { };
           };
+
+          warp-mouse-to-focus = _: { };
         };
 
         layout = {
