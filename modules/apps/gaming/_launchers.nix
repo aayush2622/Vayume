@@ -42,26 +42,29 @@
 
   home.activation.heroicSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     HEROIC_CONFIG="$HOME/.config/heroic/store/config.json"
-    run mkdir -p "$(dirname "$HEROIC_CONFIG")"
+    HEROIC_PREFIX=${lib.escapeShellArg "${gamesDir}/.wineprefix"}
+    run mkdir -p "$(dirname "$HEROIC_CONFIG")" "$HEROIC_PREFIX"
 
-    if [ ! -f "$HEROIC_CONFIG" ]; then
+    if [ ! -s "$HEROIC_CONFIG" ] || ! ${pkgs.jq}/bin/jq -e . "$HEROIC_CONFIG" > /dev/null 2>&1; then
       run sh -c "printf '{\"settings\":{}}' > '$HEROIC_CONFIG'"
     fi
 
-    HEROIC_CONFIG_TMP="$(mktemp)"
+    HEROIC_CONFIG_TMP="$HEROIC_CONFIG.vayori-tmp"
 
-    ${pkgs.jq}/bin/jq \
+    if ${pkgs.jq}/bin/jq \
       --arg themesPath "$HOME/.config/heroic/themes/matugen" \
       --arg font ${lib.escapeShellArg vayoriTheme.font} \
-      --arg winePrefix ${lib.escapeShellArg "${gamesDir}/.wineprefix"} \
+      --arg winePrefix "$HEROIC_PREFIX" \
       '.settings.customThemesPath = $themesPath
        | .theme = "matugen.css"
        | .contentFontFamily = $font
        | .actionsFontFamily = $font
        | .settings.winePrefix = $winePrefix' \
-      "$HEROIC_CONFIG" > "$HEROIC_CONFIG_TMP" \
-      && run cp "$HEROIC_CONFIG_TMP" "$HEROIC_CONFIG"
-
-    rm -f "$HEROIC_CONFIG_TMP"
+      "$HEROIC_CONFIG" > "$HEROIC_CONFIG_TMP" && [ -s "$HEROIC_CONFIG_TMP" ]; then
+      run mv -f "$HEROIC_CONFIG_TMP" "$HEROIC_CONFIG"
+    else
+      echo "heroicSettings: jq merge failed, leaving $HEROIC_CONFIG untouched" >&2
+      rm -f "$HEROIC_CONFIG_TMP"
+    fi
   '';
 }

@@ -21,6 +21,7 @@ in {
 
       self.nixosModules.VayoriUsers
       self.nixosModules.Niri
+      self.nixosModules.Hyprland
       self.nixosModules.Dms
       self.nixosModules.Fonts
       self.nixosModules.Portals
@@ -80,12 +81,12 @@ in {
 
               iconTheme = lib.mkOption {
                 type = lib.types.str;
-                default = "Papirus";
+                default = "Adwaita";
                 description = "GTK icon theme name.";
               };
               iconPackage = lib.mkOption {
                 type = lib.types.package;
-                default = pkgs.papirus-icon-theme;
+                default = pkgs.adwaita-icon-theme;
                 description = "Package providing `iconTheme`.";
               };
             };
@@ -120,6 +121,7 @@ in {
                   "Spicetify"
                   "Bitwarden"
                   "StateBackup"
+                  "Distrobox"
                 ];
               };
             in
@@ -178,6 +180,11 @@ in {
           programs.gamemode.enable = true;
           programs.steam.enable = true;
           programs.nix-ld.enable = true;
+
+          programs.appimage = {
+            enable = true;
+            binfmt = true;
+          };
 
           boot.kernelModules = [ "ntsync" ];
           services.udev.extraRules = ''

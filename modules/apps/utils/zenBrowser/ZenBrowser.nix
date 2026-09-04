@@ -36,7 +36,7 @@ in {
     mods = zenModsSpec;
   };
 
-  flake.homeModules.apps.ZenBrowser = { pkgs, lib, vayoriTheme, ... }:
+  flake.homeModules.apps.ZenBrowser = { pkgs, lib, config, vayoriTheme, ... }:
   let
     theme = vayoriTheme;
 
@@ -56,10 +56,55 @@ in {
       (throw "zen-browser.nix: no zenExtensions entry named \"${name}\"")
       zenExtensions).guid;
 
+    # Vendored under ./vendor - see its README for provenance and licences.
+    # Must be a derivation output, not a bare source path: wrapFirefox
+    # interpolates this with `toString`, which drops string context, so a
+    # raw path never becomes a build input and the sandbox cannot read it.
+    fxaConfigJs = pkgs.runCommand "fx-autoconfig-config.js" { } ''
+      cp ${./vendor/fx-autoconfig/program/config.js} $out
+    '';
+
+    fxaProfileFiles = {
+      "utils/boot.sys.mjs" = ./vendor/fx-autoconfig/chrome/utils/boot.sys.mjs;
+      "utils/chrome.manifest" = ./vendor/fx-autoconfig/chrome/utils/chrome.manifest;
+      "utils/fs.sys.mjs" = ./vendor/fx-autoconfig/chrome/utils/fs.sys.mjs;
+      "utils/module_loader.mjs" = ./vendor/fx-autoconfig/chrome/utils/module_loader.mjs;
+      "utils/uc_api.sys.mjs" = ./vendor/fx-autoconfig/chrome/utils/uc_api.sys.mjs;
+      "utils/utils.sys.mjs" = ./vendor/fx-autoconfig/chrome/utils/utils.sys.mjs;
+      "JS/matugen-bridge.uc.js" = ./vendor/fx-autoconfig/chrome/JS/matugen-bridge.uc.js;
+      "JS/matugen-boosts.uc.js" = ./vendor/fx-autoconfig/chrome/JS/matugen-boosts.uc.js;
+      "JS/Matugen/MatugenChild.sys.mjs" = ./vendor/fx-autoconfig/chrome/JS/Matugen/MatugenChild.sys.mjs;
+      "JS/Matugen/MatugenParent.sys.mjs" = ./vendor/fx-autoconfig/chrome/JS/Matugen/MatugenParent.sys.mjs;
+    };
+
+    # The eight placeholders only seed :root fallbacks - the bridge
+    # overwrites the same --matugen-* variables at runtime, which is what
+    # makes a palette change reach an already-open window. So these are
+    # substituted once at build time rather than re-rendered per wallpaper.
+    renderWabi = name: src: pkgs.runCommand name { } ''
+      ${pkgs.gnused}/bin/sed \
+        -e 's/{{bg}}/#14140b/g' \
+        -e 's/{{bg_dark}}/#0f0f08/g' \
+        -e 's/{{bg_light}}/#1e1e12/g' \
+        -e 's/{{fg}}/#e6e3d3/g' \
+        -e 's/{{fg_light}}/#c9c6b6/g' \
+        -e 's/{{accent}}/#fffdd5/g' \
+        -e 's/{{secondary}}/#cbc9a6/g' \
+        -e 's/{{tertiary}}/#a3c9a8/g' \
+        ${src} > $out
+    '';
+
+    zenUserChrome = renderWabi "userChrome.css" ./vendor/wabi/userChrome.css.template;
+    zenUserContent = renderWabi "userContent.css" ./vendor/wabi/userContent.css.template;
+
     zen-browser = pkgs.wrapFirefox
       inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped
       {
         extraPrefs = mkPrefLines "lockPref" zenPrefs;
+        extraPrefsFiles = [ fxaConfigJs ];
+        extraAutoConfig = ''
+          pref("general.config.sandbox_enabled", false);
+        '';
 
         extraPolicies = {
           DisableTelemetry = true;
@@ -101,6 +146,11 @@ in {
       "browser.toolbars.bookmarks.visibility" = "always";
       "browser.newtabpage.enabled" = false;
       "browser.ml.enable" = true;
+
+      "userChromeJS.experimental.enabled" = true;
+      "zen.boosts.enabled" = true;
+      "devtools.chrome.enabled" = true;
+      "devtools.debugger.remote-enabled" = true;
 
       "signon.rememberSignons" = false;
       "network.prefetch-next" = false;
@@ -169,9 +219,52 @@ in {
     };
 
     zenUserJs = pkgs.writeText "user.js" (mkPrefLines "user_pref" zenUserPrefs);
+
+    zen-reload = pkgs.writeShellScriptBin "vayori-zen-reload" ''
+      set -u
+
+      if ! ${pkgs.procps}/bin/pgrep -x zen > /dev/null 2>&1; then
+        echo "Zen is not running; starting it."
+        exec ${lib.getExe zen-browser}
+      fi
+
+      echo "Restarting Zen to pick up the current theme..."
+      ${pkgs.procps}/bin/pkill -x -TERM zen || true
+
+      for _ in $(seq 1 50); do
+        ${pkgs.procps}/bin/pgrep -x zen > /dev/null 2>&1 || break
+        sleep 0.2
+      done
+
+      if ${pkgs.procps}/bin/pgrep -x zen > /dev/null 2>&1; then
+        echo "Zen did not exit in time; leaving it alone." >&2
+        exit 1
+      fi
+
+      ${pkgs.coreutils}/bin/nohup ${lib.getExe zen-browser} > /dev/null 2>&1 &
+    '';
   in
   {
-    home.packages = [ zen-browser ];
+    home.file.".config/matugen/templates/zen-matugen-vars.json".text = ''
+      {
+        "bg": "{{colors.surface.default.hex}}",
+        "bg-dark": "{{colors.surface_dim.default.hex}}",
+        "bg-light": "{{colors.surface_bright.default.hex}}",
+        "fg": "{{colors.on_surface.default.hex}}",
+        "fg-light": "{{colors.on_surface_variant.default.hex}}",
+        "accent": "{{colors.primary.default.hex}}",
+        "secondary": "{{colors.secondary.default.hex}}",
+        "tertiary": "{{colors.tertiary.default.hex}}"
+      }
+    '';
+
+    vayori.matugenTemplates.zen = ''
+      [templates.zen]
+      input_path = '${config.home.homeDirectory}/.config/matugen/templates/zen-matugen-vars.json'
+      output_path = '${config.home.homeDirectory}/.zen/default/chrome/matugen-vars.json'
+    '';
+
+    home.packages = [ zen-browser zen-reload ];
 
     home.activation.zenBrowserConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       fetch_if_missing() {
@@ -200,7 +293,41 @@ in {
 
       if [ -f "$PROFILE_DIR/times.json" ]; then
         run mkdir -p "$PROFILE_DIR/chrome"
-        run ln -sf "$HOME/.config/DankMaterialShell/zen.css" "$PROFILE_DIR/chrome/userChrome.css"
+        run ${pkgs.coreutils}/bin/cp -f ${zenUserChrome} "$PROFILE_DIR/chrome/userChrome.css"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/userChrome.css"
+        run ${pkgs.coreutils}/bin/cp -f ${zenUserContent} "$PROFILE_DIR/chrome/userContent.css"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/userContent.css"
+
+        run mkdir -p "$PROFILE_DIR/chrome/utils"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."utils/boot.sys.mjs"} "$PROFILE_DIR/chrome/utils/boot.sys.mjs"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/utils/boot.sys.mjs"
+        run mkdir -p "$PROFILE_DIR/chrome/utils"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."utils/chrome.manifest"} "$PROFILE_DIR/chrome/utils/chrome.manifest"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/utils/chrome.manifest"
+        run mkdir -p "$PROFILE_DIR/chrome/utils"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."utils/fs.sys.mjs"} "$PROFILE_DIR/chrome/utils/fs.sys.mjs"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/utils/fs.sys.mjs"
+        run mkdir -p "$PROFILE_DIR/chrome/utils"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."utils/module_loader.mjs"} "$PROFILE_DIR/chrome/utils/module_loader.mjs"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/utils/module_loader.mjs"
+        run mkdir -p "$PROFILE_DIR/chrome/utils"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."utils/uc_api.sys.mjs"} "$PROFILE_DIR/chrome/utils/uc_api.sys.mjs"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/utils/uc_api.sys.mjs"
+        run mkdir -p "$PROFILE_DIR/chrome/utils"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."utils/utils.sys.mjs"} "$PROFILE_DIR/chrome/utils/utils.sys.mjs"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/utils/utils.sys.mjs"
+        run mkdir -p "$PROFILE_DIR/chrome/JS"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."JS/matugen-bridge.uc.js"} "$PROFILE_DIR/chrome/JS/matugen-bridge.uc.js"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/JS/matugen-bridge.uc.js"
+        run mkdir -p "$PROFILE_DIR/chrome/JS"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."JS/matugen-boosts.uc.js"} "$PROFILE_DIR/chrome/JS/matugen-boosts.uc.js"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/JS/matugen-boosts.uc.js"
+        run mkdir -p "$PROFILE_DIR/chrome/JS/Matugen"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."JS/Matugen/MatugenChild.sys.mjs"} "$PROFILE_DIR/chrome/JS/Matugen/MatugenChild.sys.mjs"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/JS/Matugen/MatugenChild.sys.mjs"
+        run mkdir -p "$PROFILE_DIR/chrome/JS/Matugen"
+        run ${pkgs.coreutils}/bin/cp -f ${fxaProfileFiles."JS/Matugen/MatugenParent.sys.mjs"} "$PROFILE_DIR/chrome/JS/Matugen/MatugenParent.sys.mjs"
+        run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/JS/Matugen/MatugenParent.sys.mjs"
         run ln -sf ${zenUserJs} "$PROFILE_DIR/user.js"
 
         echo "Fetching Zen mods index..."

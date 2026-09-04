@@ -481,6 +481,33 @@ lookup, no activation-ordering dance.
   `_user.nix` and rebuild to turn it back on - takes effect immediately,
   no first-run-only seeding step to work around.
 
+- **The 1-2 minute stall on the boot screen was this file's own
+  `network-online.target` dependency.** `home-manager-<user>.service`
+  had `after`/`wants` on `network-online.target` added here, with no
+  note saying why. Home Manager's own NixOS module separately sets
+  `before = [ "systemd-user-sessions.service" ]` (read straight from its
+  `nixos/default.nix`), which is what gates login on activation
+  finishing. Chain those together and login waits on
+  `NetworkManager-wait-online` - routinely 30s to well over a minute on
+  WiFi - before the greeter is even allowed to appear. Confirmed against
+  the real generated unit, not inferred.
+
+  Removed, after checking every network call activation actually makes:
+  the only two are Zen's mods-index fetch and its per-mod downloads
+  ([ZenBrowser.nix](apps-utils.md#modulesappsutilszenbrowserzenbrowsernix)),
+  both already `--max-time`-bounded and guarded so a failure prints
+  "could not reach the mods index, skipping" and moves on. Free Claude
+  Code's `git clone` looks like a counterexample but isn't - it lives in
+  `fccBootstrapScript`, run by `free-claude-code-bootstrap.service`,
+  which carries its own `After=network-online.target`. That's the right
+  place for a network dependency: a real service that can take its time,
+  not the activation the login prompt is queued behind.
+
+  `TimeoutStartSec` stays at 180s deliberately. A *fresh* account still
+  runs Zen's one-time `timeout 120s ... -CreateProfile`, so trimming the
+  timeout would kill activation partway through a first login rather
+  than speed anything up.
+
 ---
 
 ## `modules/core/DevLanguages.nix`

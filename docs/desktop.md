@@ -495,74 +495,108 @@ opt-in pick, it's just part of what this desktop *is*.
   `dank-colors.css`: produces the identical `gtk.css -> dank-colors.css`
   symlink, `assets` symlink, and `@import` line the real button
   produces.
-- **"GTK theme doesn't live-reload" - GTK3 actually does have a fix,
-  pushed back into twice before it turned up.** `dank-colors.css`
-  genuinely does get rewritten with fresh colors on every wallpaper/theme
-  change (matugen's own `RunUnconditionally: true` for these templates,
-  same as everywhere else). What doesn't happen on its own is an
-  *already-running* GTK app noticing that file changed underneath it and
-  repainting.
-  - DMS's own official docs (danklinux.com, "Application Themes" page)
-    say GTK apps "reflect these changes dynamically once the symlinks
-    are properly configured" - true, but not the claim it sounds like.
-    Grepped every call site of `Theme.applyGtkColors()` (the function
-    that actually runs `gtk.sh`) across the whole DMS QML tree: there is
-    exactly one, a `Settings -> Theme -> "Apply GTK Colors"` button
-    click. It is never called from the wallpaper-change/matugen
-    pipeline. So "dynamically" means the *symlink* only ever needs
-    setting up once (this repo's own `applyDmsGtkColors` does that, at
-    every rebuild) - after that, `dank-colors.css`'s *content* updates
-    automatically, and any *newly opened* GTK window picks it up
-    immediately. An already-open window, on its own, does not.
-  - This was the point an earlier pass in this session stopped and
-    called it a real GTK limitation - GTK genuinely gives no CSS-file
-    watcher by default, confirmed against
-    [GNOME/gtk#3409](https://gitlab.gnome.org/GNOME/gtk/-/work_items/3409),
-    "Custom CSS with dynamic reloading," a real, still-open GTK4 feature
-    request. That much is true. It missed a different, real lever:
-    matugen's own documented GTK recipe
-    ([InioX/matugen-themes](https://github.com/InioX/matugen-themes))
-    doesn't wait on a CSS watcher at all - it toggles the `gtk-theme`
-    gsettings key off and back on in a `post_hook`. GTK3 apps *do*
-    listen for that specific change notification (it's how live theme
-    switching has always worked in GTK3/GNOME), and reacting to it means
-    fully re-applying the theme - which re-reads `gtk.css`, and with it
-    the `@import`ed `dank-colors.css`, picking up the new colors as a
-    side effect of a toggle that isn't really changing anything.
-  - Confirmed DMS's own bundled templates (`gtk3-dark.toml`,
-    `gtk3-light.toml` under `$DMS/share/quickshell/dms/matugen/configs/`)
-    genuinely have no `post_hook` at all - this is a real gap in DMS's
-    own pipeline, not a misreading of it.
-  - Wired the fix in as its own template, `gtkLiveReload` in
-    `Baseline.nix`, using the exact `vayori.matugenTemplates` mechanism
-    already proven elsewhere in this repo (`papirusFolders` here,
-    `cava`/`btop` in `Terminal.nix`) rather than patching DMS's package.
-    `runUserMatugenTemplates` (`SettingsSpec.js`, on by default) is what
-    makes DMS's own `dms matugen queue` run pick up this repo's
-    `~/.config/matugen/config.toml` alongside its bundled templates in
-    the same run, so this needed no DMS changes at all. The template
-    writes no real CSS - it's a trivial input file purely to get a
-    `post_hook`, same shape as `papirusFolders`. The toggle targets plain
-    `adw-gtk3` (the exact name `gtk.theme.name` sets above), not the
-    docs' mode-suffixed `adw-gtk3-{{mode}}` example - this repo's theme
-    already follows the system light/dark preference on its own, and
-    hardcoding a suffixed variant at matugen-run-time would freeze it at
-    whatever mode was active then instead.
-  - GTK4 does not get the same fix here. libadwaita apps ignore the
-    legacy `gtk-theme` key for styling, and there's no equivalent
-    GTK4-wide "re-read your CSS" signal to toggle - checked
-    `syncModeWithPortal` (`SettingsSpec.js`) as a possible broader
-    "refresh everything" knob in case it doubled as one; it doesn't, it
-    only governs light/dark *mode* following the xdg-desktop-portal
-    signal, debounced against exactly the kind of false-positive revert
-    an earlier session hit and disabled entirely (see
-    `PortalService.qml`'s own comment on this). Toggling the portal's
-    `color-scheme` key to force a GTK4 refresh was considered and
-    deliberately left out - it's the same signal that debounce guards,
-    and reusing it here wasn't worth risking that regression without a
-    way to test it live first. A GTK4 app still needs a restart, or its
-    own reload signal if it exposes one (the `pkill -USR2 btop`-style
-    fix already used for btop is exactly that, done per-app).
+- **"GTK theme doesn't live-reload" - three separate mechanisms tried
+  before landing on one that has an actual working basis.**
+  `dank-colors.css` genuinely does get rewritten with fresh colors on
+  every wallpaper/theme change (matugen's own `RunUnconditionally: true`
+  for these templates, same as everywhere else). What doesn't happen on
+  its own is an *already-running* GTK app noticing that file changed
+  underneath it and repainting - confirmed straight from GTK3's own
+  source (`gtksettings.c`'s `settings_init_style()`): the user
+  `~/.config/gtk-3.0/gtk.css` is loaded exactly once, behind a
+  `G_UNLIKELY (!css_provider)` guard, no `GFileMonitor` anywhere near it.
+  No amount of rewriting that file reaches a window that's already open.
+  - **First attempt (wrong): toggle the same `gtk-theme` gsettings value
+    off and back on.** This is matugen's own documented GTK recipe
+    ([InioX/matugen-themes](https://github.com/InioX/matugen-themes)),
+    and it looked right - GTK3 does watch `gtk-theme-name` live. But
+    that's a *different* code path from the one above: it re-resolves
+    `gtk_css_provider_get_named()`, a provider cache keyed by theme
+    *name*, completely separate from the config-dir `gtk.css` file. A
+    toggle back to the *same* name (`adw-gtk3` off, `adw-gtk3` on) is a
+    cache **hit** - `gtk_css_provider_get_named()` returns the already-
+    cached provider from last time without touching disk again. Verified
+    directly in `gtkcssprovider.c`: `provider = g_hash_table_lookup
+    (themes, key); if (!provider) { ... }` - nothing re-parses when the
+    lookup already succeeds. This toggle could never have moved a single
+    pixel; confirmed the hard way once an independent, far more
+    thorough project's write-up settled it (see below), not by testing
+    it live.
+  - **Second attempt (also wrong): a `GSETTINGS_SCHEMA_DIR` env-var
+    fix that never got a chance to matter.** While chasing why the
+    toggle "wasn't confirmed working," found a real, separate bug: this
+    machine had zero `gschemas.compiled` anywhere in the filesystem
+    (`programs.dconf.enable` only installs the `dconf` binary, never
+    `gsettings-desktop-schemas`), so every `gsettings` call in the
+    matugen `post_hook` was failing before it could do anything, silently,
+    behind its own `2>/dev/null`. Fixed for real - `GSETTINGS_SCHEMA_DIR`
+    now set in [Host.nix](core.md#moduleshostsnamehostnix) - but fixing
+    a broken gsettings call doesn't help when the call it enables was
+    never going to work anyway (see above).
+  - **What actually surfaced the real fix: reading
+    [arqueon/dms-theme-sync](https://github.com/arqueon/dms-theme-sync),**
+    an independent, far more thorough plugin solving exactly this
+    problem across GTK/Qt/KDE/Kvantum/Flatpak. Its own conclusion,
+    stated outright: *"There is intentionally no fake GTK 'reload
+    everything' signal... a Matugen palette rewrite under the same CSS
+    and theme names still requires restarting that GTK application."*
+    That's the same conclusion reached independently from GTK's own
+    source - real, converging confirmation, not a guess. But its README
+    also names the one channel that *is* real: *"GTK on Wayland: real
+    desktop-setting changes arrive through the settings portal - theme
+    name... update[s] when [its] value actually changes."* The key word
+    is *changes* - a new value, not the same name toggled off and on.
+  - **The actual fix: a genuinely new theme name every run, not a
+    repeated one.** `gtkLiveReload` in `Baseline.nix` now writes a
+    fresh, timestamped theme directory
+    (`~/.local/share/themes/vayori-dank-<timestamp>/gtk-3.0/`) on every
+    matugen run - `gtk.css`/`gtk-dark.css` each `@import` real
+    `adw-gtk3` first (so the actual widget styling comes along, not just
+    colors) then `dank-colors.css` last (so its accent overrides win -
+    confirmed directly: adw-gtk3's own `gtk.css` defines
+    `accent_bg_color` as `@blue_3`, `dank-colors.css` redefines it to
+    the real matugen hex, and the later `@import` wins). A name
+    `gtk_css_provider_get_named()` has never seen before is a guaranteed
+    cache miss, forcing a real parse - the same mechanism used by
+    manual GNOME theme switching since GTK3's earliest days, just
+    triggered with a name that's different every time instead of a
+    fixed one. The old theme directory is pruned right after the
+    `gsettings set` call succeeds, so this doesn't accumulate. This
+    repo's portal backend is `xdg-desktop-portal-gtk`
+    ([Portals.nix](core.md#modulesdesktopportalsnix)) - the specific
+    backend documented to proxy arbitrary GSettings keys (not just the
+    portal spec's own standardized `org.freedesktop.appearance`
+    namespace) to Wayland-native clients, which is what dms-theme-sync's
+    "arrives through the settings portal" claim depends on and what
+    this whole mechanism needs to actually reach a running app under
+    niri.
+  - **Still not verified against an actual live GTK window** - every
+    piece up to that point (script executes, correct file precedence,
+    correct pruning across repeated runs, valid shell syntax) was
+    checked directly; whether the portal genuinely forwards the
+    notification on this exact setup could only be confirmed by
+    watching a real app repaint in a real session, which wasn't
+    available while making this change. If it turns out not to fire,
+    the mechanism is inert but harmless (same failure mode as before:
+    apps show correct colors on next launch, need a restart otherwise) -
+    worth confirming for real and reporting back either way.
+  - **GTK4 does not get this fix.** libadwaita ignores the legacy
+    `gtk-theme` key entirely for styling - confirmed independently by
+    dms-theme-sync's own "Limits" section, not just this repo's own
+    read of GTK4's source. There's no equivalent GTK4-wide lever to
+    pull. A GTK4 app still needs a restart, or its own reload signal if
+    it exposes one (the `pkill -USR2 btop`-style fix already used for
+    btop is exactly that, done per-app).
+  - **Qt/KDE also get a real reload now, riding the same post_hook.**
+    `qt5ct.conf`/`qt6ct.conf` are watched files - touching either one
+    (no content change needed, the `mtime` bump is the whole trigger)
+    makes qt5ct/qt6ct emit a genuine Qt `ThemeChange` event to already-
+    running Qt apps, covering palette/fonts/style hints/icons. Any KDE
+    Frameworks app gets the matching `KGlobalSettings`/`KIconLoader`
+    D-Bus signals. Both lifted directly from dms-theme-sync's own
+    `reload-application-theme.sh`, which states plainly why each one
+    works - not reverse-engineered, read straight from a project that
+    already did the legwork and shipped it.
 - **Qt theming deliberately has no separate style override set.** An
   earlier version forced every Qt app onto a totally different theming
   engine regardless of the palette settings below, and matugen has no

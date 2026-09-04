@@ -123,6 +123,7 @@
 
         imports = [
           self.homeModules.Baseline
+          self.homeModules.Hyprland
         ] ++ (map (app: self.homeModules.apps.${app}) config.vayori.apps);
 
         home.stateVersion = config.system.stateVersion;
@@ -133,9 +134,7 @@
       }) cfg;
 
       systemd.services = lib.mapAttrs' (name: u: lib.nameValuePair "home-manager-${name}" {
-        after = [ "network-online.target" ];
-        wants = [ "network-online.target" ];
-        serviceConfig.TimeoutStartSec = lib.mkForce "180sec";
+        serviceConfig.TimeoutStartSec = lib.mkForce "600sec";
       }) cfg;
     };
   };
