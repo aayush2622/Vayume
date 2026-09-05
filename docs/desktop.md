@@ -280,8 +280,31 @@ enabling it alone isn't enough.
   straight from its own repo (not in nixpkgs), scoped to DMS's launcher
   only via an env var DMS specifically documents for this - it doesn't
   touch Nautilus or anything else system-wide. Static install is fine
-  here; unlike Papirus below, nothing ever needs to rewrite it at
-  runtime.
+  here - nothing ever needs to rewrite it at runtime.
+- **`lockBeforeSuspend = true;` and an idle-timeout lock service - the
+  system had neither.** Checked DMS's own settings spec directly for
+  what's actually available before building anything: `lockBeforeSuspend`
+  exists (defaults `false`, never overridden here before), but there's no
+  idle-timeout lock setting at all - only lock-*before-suspend*. Worth
+  noticing DMS's own bar ships an "Idle Inhibitor" widget
+  (`id = "idleInhibitor"`) that only means anything if something actually
+  locks on idle for it to inhibit - the widget existed, the mechanism it
+  was built to counteract didn't.
+
+  `systemd.user.services.vayori-idle-lock` runs `swayidle -w timeout 600
+  '... dms ipc call lock lock'`, bound to `graphical-session.target` the
+  same way DMS's own service is, so it starts under either compositor
+  automatically - no niri- or Hyprland-specific wiring needed. swayidle
+  isn't sway-specific despite the name; it drives the generic Wayland
+  idle-notify protocol both compositors implement, and already respects
+  systemd-logind idle-inhibit locks on its own, which is what makes the
+  existing widget work against it for free. Verified against the real
+  built unit: `ExecStart` resolves to the actual `dms`/`swayidle` store
+  paths (not bare `$PATH` lookups, matching this repo's own convention),
+  and it's correctly linked into
+  `graphical-session.target.wants/vayori-idle-lock.service`. Not verified
+  live - whether it actually fires after ten real minutes of idle needs a
+  real session to watch.
 
 ---
 
@@ -353,6 +376,77 @@ documented config syntax exactly.
 
 ---
 
+## `modules/desktop/Hyprland.nix`
+
+A second compositor, deliberately mirroring niri's own shape rather than
+reinventing one - same gaps/borders/opacity/blur values, same keybind
+set (terminal/files/code/browser/`dms ipc call` spawns, focus/move,
+workspaces 1-10 with `0` mapped to workspace 10), so switching sessions
+at the SDDM greeter changes the compositor, not the muscle memory. Both
+`nixosModules.Hyprland` and `homeModules.Hyprland` exist, imported next
+to their niri counterparts in `Host.nix`/`Users.nix` - both compositors
+are always available, picked per-login, not toggled by a single option.
+
+**DMS needed nothing new to run under it.** It starts as a systemd user
+service bound to `graphical-session.target`
+([Dms.nix](#modulesdesktopdmsnix)'s `systemd.enable = true;`), which
+either compositor's session provides - no `exec-once`/spawn-at-startup
+line required, confirmed by checking there's no niri-specific assumption
+in how DMS's own `programs.dank-material-shell` module starts it.
+
+**Four places genuinely have no niri equivalent, not just an oversight**
+- Hyprland is a dwindle tiler, niri is a scrollable-column WM, and some
+concepts don't translate:
+- No built-in overview (niri has one; Hyprland needs the `hyprexpo`
+  plugin, not pulled in here) - `Mod+Tab` maps to `cyclenext` instead, a
+  stand-in, not an equivalent.
+- No column operations (`consume-window-into-column`,
+  `expel-window-from-column`, preset column widths) - `Mod+J`/`Mod+R` map
+  to `togglegroup`/`pseudo`, the nearest dwindle concepts, not real
+  matches.
+- No built-in screenshotting - niri has `.screenshot`/`.screenshot-screen`
+  actions; Hyprland gets `grim`/`slurp` instead (already in
+  `environment.systemPackages` via [Host.nix](core.md#moduleshostsnamehostnix)),
+  with `Mod+Shift+S` doing the region-select variant.
+- Resize is `resizeactive` in pixels rather than niri's
+  `set-column-width` proportions - dwindle has no column-proportion
+  concept to resize against.
+
+**The brightness binds needed the same device-resolution logic niri's
+own already has, not a bare `dms ipc call brightness increment 5`.**
+Checked DMS's own default keybind list
+(`Common/KeybindActions.js`) rather than assume the device argument was
+optional - its own defaults always pass a third argument, even if empty
+(`brightness increment 5 ""`). Matched niri's existing, more robust
+approach instead of DMS's bare default: resolve the actual backlight
+device name via `dms ipc call brightness list | awk '$1 ~
+/^backlight:/ {print $1; exit}'`, same shell substitution as
+[Niri.nix](#modulesdesktopnirinix)'s own binds, verified against the
+real rendered `hyprland.conf` line for line.
+
+Verified against a real build, not just eval: the generated
+`hyprland.conf` has 70 `bind*` lines including all 20 workspace binds
+(`0` correctly mapping to workspace `10`), and both `niri-26.04` and
+`hyprland-0.56.1` show up in `services.displayManager.sessionPackages` -
+SDDM will actually offer both.
+
+**`windowrulev2` doesn't work on this pinned Hyprland version - real,
+live feedback, not caught by any of the build-time verification above.**
+`nixpkgs.hyprland` here is `0.56.1`, and this build/eval-only session has
+no way to launch a real compositor session - only Hyprland's own
+`--verify-config` (which parses the config for real, but was only run
+once, before this bug, not re-run against every later change) would ever
+have caught this. `class:REGEX`-style selectors were replaced with a
+`match:` prefix - confirmed straight from Hyprland's own source
+(`src/config/legacy/ConfigManager.cpp`: a selector token has to
+`start_with("match:")`, colon immediately joined to the field name with
+no space, then a space before the value - `class:.*` is genuinely
+invalid now, not just deprecated-but-working). Fixed to `match:class
+.*`, then actually re-verified against the real
+`Hyprland --config ... --verify-config` binary this time (not just
+`nix build`) - `config ok`, zero parse errors, on the exact config this
+repo generates.
+
 ## `modules/desktop/Fonts.nix` / `Portals.nix`
 
 - One font package for terminal/bar glyphs, one for DMS's icon font.
@@ -384,6 +478,17 @@ documented config syntax exactly.
   (`nix eval`'d against the real option schema, not guessed) - not
   verified against a live screen-share/screenshot session, which isn't
   possible in this environment.
+- **`xdg.portal.config.hyprland` does *not* reuse `gnome` for
+  `ScreenCast`/`Screenshot` the way niri's block does - checked before
+  copying, not assumed.** Unlike niri, `programs.hyprland.enable` auto-adds
+  a portal package of its own (`portalPackage`, defaulting to
+  `xdg-desktop-portal-hyprland`) to `extraPortals` - confirmed directly
+  in nixpkgs' `hyprland.nix` module, whose own comment states outright
+  "Hyprland has its own portal, wlr is not needed". Routed both
+  interfaces to `"hyprland"` instead - `gnome`'s portal implementation is
+  built for Mutter's screencapture protocol, not Hyprland's own, so
+  reusing niri's exact block here would have installed the right package
+  and then never actually routed to it.
 
 **One font setting drives everything declarative**: system font, GTK app
 text, terminal, and DMS's own UI all read the same shared font option.
@@ -495,108 +600,143 @@ opt-in pick, it's just part of what this desktop *is*.
   `dank-colors.css`: produces the identical `gtk.css -> dank-colors.css`
   symlink, `assets` symlink, and `@import` line the real button
   produces.
-- **"GTK theme doesn't live-reload" - three separate mechanisms tried
-  before landing on one that has an actual working basis.**
+- **"GTK theme doesn't live-reload" - four attempts, the last one
+  correct only after checking a claim the first three all missed.**
   `dank-colors.css` genuinely does get rewritten with fresh colors on
   every wallpaper/theme change (matugen's own `RunUnconditionally: true`
   for these templates, same as everywhere else). What doesn't happen on
   its own is an *already-running* GTK app noticing that file changed
-  underneath it and repainting - confirmed straight from GTK3's own
-  source (`gtksettings.c`'s `settings_init_style()`): the user
-  `~/.config/gtk-3.0/gtk.css` is loaded exactly once, behind a
-  `G_UNLIKELY (!css_provider)` guard, no `GFileMonitor` anywhere near it.
-  No amount of rewriting that file reaches a window that's already open.
+  underneath it and repainting.
   - **First attempt (wrong): toggle the same `gtk-theme` gsettings value
-    off and back on.** This is matugen's own documented GTK recipe
-    ([InioX/matugen-themes](https://github.com/InioX/matugen-themes)),
-    and it looked right - GTK3 does watch `gtk-theme-name` live. But
-    that's a *different* code path from the one above: it re-resolves
-    `gtk_css_provider_get_named()`, a provider cache keyed by theme
-    *name*, completely separate from the config-dir `gtk.css` file. A
-    toggle back to the *same* name (`adw-gtk3` off, `adw-gtk3` on) is a
-    cache **hit** - `gtk_css_provider_get_named()` returns the already-
-    cached provider from last time without touching disk again. Verified
-    directly in `gtkcssprovider.c`: `provider = g_hash_table_lookup
-    (themes, key); if (!provider) { ... }` - nothing re-parses when the
-    lookup already succeeds. This toggle could never have moved a single
-    pixel; confirmed the hard way once an independent, far more
-    thorough project's write-up settled it (see below), not by testing
-    it live.
-  - **Second attempt (also wrong): a `GSETTINGS_SCHEMA_DIR` env-var
-    fix that never got a chance to matter.** While chasing why the
-    toggle "wasn't confirmed working," found a real, separate bug: this
-    machine had zero `gschemas.compiled` anywhere in the filesystem
-    (`programs.dconf.enable` only installs the `dconf` binary, never
-    `gsettings-desktop-schemas`), so every `gsettings` call in the
-    matugen `post_hook` was failing before it could do anything, silently,
-    behind its own `2>/dev/null`. Fixed for real - `GSETTINGS_SCHEMA_DIR`
-    now set in [Host.nix](core.md#moduleshostsnamehostnix) - but fixing
-    a broken gsettings call doesn't help when the call it enables was
-    never going to work anyway (see above).
-  - **What actually surfaced the real fix: reading
-    [arqueon/dms-theme-sync](https://github.com/arqueon/dms-theme-sync),**
-    an independent, far more thorough plugin solving exactly this
-    problem across GTK/Qt/KDE/Kvantum/Flatpak. Its own conclusion,
-    stated outright: *"There is intentionally no fake GTK 'reload
-    everything' signal... a Matugen palette rewrite under the same CSS
-    and theme names still requires restarting that GTK application."*
-    That's the same conclusion reached independently from GTK's own
-    source - real, converging confirmation, not a guess. But its README
-    also names the one channel that *is* real: *"GTK on Wayland: real
-    desktop-setting changes arrive through the settings portal - theme
-    name... update[s] when [its] value actually changes."* The key word
-    is *changes* - a new value, not the same name toggled off and on.
-  - **The actual fix: a genuinely new theme name every run, not a
-    repeated one.** `gtkLiveReload` in `Baseline.nix` now writes a
-    fresh, timestamped theme directory
-    (`~/.local/share/themes/vayori-dank-<timestamp>/gtk-3.0/`) on every
-    matugen run - `gtk.css`/`gtk-dark.css` each `@import` real
-    `adw-gtk3` first (so the actual widget styling comes along, not just
-    colors) then `dank-colors.css` last (so its accent overrides win -
-    confirmed directly: adw-gtk3's own `gtk.css` defines
-    `accent_bg_color` as `@blue_3`, `dank-colors.css` redefines it to
-    the real matugen hex, and the later `@import` wins). A name
-    `gtk_css_provider_get_named()` has never seen before is a guaranteed
-    cache miss, forcing a real parse - the same mechanism used by
-    manual GNOME theme switching since GTK3's earliest days, just
-    triggered with a name that's different every time instead of a
-    fixed one. The old theme directory is pruned right after the
-    `gsettings set` call succeeds, so this doesn't accumulate. This
-    repo's portal backend is `xdg-desktop-portal-gtk`
-    ([Portals.nix](core.md#modulesdesktopportalsnix)) - the specific
-    backend documented to proxy arbitrary GSettings keys (not just the
-    portal spec's own standardized `org.freedesktop.appearance`
-    namespace) to Wayland-native clients, which is what dms-theme-sync's
-    "arrives through the settings portal" claim depends on and what
-    this whole mechanism needs to actually reach a running app under
-    niri.
-  - **Still not verified against an actual live GTK window** - every
-    piece up to that point (script executes, correct file precedence,
-    correct pruning across repeated runs, valid shell syntax) was
-    checked directly; whether the portal genuinely forwards the
-    notification on this exact setup could only be confirmed by
-    watching a real app repaint in a real session, which wasn't
-    available while making this change. If it turns out not to fire,
-    the mechanism is inert but harmless (same failure mode as before:
-    apps show correct colors on next launch, need a restart otherwise) -
-    worth confirming for real and reporting back either way.
-  - **GTK4 does not get this fix.** libadwaita ignores the legacy
-    `gtk-theme` key entirely for styling - confirmed independently by
-    dms-theme-sync's own "Limits" section, not just this repo's own
-    read of GTK4's source. There's no equivalent GTK4-wide lever to
-    pull. A GTK4 app still needs a restart, or its own reload signal if
-    it exposes one (the `pkill -USR2 btop`-style fix already used for
-    btop is exactly that, done per-app).
-  - **Qt/KDE also get a real reload now, riding the same post_hook.**
-    `qt5ct.conf`/`qt6ct.conf` are watched files - touching either one
-    (no content change needed, the `mtime` bump is the whole trigger)
-    makes qt5ct/qt6ct emit a genuine Qt `ThemeChange` event to already-
-    running Qt apps, covering palette/fonts/style hints/icons. Any KDE
-    Frameworks app gets the matching `KGlobalSettings`/`KIconLoader`
-    D-Bus signals. Both lifted directly from dms-theme-sync's own
-    `reload-application-theme.sh`, which states plainly why each one
-    works - not reverse-engineered, read straight from a project that
-    already did the legwork and shipped it.
+    off and back on.** Matugen's own documented GTK recipe
+    ([InioX/matugen-themes](https://github.com/InioX/matugen-themes)).
+    Wrong because `gtk_css_provider_get_named()` (the code path this
+    actually exercises) caches by theme *name* - a toggle back to the
+    *same* name is a cache hit, confirmed directly in
+    `gtkcssprovider.c`: `provider = g_hash_table_lookup(themes, key); if
+    (!provider) { ... }`. Nothing re-parses when the lookup already
+    succeeds.
+  - **Second attempt (a real bug, but not this one): `gsettings` was
+    silently failing outright.** This machine had zero
+    `gschemas.compiled` anywhere (`programs.dconf.enable` only installs
+    the `dconf` binary, never `gsettings-desktop-schemas`), so every
+    `gsettings` call in the post_hook failed before doing anything,
+    behind its own `2>/dev/null`. Genuinely fixed -
+    `GSETTINGS_SCHEMA_DIR` in [Host.nix](core.md#moduleshostsnamehostnix)
+    - but fixing a broken call doesn't help when the call it enables was
+    never going to work anyway.
+  - **Third attempt: a genuinely new theme name every run.** Confirmed
+    against an independent, far more thorough project solving the same
+    problem ([arqueon/dms-theme-sync](https://github.com/arqueon/dms-theme-sync)):
+    a real *value change* to `gtk-theme` - not a same-name toggle - is
+    the one channel GTK3 has always watched live, the same mechanism
+    manual GNOME theme switching has used since before Wayland existed.
+    `gtkLiveReloadScript` in `Baseline.nix` builds a fresh, timestamped
+    theme directory every matugen run - a name
+    `gtk_css_provider_get_named()` has never seen, guaranteeing a cache
+    miss - whose `gtk.css`/`gtk-dark.css` `@import` real `adw-gtk3`
+    styling first, then `dank-colors.css` last so its accent overrides
+    win. This part is correct and still stands.
+  - **What the third attempt missed: `@define-color` resolution is
+    cascade-wide, not scoped to whichever provider defines it.**
+    Confirmed directly in GTK3's own `gtkstylecascade.c`
+    (`gtk_style_cascade_get_color`): a symbolic color lookup walks
+    *every* provider in the cascade, highest-priority first, and returns
+    the first match - a genuine global symbol table, not a per-provider
+    one. `~/.config/gtk-3.0/gtk.css` loads once at each process's own
+    startup at `PRIORITY_USER` - and at the time, this repo had it
+    `@import`ing `dank-colors.css` directly, the same convention
+    `gtk-4.0/gtk.css` already used. That put a frozen, once-loaded copy
+    of every accent color name at the *highest* priority in the cascade
+    - outranking the rotating theme's own `PRIORITY_SETTINGS` provider
+    for every name they both define. The rotating-theme mechanism was
+    doing everything right - correct file, correct precedence, correct
+    cache-miss, confirmed portal backend - and still couldn't win,
+    because a higher-priority provider had already claimed those color
+    names and would keep winning the lookup for the rest of that
+    process's life, no matter how many times the theme name changed.
+    This is exactly why GTK4 (fixed first) and GTK3/Lutris (still frozen)
+    read as two different problems when they were actually the same
+    mechanism failing for two different reasons.
+  - **The actual fix: `~/.config/gtk-3.0/gtk.css` now defines zero
+    colors.** No `dank-colors.css` import, nothing - an empty file,
+    declared explicitly (not left undeclared) so home-manager keeps it
+    in a known, controlled state on every rebuild, since a stale
+    hand-made symlink at this exact path is what caused this in the
+    first place. With no higher-priority provider claiming those color
+    names, the rotating theme's own colors are free to win the cascade
+    lookup on their own merits. `gtk-4.0/gtk.css` is unaffected by any
+    of this - libadwaita doesn't use the same named-theme cache GTK3
+    does, so there was never a competing PRIORITY_USER color to conflict
+    with, and it still imports `dank-colors.css` so a freshly-launched
+    GTK4 app has something to read.
+  - **Checked this empirically, not just from source.** A small
+    PyGObject script adding two real `Gtk.CssProvider`s to a real
+    `Gtk.StyleContext`, one at each priority, both defining
+    `accent_bg_color` differently, then asking GTK itself to resolve it
+    via `lookup_color()`. With the old behavior reproduced (PRIORITY_USER
+    defines the color), GTK resolved it to the PRIORITY_USER value every
+    time regardless of what PRIORITY_SETTINGS said - confirming the
+    poisoning was real, not a misreading of `gtkstylecascade.c`. With
+    `gtk.css` empty, GTK resolved it to the PRIORITY_SETTINGS value
+    instead - confirming the fix.
+  - **Settled empirically what the documented matugen recipe can and
+    can't do.** [matugen-themes#161](https://github.com/InioX/matugen-themes/pull/161)
+    ships a far more complete GTK theme (a 50-var gtk3 color template and
+    a 121-var gtk4 one, plus full 6251/9973-line stylesheets, versus the
+    20 `@define-color`s this repo generated before). Both of its documented
+    layouts put the colors in `~/.config/gtk-{3,4}.0/gtk.css` via
+    `@import 'colors.css'`. Tested that layout directly with PyGObject
+    against real GTK3, resolving a probe color at each step: after init
+    `#111111`; after **rewriting the file on disk**, still `#111111`;
+    after the recipe's own `gtk-theme ""` → `adw-gtk3-{{mode}}` toggle,
+    still `#111111`; after switching to a **brand-new, never-seen theme
+    name**, still `#111111`. So `~/.config/gtk-3.0/gtk.css` is read once
+    at process start and never again - not by a file rewrite, not by the
+    documented toggle, not even by a cache-missing theme change. That
+    upstream layout is about theming *completeness*, not liveness: new
+    apps get new colors, already-open ones never do.
+  - **So the two are complementary, and this repo takes both halves.**
+    The vendored theme (`modules/desktop/vendor/matugen-gtk/`, MIT, see
+    its README) supplies completeness; the rotating theme supplies
+    liveness. GTK4 follows upstream's layout exactly - the full
+    `gtk4.css` as `~/.config/gtk-4.0/gtk.css`, its 121-var `colors.css`
+    beside it, and the proven `{{mode}}` color-scheme post_hook, since
+    libadwaita's re-render is a different code path that does work. GTK3
+    deliberately does *not*: the full `gtk3.css` is copied into each
+    rotating theme directory instead, with the freshly rendered colors
+    written next to it as `colors.css` - which works untouched because
+    the stylesheet's own first line is a **relative**
+    `@import url("colors.css")`, so it resolves inside the theme dir with
+    no path rewriting. The gtk3 color template renders to
+    `~/.cache/vayori/gtk3-colors.css`, deliberately *not* into
+    `~/.config/gtk-3.0/`, so nothing is ever tempted to `@import` it from
+    the PRIORITY_USER file and re-introduce the shadowing bug.
+  - **Verified the whole GTK3 chain end-to-end against real GTK**, not
+    just that it builds: ran the generated reload script against a
+    scratch `$HOME` with known probe colors, then asked GTK itself to
+    resolve them after switching to the theme the script had just
+    created. `primary` resolved to `rgb(255,0,255)` and `surface` to
+    `rgb(18,52,86)` - exactly the values written into that run's
+    `colors.css` - where both had been unset beforehand. Theme creation,
+    the named-theme lookup, the relative import, and color resolution all
+    confirmed working together, with no CSS parse warnings from the
+    171KB stylesheet.
+  - **Still not verified against an actual live GTK window.** Every
+    piece up to this point - script executes, correct file precedence,
+    correct pruning across repeated runs, valid shell syntax, and now
+    the cascade-priority conflict itself - was checked directly against
+    real source and real builds. Whether the portal genuinely forwards
+    the theme-name-change notification on this exact setup, and whether
+    an already-open Lutris window actually repaints, can only be
+    confirmed by watching it happen in a real session.
+  - **GTK4 does not get the theme-name trick.** libadwaita ignores the
+    legacy `gtk-theme` key entirely for styling - confirmed independently
+    by dms-theme-sync's own "Limits" section. It gets the portal
+    color-scheme toggle instead (default off then back to whatever it
+    was), a different, genuinely-watched code path - real, and does
+    force a re-render, confirmed against dms-theme-sync's own stated
+    limits for what that channel can and can't do.
 - **Qt theming deliberately has no separate style override set.** An
   earlier version forced every Qt app onto a totally different theming
   engine regardless of the palette settings below, and matugen has no
@@ -607,42 +747,19 @@ opt-in pick, it's just part of what this desktop *is*.
   *at* it - same "updates an existing setup, doesn't install one" pattern
   as everywhere else DMS integrates with something. This pointer is the
   one-time setup matugen assumes is already in place.
-- **Papirus lives as a real, writable per-user copy, not the read-only
-  Nix package directly.** The tool that recolors Papirus's folder icons
-  to match the current accent needs to actually rewrite files in place,
-  which it can't do against a read-only store path - confirmed by
-  reading its actual script. Conveniently, that same script checks the
-  user's own icon directory before any system one, so this writable copy
-  just wins automatically with zero conflict. Copied with `rsync
-  --delete`, not a full recursive delete-and-recopy, so a version bump
-  only transfers what actually changed instead of recopying roughly
-  300,000 files from scratch every time - checked this for real against
-  the actual rendered command, not just eyeballed the intent.
-- **Folder color-matching** uses matugen's own real, documented support
-  for driving that recoloring tool - checked against the installed
-  matugen binary directly, these aren't repo-specific hacks. It picks
-  whichever preset color is closest to the current accent and runs the
-  recoloring tool with it, no `sudo` needed since it's editing the
-  writable copy directly as the regular user.
-- **The recoloring tool's own `-u` (update icon caches) flag was
-  silently doing nothing.** Checked its actual script: `-u` shells out to
-  `gtk-update-icon-cache`, a `gtk3` binary this repo never installed
-  anywhere - `papirus-folders` itself doesn't depend on it (confirmed via
-  `nix why-depends`), so it was missing from `$PATH` entirely. The
-  recoloring itself was working the whole time - the underlying icon
-  files really were getting rewritten - but with nothing ever
-  invalidating the cached icon index, every app (Nautilus very much
-  included) just kept reading the stale one forever. `pkgs.gtk3` added
-  alongside `papirus-folders`, scoped to the same Papirus-only block.
-- **Nautilus's own window chrome not updating live is a separate,
-  GTK4-specific gap, not this same bug.** The CSS-import mechanism above
-  is real and does work, but modern libadwaita (GTK4) deliberately
-  doesn't hot-reload from a plain CSS re-import the way GTK3 apps do -
-  DMS's own upstream source confirms this in a comment, and ships a
-  specific fix for it (a deliberate color-scheme toggle-and-restore
-  round trip) that's opt-in behind an environment variable, off by
-  default. See [Dms.nix](#modulesdesktopdmsnix) for where that gets
-  turned on.
+- **Papirus and its accent-matched folder recoloring were removed.**
+  The recoloring tool (`papirus-folders`) needed a writable per-user copy
+  of the whole icon set (rsync'd out of the read-only store, ~300,000
+  files) rebuilt on every activation - that copy was the direct cause of
+  the 1-2 minute boot stall traced down earlier (see
+  [Users.nix](core.md#modulescoreusersnix)): the rsync routinely
+  exceeded `TimeoutStartSec`, which killed the whole activation partway
+  through and skipped everything after it, including the step that
+  seeds DMS's wallpaper state. `iconTheme` is `Adwaita` now
+  (`pkgs.adwaita-icon-theme`, already a system package) - no writable
+  copy, no per-boot rsync, no accent-matched folder colors. If that
+  trade is ever worth revisiting, the old mechanism is intact in git
+  history on the commit before this removal.
 
 ---
 

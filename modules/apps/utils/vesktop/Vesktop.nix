@@ -1,6 +1,9 @@
 {
-  flake.homeModules.apps.Vesktop = { pkgs, lib, vayoriTheme, ... }:
+  flake.homeModules.apps.Vesktop = { self, pkgs, lib, config, vayoriTheme, ... }:
   let
+    discordTemplate =
+      lib.replaceStrings [ "@@FONT@@" ] [ vayoriTheme.font ] self.matugenTemplates.discord;
+
     vesktopSettings = {
       discordBranch = "stable";
       minimizeToTray = true;
@@ -246,18 +249,22 @@
       vencord.settings = vencordSettings // { plugins = vencordPlugins; };
     };
 
+    home.file.".config/matugen/templates/vayori-discord.css".text = discordTemplate;
+
+    vayori.matugenTemplates.vesktop = ''
+      [templates.vesktop]
+      input_path = '${config.home.homeDirectory}/.config/matugen/templates/vayori-discord.css'
+      output_path = '${config.home.homeDirectory}/.config/vesktop/themes/vayori-discord.css'
+    '';
+
     home.activation.applyDmsVesktopTheme =
       let
         quickCss = pkgs.writeText "vesktop-quickcss" ''
-          @import url("../themes/dank-discord.css");
-
-          :root {
-            --font: "${vayoriTheme.font}", sans-serif !important;
-          }
+          @import url("../themes/vayori-discord.css");
         '';
       in
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        run mkdir -p "$HOME/.config/vesktop/settings"
+        run mkdir -p "$HOME/.config/vesktop/settings" "$HOME/.config/vesktop/themes"
         run install -m 644 "${quickCss}" "$HOME/.config/vesktop/settings/quickCss.css"
       '';
   };

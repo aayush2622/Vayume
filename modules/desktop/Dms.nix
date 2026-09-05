@@ -113,13 +113,26 @@
           );
 
       home-manager.users = lib.genAttrs (builtins.attrNames config.vayori.users) (
-        name: { pkgs, lib, ... }: {
+        name: { pkgs, lib, config, ... }: {
           imports = [
             inputs.dms.homeModules.dank-material-shell
             inputs.dms-plugin-registry.nixosModules.default
           ];
-          home.packages = [ materialOSIcons ];
+          home.packages = [ materialOSIcons pkgs.swayidle ];
           home.sessionVariables.QS_ICON_THEME = "MaterialOS";
+
+          systemd.user.services.vayori-idle-lock = {
+            Unit = {
+              Description = "Lock the screen after 10 minutes idle";
+              After = [ "graphical-session.target" ];
+              PartOf = [ "graphical-session.target" ];
+            };
+            Service = {
+              ExecStart = "${pkgs.swayidle}/bin/swayidle -w timeout 600 '${config.programs.dank-material-shell.package}/bin/dms ipc call lock lock'";
+              Restart = "on-failure";
+            };
+            Install.WantedBy = [ "graphical-session.target" ];
+          };
           xdg.configFile = {
             "DankMaterialShell/settings.json".force = true;
             "DankMaterialShell/plugin_settings.json".force = true;
@@ -255,6 +268,10 @@
               cornerRadius = 12;
 
               useAutoLocation = true;
+
+              lockBeforeSuspend = true;
+
+              matugenTemplateZenBrowser = false;
 
               blurEnabled = true;
 

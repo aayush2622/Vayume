@@ -1,0 +1,337 @@
+/**
+ * Oxocarbon by Adolar0042 (based on refact0r's Midnight), repalettised to
+ * matugen. Structure and selectors are upstream's; only the base00-base28
+ * palette below is generated. See vendor/README.md.
+*/
+
+@import url("https://refact0r.github.io/midnight-discord/build/midnight.css");
+
+@import url("https://nspc911.github.io/themes/vencord/RefreshedSeamlessChatBar.theme.css");
+:root {
+    --rscb-chat-box-padding: 8px;
+}
+
+:root,
+body {
+    --spacing: 16px;
+    --custom-dms-icon: off;
+
+    --app-font: "@@FONT@@", "gg sans", sans-serif;
+    --code-font: "@@FONT@@", monospace;
+    --font-primary: var(--app-font);
+    --font-display: var(--app-font);
+    --font-headline: var(--app-font);
+    --font-code: var(--code-font);
+
+    --base00: {{colors.surface.default.hex}};
+    --base01: {{colors.surface_container.default.hex}};
+    --base02: {{colors.surface_container_high.default.hex}};
+    --base03: {{colors.outline.default.hex}};
+    --base04: {{colors.on_surface_variant.default.hex}};
+    --base05: {{colors.on_surface.default.hex}};
+    --base06: {{colors.on_surface.default.hex}};
+    --base07: {{colors.secondary.default.hex}};
+    --base08: {{colors.secondary_fixed_dim.default.hex}};
+    --base09: {{colors.tertiary.default.hex}};
+    --base0A: {{colors.error.default.hex}};
+    --base0B: {{colors.secondary.default.hex}};
+    --base0C: {{colors.tertiary_fixed_dim.default.hex}};
+    --base0D: {{colors.secondary.default.hex}};
+    --base0E: {{colors.primary.default.hex}};
+    --base0F: {{colors.tertiary.default.hex}};
+
+    --base10: {{colors.inverse_surface.default.hex}};
+    --base11: {{colors.surface_bright.default.hex}};
+    --base12: {{colors.outline_variant.default.hex}};
+    --base13: {{colors.surface_container_lowest.default.hex}};
+    --base14: {{colors.surface_container_low.default.hex}};
+    --base15: {{colors.surface_container_high.default.hex}};
+    --base16: {{colors.outline.default.hex}};
+    --base17: {{colors.secondary.default.hex}};
+    --base18: {{colors.tertiary_fixed_dim.default.hex}};
+    --base19: {{colors.error.default.hex}};
+    --base1A: {{colors.tertiary.default.hex}};
+    --base1B: {{colors.primary.default.hex}};
+    --base1C: {{colors.primary_fixed_dim.default.hex}};
+    --base1D: {{colors.secondary.default.hex}};
+    --base1E: {{colors.primary.default.hex}};
+    --base1F: {{colors.surface_variant.default.hex}};
+
+    --base20: {{colors.error.default.hex}};
+    --base21: {{colors.secondary.default.hex}};
+    --base22: {{colors.tertiary.default.hex}};
+    --base23: {{colors.secondary_fixed_dim.default.hex}};
+    --base24: {{colors.tertiary_fixed_dim.default.hex}};
+    --base25: {{colors.secondary_fixed_dim.default.hex}};
+    --base26: {{colors.tertiary.default.hex}};
+    --base27: {{colors.tertiary_fixed_dim.default.hex}};
+    --base28: {{colors.surface_container_lowest.default.hex}};
+
+    /* text colors */
+    --text-0: var(--bg-4);
+    --text-1: var(--base06);
+    --text-2: var(--base06);
+    --text-3: var(--base06);
+    --text-4: var(--base04);
+    --text-5: var(--base03);
+
+    /* background and dark colors */
+    --bg-1: var(--base03);
+    --bg-2: var(--base01);
+    --bg-3: var(--base28, var(--base01));
+    --bg-4: var(--base00);
+    --hover: rgba(from var(--base03) r g b / 0.1);
+    --active: rgba(from var(--base03) r g b / 0.2);
+    --active-2: rgba(from var(--base03) r g b / 0.3);
+    --message-hover: rgba(0, 0, 0, 0.1);
+
+    /* accent colors */
+    --accent-1: var(--base09);
+    --accent-2: var(--base0E);
+    --accent-3: var(--base0E);
+    --accent-4: var(--base0E);
+    --accent-5: var(--base0A);
+    --accent-new: var(--base0A);
+    --mention: color-mix(in hsl, var(--base0E), transparent 90%);
+    --mention-hover: color-mix(
+        in hsl,
+        color-mix(in hsl, var(--base0E), var(--base00) 30%),
+        transparent 90%
+    );
+    --reply: color-mix(in hsl, var(--base09), transparent 90%);
+    --reply-hover: color-mix(in hsl, var(--base09), transparent 95%);
+
+    /* status indicator colors */
+    --online: var(--base0D);
+    --dnd: var(--base20, var(--base0A));
+    --idle: var(--base27, var(--base0F));
+    --streaming: var(--base0E);
+    --offline: var(--base03);
+
+    /* border colors */
+    --border-light: #00000000;
+    --border: #00000000;
+    --button-border: #00000000;
+
+    /* base colors */
+    --red-1: var(--base20, var(--base0A));
+    --red-2: var(--base20, var(--base0A));
+    --red-3: var(--base20, var(--base0A));
+    --red-4: var(--base20, var(--base0A));
+    --red-5: var(--base20, var(--base0A));
+
+    --green-1: var(--base0D);
+    --green-2: var(--base0D);
+    --green-3: var(--base0D);
+    --green-4: var(--base0D);
+    --green-5: var(--base0D);
+
+    --blue-1: var(--base0B);
+    --blue-2: var(--base0B);
+    --blue-3: var(--base0B);
+    --blue-4: var(--base0B);
+    --blue-5: var(--base0B);
+
+    --yellow-1: var(--base26, var(--base0F));
+    --yellow-2: var(--base26, var(--base0F));
+    --yellow-3: var(--base26, var(--base0F));
+    --yellow-4: var(--base26, var(--base0F));
+    --yellow-5: var(--base26, var(--base0F));
+
+    --purple-1: var(--base0E);
+    --purple-2: var(--base0E);
+    --purple-3: var(--base0E);
+    --purple-4: var(--base0E);
+    --purple-5: var(--base0E);
+
+    --radius-none: 0px;
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-xxl: 32px;
+    --radius-round: 2147483647px;
+
+    /* Fixes */
+    --brand-560: var(--base0E);
+    --brand-260: var(--base0A);
+    --card-secondary-bg: transparent;
+}
+
+/* Startup backgrounds */
+#app-mount,
+body,
+.container_a2f514 {
+    background-color: var(--bg-3);
+}
+
+.inlineCode_ada32f {
+    font-size: 100%;
+}
+
+.custom-profile-theme,
+div[aria-label="Add custom status"] {
+    --text-muted: #fff !important;
+    --interactive-normal: #fff;
+    --white-500: #fff !important;
+}
+
+/* Reply to status message box */
+div[role="dialog"] > div.container_b1f01d.biteSize_b1f01d.status_b1f01d {
+    margin-left: var(--spacing);
+    --bg-base-primary: var(--input-background);
+}
+
+/* Ads and other annoying trash */
+div[aria-label="Give a Gift"],
+div[aria-label="Send a gift"],
+div:has(>div[aria-label="Apps"]),
+.channelAppLauncher_e6e74f,
+#channel-attach-SLASH_COMMAND,
+li[data-author-username="Guild Boost Upsell"],
+.wrapper__11054,
+.mask__0d616,
+.container__4413f,
+.wrapper__0d616 .wrapperVisible__0d616,
+._00943886e1cf89d1-body:has(._1d8687673afa90a1-promotedTag),
+.container__675e5,
+.container__4bbc6,
+ul[aria-label="Direct Messages"] > .sectionDivider__35e86:nth-of-type(3),
+div[aria-label="Edit Image with Apps"] {
+    display: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Quest Ad below playing game in active now */
+.body__00943 {
+    .wrapper__960df,
+    .separator__00943 {
+        display: none !important;
+    }
+    .section__00943 {
+        border-radius: 8px !important;
+    }
+}
+
+/* Annoying ass chat gradient */
+.formWithLoadedChatInput_f75fb0:before {
+    display: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+}
+.messagesWrapper__36d07,
+.scroller__36d07 {
+    mask: none !important;
+}
+
+/* Annoying ass channel/server gradient */
+.wrapper_ef3116 {
+    mask: none !important;
+}
+
+/*               Visual refresh stuff               */
+/* ================================================ */
+
+.base_c48ade,
+.base__5e434,
+.c38106a3f0c3ca76-bar {
+    --custom-app-top-bar-height: var(--spacing);
+    .trailing_c38106,
+    .bar_c38106,
+    .title_c38106,
+    .c38106a3f0c3ca76-title,
+    .c38106a3f0c3ca76-trailing {
+        display: none !important;
+        --gap: 0px !important;
+    }
+}
+
+.vc-betterFolders-sidebar-grid {
+    --custom-app-top-bar-height: var(--spacing);
+}
+
+div[class^="chat"]
+    > div[class^="content-"]
+    main[class^="chatContent-"]
+    + div[class^="container-"] {
+    background-color: var(--background-secondary);
+}
+
+.base_c48ade:has(.winButtons_c38106) .toolbar__9293f {
+    padding-right: 0px;
+}
+
+.visual-refresh {
+    --accent-new: var(--accent-5);
+
+    body,
+    .theme-dark {
+        --font: var(--app-font);
+        --channels-default: var(--base04);
+        --gap: var(--spacing);
+    }
+
+    /* Profile Fixes */
+    .outer_c0bea0 {
+        border: none;
+    }
+    .profileEffects__01370 > .inner__01370 {
+        border-radius: var(--radius-lg);
+    }
+
+    /* Area above message box (users typing, slowmode message) */
+    .base_b88801 {
+        top: -24px;
+    }
+
+    .replying__5126c:before {
+        background-color: var(--base09) !important;
+    }
+
+    /* Download Apps and Discover Buttons */
+    .scroller_ef3116 > .listItem__650eb > .listItemWrapper__91816 {
+        display: none;
+    }
+
+    .folderIconWrapper__48112 > .closedFolderIconWrapper__48112 {
+        display: none;
+    }
+
+    /* Round Server Icons */
+    .listItem__650eb > span {
+        > div:not(.selected_e5445c)
+        > .wrapper_cc5dd2
+        > svg
+        > foreignObject
+        > div:not(.folderButtonInner__48112) {
+            clip-path: circle(50% at 50% 50%);
+        }
+    }
+    ._650eb104245d257b-listItem > span {
+        div:not(.e5445cbd3ad226f2-selected)
+            > div
+            > svg
+            > foreignObject
+            > div:not(._48112cbe77dc5022-folderButtonInner) {
+            clip-path: circle(50% at 50% 50%);
+        }
+    }
+
+    /* Attachment Area */
+    .channelAttachmentArea_b77158 {
+        background-color: var(--bg-3);
+    }
+
+    /* Send Button */
+    .activeButtonChild_aa63ab {
+        color: var(--base0A);
+    }
+
+    /* Text input areas */
+    .channelTextArea__74017 {
+        background-color: var(--bg-3);
+    }
+}

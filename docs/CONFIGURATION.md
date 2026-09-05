@@ -25,6 +25,7 @@ deep dive.
 **Desktop**
 - [desktop/Dms.nix](desktop.md#modulesdesktopdmsnix)
 - [desktop/Niri.nix](desktop.md#modulesdesktopnirinix)
+- [desktop/Hyprland.nix](desktop.md#modulesdesktophyprlandnix)
 - [desktop/Fonts.nix / Portals.nix](desktop.md#modulesdesktopfontsnix--portalsnix)
 - [desktop/Baseline.nix](desktop.md#modulesdesktopbaselinenix)
 - [desktop/Matugen.nix](desktop.md#modulesdesktopmatugennix)
@@ -50,8 +51,10 @@ deep dive.
 - [apps/utils/spicetify/Spicetify.nix](apps-utils.md#modulesappsutilsspicetifyspicetifynix)
 - [apps/utils/nautilus/Nautilus.nix](apps-utils.md#modulesappsutilsnautilusnautilusnix)
 - [apps/utils/bitwarden/Bitwarden.nix](apps-utils.md#modulesappsutilsbitwardenbitwardennix)
+- [apps/utils/stateBackup/StateBackup.nix](apps-utils.md#modulesappsutilsstatebackupstatebackupnix)
 - [apps/utils/terminal/Terminal.nix](apps-utils.md#modulesappsutilsterminalterminalnix)
 - [apps/utils/vesktop/Vesktop.nix](apps-utils.md#modulesappsutilsvesktopvesktopnix)
+- [apps/utils/distrobox/Distrobox.nix](apps-utils.md#modulesappsutilsdistroboxdistroboxnix)
 
 ---
 

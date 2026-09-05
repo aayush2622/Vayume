@@ -44,8 +44,9 @@ If this saves you an evening, a star costs nothing. ⭐
 
 - **Desktop** - niri (config wrapped declaratively via
   [nix-wrapper-modules](https://github.com/BirdeeHub/nix-wrapper-modules)),
-  DMS for bar/launcher/notifications/lock, a themed SDDM greeter + GRUB,
-  kitty/zsh with fastfetch.
+  Hyprland as a second, always-available option picked per-login at the
+  greeter, DMS for bar/launcher/notifications/lock, a themed SDDM greeter
+  + GRUB, kitty/zsh with fastfetch.
 - **Dev** - VS Code, Android Studio, and Zed, all pre-configured; seven
   language toggles that install tooling *and* tell all three editors what
   to install for it; [Free Claude Code](https://github.com/Alishahryar1/free-claude-code)
@@ -53,7 +54,9 @@ If this saves you an evening, a star costs nothing. ⭐
 - **Gaming** - Steam, Lutris + Heroic, GE-Proton, MangoHud, all color-matched
   too.
 - **Everything else** - Zen Browser, Nautilus, Spicetify, Bitwarden, Vesktop,
-  an ASUS control widget - all opt-in per machine under `modules/apps/`.
+  an ASUS control widget, native AppImage support, an isolated Distrobox
+  escape hatch for the genuinely Ubuntu-only tail - all opt-in per machine
+  under `modules/apps/`.
 
 ## Prerequisites
 
@@ -200,7 +203,7 @@ Full list in [modules/desktop/Niri.nix](modules/desktop/Niri.nix).
 | [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) | bar, launcher, lock, theming |
 | [matugen](https://github.com/InioX/matugen) | the color engine behind all of it |
 | [home-manager](https://github.com/nix-community/home-manager) · [flake-parts](https://flake.parts/) · [import-tree](https://github.com/vic/import-tree) | the Nix plumbing |
-| [Bibata](https://github.com/ful1e5/Bibata_Cursor) · [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme) · [Catppuccin](https://github.com/catppuccin) | cursor/icons/editor theme |
+| [Bibata](https://github.com/ful1e5/Bibata_Cursor) · [Catppuccin](https://github.com/catppuccin) | cursor/editor theme |
 | [Free Claude Code](https://github.com/Alishahryar1/free-claude-code) · [WakaTime](https://wakatime.com/) | the dev-editor integrations |
 | [Vencord](https://github.com/Vendicated/Vencord) · [DankAsusControl](https://github.com/shazzaam7/DankAsusControl) | Discord mods, ASUS widget |
 

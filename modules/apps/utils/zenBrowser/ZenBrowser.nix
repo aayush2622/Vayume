@@ -293,9 +293,9 @@ in {
 
       if [ -f "$PROFILE_DIR/times.json" ]; then
         run mkdir -p "$PROFILE_DIR/chrome"
-        run ${pkgs.coreutils}/bin/cp -f ${zenUserChrome} "$PROFILE_DIR/chrome/userChrome.css"
+        run ${pkgs.coreutils}/bin/cp --remove-destination ${zenUserChrome} "$PROFILE_DIR/chrome/userChrome.css"
         run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/userChrome.css"
-        run ${pkgs.coreutils}/bin/cp -f ${zenUserContent} "$PROFILE_DIR/chrome/userContent.css"
+        run ${pkgs.coreutils}/bin/cp --remove-destination ${zenUserContent} "$PROFILE_DIR/chrome/userContent.css"
         run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/userContent.css"
 
         run mkdir -p "$PROFILE_DIR/chrome/utils"

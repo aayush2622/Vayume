@@ -66,6 +66,48 @@ It gets reused and re-synced on every rebuild.
   Editor flow above - not something a `home.activation` script can
   trigger from outside the running browser. A new window (or restart)
   is what actually picks up the new colors.
+- **What the bridge changes about all of the above.** Everything in that
+  finding is still true *for a stylesheet that gets rewritten on disk* -
+  which is exactly what DMS's own zenbrowser matugen template does. The
+  vendored `matugen-bridge.uc.js` sidesteps the limitation instead of
+  solving it: it never asks Zen to reread a file, it sets the
+  `--matugen-*` custom properties as **inline style on
+  `document.documentElement`** from privileged chrome JS. Inline custom
+  properties are live - every `var(--matugen-*)` in the already-parsed
+  `userChrome.css` re-resolves against the new value with no reload. So
+  live chrome theming does work here, just not by the route the sources
+  above (correctly) rule out.
+- **Which makes *who owns `userChrome.css`* the thing that actually
+  matters - and DMS was winning it.** Symptom: content/websites retinted
+  live, but tab bar, toolbar, URL bar and sidebar stayed frozen. The
+  bridge wasn't at fault - its own log
+  (`~/.zen/default/chrome/matugen-bridge.log`) said `Wrote 8 prefs` /
+  `Applied 8 vars to chrome :root` on every change, no errors, and the
+  six distinct `var(--matugen-*)` names the chrome CSS consumes are all
+  within those eight. The actual cause was two separate bugs stacking:
+  1. **DMS owned the file.** Its `matugenTemplateZenBrowser` setting
+     (defaults `true`) writes `~/.config/DankMaterialShell/zen.css` and
+     makes `userChrome.css` a *symlink* to it. That file hardcodes hex
+     with `!important` onto Zen's own native variables
+     (`--zen-primary-color`, `--toolbar-color`, `--sidebar-text-color`)
+     and references no `--matugen-*` var at all - so the sheet Zen
+     actually loaded was structurally incapable of live-updating, and
+     the vendored zen-wabi CSS was never being loaded at all.
+     Now `false` in [Dms.nix](desktop.md#modulesdesktopdmsnix), which
+     adds `zenbrowser` to matugen's `--skip-templates` (confirmed in
+     DMS's own `Common/Theme.qml`, not assumed).
+  2. **`cp -f` writes *through* a symlink.** The activation deployed the
+     vendored file with `cp -f`, which follows the symlink and
+     overwrites its *target* rather than replacing the link - so it was
+     silently clobbering DMS's `zen.css` with zen-wabi's content, DMS
+     regenerated that file on the next theme change, and the symlink
+     survived untouched the whole time. Both CSS deployments now use
+     `cp --remove-destination`, which unlinks first so a real file lands
+     at the path.
+
+  Because `userChrome.css` is still only *parsed* at startup, Zen needs
+  one restart after the rebuild that lands this; from then on the
+  bridge's inline vars carry every subsequent theme change live.
 - **First-run bootstrap**: if the profile doesn't exist, the script runs
   Zen's own `-CreateProfile` command. That command still tries to talk to
   GTK even with no window to show, so it fails with "no DISPLAY" if run
