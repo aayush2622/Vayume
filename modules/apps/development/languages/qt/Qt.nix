@@ -5,10 +5,15 @@
         { publisher = "theqtcompany"; name = "qt-core"; }
         { publisher = "theqtcompany"; name = "qt-qml"; }
       ];
-      settings = {
+      settings = pkgs: {
         "qt-qml.qmlls.useQmlImportPathEnvVar" = true;
+        "qt-qml.qmlls.customExePath" = "${pkgs.kdePackages.qtdeclarative}/bin/qmlls";
+        "qt-qml.doNotAskForQmllsDownload" = true;
         "qt-core.additionalQtPaths" = [
-          { name = "Qt-5.15.18-linux-g++_from_PATH"; path = "/usr/bin/qmake"; }
+          {
+            name = "Qt-${pkgs.kdePackages.qtbase.version}-nixpkgs";
+            path = "${pkgs.kdePackages.qtbase}/bin/qmake6";
+          }
         ];
       };
     };

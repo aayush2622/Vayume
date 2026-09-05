@@ -32,7 +32,9 @@ in {
     languageManualExtensions =
       lib.concatMap (v: v.manualExtensions or [ ]) languageVscode;
     languageSettings =
-      lib.foldl' lib.recursiveUpdate { } (map (v: v.settings or { }) languageVscode);
+      lib.foldl' lib.recursiveUpdate { } (map
+        (v: let s = v.settings or { }; in if lib.isFunction s then s pkgs else s)
+        languageVscode);
 
     nixpkgsExtensions = with pkgs.vscode-extensions; [
       anthropic.claude-code

@@ -94,7 +94,69 @@ in {
         ${src} > $out
     '';
 
-    zenUserChrome = renderWabi "userChrome.css" ./vendor/wabi/userChrome.css.template;
+    zenRadius = "12px";
+    zenRadiusSmall = "8px";
+
+    zenRoundingOverrides = pkgs.writeText "vayori-zen-rounding.css" ''
+
+      /* ---------------------------------------------------------------
+         zen-wabi ships "sharp corners" as a deliberate style choice - all
+         17 of its border-radius rules are `0 !important`, squaring off the
+         tab bar, sidebar, URL bar, toolbar buttons and menus. Appended
+         after it (same specificity, also !important, and later wins) to
+         put the rounding back on the interactive elements, leaving the
+         full-bleed containers square where rounding reads as broken.
+         --------------------------------------------------------------- */
+
+      .tab-background,
+      .tab-stack,
+      .tab-content,
+      #tabbrowser-tabs .tabbrowser-tab[zen-essential="true"],
+      #tabbrowser-tabs .tabbrowser-tab[zen-essential="true"] .tab-background,
+      zen-folder,
+      zen-folder .tab-group-label-container,
+      .tab-group-label,
+      .zen-workspace-tabs-section,
+      .zen-current-workspace-indicator,
+      #zen-workspaces-button {
+        border-radius: ${zenRadius} !important;
+      }
+
+      #urlbar,
+      .urlbar-background,
+      .content-shortcuts,
+      #urlbar-input-container,
+      #urlbar[breakout-extend="true"] > .urlbar-input-container,
+      .urlbar[focused="true"] > .urlbar-input-container,
+      #urlbar[open][zen-floating-urlbar="true"] #urlbar-container,
+      #searchbar,
+      #searchbar .searchbar-textbox {
+        border-radius: ${zenRadius} !important;
+      }
+
+      toolbarbutton,
+      .toolbarbutton-1,
+      .toolbarbutton-icon {
+        border-radius: ${zenRadiusSmall} !important;
+      }
+
+      menupopup,
+      panel,
+      menu,
+      menuitem,
+      #contentAreaContextMenu,
+      #PlacesToolbar menu,
+      #PlacesToolbar menupopup,
+      .tab-context-menu {
+        border-radius: ${zenRadius} !important;
+        --panel-border-radius: ${zenRadius} !important;
+      }
+    '';
+
+    zenUserChrome = pkgs.runCommand "userChrome.css" { } ''
+      cat ${renderWabi "userChrome-base.css" ./vendor/wabi/userChrome.css.template} \
+          ${zenRoundingOverrides} > $out
+    '';
     zenUserContent = renderWabi "userContent.css" ./vendor/wabi/userContent.css.template;
 
     zen-browser = pkgs.wrapFirefox
@@ -136,6 +198,8 @@ in {
       "zen.view.use-single-toolbar" = false;
       "zen.widget.linux.transparency" = true;
       "zen.view.window.scheme" = 0;
+      "zen.theme.border-radius" = 12;
+      "zen.theme.content-element-separation" = 8;
 
       "sidebar.visibility" = "hide-sidebar";
       "sidebar.installed.extensions" = zenSidebarExtensionIds;
