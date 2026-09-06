@@ -231,13 +231,12 @@
 
             (bind "SHIFT + P" (spawn "hyprpicker -a"))
 
-            # Screenshot suite, mirroring niri's Print bindings. hyprshot
-            # copies to the clipboard, saves into ~/Pictures/Screenshots and
-            # fires a notification.
-            (bindBare "PRINT" (spawn "hyprshot -m region -z") { })
+            # Only Shift+Print writes a file. The interactive grabs go to
+            # the clipboard and nowhere else - hyprshot's --clipboard-only.
+            (bindBare "PRINT" (spawn "hyprshot -m region -z --clipboard-only") { })
             (bindBare "SHIFT + PRINT" (spawn "hyprshot -m output") { })
-            (bind "PRINT" (spawn "hyprshot -m window -z"))
-            (bind "SHIFT + S" (spawn "hyprshot -m region -z"))
+            (bind "PRINT" (spawn "hyprshot -m window -z --clipboard-only"))
+            (bind "SHIFT + S" (spawn "hyprshot -m region -z --clipboard-only"))
 
             (bind "CTRL + Right" (lua ''hl.dsp.focus({ workspace = "e+1" })''))
             (bind "CTRL + Left" (lua ''hl.dsp.focus({ workspace = "e-1" })''))

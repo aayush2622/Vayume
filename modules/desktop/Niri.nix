@@ -64,7 +64,9 @@
 
       "Mod+Shift+P" = titled "Pick Color" { spawn = [ "hyprpicker" "-a" ]; };
       "Print".screenshot = _: { };
-      "Shift+Print".screenshot-screen = _: { };
+      "Shift+Print" = titled "Screenshot (save)" {
+        spawn-sh = "mkdir -p \"$HOME/Pictures/Screenshots\" && grim \"$HOME/Pictures/Screenshots/$(date +%Y-%m-%d_%H-%M-%S).png\"";
+      };
       "Mod+Shift+S" = titled "Screenshot (DMS)" { spawn = [ "dms" "ipc" "call" "niri" "screenshot" ]; };
 
       "XF86AudioMute" = titled "Mute Audio" { spawn = [ "dms" "ipc" "call" "audio" "mute" ]; };
@@ -129,6 +131,14 @@
 
       settings = {
         prefer-no-csd = true;
+
+        # Print opens niri's interactive screenshot UI, which has no
+        # per-bind write-to-disk property (only screenshot-screen and
+        # screenshot-window do - checked against niri 26.04's own KDL
+        # parser). Null here is the only lever that stops it writing a
+        # file, so Print becomes clipboard-only and Shift+Print does the
+        # saving explicitly via grim below.
+        screenshot-path = null;
 
         environment = {
           QT_QPA_PLATFORMTHEME = "qt6ct";
