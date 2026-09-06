@@ -2,25 +2,29 @@
 
 <p>
   <img alt="Built with Nix" src="https://img.shields.io/badge/built%20with-Nix-5277C3?logo=nixos&logoColor=white">
-  <img alt="Compositor" src="https://img.shields.io/badge/compositor-niri-blue">
+  <img alt="Compositor" src="https://img.shields.io/badge/compositor-niri%20%2B%20Hyprland-blue">
   <img alt="Shell" src="https://img.shields.io/badge/shell-DankMaterialShell-purple">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
   <a href="https://github.com/aayush2622/Vayori-Rice/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/aayush2622/Vayori-Rice?style=flat&color=yellow"></a>
 </p>
 
-My NixOS setup. [niri](https://github.com/YaLTeR/niri) +
+My NixOS setup. [niri](https://github.com/YaLTeR/niri) and
+[Hyprland](https://hypr.land) side by side - same keybinds, picked at the
+login screen - both driving
 [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell), with a
-wallpaper-matching color theme that's gone a little too far - editors, login
-screen, GRUB, Wine dialogs, all of it. Written with
-[flake-parts](https://flake.parts/) + [import-tree](https://github.com/vic/import-tree),
-so every `.nix` file under `modules/` just gets picked up - no import list to
-maintain.
+wallpaper-matching color theme that's gone a little too far: editors, login
+screen, GRUB, Discord, Wine dialogs, all of it.
+
+Written with [flake-parts](https://flake.parts/) +
+[import-tree](https://github.com/vic/import-tree), so every `.nix` file under
+`modules/` gets picked up automatically - no import list to maintain.
 
 > [!WARNING]
 > This is my actual laptop's config, not a template you run as-is. Real
 > disk UUIDs and login info live in two gitignored files that don't exist
 > until you make them - the build refuses to evaluate without them, on
-> purpose. Two minutes, see [Quick start](#quick-start) below.
+> purpose. Takes two minutes:
+> **[Getting started](docs/getting-started.md)**.
 
 If this saves you an evening, a star costs nothing. ⭐
 
@@ -32,137 +36,108 @@ If this saves you an evening, a star costs nothing. ⭐
   <img src="screenshots/media.png" width="60%">
 </p>
 
-## Contents
-
-[Quick start](#quick-start) · [Secrets](#secrets) ·
-[Your own machine](#using-this-on-your-own-machine) · [Layout](#layout) ·
-[Docs](#documentation) · [Keybinds](#keybinds-niri) · [Credits](#credits)
-
 ---
 
 ## What's in it
 
-- **Desktop** - niri (config wrapped declaratively via
-  [nix-wrapper-modules](https://github.com/BirdeeHub/nix-wrapper-modules)),
-  Hyprland as a second, always-available option picked per-login at the
-  greeter, DMS for bar/launcher/notifications/lock, a themed SDDM greeter
-  + GRUB, kitty/zsh with fastfetch.
-- **Dev** - VS Code, Android Studio, and Zed, all pre-configured; seven
-  language toggles that install tooling *and* tell all three editors what
-  to install for it; [Free Claude Code](https://github.com/Alishahryar1/free-claude-code)
-  for a free-tier model in your CLI/editor.
-- **Gaming** - Steam, Lutris + Heroic, GE-Proton, MangoHud, all color-matched
-  too.
-- **Everything else** - Zen Browser, Nautilus, Spicetify, Bitwarden, Vesktop,
-  an ASUS control widget, native AppImage support, an isolated Distrobox
-  escape hatch for the genuinely Ubuntu-only tail - all opt-in per machine
-  under `modules/apps/`.
+**Desktop** — niri and Hyprland, both always available and swappable at the
+greeter, with matching binds so muscle memory carries over. DMS handles the
+bar, launcher, notifications and lock screen. Themed SDDM greeter and GRUB,
+kitty + zsh with fastfetch.
 
-## Prerequisites
+**Dev** — VS Code, Android Studio and Zed, pre-configured. Seven language
+toggles that install the toolchain *and* tell all three editors what to load
+for it. [Free Claude Code](https://github.com/Alishahryar1/free-claude-code)
+wires a free-tier model into your CLI and editors.
 
-NixOS with flakes enabled, UEFI boot, and `mkpasswd`
-(`nix run nixpkgs#mkpasswd`) for the one password hash you'll need.
+**Gaming** — Steam, Lutris, Heroic, GE-Proton, MangoHud. Color-matched too,
+down to the Wine dialogs.
 
----
+**Everything else** — Zen Browser (chrome-scripted so its theme reloads
+live), Nautilus, Spicetify, Bitwarden, Vesktop, an ASUS control widget,
+native AppImage support, and an isolated Distrobox escape hatch for the
+Ubuntu-only tail.
 
-## Quick start
+Everything under `modules/apps/` is one boolean in `Host.nix`:
 
-```bash
-git clone https://github.com/aayush2622/Vayori-Rice.git vayori
-cd vayori
-cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
-cp modules/hosts/Diablo/_user.nix.example modules/hosts/Diablo/_user.nix
-$EDITOR modules/hosts/Diablo/_user.nix   # at least pick a username
-sudo nixos-rebuild switch --flake path:.#Diablo
+```nix
+vayori.apps = {
+  Vscode.enable = true;
+  Gaming.enable = true;
+  Rust.enable = false;
+};
 ```
-
-`path:.#Diablo`, not `.#Diablo` - see
-[why below](#using-this-on-your-own-machine). Any user without a
-`hashedPassword` logs in with `changeme` - run `passwd` after.
 
 ---
 
 ## Secrets
 
-API keys and the like live directly in `_user.nix`, nested under
-`vayori.users.<name>.secrets` - `<name>` is whichever key you picked for
-yourself in the `vayori.users` block above it (`ash` is this repo
-author's own username, not a reserved name - use your own):
+API keys live in `_user.nix` (gitignored), under
+`vayori.users.<name>.secrets` — `<name>` is whichever key you picked for
+yourself in `vayori.users` above it. `ash` is just this repo author's
+username, not a reserved word:
 
 ```nix
-# modules/hosts/Diablo/_user.nix
-{
-  vayori.users.<yourname>.secrets = {
-    # Read by VS Code, Android Studio, and Zed - installs the WakaTime
-    # extension and writes ~/.wakatime.cfg. Leave it out and none of
-    # that happens; nothing gets configured with a key that would only
-    # fail.
-    WAKATIME_API_KEY = "waka_...";
+vayori.users.<yourname>.secrets = {
+  # VS Code, Android Studio, Zed - installs WakaTime, writes ~/.wakatime.cfg
+  WAKATIME_API_KEY = "waka_...";
 
-    # Read by Bitwarden's rbw client to pre-fill the email prompt.
-    RBW_EMAIL = "you@example.com";
+  # Bitwarden's rbw client, to pre-fill the email prompt
+  RBW_EMAIL = "you@example.com";
 
-    # Open-ended - passed straight through to Free Claude Code as
-    # environment variables, one per provider you actually have a key
-    # for. Any of its supported provider vars work here, not just
-    # this one; a few of the more common ones:
-    PROVIDERS = {
-      NVIDIA_NIM_API_KEY = "nvapi-...";
-      OPENROUTER_API_KEY = "sk-or-...";
-      GROQ_API_KEY = "gsk_...";
-      GEMINI_API_KEY = "...";
-      DEEPSEEK_API_KEY = "sk-...";
-      MISTRAL_API_KEY = "...";
-      TOGETHER_API_KEY = "...";
-      CEREBRAS_API_KEY = "csk-...";
-      FIREWORKS_API_KEY = "fw_...";
-      HUGGINGFACE_API_KEY = "hf_...";
-      COHERE_API_KEY = "...";
-      # Full list: github.com/Alishahryar1/free-claude-code#readme
-    };
+  # Open-ended - each one becomes an env var for Free Claude Code.
+  # Any provider it supports works here; these are the common ones.
+  PROVIDERS = {
+    NVIDIA_NIM_API_KEY = "nvapi-...";
+    OPENROUTER_API_KEY = "sk-or-...";
+    GROQ_API_KEY       = "gsk_...";
+    GEMINI_API_KEY     = "...";
+    DEEPSEEK_API_KEY   = "sk-...";
+    MISTRAL_API_KEY    = "...";
+    TOGETHER_API_KEY   = "...";
+    CEREBRAS_API_KEY   = "csk-...";
+    FIREWORKS_API_KEY  = "fw_...";
+    HUGGINGFACE_API_KEY = "hf_...";
+    COHERE_API_KEY     = "...";
+    # Full list: github.com/Alishahryar1/free-claude-code#readme
   };
-}
+};
 ```
 
-Edit, rebuild, done - no runtime file to seed or re-edit. Leave a key out
-(or the whole `secrets` block) and whatever needed it just doesn't get
-installed, instead of getting configured with a key that would only
-fail. Full shape in [docs/core-users.md](docs/core-users.md).
+Leave a key out — or the whole block — and whatever needed it simply
+doesn't get installed, rather than being configured with a key that would
+only fail. Full shape in [docs/core-users.md](docs/core-users.md).
 
-Everything else (browser profile, editor logins, rbw session) lives under
-one portable folder, `~/.config/vayori/session`, with its own backup CLI:
+Browser profiles, editor logins and the rbw session live in one portable
+folder, `~/.config/vayori/session`, with its own encrypted backup CLI:
 
 ```bash
 vayori-app-state backup ~/vayori-session.enc
 ```
 
-Details in [docs/apps-utils-statebackup.md](docs/apps-utils-statebackup.md).
-
 ---
 
-## Using this on your own machine
+## Keybinds
 
-A host is three files under `modules/hosts/<name>/`: `Host.nix` (apps,
-timezone, bootloader), `_hardware.nix`, `_user.nix` (the last two
-gitignored + required - everything else in that folder is gitignored by
-default too, so anything personal you add later stays untracked with no
-extra `.gitignore` line).
+Same on both compositors. `Mod` is Super.
 
-Build with `path:.#<host>`, not a bare ref - a bare ref resolves through
-git's tracked-files view, which makes the two gitignored files look
-"missing" even though they're right there. `path:` uses the real
-directory as-is.
+| Key | | Key | |
+| --- | --- | --- | --- |
+| `Mod+Return` | terminal | `Mod+Q` / `Alt+F4` | close window |
+| `Mod+E` | files | `Mod+W` | float |
+| `Mod+C` | code | `Mod+F` / `Shift+F11` | fullscreen |
+| `Mod+B` | browser | `Mod+←↑↓→` | focus |
+| `Mod+A` | launcher | `Mod+Shift+←↑↓→` | move window |
+| `Mod+V` | clipboard | `Mod+1`–`0` | workspace |
+| `Mod+Comma` | settings | `Mod+Shift+1`–`0` | send to workspace |
+| `Mod+L` | lock | `Mod+Shift+P` | color picker |
+| `Mod+Shift+W` | wallpapers | `Print` / `Shift+Print` | screenshot |
 
-1. `cp -r modules/hosts/Diablo modules/hosts/<yourhostname>`
-2. `sudo nixos-generate-config --show-hardware-config > modules/hosts/<yourhostname>/_hardware.nix`
-   (drop the Nvidia/Optimus block unless you're also on one)
-3. `cp .../<yourhostname>/_user.nix.example .../<yourhostname>/_user.nix`,
-   fill it in (`mkpasswd -m sha-512` for the hash)
-4. Edit `Host.nix` - rename the host, adjust `vayori.apps`, fix
-   timezone/locale/bootloader
-5. `sudo nixos-rebuild switch --flake path:.#<yourhostname>`
+Hyprland adds mouse-drag move/resize (`Mod`+left/right click), a scratchpad
+on `Mod+S`, and silent workspace moves on `Mod+Alt+1`–`0`.
 
-Full field-by-field shape: [docs/core-users.md](docs/core-users.md).
+Full lists: [Niri.nix](modules/desktop/Niri.nix) ·
+[Hyprland.nix](modules/desktop/Hyprland.nix)
 
 ---
 
@@ -172,59 +147,30 @@ Full field-by-field shape: [docs/core-users.md](docs/core-users.md).
 flake.nix          inputs + import-tree ./modules
 modules/
   core/               flake-parts wiring, the shared user/app framework
-  hosts/<name>/       Host.nix + _hardware.nix + _user.nix (see above)
-  desktop/            niri, DMS, fonts/portals, GTK/Qt baseline, matugen
-  system/             docker/libvirtd, zram, GRUB theme
-  apps/               opt-in per-user modules, picked via vayori.apps
+  hosts/<name>/       Host.nix + _hardware.nix + _user.nix
+  desktop/            niri, Hyprland, DMS, fonts/portals, GTK/Qt, matugen
+  system/             docker/podman, zram, GRUB theme
+  apps/               opt-in per-user modules, toggled in Host.nix
     development/        editors, languages, dev-tools, Free Claude Code
     gaming/             launchers, proton, performance tweaks
     utils/              terminal, browser, everything else
   assets/wallpapers/  default wallpaper set
 ```
 
-## Extending it
-
-**Add a person**: entry in `_user.nix`. **Add an app**: folder under
-`modules/apps/*/` that sets `flake.homeModules.apps.<Name>` - picked up
-automatically. **Add a host**: copy `modules/hosts/Diablo/`. Details on all
-three in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
+**Add a person**: an entry in `_user.nix`. **Add an app**: a folder under
+`modules/apps/*/` setting `flake.homeModules.apps.<Name>` — picked up
+automatically. **Add a host**: copy `modules/hosts/Diablo/`.
 
 ---
 
 ## Documentation
 
-One page per module, in the order you'd meet them setting this up for
-the first time - each ends with a link to the next, so it reads straight
-through like a book, or jump to whichever file you're actually editing.
+[**docs/CONFIGURATION.md**](docs/CONFIGURATION.md) is the index — one page
+per module, in the order you'd meet them, each linking to the next so it
+reads straight through. Start with
+[Getting started](docs/getting-started.md).
 
-**[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** is the index and the
-place to start. It covers, in order: Host.nix → \_hardware.nix → Vm.nix →
-Users.nix → DevLanguages.nix → PluginUpdateCheck.nix, then the desktop
-stack (DMS, Niri, Hyprland, Fonts/Portals, Baseline, Matugen), then
-system infra (Docker, Zram, GRUB theming), then every app under
-`modules/apps/` - editors, languages, gaming, browser, and the rest of
-the utils.
-
-The `.nix` files stay comment-free - all the "why" lives in these pages
-instead.
-
----
-
-## Keybinds (niri)
-
-| Key | Action | Key | Action |
-| --- | --- | --- | --- |
-| `Mod+Return` | terminal | `Mod+Q` / `Alt+F4` | close window |
-| `Mod+E` | file manager | `Mod+F` / `Shift+F11` | fullscreen |
-| `Mod+C` | code | `Mod+W` | toggle floating |
-| `Mod+B` | browser | `Mod+←/→/↑/↓` | focus column/window |
-| `Mod+A` / `Mod+S` | app launcher | `Mod+Shift+←/→/↑/↓` | move column/window |
-| `Mod+V` | clipboard history | `Mod+1`-`0` | switch workspace |
-| `Mod+Comma` | settings | `Mod+Shift+1`-`0` | move to workspace |
-| `Mod+L` | lock | `Mod+Shift+P` | color picker |
-| `Mod+Tab` | overview | `Print` / `Shift+Print` | screenshot |
-
-Full list in [modules/desktop/Niri.nix](modules/desktop/Niri.nix).
+The `.nix` files stay comment-free; all the "why" lives in those pages.
 
 ---
 
@@ -232,7 +178,7 @@ Full list in [modules/desktop/Niri.nix](modules/desktop/Niri.nix).
 
 | Project | For |
 | --- | --- |
-| [niri](https://github.com/YaLTeR/niri) | the compositor |
+| [niri](https://github.com/YaLTeR/niri) · [Hyprland](https://hypr.land) | the compositors |
 | [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) | bar, launcher, lock, theming |
 | [matugen](https://github.com/InioX/matugen) | the color engine behind all of it |
 | [home-manager](https://github.com/nix-community/home-manager) · [flake-parts](https://flake.parts/) · [import-tree](https://github.com/vic/import-tree) | the Nix plumbing |
@@ -249,5 +195,5 @@ Full pinned list: `flake.nix`.
 ## Known caveats
 
 `dankAsusControlCenter` builds fine but hasn't met real ASUS hardware in
-testing yet - see [docs/desktop-dms.md](docs/desktop-dms.md)
-if `asusctl`/`supergfxctl` won't cooperate.
+testing yet — see [docs/desktop-dms.md](docs/desktop-dms.md) if
+`asusctl`/`supergfxctl` won't cooperate.

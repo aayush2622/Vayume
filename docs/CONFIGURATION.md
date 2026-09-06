@@ -6,16 +6,20 @@ you were setting this up for the first time. Each page ends with a link
 to the next one, so you can read straight through like a book, or jump
 straight to the one file you're actually editing.
 
-**New here?** Start at [Host.nix](core-host.md) - it's the file
-everything else in this repo exists to serve, and reading it first makes
-every other page make more sense.
+**New here?** [Getting started](getting-started.md) has the setup - the
+three files a host needs, and how to point this at your own machine.
+After that, [Host.nix](core-host.md) is the file everything else in this
+repo exists to serve, and reading it first makes every other page make
+more sense.
 
-Looking for "how do I add a host/user/app" instead? That's the README's
-[Using this on your own machine](../README.md#using-this-on-your-own-machine)
-and [Extending it](../README.md#extending-it) - the walkthrough, not the
-deep dive.
+Looking for "how do I add a host/user/app" instead? That's
+[Getting started](getting-started.md) - the walkthrough, not the deep
+dive.
 
 ## The whole story, in reading order
+
+**Setup**
+0. [Getting started](getting-started.md)
 
 **Core & hosts** - who this machine is, and who's allowed to use it
 1. [hosts/\<name\>/Host.nix](core-host.md)
@@ -143,4 +147,4 @@ their own - same trick as `_hardware.nix`.
 
 ---
 
-**[Start reading → Host.nix](core-host.md)**
+**[Start reading → Getting started](getting-started.md)**

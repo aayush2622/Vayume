@@ -174,4 +174,4 @@ below.
 
 ---
 
-[Index](CONFIGURATION.md) · [_hardware.nix →](core-hardware.md)
+[← Getting started](getting-started.md) · [Index](CONFIGURATION.md) · [_hardware.nix →](core-hardware.md)
