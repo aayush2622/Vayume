@@ -138,12 +138,24 @@ in {
             settings.foreground = "#e06c75";
           }
           { scope = [ "constant.character.escape" "keyword.operator" "markup.underline.link" "string.regexp" "string.url" ]; settings.foreground = "#56b6c2"; }
-          { scope = [ "entity.name.function" "entity.other.attribute-name.id.css" "meta.function-call.generic" "string.other.link" "support.function" "variable.language.super" ]; settings.foreground = "#61afef"; }
+          {
+            scope = [
+              "entity.name.function" "entity.other.attribute-name.id.css" "meta.function-call.generic"
+              "string.other.link" "support.function" "variable.language.super"
+            ];
+            settings.foreground = "#61afef";
+          }
           { scope = [ "meta.brace" "punctuation.accessor" "punctuation.definition.block" "punctuation.separator" "support.type.property-name.css" ]; settings.foreground = "#abb2bf"; }
           { scope = [ "markup.inline" "markup.quote" "source.ini" "string.other.link.description" "string" ]; settings.foreground = "#98c379"; }
           { scope = [ "comment" ]; settings.foreground = "#5c6370"; }
           { scope = [ "keyword.operator.new" "keyword" "markup.italic" "punctuation.definition.block.tag" "storage.modifier" "storage.type" ]; settings.foreground = "#c678dd"; }
-          { scope = [ "constant" "entity.other.attribute-name" "keyword.operator.quantifier.regexp" "markup.bold" "support.constant" "variable.other.constant" "variable.parameter" ]; settings.foreground = "#d19a66"; }
+          {
+            scope = [
+              "constant" "entity.other.attribute-name" "keyword.operator.quantifier.regexp" "markup.bold"
+              "support.constant" "variable.other.constant" "variable.parameter"
+            ];
+            settings.foreground = "#d19a66";
+          }
           { scope = [ "markup.quote" "markup.italic" ]; settings.fontStyle = "italic"; }
           { scope = [ "heading" "markup.bold" ]; settings.fontStyle = "bold"; }
         ];

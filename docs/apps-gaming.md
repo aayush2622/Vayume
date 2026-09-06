@@ -1,8 +1,8 @@
-# Gaming app reference
-
-[← Back to index](CONFIGURATION.md)
+[Index](CONFIGURATION.md)
 
 ---
+
+Steam, Lutris, Heroic, and Proton - one toggle, split across a few files so no single one grows unmanageable.
 
 ## `modules/apps/gaming/Gaming.nix`
 
@@ -25,7 +25,7 @@ alongside them, plus everything shared between them:
   the NVIDIA shader-cache path.
 
   Those three all start with an underscore on purpose - same reason as
-  [\_hardware.nix](core.md#moduleshostsname_hardwarenix): import-tree
+  [\_hardware.nix](core-hardware.md): import-tree
   ignores anything with `/_` in the path, so these fragments (which
   aren't valid flake-parts modules on their own - they use `home.packages`,
   not flake-parts options) stay invisible to it. `Gaming.nix` is the only
@@ -81,7 +81,7 @@ elsewhere, e.g. `gamemoderun gamescope-fsr --mangoapp -- %command%`.
 **GPU offload, Optimus laptops only:** none of this makes a game actually
 use the dGPU by default - it'll happily run on the weaker iGPU unless
 told otherwise. `nvidia-offload` (from
-[\_hardware.nix](core.md#moduleshostsname_hardwarenix)) is NixOS's
+[\_hardware.nix](core-hardware.md)) is NixOS's
 built-in wrapper for that, used the same way:
 `nvidia-offload gamemoderun -- %command%`. The DankAsusControl "GPU Mode"
 widget does the same thing but laptop-wide instead of per-game.
@@ -114,3 +114,7 @@ it has no CSS hook of its own. Wine's theme writes a `.reg` file and
 imports it with `wine regedit` against the shared prefix only -
 Lutris/Heroic's own prefixes are out of reach for the same reason
 `$WINEPREFIX` doesn't reach them either.
+
+---
+
+[← FreeClaudeCode.nix](apps-dev-freeclaudecode.md) · [Index](CONFIGURATION.md) · [ZenBrowser.nix →](apps-utils-zenbrowser.md)

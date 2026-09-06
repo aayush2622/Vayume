@@ -219,7 +219,9 @@
     '';
   in {
     environment.etc."vayori/plugin-pins.json".text = builtins.toJSON (
-      lib.filterAttrs (name: _: builtins.elem name config.vayori.apps) self.pluginPins
+      lib.filterAttrs
+        (name: _: config.vayori.apps.${name}.enable or false)
+        self.pluginPins
     );
     environment.systemPackages = [ checkerScript pkgs.coreutils ];
   };

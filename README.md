@@ -84,20 +84,50 @@ sudo nixos-rebuild switch --flake path:.#Diablo
 
 ## Secrets
 
-API keys and the like live directly in `_user.nix`, per user:
+API keys and the like live directly in `_user.nix`, nested under
+`vayori.users.<name>.secrets` - `<name>` is whichever key you picked for
+yourself in the `vayori.users` block above it (`ash` is this repo
+author's own username, not a reserved name - use your own):
 
 ```nix
-ash.secrets = {
-  WAKATIME_API_KEY = "...";
-  RBW_EMAIL = "...";
-  PROVIDERS.NVIDIA_NIM_API_KEY = "...";  # open-ended, add any provider
-};
+# modules/hosts/Diablo/_user.nix
+{
+  vayori.users.<yourname>.secrets = {
+    # Read by VS Code, Android Studio, and Zed - installs the WakaTime
+    # extension and writes ~/.wakatime.cfg. Leave it out and none of
+    # that happens; nothing gets configured with a key that would only
+    # fail.
+    WAKATIME_API_KEY = "waka_...";
+
+    # Read by Bitwarden's rbw client to pre-fill the email prompt.
+    RBW_EMAIL = "you@example.com";
+
+    # Open-ended - passed straight through to Free Claude Code as
+    # environment variables, one per provider you actually have a key
+    # for. Any of its supported provider vars work here, not just
+    # this one; a few of the more common ones:
+    PROVIDERS = {
+      NVIDIA_NIM_API_KEY = "nvapi-...";
+      OPENROUTER_API_KEY = "sk-or-...";
+      GROQ_API_KEY = "gsk_...";
+      GEMINI_API_KEY = "...";
+      DEEPSEEK_API_KEY = "sk-...";
+      MISTRAL_API_KEY = "...";
+      TOGETHER_API_KEY = "...";
+      CEREBRAS_API_KEY = "csk-...";
+      FIREWORKS_API_KEY = "fw_...";
+      HUGGINGFACE_API_KEY = "hf_...";
+      COHERE_API_KEY = "...";
+      # Full list: github.com/Alishahryar1/free-claude-code#readme
+    };
+  };
+}
 ```
 
 Edit, rebuild, done - no runtime file to seed or re-edit. Leave a key out
-and whatever needed it just doesn't get installed, instead of getting
-configured with a key that would only fail. Full shape in
-[docs/core.md](docs/core.md#modulescoreusersnix).
+(or the whole `secrets` block) and whatever needed it just doesn't get
+installed, instead of getting configured with a key that would only
+fail. Full shape in [docs/core-users.md](docs/core-users.md).
 
 Everything else (browser profile, editor logins, rbw session) lives under
 one portable folder, `~/.config/vayori/session`, with its own backup CLI:
@@ -106,7 +136,7 @@ one portable folder, `~/.config/vayori/session`, with its own backup CLI:
 vayori-app-state backup ~/vayori-session.enc
 ```
 
-Details in [docs/apps-utils.md](docs/apps-utils.md#modulesappsutilsstatebackupstatebackupnix).
+Details in [docs/apps-utils-statebackup.md](docs/apps-utils-statebackup.md).
 
 ---
 
@@ -132,7 +162,7 @@ directory as-is.
    timezone/locale/bootloader
 5. `sudo nixos-rebuild switch --flake path:.#<yourhostname>`
 
-Full field-by-field shape: [docs/core.md](docs/core.md#modulescoreusersnix).
+Full field-by-field shape: [docs/core-users.md](docs/core-users.md).
 
 ---
 
@@ -163,17 +193,20 @@ three in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
 ## Documentation
 
-| Doc | Covers |
-| --- | --- |
-| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Index - how it's wired together |
-| [docs/core.md](docs/core.md) | Users, apps, languages, host/hardware config |
-| [docs/desktop.md](docs/desktop.md) | DMS, niri, fonts/portals, matugen |
-| [docs/system.md](docs/system.md) | Docker/libvirtd, GRUB theming |
-| [docs/apps-development.md](docs/apps-development.md) | Editors, languages, Free Claude Code |
-| [docs/apps-gaming.md](docs/apps-gaming.md) | The gaming setup |
-| [docs/apps-utils.md](docs/apps-utils.md) | Browser, Spicetify, Nautilus, Bitwarden, terminal, Vesktop |
+One page per module, in the order you'd meet them setting this up for
+the first time - each ends with a link to the next, so it reads straight
+through like a book, or jump to whichever file you're actually editing.
 
-The `.nix` files stay comment-free - all the "why" lives here instead.
+**[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** is the index and the
+place to start. It covers, in order: Host.nix → \_hardware.nix → Vm.nix →
+Users.nix → DevLanguages.nix → PluginUpdateCheck.nix, then the desktop
+stack (DMS, Niri, Hyprland, Fonts/Portals, Baseline, Matugen), then
+system infra (Docker, Zram, GRUB theming), then every app under
+`modules/apps/` - editors, languages, gaming, browser, and the rest of
+the utils.
+
+The `.nix` files stay comment-free - all the "why" lives in these pages
+instead.
 
 ---
 
@@ -216,5 +249,5 @@ Full pinned list: `flake.nix`.
 ## Known caveats
 
 `dankAsusControlCenter` builds fine but hasn't met real ASUS hardware in
-testing yet - see [docs/desktop.md](docs/desktop.md#modulesdesktopdmsnix)
+testing yet - see [docs/desktop-dms.md](docs/desktop-dms.md)
 if `asusctl`/`supergfxctl` won't cooperate.

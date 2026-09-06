@@ -34,7 +34,7 @@ Upstream's "Option 2" puts `gtk3.css` at `~/.config/gtk-3.0/gtk.css` with
 `colors.css` next to it. This repo does that for GTK4 but **not** for GTK3,
 because that layout cannot live-reload GTK3 - `~/.config/gtk-3.0/gtk.css`
 is read once at process start and never re-read (verified directly, see
-[docs/desktop.md](../../../../docs/desktop.md#modulesdesktopbaselinenix)),
+[docs/desktop-baseline.md](../../../../docs/desktop-baseline.md)),
 so an already-open app keeps its launch-time colors no matter what the
 post_hook does. GTK3 gets the same stylesheet through the rotating named
 theme instead, which is the one path GTK3 does re-read.

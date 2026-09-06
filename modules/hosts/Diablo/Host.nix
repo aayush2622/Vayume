@@ -11,7 +11,8 @@ let
 
         cp modules/hosts/Diablo/${name}.example modules/hosts/Diablo/${name}
 
-      See docs/core.md for what belongs in it.
+      See docs/core-hardware.md or docs/core-users.md for what belongs
+      in it.
     '';
 in {
   flake.nixosConfigurations.Diablo = inputs.nixpkgs.lib.nixosSystem {
@@ -94,38 +95,39 @@ in {
         };
 
         config = {
-          vayori.apps =
-            let
-              appsByCategory = {
-                development = [
-                  "Vscode"
-                  "AndroidStudio"
-                  "Zed"
-                  "DevTools"
-                  #"FreeClaudeCode"
+          # One line per app under modules/apps/ - type `vayori.apps.` in an
+          # editor with Nix LSP support and every available app shows up by
+          # name. `false` entries are kept, not deleted, so it's visible at
+          # a glance which apps exist but are off, not just missing.
+          vayori.apps = {
+            # development
+            Vscode.enable = true;
+            AndroidStudio.enable = true;
+            Zed.enable = true;
+            DevTools.enable = true;
+            FreeClaudeCode.enable = false;
 
-                  "Cpp"
-                  #"Rust"
-                  "Kotlin"
-                  #"Flutter"
-                  "Nix"
-                  "Qt"
-                  "Python"
-                ];
-                gaming = [ "Gaming" ];
-                utils = [
-                  "Terminal"
-                  "Nautilus"
-                  "ZenBrowser"
-                  "Vesktop"
-                  "Spicetify"
-                  "Bitwarden"
-                  "StateBackup"
-                  "Distrobox"
-                ];
-              };
-            in
-            lib.flatten (lib.attrValues appsByCategory);
+            Cpp.enable = true;
+            Rust.enable = false;
+            Kotlin.enable = true;
+            Flutter.enable = false;
+            Nix.enable = true;
+            Qt.enable = true;
+            Python.enable = true;
+
+            # gaming
+            Gaming.enable = true;
+
+            # utils
+            Terminal.enable = true;
+            Nautilus.enable = true;
+            ZenBrowser.enable = true;
+            Vesktop.enable = true;
+            Spicetify.enable = true;
+            Bitwarden.enable = true;
+            StateBackup.enable = true;
+            Distrobox.enable = true;
+          };
 
           nix.settings.experimental-features = [ "nix-command" "flakes" ];
           nixpkgs.config.allowUnfree = true;

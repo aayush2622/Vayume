@@ -13,6 +13,10 @@
 
     availableApps = builtins.attrNames self.homeModules.apps;
 
+    enabledAppNames = builtins.attrNames (
+      lib.filterAttrs (_: app: app.enable) config.vayori.apps
+    );
+
     userSubmodule = lib.types.submodule ({ name, ... }: {
       options = {
         fullName = lib.mkOption {
@@ -27,7 +31,7 @@
           description = ''
             Hashed password (mkpasswd -m sha-512). Set this from
             _user.nix (a gitignored file that lives next to Host.nix,
-            never committed - see docs/core.md), not a tracked Nix file,
+            never committed - see docs/core-users.md), not a tracked Nix file,
             so the repo has zero personal data in it and stays safe to
             publish. Leave unset to fall back to initialPassword
             "changeme" (run `passwd` after first login).
@@ -45,7 +49,7 @@
           default = { };
           description = ''
             Small per-app credentials (WakaTime key, rbw email, Free
-            Claude Code provider keys - see docs/core.md for the full
+            Claude Code provider keys - see docs/core-users.md for the full
             shape) passed straight to every app module as the
             `vayoriSecrets` argument. Left-out keys, or the whole
             attrset, fall back to "REPLACE_ME" placeholders - a key
@@ -84,7 +88,7 @@
       default = { };
       description = ''
         One entry per person using this machine. Set from
-        modules/hosts/<name>/_user.nix (see docs/core.md) - a gitignored
+        modules/hosts/<name>/_user.nix (see docs/core-users.md) - a gitignored
         file, required, not a Nix-declared block here, so the repo has
         zero personal data in it and stays safe to publish. Fine to set
         directly in a tracked host file instead if you'd rather commit
@@ -93,9 +97,25 @@
     };
 
     options.vayori.apps = lib.mkOption {
-      type = lib.types.listOf (lib.types.enum availableApps);
-      default = [ ];
-      description = "Which optional app modules (from modules/apps/) EVERYONE on this machine gets. Options: ${lib.concatStringsSep ", " availableApps}";
+      type = lib.types.submodule {
+        options = lib.genAttrs availableApps (
+          name: lib.mkOption {
+            type = lib.types.submodule {
+              options.enable = lib.mkEnableOption "the ${name} app module (modules/apps/**/${name}.nix) for every user on this machine";
+            };
+            default = { };
+          }
+        );
+      };
+      default = { };
+      description = ''
+        Which optional app modules (from modules/apps/) EVERYONE on this
+        machine gets, e.g. `vayori.apps.Vscode.enable = true;`. One real,
+        individually-named option per module under modules/apps/ - type
+        `vayori.apps.` in an editor with Nix LSP support and every
+        available app shows up by name, instead of needing to already
+        know the exact quoted string a `listOf` would require.
+      '';
     };
 
     config = lib.mkIf (cfg != { }) {
@@ -115,7 +135,7 @@
 
       home-manager.useGlobalPkgs = true;
       home-manager.useUserPackages = true;
-      home-manager.extraSpecialArgs = { inherit inputs self; vayoriTheme = config.vayori.theme; vayoriApps = config.vayori.apps; };
+      home-manager.extraSpecialArgs = { inherit inputs self; vayoriTheme = config.vayori.theme; vayoriApps = enabledAppNames; };
       home-manager.backupFileExtension = "backup";
 
       home-manager.users = lib.mapAttrs (name: u: { lib, pkgs, ... }: {
@@ -124,7 +144,7 @@
         imports = [
           self.homeModules.Baseline
           self.homeModules.Hyprland
-        ] ++ (map (app: self.homeModules.apps.${app}) config.vayori.apps);
+        ] ++ (map (app: self.homeModules.apps.${app}) enabledAppNames);
 
         home.stateVersion = config.system.stateVersion;
         home.packages = u.extraPackages;

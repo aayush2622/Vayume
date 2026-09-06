@@ -1,60 +1,63 @@
 # Configuration reference
 
 `.nix` files stay comment-free in this repo, so all the "why" lives here
-instead. Organized to match `modules/` - find the file you're editing,
-jump to its doc.
+instead - one page per module, in the order you'd actually meet them if
+you were setting this up for the first time. Each page ends with a link
+to the next one, so you can read straight through like a book, or jump
+straight to the one file you're actually editing.
+
+**New here?** Start at [Host.nix](core-host.md) - it's the file
+everything else in this repo exists to serve, and reading it first makes
+every other page make more sense.
 
 Looking for "how do I add a host/user/app" instead? That's the README's
 [Using this on your own machine](../README.md#using-this-on-your-own-machine)
 and [Extending it](../README.md#extending-it) - the walkthrough, not the
 deep dive.
 
-## Contents
+## The whole story, in reading order
 
-- [How it's wired together](#how-its-wired-together)
-- [Project structure](#project-structure)
+**Core & hosts** - who this machine is, and who's allowed to use it
+1. [hosts/\<name\>/Host.nix](core-host.md)
+2. [hosts/\<name\>/\_hardware.nix](core-hardware.md)
+3. [hosts/\<name\>/Vm.nix](core-vm.md)
+4. [core/Users.nix](core-users.md)
+5. [core/DevLanguages.nix](core-devlanguages.md)
+6. [core/PluginUpdateCheck.nix](core-pluginupdatecheck.md)
 
-**Core & hosts**
-- [core/Users.nix](core.md#modulescoreusersnix)
-- [core/DevLanguages.nix](core.md#modulescoredevlanguagesnix)
-- [core/PluginUpdateCheck.nix](core.md#modulescorepluginupdatechecknix)
-- [hosts/\<name\>/Host.nix](core.md#moduleshostsnamehostnix)
-- [hosts/\<name\>/\_hardware.nix](core.md#moduleshostsname_hardwarenix)
-- [hosts/\<name\>/Vm.nix](core.md#moduleshostsnamevmnix)
+**Desktop** - the part you actually look at all day
+7. [desktop/Dms.nix](desktop-dms.md)
+8. [desktop/Niri.nix](desktop-niri.md)
+9. [desktop/Hyprland.nix](desktop-hyprland.md)
+10. [desktop/Fonts.nix / Portals.nix](desktop-portals-fonts.md)
+11. [desktop/Baseline.nix](desktop-baseline.md)
+12. [desktop/Matugen.nix](desktop-matugen.md)
 
-**Desktop**
-- [desktop/Dms.nix](desktop.md#modulesdesktopdmsnix)
-- [desktop/Niri.nix](desktop.md#modulesdesktopnirinix)
-- [desktop/Hyprland.nix](desktop.md#modulesdesktophyprlandnix)
-- [desktop/Fonts.nix / Portals.nix](desktop.md#modulesdesktopfontsnix--portalsnix)
-- [desktop/Baseline.nix](desktop.md#modulesdesktopbaselinenix)
-- [desktop/Matugen.nix](desktop.md#modulesdesktopmatugennix)
-
-**System**
-- [system/DevTooling.nix](system.md#modulessystemdevtoolingnix)
-- [system/Zram.nix](system.md#modulessystemzramnix)
-- [system/GrubTheme.nix](system.md#modulessystemgrubthemenix)
+**System** - infrastructure that doesn't care what desktop you're running
+13. [system/DevTooling.nix](system-devtooling.md)
+14. [system/Zram.nix](system-zram.md)
+15. [system/GrubTheme.nix](system-grubtheme.md)
 
 **Apps - development**
-- [apps/development/editors/vscode/Vscode.nix](apps-development.md#modulesappsdevelopmenteditorsvscodevscodenix)
-- [apps/development/editors/androidStudio/AndroidStudio.nix](apps-development.md#modulesappsdevelopmenteditorsandroidstudioandroidstudionix)
-- [apps/development/editors/zed/Zed.nix](apps-development.md#modulesappsdevelopmenteditorszedzednix)
-- [apps/development/devTools/DevTools.nix](apps-development.md#modulesappsdevelopmentdevtoolsdevtoolsnix)
-- [apps/development/freeClaudeCode/FreeClaudeCode.nix](apps-development.md#modulesappsdevelopmentfreeclaudecodefreeclaudecodenix)
-- [apps/development/languages/\*/\*.nix](apps-development.md#modulesappsdevelopmentlanguagesnix) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt)
+16. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
+17. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
+18. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
+19. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt)
+20. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
+21. [apps/development/freeClaudeCode/FreeClaudeCode.nix](apps-dev-freeclaudecode.md)
 
 **Apps - gaming**
-- [apps/gaming/Gaming.nix](apps-gaming.md#modulesappsgaminggamingnix)
+22. [apps/gaming/Gaming.nix](apps-gaming.md)
 
 **Apps - utils**
-- [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils.md#modulesappsutilszenbrowserzenbrowsernix)
-- [apps/utils/spicetify/Spicetify.nix](apps-utils.md#modulesappsutilsspicetifyspicetifynix)
-- [apps/utils/nautilus/Nautilus.nix](apps-utils.md#modulesappsutilsnautilusnautilusnix)
-- [apps/utils/bitwarden/Bitwarden.nix](apps-utils.md#modulesappsutilsbitwardenbitwardennix)
-- [apps/utils/stateBackup/StateBackup.nix](apps-utils.md#modulesappsutilsstatebackupstatebackupnix)
-- [apps/utils/terminal/Terminal.nix](apps-utils.md#modulesappsutilsterminalterminalnix)
-- [apps/utils/vesktop/Vesktop.nix](apps-utils.md#modulesappsutilsvesktopvesktopnix)
-- [apps/utils/distrobox/Distrobox.nix](apps-utils.md#modulesappsutilsdistroboxdistroboxnix)
+23. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
+24. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
+25. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
+26. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
+27. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
+28. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
+29. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
+30. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
 
 ---
 
@@ -129,7 +132,7 @@ one toggle does both, see that section - `Nix`, `Qt`). Each one is a
 normal app (`flake.homeModules.apps.<Lang>` installs the actual
 LSP/toolchain) that's *also* a data source (`flake.devLanguages.<Lang>`)
 every editor reads to figure out what extensions it needs. See
-[core/DevLanguages.nix](core.md#modulescoredevlanguagesnix).
+[core/DevLanguages.nix](core-devlanguages.md).
 
 `apps/gaming/` is one app (`Gaming`) spread across a few files just so no
 single file gets huge: `Gaming.nix` is the real
@@ -139,3 +142,5 @@ underscore keeps import-tree from trying to treat them as modules of
 their own - same trick as `_hardware.nix`.
 
 ---
+
+**[Start reading → Host.nix](core-host.md)**

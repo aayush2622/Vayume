@@ -1,5 +1,5 @@
 {
-  flake.nixosModules.Zram = {
+  flake.nixosModules.Zram = { ... }: {
     zramSwap.enable = true;
   };
 }

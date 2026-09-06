@@ -1,43 +1,8 @@
-# System reference
-
-[← Back to index](CONFIGURATION.md)
+[Index](CONFIGURATION.md)
 
 ---
 
-## `modules/system/DevTooling.nix`
-
-Named for what it is: system-level stuff for dev workflows, not tied to
-any one app. Used to be called `dev-system.nix`, which read way too much
-like [apps/devTools/DevTools.nix](apps-development.md#modulesappsdevelopmentdevtoolsdevtoolsnix)
-- a completely different, per-user file (VS Code/git/gh/lazygit/
-docker-compose) - so it got a better name.
-
-`virtualisation.docker.enable`/`libvirtd.enable` are the actual daemons
-that `docker-compose` and any VM tooling need running. `programs.adb.enable`
-got dropped since systemd 258+ handles the adb udev rules on its own now,
-and `pkgs.android-tools` (already pulled in by
-[AndroidStudio.nix](apps-development.md#modulesappsdevelopmenteditorsandroidstudioandroidstudionix))
-covers the actual `adb` command. `users.groups.adbusers` sticks around
-here purely so it's a valid group to put in `extraGroups` - it doesn't
-grant anything on its own anymore, it's basically a fossil.
-
----
-
-## `modules/system/Zram.nix`
-
-One line - `zramSwap.enable = true;` - and the upstream module's own
-defaults (50% of RAM, `zstd`, priority `5`) already do the right thing,
-confirmed by actually reading that module's source rather than assuming:
-`zstd` is both fast and well-compressed, and priority `5` beats a plain
-disk swap entry's default, so the RAM-backed swap gets used first and
-[Diablo's real disk swap partition](core.md#moduleshostsnamehardwarenix)
-only picks up genuine overflow. Split out into its own file under
-`system/`, not folded into `_hardware.nix`, since nothing about it is
-actually hardware-specific - any host with enough RAM benefits the same
-way, and a second host defined later gets it for free instead of needing
-this copied in.
-
----
+The first thing this machine shows you, before Linux itself has even loaded.
 
 ## `modules/system/GrubTheme.nix`
 
@@ -70,7 +35,7 @@ hand-rolled packaging like the old theme needed.
   cosmetic. `screen` sets `boot.loader.grub.gfxmodeBios` to
   `1920x1080,auto` under the hood, but `virtualisation.vmVariant` (the
   machinery behind `nixos-rebuild build-vm` and
-  [Vm.nix](core.md#moduleshostsnamevmnix)) sets its own plain `1024x768`
+  [Vm.nix](core-vm.md)) sets its own plain `1024x768`
   default for the *same* option - two plain-priority definitions,
   genuinely conflicting, and `config.system.build.vm` flat out failed to
   evaluate because of it. Not a hypothetical: hit this for real trying
@@ -80,3 +45,5 @@ hand-rolled packaging like the old theme needed.
   virtual display has no trouble with 1920x1080.
 
 ---
+
+[← Zram.nix](system-zram.md) · [Index](CONFIGURATION.md) · [AndroidStudio.nix →](apps-dev-androidstudio.md)
