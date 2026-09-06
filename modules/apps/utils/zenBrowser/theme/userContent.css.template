@@ -1,8 +1,12 @@
-/* Zen Browser userContent.css - matugen-driven theme
- * Palette uses CSS custom properties --matugen-* set by matugen-bridge.uc.js
- * from the Firefox prefs matugen.theme.* (which matugen-bridge writes from
- * matugen-vars.json on disk). The :root block below holds first-paint
- * defaults; the bridge overrides them at runtime via inline style.
+/* Zen Browser userContent.css - matugen-driven COLOUR theme
+ *
+ * Derived from parazeeknova/zen-wabi (MIT), revision
+ * 4b42ce351504f95de53aaf57d6bf70df85e0dd53, stripped to colour rules only:
+ * no border-radius / border / box-shadow / layout / logo-swap rules, so
+ * built-in about: pages keep their native shape and only their palette
+ * changes. Colours come from the --matugen-* variables that
+ * matugen-bridge.uc.js overrides at runtime (:root holds first-paint
+ * defaults).
  */
 
 :root {
@@ -51,22 +55,6 @@
 
   .icon {
     color: var(--matugen-accent) !important;
-  }
-
-  .search-wrapper .logo-and-wordmark .logo {
-    background: url("zen-logo-mocha.svg") no-repeat center !important;
-    display: inline-block !important;
-    height: 82px !important;
-    width: 82px !important;
-    background-size: 82px !important;
-  }
-
-  @media (max-width: 609px) {
-    .search-wrapper .logo-and-wordmark .logo {
-      background-size: 64px !important;
-      height: 64px !important;
-      width: 64px !important;
-    }
   }
 
   .card-outer:is(:hover, :focus, .active):not(.placeholder) .card-title {
@@ -177,30 +165,23 @@
 }
 
 /* Findbar match highlights inside page content. The findbar
- * wraps every match in a <span class="matched-word">. Accent
- * bg with dark fg gives consistent visual style with the
- * ::selection rule above and the findbar's accent border. */
+ * wraps every match in a <span class="matched-word">. Colour
+ * only - the highlight box geometry is left to the browser. */
 .matched-word {
   background-color: color-mix(in srgb, var(--matugen-accent) 60%, transparent) !important;
   color: var(--matugen-bg-dark) !important;
-  text-decoration: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  outline: none !important;
 }
 
 .matched-word:focus,
 .matched-word.selected {
   background-color: var(--matugen-accent) !important;
   color: var(--matugen-bg-dark) !important;
-  outline: 1px solid var(--matugen-accent) !important;
 }
 
 /* ============================================================
- * GitHub theming has moved to userContent.github.template.
- * When this CSS is injected via the Matugen JSWindowActor child
- * as a <style> element, @-moz-document rules are ignored, so
- * per-site rules live in their own file and the actor child
- * injects them only when the document hostname matches.
+ * Per-site (@-moz-document) theming such as GitHub lives in its
+ * own file - when this CSS is injected via the Matugen
+ * JSWindowActor child as a <style> element, @-moz-document rules
+ * are ignored, so per-site rules are injected only on a hostname
+ * match by the actor child.
  * ============================================================ */

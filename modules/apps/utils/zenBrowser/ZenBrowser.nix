@@ -56,8 +56,8 @@ in {
       (throw "zen-browser.nix: no zenExtensions entry named \"${name}\"")
       zenExtensions).guid;
 
-    # Vendored under ./vendor - see its README for provenance and licences.
-    # Must be a derivation output, not a bare source path: wrapFirefox
+    # fx-autoconfig is vendored under ./vendor - see its README for provenance
+    # and licences. Must be a derivation output, not a bare source path: wrapFirefox
     # interpolates this with `toString`, which drops string context, so a
     # raw path never becomes a build input and the sandbox cannot read it.
     fxaConfigJs = pkgs.runCommand "fx-autoconfig-config.js" { } ''
@@ -81,7 +81,11 @@ in {
     # overwrites the same --matugen-* variables at runtime, which is what
     # makes a palette change reach an already-open window. So these are
     # substituted once at build time rather than re-rendered per wallpaper.
-    renderWabi = name: src: pkgs.runCommand name { } ''
+    #
+    # ./theme is this repo's own colour-only cut of parazeeknova/zen-wabi:
+    # every border-radius / border / box-shadow / layout rule has been
+    # dropped so Zen's UI shape is left untouched and only colours change.
+    renderTheme = name: src: pkgs.runCommand name { } ''
       ${pkgs.gnused}/bin/sed \
         -e 's/{{bg}}/#14140b/g' \
         -e 's/{{bg_dark}}/#0f0f08/g' \
@@ -94,70 +98,8 @@ in {
         ${src} > $out
     '';
 
-    zenRadius = "12px";
-    zenRadiusSmall = "8px";
-
-    zenRoundingOverrides = pkgs.writeText "vayori-zen-rounding.css" ''
-
-      /* ---------------------------------------------------------------
-         zen-wabi ships "sharp corners" as a deliberate style choice - all
-         17 of its border-radius rules are `0 !important`, squaring off the
-         tab bar, sidebar, URL bar, toolbar buttons and menus. Appended
-         after it (same specificity, also !important, and later wins) to
-         put the rounding back on the interactive elements, leaving the
-         full-bleed containers square where rounding reads as broken.
-         --------------------------------------------------------------- */
-
-      .tab-background,
-      .tab-stack,
-      .tab-content,
-      #tabbrowser-tabs .tabbrowser-tab[zen-essential="true"],
-      #tabbrowser-tabs .tabbrowser-tab[zen-essential="true"] .tab-background,
-      zen-folder,
-      zen-folder .tab-group-label-container,
-      .tab-group-label,
-      .zen-workspace-tabs-section,
-      .zen-current-workspace-indicator,
-      #zen-workspaces-button {
-        border-radius: ${zenRadius} !important;
-      }
-
-      #urlbar,
-      .urlbar-background,
-      .content-shortcuts,
-      #urlbar-input-container,
-      #urlbar[breakout-extend="true"] > .urlbar-input-container,
-      .urlbar[focused="true"] > .urlbar-input-container,
-      #urlbar[open][zen-floating-urlbar="true"] #urlbar-container,
-      #searchbar,
-      #searchbar .searchbar-textbox {
-        border-radius: ${zenRadius} !important;
-      }
-
-      toolbarbutton,
-      .toolbarbutton-1,
-      .toolbarbutton-icon {
-        border-radius: ${zenRadiusSmall} !important;
-      }
-
-      menupopup,
-      panel,
-      menu,
-      menuitem,
-      #contentAreaContextMenu,
-      #PlacesToolbar menu,
-      #PlacesToolbar menupopup,
-      .tab-context-menu {
-        border-radius: ${zenRadius} !important;
-        --panel-border-radius: ${zenRadius} !important;
-      }
-    '';
-
-    zenUserChrome = pkgs.runCommand "userChrome.css" { } ''
-      cat ${renderWabi "userChrome-base.css" ./vendor/wabi/userChrome.css.template} \
-          ${zenRoundingOverrides} > $out
-    '';
-    zenUserContent = renderWabi "userContent.css" ./vendor/wabi/userContent.css.template;
+    zenUserChrome = renderTheme "userChrome.css" ./theme/userChrome.css.template;
+    zenUserContent = renderTheme "userContent.css" ./theme/userContent.css.template;
 
     zen-browser = pkgs.wrapFirefox
       inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped
@@ -199,7 +141,7 @@ in {
       "zen.widget.linux.transparency" = true;
       "zen.view.window.scheme" = 0;
       "zen.theme.border-radius" = 12;
-      "zen.theme.content-element-separation" = 8;
+      "zen.theme.content-element-separation" = 0;
 
       "sidebar.visibility" = "hide-sidebar";
       "sidebar.installed.extensions" = zenSidebarExtensionIds;
@@ -287,20 +229,27 @@ in {
     zen-reload = pkgs.writeShellScriptBin "vayori-zen-reload" ''
       set -u
 
-      if ! ${pkgs.procps}/bin/pgrep -x zen > /dev/null 2>&1; then
+      # wrapFirefox's launcher exec's `.zen-wrapped`, so the running process's
+      # comm is `.zen-wrapped`, not `zen`. Matching `-x zen` here silently
+      # missed it, so the reload never actually restarted Zen. Match the comm
+      # exactly against either name (`zen` kept for forward-compat).
+      zen_match='zen|\.zen-wrapped'
+      zen_pids() { ${pkgs.procps}/bin/pgrep -x "$zen_match" 2>/dev/null; }
+
+      if [ -z "$(zen_pids)" ]; then
         echo "Zen is not running; starting it."
         exec ${lib.getExe zen-browser}
       fi
 
       echo "Restarting Zen to pick up the current theme..."
-      ${pkgs.procps}/bin/pkill -x -TERM zen || true
+      ${pkgs.procps}/bin/pkill -TERM -x "$zen_match" || true
 
       for _ in $(seq 1 50); do
-        ${pkgs.procps}/bin/pgrep -x zen > /dev/null 2>&1 || break
+        [ -z "$(zen_pids)" ] && break
         sleep 0.2
       done
 
-      if ${pkgs.procps}/bin/pgrep -x zen > /dev/null 2>&1; then
+      if [ -n "$(zen_pids)" ]; then
         echo "Zen did not exit in time; leaving it alone." >&2
         exit 1
       fi
