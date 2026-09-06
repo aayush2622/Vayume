@@ -31,6 +31,7 @@ in {
       self.nixosModules.DevTooling
       self.nixosModules.Zram
       self.nixosModules.Network
+      self.nixosModules.Waydroid
       self.nixosModules.VmTesting
       self.nixosModules.PluginUpdateCheck
 

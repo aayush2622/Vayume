@@ -292,6 +292,78 @@ in {
       ZEN_BASE="$HOME/.zen"
       PROFILE_DIR="$ZEN_BASE/default"
       run mkdir -p "$ZEN_BASE"
+
+      # --- Keep the profile Zen launches at the "default" path -------------
+      # Everything below deploys into $ZEN_BASE/default. A backup restored
+      # from outside `vayori-app-state` (a raw ~/.zen copy, a snapshot tool,
+      # Zen's own profile import) brings its own profiles.ini / installs.ini
+      # that can make a differently-named profile the default - then Zen
+      # shows the restored data while this activation keeps writing to an
+      # unused "default". Detect that and move the restored profile onto the
+      # "default" path so the config always lands on top of it.
+      normalize_zen_profile() {
+        local ini="$ZEN_BASE/profiles.ini"
+        local installs="$ZEN_BASE/installs.ini"
+        [ -f "$ini" ] || return 0
+
+        # installs.ini's per-install Default= wins over profiles.ini's Default=1
+        local chosen=""
+        if [ -f "$installs" ]; then
+          chosen="$(${pkgs.gawk}/bin/awk '
+            /^\[Install/ { i=1; next }
+            /^\[/        { i=0 }
+            i && sub(/^Default=/, "") { print; exit }
+          ' "$installs")"
+        fi
+        if [ -z "$chosen" ]; then
+          chosen="$(${pkgs.gawk}/bin/awk '
+            /^\[/                { p=""; rel="1" }
+            sub(/^Path=/, "")    { p=$0 }
+            sub(/^IsRelative=/, "") { rel=$0 }
+            /^Default=1$/        { print (rel=="0" ? "ABS:" : "") p; exit }
+          ' "$ini")"
+        fi
+
+        [ -n "$chosen" ] || return 0
+        case "$chosen" in
+          default) return 0 ;;                 # already correct
+          ABS:*)   echo "  active Zen profile is an absolute path, leaving it alone"; return 0 ;;
+        esac
+        [ -d "$ZEN_BASE/$chosen" ] || { echo "  profiles.ini default '$chosen' has no directory, ignoring"; return 0; }
+
+        if ${pkgs.procps}/bin/pgrep -x .zen-wrapped >/dev/null 2>&1; then
+          echo "  Zen is running - deferring the '$chosen' -> default relocation to the next rebuild"
+          return 0
+        fi
+
+        local ts; ts="$(${pkgs.coreutils}/bin/date +%s)"
+        echo "  restored backup points Zen at '$chosen'; relocating it onto the 'default' path (old default -> *.pre-restore.$ts)"
+
+        # $PROFILE_DIR may be the vayori-session symlink; act on its real target
+        local realdefault="$PROFILE_DIR"
+        [ -L "$PROFILE_DIR" ] && realdefault="$(${pkgs.coreutils}/bin/readlink -f "$PROFILE_DIR")"
+        run ${pkgs.coreutils}/bin/mkdir -p "$(dirname "$realdefault")"
+        [ -e "$realdefault" ] && run ${pkgs.coreutils}/bin/mv "$realdefault" "$realdefault.pre-restore.$ts"
+        run ${pkgs.coreutils}/bin/mv "$ZEN_BASE/$chosen" "$realdefault"
+        run ${pkgs.coreutils}/bin/rm -f \
+          "$realdefault/.parentlock" "$realdefault/lock" "$realdefault/compatibility.ini"
+
+        run ${pkgs.coreutils}/bin/cp -f "$ini" "$ini.pre-restore.$ts"
+        ${pkgs.coreutils}/bin/cat > "$ini" <<'PROFILES'
+[Profile0]
+Name=Default (release)
+IsRelative=1
+Path=default
+Default=1
+
+[General]
+StartWithLastProfile=1
+Version=2
+PROFILES
+        [ -f "$installs" ] && run ${pkgs.coreutils}/bin/mv "$installs" "$installs.pre-restore.$ts"
+      }
+      normalize_zen_profile
+
       if [ -f "$PROFILE_DIR/times.json" ]; then
         echo "Zen profile already exists, skipping -CreateProfile"
       else
