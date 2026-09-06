@@ -41,27 +41,28 @@ dive.
 13. [system/DevTooling.nix](system-devtooling.md)
 14. [system/Zram.nix](system-zram.md)
 15. [system/GrubTheme.nix](system-grubtheme.md)
+16. [system/Network.nix](system-network.md)
 
 **Apps - development**
-16. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
-17. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
-18. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
-19. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt)
-20. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
-21. [apps/development/freeClaudeCode/FreeClaudeCode.nix](apps-dev-freeclaudecode.md)
+17. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
+18. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
+19. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
+20. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt)
+21. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
+22. [apps/development/freeClaudeCode/FreeClaudeCode.nix](apps-dev-freeclaudecode.md)
 
 **Apps - gaming**
-22. [apps/gaming/Gaming.nix](apps-gaming.md)
+23. [apps/gaming/Gaming.nix](apps-gaming.md)
 
 **Apps - utils**
-23. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
-24. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
-25. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
-26. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
-27. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
-28. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
-29. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
-30. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
+24. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
+25. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
+26. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
+27. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
+28. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
+29. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
+30. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
+31. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
 
 ---
 

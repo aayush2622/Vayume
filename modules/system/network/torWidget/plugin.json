@@ -1,0 +1,11 @@
+{
+    "id": "tor",
+    "name": "Tor",
+    "description": "Route all system traffic through Tor, or turn it back off",
+    "version": "1.0.0",
+    "author": "vayori",
+    "icon": "vpn_lock",
+    "type": "widget",
+    "component": "./TorWidget.qml",
+    "requires_dms": ">=1.2.0"
+}

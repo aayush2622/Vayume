@@ -327,6 +327,14 @@
                   width = 50;
                 }
                 {
+                  # modules/system/network/Network.nix installs the
+                  # plugin this id refers to - DMS prefixes plugin
+                  # widget ids with "plugin_".
+                  id = "plugin_tor";
+                  enabled = true;
+                  width = 50;
+                }
+                {
                   id = "diskUsage";
                   enabled = true;
                   width = 50;
@@ -361,7 +369,7 @@
                 };
 
                 hyprland = {
-                  hideOnKeyPress = false;
+                  hideOnKeyPress = true;
                   hideOnTouch = false;
                   inactiveTimeout = 0;
                 };

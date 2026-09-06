@@ -30,6 +30,7 @@ in {
       self.nixosModules.GrubTheme
       self.nixosModules.DevTooling
       self.nixosModules.Zram
+      self.nixosModules.Network
       self.nixosModules.VmTesting
       self.nixosModules.PluginUpdateCheck
 
@@ -154,6 +155,28 @@ in {
 
           networking.hostName = "Diablo";
           networking.networkmanager.enable = true;
+
+          # DNS resolver, the Tor toggle behind the control-center
+          # widget, and the network-stack hardening sysctls. See
+          # docs/system-network.md.
+          vayori.network = {
+            dns = {
+              provider = "cloudflare";
+              overTls = "opportunistic";
+              ipv6 = true;
+            };
+
+            tor = {
+              enable = true;
+              includeContainers = true;
+            };
+
+            hardening.enable = true;
+
+            # Breaks MAC-authenticated networks and captive portals that
+            # remember you - off unless you actually want that trade.
+            randomizeMac = false;
+          };
 
           time.timeZone = "Asia/Kolkata";
           i18n.defaultLocale = "en_IN";

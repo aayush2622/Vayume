@@ -46,4 +46,4 @@ hand-rolled packaging like the old theme needed.
 
 ---
 
-[← Zram.nix](system-zram.md) · [Index](CONFIGURATION.md) · [AndroidStudio.nix →](apps-dev-androidstudio.md)
+[← Zram.nix](system-zram.md) · [Index](CONFIGURATION.md) · [Network.nix →](system-network.md)
