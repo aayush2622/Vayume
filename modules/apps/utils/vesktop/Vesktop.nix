@@ -19,7 +19,7 @@
       useQuickCss = true;
       themeLinks = [ ];
       eagerPatches = false;
-      enabledThemes = [ ];
+      enabledThemes = [ "vayori-discord.css" ];
       enableReactDevtools = false;
       frameless = false;
       transparent = false;
@@ -257,15 +257,5 @@
       output_path = '${config.home.homeDirectory}/.config/vesktop/themes/vayori-discord.css'
     '';
 
-    home.activation.applyDmsVesktopTheme =
-      let
-        quickCss = pkgs.writeText "vesktop-quickcss" ''
-          @import url("../themes/vayori-discord.css");
-        '';
-      in
-      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        run mkdir -p "$HOME/.config/vesktop/settings" "$HOME/.config/vesktop/themes"
-        run install -m 644 "${quickCss}" "$HOME/.config/vesktop/settings/quickCss.css"
-      '';
   };
 }

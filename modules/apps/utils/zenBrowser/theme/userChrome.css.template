@@ -5,9 +5,15 @@
  * Every border-radius / border / box-shadow / outline / appearance / opacity
  * / sizing rule from wabi has been removed, so Zen's own UI shape, spacing,
  * rounding and chrome layout are left completely untouched. What remains only
- * assigns `color`, `fill`, `background-color` and colour-valued CSS custom
- * properties, all from the --matugen-* palette that matugen-bridge.uc.js
- * overrides at runtime (:root below holds the first-paint defaults).
+ * assigns `color`, `fill` and colour-valued CSS custom properties, all from
+ * the --matugen-* palette that matugen-bridge.uc.js overrides at runtime
+ * (:root below holds the first-paint defaults).
+ *
+ * Surface fills: every decorative `background-color` has been removed so
+ * Zen's own transparency / the compositor blur shows through, EXCEPT the
+ * top toolbar strip + the left vertical-tab / drag strip, which are pinned
+ * opaque by the rule at the very bottom of this file. Text-selection
+ * highlights keep their accent fill.
  */
 
 :root {
@@ -90,17 +96,11 @@ zen-folder,
   --zen-colors-tertiary: var(--matugen-bg-dark);
   --zen-colors-border: var(--matugen-fg-light);
 
-  --zen-main-browser-background: var(--matugen-bg-dark);
   --zen-themed-toolbar-bg: var(--matugen-bg-dark);
   --zen-themed-toolbar-bg-transparent: var(--matugen-bg-dark);
 
-  --toolbar-bgcolor: var(--matugen-bg-dark);
-  --toolbox-bgcolor-inactive: var(--matugen-bg-dark);
-  --newtab-background-color: var(--matugen-bg);
-
   --lwt-text-color: var(--matugen-fg);
   --lwt-sidebar-text-color: var(--matugen-fg);
-  --lwt-sidebar-background-color: var(--matugen-bg-dark);
 
   --toolbar-color: var(--matugen-fg);
   --toolbar-field-color: var(--matugen-fg);
@@ -109,42 +109,8 @@ zen-folder,
   --newtab-text-primary-color: var(--matugen-fg);
 
   --arrowpanel-color: var(--matugen-accent);
-  --arrowpanel-background: var(--matugen-bg);
   --sidebar-text-color: var(--matugen-fg);
   --toolbarbutton-icon-fill: var(--matugen-accent);
-}
-
-/* ============================================================
- * 2. ZEN FOLDER + WORKSPACE INDICATOR HOVER/ACTIVE TINT
- *    Colour only - Zen's own hover overlay geometry is left as-is.
- * ============================================================ */
-zen-folder:hover .tab-group-label-container {
-  background-color: color-mix(in srgb, var(--matugen-accent) 15%, var(--matugen-bg-dark) 85%) !important;
-}
-zen-folder[open] .tab-group-label-container,
-zen-folder[expanded] .tab-group-label-container {
-  background-color: color-mix(in srgb, var(--matugen-accent) 20%, var(--matugen-bg-dark) 80%) !important;
-}
-
-.zen-current-workspace-indicator:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 15%, var(--matugen-bg-dark) 85%) !important;
-}
-.zen-current-workspace-indicator[open],
-.zen-current-workspace-indicator[active] {
-  background-color: color-mix(in srgb, var(--matugen-accent) 20%, var(--matugen-bg-dark) 80%) !important;
-}
-
-/* ============================================================
- * 3. SIDEBAR (vertical tabs, workspaces, splitter)
- * ============================================================ */
-#zen-main-app-wrapper,
-#zen-browser-background,
-#zen-browser-background::after,
-#navigator-toolbox,
-#titlebar,
-#tabbrowser-tabs[orient="vertical"],
-#zen-sidebar-splitter {
-  background-color: var(--matugen-bg-dark) !important;
 }
 
 #tabbrowser-tabs[orient="vertical"] .tabbrowser-tab .tab-label,
@@ -168,13 +134,8 @@ toolbarbutton.bookmark-item,
 }
 
 #zen-sidebar-foot-buttons > toolbarbutton:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 15%, var(--matugen-bg-dark) 85%) !important;
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
-}
-
-.sidebar-placesTree {
-  background-color: var(--matugen-bg-dark) !important;
 }
 
 /* Sidebar / workspace toolbar buttons + new-tab button: accent icon,
@@ -194,7 +155,6 @@ toolbarbutton.bookmark-item,
 
 #tabs-newtab-button:hover,
 #tabbrowser-tabs[orient="vertical"] #tabs-newtab-button:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 15%, var(--matugen-bg-dark) 85%) !important;
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
 }
@@ -205,12 +165,7 @@ toolbarbutton.bookmark-item,
 .tabbrowser-tab[selected] .tab-background,
 .tabbrowser-tab[selected] .tab-stack,
 .tabbrowser-tab:hover .tab-background {
-  background-color: var(--matugen-bg-light) !important;
   color: var(--matugen-accent) !important;
-}
-
-.tabbrowser-tab:not([selected]):not(:hover) .tab-background {
-  background-color: var(--matugen-bg-dark) !important;
 }
 
 .tabbrowser-tab .tab-label,
@@ -218,33 +173,8 @@ toolbarbutton.bookmark-item,
   color: var(--matugen-accent) !important;
 }
 
-/* Zen "essential" pinned tabs: colour tint by state, shape left to Zen. */
-#tabbrowser-tabs .tabbrowser-tab[zen-essential="true"] .tab-background,
-#zen-welcome-initial-essentials-browser-sidebar-essentials .tabbrowser-tab .tab-background {
-  background-color: color-mix(in srgb, var(--matugen-bg-light) 30%, var(--matugen-bg-dark) 70%) !important;
-}
-
-#tabbrowser-tabs .tabbrowser-tab[zen-essential="true"]:not([visuallyselected]):not([multiselected="true"]):hover .tab-background {
-  background-color: color-mix(in srgb, var(--matugen-bg-light) 50%, var(--matugen-bg-dark) 50%) !important;
-}
-
-#tabbrowser-tabs .tabbrowser-tab[zen-essential="true"][visuallyselected] .tab-background,
-#tabbrowser-tabs .tabbrowser-tab[zen-essential="true"][selected] .tab-background {
-  background-color: color-mix(in srgb, var(--matugen-bg-light) 70%, var(--matugen-bg-dark) 30%) !important;
-}
-
-/* ============================================================
- * 5. TOP TOOLBAR (URL bar, search, content shortcuts)
- * ============================================================ */
-#TabsToolbar,
-#zen-appcontent-navbar-container,
-hbox#titlebar {
-  background-color: var(--matugen-bg-dark) !important;
-}
-
 .urlbar-background,
 .content-shortcuts {
-  background-color: var(--matugen-bg) !important;
   color: var(--matugen-fg) !important;
 }
 
@@ -253,10 +183,6 @@ hbox#titlebar {
 .ac-url-text,
 .ac-action-text {
   color: var(--matugen-accent) !important;
-}
-
-#zenEditBookmarkPanelFaviconContainer {
-  background: var(--matugen-bg-dark) !important;
 }
 
 /* URL bar text selection + suggestion row highlight. */
@@ -333,22 +259,11 @@ panel ::-moz-selection {
   color-scheme: light dark;
 }
 
-#urlbar-results .urlbarView-row[selected],
-.urlbarView-row[selected],
-.urlbarView-row:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 25%, var(--matugen-bg) 75%) !important;
-}
-
 #urlbar-results .urlbarView-row[selected] .urlbarView-url,
 #urlbar-results .urlbarView-row[selected] .ac-url-text,
 #urlbar-results .urlbarView-row[selected] .ac-title,
 #urlbar-results .urlbarView-row[selected] .ac-action-text {
   color: var(--matugen-accent) !important;
-}
-
-#urlbar[breakout-extend="true"] > .urlbar-input-container,
-.urlbar[focused="true"] > .urlbar-input-container {
-  background-color: var(--matugen-bg) !important;
 }
 
 /* All toolbar buttons: accent color/fill + accent hover tint. */
@@ -372,20 +287,6 @@ panel ::-moz-selection {
   fill: var(--matugen-accent) !important;
 }
 
-.toolbarbutton-1:not(#tabs-newtab-button):hover,
-.urlbar-page-action:hover,
-.identity-box-button:hover,
-#PanelUI-menu-button:hover,
-#back-button:hover,
-#forward-button:hover,
-#reload-button:hover,
-#downloads-button:hover,
-#bookmarks-menu-button:hover,
-#history-button:hover,
-#addons-button:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 15%, var(--matugen-bg-dark) 85%) !important;
-}
-
 /* ============================================================
  * 6. PANEL POPUPS (context menus, dropdowns)
  * ============================================================ */
@@ -395,7 +296,6 @@ menupopup, panel,
 #PlacesToolbar menupopup,
 .tab-context-menu {
   --panel-border-color: color-mix(in srgb, var(--matugen-accent) 30%, transparent) !important;
-  background-color: var(--matugen-bg) !important;
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
 }
@@ -425,7 +325,6 @@ menupopup menuitem[_moz-menuactive="true"],
 menupopup menuitem:hover:not([disabled="true"]),
 menupopup menu[_moz-menuactive="true"],
 menupopup menu:hover:not([disabled="true"]) {
-  background-color: color-mix(in srgb, var(--matugen-accent) 20%, var(--matugen-bg) 80%) !important;
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
 }
@@ -457,15 +356,6 @@ menupopup image {
   color: var(--matugen-accent) !important;
 }
 
-/* ============================================================
- * 6b. APP MENU (hamburger PanelUI) - accent text/icons + hover bg
- * ============================================================ */
-#appMenu-mainView,
-.panel-viewstack,
-.panel-subview-body {
-  background-color: var(--matugen-bg) !important;
-}
-
 .subviewbutton,
 .subviewbutton-nav,
 .subviewbutton-iconic {
@@ -490,7 +380,6 @@ menupopup image {
 .subviewbutton[selected],
 .subviewbutton-nav:hover:not([disabled="true"]),
 .subviewbutton-iconic:hover:not([disabled="true"]) {
-  background-color: color-mix(in srgb, var(--matugen-accent) 20%, var(--matugen-bg) 80%) !important;
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
 }
@@ -512,7 +401,6 @@ menupopup image {
 }
 
 .panel-banner-item {
-  background-color: color-mix(in srgb, var(--matugen-accent) 15%, var(--matugen-bg) 85%) !important;
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
 }
@@ -524,7 +412,6 @@ menupopup image {
 #downloadsPanel .panel-view-body-unscrollable,
 #downloadsListBox,
 #downloadsFooter {
-  background-color: var(--matugen-bg) !important;
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
 }
@@ -546,14 +433,6 @@ richlistitem[is="download"] .downloadStatus,
   color: var(--matugen-accent) !important;
 }
 
-.downloadProgress {
-  background-color: var(--matugen-bg-dark) !important;
-}
-.downloadProgress::-moz-progress-bar,
-.downloadProgress[mode="normal"]::-moz-progress-bar {
-  background-color: var(--matugen-accent) !important;
-}
-
 #downloadsHistory,
 .downloadsPanelFooterButton,
 #downloadsHistory > button,
@@ -569,7 +448,6 @@ richlistitem[is="download"] .downloadStatus,
 #downloadsHistory > button:hover,
 .downloadsPanelFooterButton:hover,
 .downloadsPanelFooterButton > button:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 20%, var(--matugen-bg) 80%) !important;
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
 }
@@ -610,14 +488,6 @@ button[default="true"],
 button[default] {
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
-  background-color: color-mix(in srgb, var(--matugen-accent) 12%, var(--matugen-bg) 88%) !important;
-}
-
-.toolbarbutton-1:hover,
-dialog button:hover,
-button.dialog-button:hover,
-button[dlgtype="accept"]:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 25%, var(--matugen-bg) 75%) !important;
 }
 
 dialog button[dlgtype="cancel"],
@@ -625,7 +495,6 @@ dialog button[dlgtype="reject"],
 dialog button[dlgtype="disclosure"] {
   color: var(--matugen-fg) !important;
   fill: var(--matugen-fg) !important;
-  background-color: var(--matugen-bg-dark) !important;
 }
 
 #print-preview-toolbar .toolbarbutton-icon,
@@ -649,14 +518,6 @@ dialog button[dlgtype="disclosure"] {
 .zen-glance-sidebar-split {
   color: var(--matugen-accent) !important;
   fill: var(--matugen-accent) !important;
-  background-color: color-mix(in srgb, var(--matugen-accent) 12%, var(--matugen-bg-dark) 88%) !important;
-}
-
-.zen-glance-sidebar-container toolbarbutton:hover,
-.zen-glance-sidebar-close:hover,
-.zen-glance-sidebar-open:hover,
-.zen-glance-sidebar-split:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 25%, var(--matugen-bg-dark) 75%) !important;
 }
 
 .zen-glance-sidebar-container toolbarbutton .toolbarbutton-icon,
@@ -679,21 +540,17 @@ dialog button[dlgtype="disclosure"] {
  * ============================================================ */
 .browserContainer > findbar,
 findbar {
-  --toolbar-bgcolor: var(--matugen-bg-dark) !important;
   --toolbar-color: var(--matugen-accent) !important;
   --chrome-content-separator-color: var(--matugen-accent) !important;
-  background-color: var(--matugen-bg-dark) !important;
   color: var(--matugen-accent) !important;
 }
 
 .findbar-container {
-  background-color: var(--matugen-bg-dark) !important;
   color: var(--matugen-accent) !important;
 }
 
 .findbar-textbox,
 .findbar-textbox[focused="true"] {
-  background-color: var(--matugen-bg) !important;
   color: var(--matugen-fg) !important;
 }
 
@@ -717,16 +574,6 @@ findbar {
 .findbar-closebutton > .toolbarbutton-icon {
   fill: var(--matugen-accent) !important;
   color: var(--matugen-accent) !important;
-}
-
-.findbar-find-previous:hover,
-.findbar-find-next:hover,
-.findbar-highlight:hover,
-.findbar-case-sensitive:hover,
-.findbar-entire-word:hover,
-.findbar-find:hover,
-.findbar-closebutton:hover {
-  background-color: color-mix(in srgb, var(--matugen-accent) 20%, var(--matugen-bg-dark) 80%) !important;
 }
 
 .findbar-find-status,
@@ -762,6 +609,27 @@ findbar {
   color: var(--matugen-bg-dark) !important;
 }
 
-#zen-media-controls-toolbar #zen-media-progress-bar::-moz-range-track {
-  background: var(--matugen-bg-light) !important;
+
+/* ============================================================
+ * 9. OPAQUE SURFACES
+ *     Pin the top toolbar strip + the left vertical-tab / drag strip
+ *     to a solid fill; the web-content backdrop is left transparent so
+ *     empty tabs show the compositor blur / wallpaper. Last in the file
+ *     so it wins over the stripped rules above.
+ * ============================================================ */
+#navigator-toolbox,
+#titlebar,
+hbox#titlebar,
+#TabsToolbar,
+#nav-bar,
+#zen-appcontent-navbar-container,
+#zen-appcontent-navbar-wrapper,
+#zen-main-app-wrapper,
+#tabbrowser-tabs[orient="vertical"],
+#zen-tabbox-wrapper,
+#zen-sidebar-top-buttons,
+#zen-current-workspace-indicator,
+.zen-workspace-tabs-section,
+#zen-sidebar-splitter {
+  background-color: var(--matugen-bg-dark) !important;
 }
