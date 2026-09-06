@@ -102,7 +102,7 @@ in {
                   "AndroidStudio"
                   "Zed"
                   "DevTools"
-                  "FreeClaudeCode"
+                  #"FreeClaudeCode"
 
                   "Cpp"
                   #"Rust"
@@ -234,6 +234,7 @@ in {
             wl-clipboard
             grim
             slurp
+            hyprshot
             hyprpicker
             playerctl
             brightnessctl
