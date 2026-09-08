@@ -1,5 +1,5 @@
 { self, inputs, ... }: {
-  flake.nixosModules.VayoriUsers = { config, lib, pkgs, ... }:
+  flake.nixosModules.VayumeUsers = { config, lib, pkgs, ... }:
   let
     defaultUserSecrets = {
       WAKATIME_API_KEY = "REPLACE_ME";
@@ -9,12 +9,12 @@
       };
     };
 
-    cfg = config.vayori.users;
+    cfg = config.vayume.users;
 
     availableApps = builtins.attrNames self.homeModules.apps;
 
     enabledAppNames = builtins.attrNames (
-      lib.filterAttrs (_: app: app.enable) config.vayori.apps
+      lib.filterAttrs (_: app: app.enable) config.vayume.apps
     );
 
     userSubmodule = lib.types.submodule ({ name, ... }: {
@@ -51,7 +51,7 @@
             Small per-app credentials (WakaTime key, rbw email, Free
             Claude Code provider keys - see docs/core-users.md for the full
             shape) passed straight to every app module as the
-            `vayoriSecrets` argument. Left-out keys, or the whole
+            `vayumeSecrets` argument. Left-out keys, or the whole
             attrset, fall back to "REPLACE_ME" placeholders - a key
             still equal to that disables whatever it would've
             configured (no WakaTime extension installed, no rbw email
@@ -83,7 +83,7 @@
       };
     });
   in {
-    options.vayori.users = lib.mkOption {
+    options.vayume.users = lib.mkOption {
       type = lib.types.attrsOf userSubmodule;
       default = { };
       description = ''
@@ -96,7 +96,7 @@
       '';
     };
 
-    options.vayori.apps = lib.mkOption {
+    options.vayume.apps = lib.mkOption {
       type = lib.types.submodule {
         options = lib.genAttrs availableApps (
           name: lib.mkOption {
@@ -110,9 +110,9 @@
       default = { };
       description = ''
         Which optional app modules (from modules/apps/) EVERYONE on this
-        machine gets, e.g. `vayori.apps.Vscode.enable = true;`. One real,
+        machine gets, e.g. `vayume.apps.Vscode.enable = true;`. One real,
         individually-named option per module under modules/apps/ - type
-        `vayori.apps.` in an editor with Nix LSP support and every
+        `vayume.apps.` in an editor with Nix LSP support and every
         available app shows up by name, instead of needing to already
         know the exact quoted string a `listOf` would require.
       '';
@@ -135,11 +135,11 @@
 
       home-manager.useGlobalPkgs = true;
       home-manager.useUserPackages = true;
-      home-manager.extraSpecialArgs = { inherit inputs self; vayoriTheme = config.vayori.theme; vayoriApps = enabledAppNames; };
+      home-manager.extraSpecialArgs = { inherit inputs self; vayumeTheme = config.vayume.theme; vayumeApps = enabledAppNames; };
       home-manager.backupFileExtension = "backup";
 
       home-manager.users = lib.mapAttrs (name: u: { lib, pkgs, ... }: {
-        _module.args.vayoriSecrets = lib.recursiveUpdate defaultUserSecrets u.secrets;
+        _module.args.vayumeSecrets = lib.recursiveUpdate defaultUserSecrets u.secrets;
 
         imports = [
           self.homeModules.Baseline

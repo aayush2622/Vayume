@@ -14,7 +14,7 @@
 
   home.file.".config/matugen/templates/wine-colors.reg".text = self.matugenTemplates.wine;
 
-  vayori.matugenTemplates.wine = ''
+  vayume.matugenTemplates.wine = ''
     [templates.wine]
     input_path = '${config.home.homeDirectory}/.config/matugen/templates/wine-colors.reg'
     output_path = '/tmp/wine.reg'

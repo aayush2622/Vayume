@@ -16,19 +16,19 @@
 
     pathsBashArray = builtins.concatStringsSep " " (map (p: "\"${p}\"") statePaths);
 
-    stateBackupScript = pkgs.writeShellScriptBin "vayori-app-state" ''
+    stateBackupScript = pkgs.writeShellScriptBin "vayume-app-state" ''
       set -euo pipefail
 
-      SESSION_DIR="$HOME/.config/vayori/session"
+      SESSION_DIR="$HOME/.config/vayume/session"
 
       usage() {
-        echo "usage: vayori-app-state backup <output-file>" >&2
-        echo "       vayori-app-state restore <input-file>" >&2
+        echo "usage: vayume-app-state backup <output-file>" >&2
+        echo "       vayume-app-state restore <input-file>" >&2
         echo "" >&2
         echo "Every app's real login/session state (Zen Browser profile, Vesktop," >&2
         echo "VS Code/Zed accounts, rbw session, Bitwarden desktop, Free Claude" >&2
         echo "Code's .env, ...) lives at" >&2
-        echo "~/.config/vayori/session - always that same fixed path, regardless" >&2
+        echo "~/.config/vayume/session - always that same fixed path, regardless" >&2
         echo "of where this flake is checked out." >&2
         echo "Apps are symlinked there automatically (see linkSessionState), so" >&2
         echo "it's already the one folder that has to move for a fresh install" >&2
@@ -105,7 +105,7 @@
     home.packages = [ stateBackupScript ];
 
     home.activation.linkSessionState = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      SESSION_DIR="$HOME/.config/vayori/session"
+      SESSION_DIR="$HOME/.config/vayume/session"
       PATHS=(${pathsBashArray})
 
       for p in "''${PATHS[@]}"; do
@@ -120,7 +120,7 @@
 
         if [ -e "$TARGET" ]; then
           if [ -e "$LINK_DEST" ]; then
-            echo "vayori-session: both $TARGET and $LINK_DEST already exist - leaving $TARGET as-is, resolve by hand"
+            echo "vayume-session: both $TARGET and $LINK_DEST already exist - leaving $TARGET as-is, resolve by hand"
             continue
           fi
           run mv "$TARGET" "$LINK_DEST"

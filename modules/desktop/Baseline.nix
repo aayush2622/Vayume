@@ -5,22 +5,22 @@
       pkgs,
       lib,
       config,
-      vayoriTheme,
+      vayumeTheme,
       ...
     }:
     let
-      theme = vayoriTheme;
+      theme = vayumeTheme;
 
       schemaDir = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
 
-      gtkLiveReloadScript = pkgs.writeShellScript "vayori-gtk-live-reload" ''
+      gtkLiveReloadScript = pkgs.writeShellScript "vayume-gtk-live-reload" ''
         set -u
 
         themesDir="$HOME/.local/share/themes"
-        colors="$HOME/.cache/vayori/gtk3-colors.css"
+        colors="$HOME/.cache/vayume/gtk3-colors.css"
 
         if [ -f "$colors" ]; then
-          name="vayori-dank-$(${pkgs.coreutils}/bin/date +%s%N)"
+          name="vayume-dank-$(${pkgs.coreutils}/bin/date +%s%N)"
           dest="$themesDir/$name/gtk-3.0"
           ${pkgs.coreutils}/bin/mkdir -p "$dest"
 
@@ -34,7 +34,7 @@
           if GSETTINGS_SCHEMA_DIR=${schemaDir} \
             ${pkgs.glib.bin}/bin/gsettings set org.gnome.desktop.interface gtk-theme "$name"
           then
-            for d in "$themesDir"/vayori-dank-*; do
+            for d in "$themesDir"/vayume-dank-*; do
               [ -d "$d" ] || continue
               [ "$d" = "$themesDir/$name" ] || ${pkgs.coreutils}/bin/rm -rf "$d"
             done
@@ -45,7 +45,7 @@
       '';
     in
     {
-      options.vayori.matugenTemplates = lib.mkOption {
+      options.vayume.matugenTemplates = lib.mkOption {
         type = lib.types.attrsOf lib.types.lines;
         default = { };
         description = ''
@@ -57,7 +57,7 @@
       config = {
         home.file = {
           ".config/matugen/config.toml".text =
-            "[config]\n" + lib.concatStringsSep "\n" (lib.attrValues config.vayori.matugenTemplates);
+            "[config]\n" + lib.concatStringsSep "\n" (lib.attrValues config.vayume.matugenTemplates);
 
           ".local/share/themes/adw-gtk3".source = "${pkgs.adw-gtk3}/share/themes/adw-gtk3";
 
@@ -117,10 +117,10 @@
             size = theme.fontSize;
           };
         };
-        vayori.matugenTemplates.gtk = ''
+        vayume.matugenTemplates.gtk = ''
           [templates.gtk3]
           input_path = '${config.home.homeDirectory}/.config/matugen/templates/gtk3-colors.css'
-          output_path = '${config.home.homeDirectory}/.cache/vayori/gtk3-colors.css'
+          output_path = '${config.home.homeDirectory}/.cache/vayume/gtk3-colors.css'
           post_hook = '${gtkLiveReloadScript}'
 
           [templates.gtk4]

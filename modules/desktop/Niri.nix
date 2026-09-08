@@ -23,7 +23,7 @@
       "Mod+E" = titled "Open File Manager" { spawn = [ "thunar" ]; };
       "Mod+C" = titled "Open VS Code" { spawn = [ "code" ]; };
       "Mod+B" = titled "Open Browser" { spawn = [ "zen" ]; };
-      "Mod+Shift+B" = titled "Reload Zen (apply new theme)" { spawn = [ "vayori-zen-reload" ]; };
+      "Mod+Shift+B" = titled "Reload Zen (apply new theme)" { spawn = [ "vayume-zen-reload" ]; };
       "Control+Shift+Escape" = titled "Open System Monitor" { spawn = [ "kitty" "-e" "btop" ]; };
 
       "Mod+S" = titled "Toggle App Launcher" { spawn = [ "dms" "ipc" "call" "spotlight" "toggle" ]; };

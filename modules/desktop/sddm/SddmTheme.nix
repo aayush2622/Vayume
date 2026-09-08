@@ -6,8 +6,8 @@
       background=bg.png
       font=Itim
       themeMode=light
-      cursorTheme=${config.vayori.theme.cursorTheme}
-      cursorSize=${toString config.vayori.theme.cursorSize}
+      cursorTheme=${config.vayume.theme.cursorTheme}
+      cursorSize=${toString config.vayume.theme.cursorSize}
     '';
 
     womenUmbrella = pkgs.stdenvNoCC.mkDerivation {

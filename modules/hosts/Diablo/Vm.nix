@@ -27,7 +27,7 @@
       nix.gc.automatic = lib.mkForce false;
 
       services.displayManager.sddm.settings.General.GreeterEnvironment = lib.mkForce
-        "XCURSOR_THEME=${config.vayori.theme.cursorTheme},XCURSOR_SIZE=${toString config.vayori.theme.cursorSize},XCURSOR_PATH=${config.vayori.theme.cursorPackage}/share/icons,QT_QUICK_BACKEND=software";
+        "XCURSOR_THEME=${config.vayume.theme.cursorTheme},XCURSOR_SIZE=${toString config.vayume.theme.cursorSize},XCURSOR_PATH=${config.vayume.theme.cursorPackage}/share/icons,QT_QUICK_BACKEND=software";
 
       virtualisation = {
         memorySize = 6144;
@@ -51,10 +51,10 @@
     {
       apps.vm = {
         type = "app";
-        program = lib.getExe (pkgs.writeShellScriptBin "vayori-vm" ''
+        program = lib.getExe (pkgs.writeShellScriptBin "vayume-vm" ''
           set -eu
 
-          IMG="''${VAYORI_VM_IMAGE:-''${XDG_CACHE_HOME:-$HOME/.cache}/vayori/Diablo.qcow2}"
+          IMG="''${VAYUME_VM_IMAGE:-''${XDG_CACHE_HOME:-$HOME/.cache}/vayume/Diablo.qcow2}"
           ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$IMG")"
 
           if [ "''${1:-}" = "--fresh" ] || [ "''${1:-}" = "-f" ]; then

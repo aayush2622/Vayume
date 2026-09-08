@@ -1,11 +1,11 @@
-# Vayori
+# Vayume
 
 <p>
   <img alt="Built with Nix" src="https://img.shields.io/badge/built%20with-Nix-5277C3?logo=nixos&logoColor=white">
   <img alt="Compositor" src="https://img.shields.io/badge/compositor-niri%20%2B%20Hyprland-blue">
   <img alt="Shell" src="https://img.shields.io/badge/shell-DankMaterialShell-purple">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
-  <a href="https://github.com/aayush2622/Vayori-Rice/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/aayush2622/Vayori-Rice?style=flat&color=yellow"></a>
+  <a href="https://github.com/aayush2622/Vayume-Rice/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/aayush2622/Vayume-Rice?style=flat&color=yellow"></a>
 </p>
 
 My NixOS setup. [niri](https://github.com/YaLTeR/niri) and
@@ -66,7 +66,7 @@ Ubuntu-only tail.
 Everything under `modules/apps/` is one boolean in `Host.nix`:
 
 ```nix
-vayori.apps = {
+vayume.apps = {
   Vscode.enable = true;
   Gaming.enable = true;
   Rust.enable = false;
@@ -78,12 +78,12 @@ vayori.apps = {
 ## Secrets
 
 API keys live in `_user.nix` (gitignored), under
-`vayori.users.<name>.secrets` — `<name>` is whichever key you picked for
-yourself in `vayori.users` above it. `ash` is just this repo author's
+`vayume.users.<name>.secrets` — `<name>` is whichever key you picked for
+yourself in `vayume.users` above it. `ash` is just this repo author's
 username, not a reserved word:
 
 ```nix
-vayori.users.<yourname>.secrets = {
+vayume.users.<yourname>.secrets = {
   # VS Code, Android Studio, Zed - installs WakaTime, writes ~/.wakatime.cfg
   WAKATIME_API_KEY = "waka_...";
 
@@ -114,10 +114,10 @@ doesn't get installed, rather than being configured with a key that would
 only fail. Full shape in [docs/core-users.md](docs/core-users.md).
 
 Browser profiles, editor logins and the rbw session live in one portable
-folder, `~/.config/vayori/session`, with its own encrypted backup CLI:
+folder, `~/.config/vayume/session`, with its own encrypted backup CLI:
 
 ```bash
-vayori-app-state backup ~/vayori-session.enc
+vayume-app-state backup ~/vayume-session.enc
 ```
 
 ---

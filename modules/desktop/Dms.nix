@@ -9,7 +9,7 @@
       ...
     }:
     let
-      theme = config.vayori.theme;
+      theme = config.vayume.theme;
 
       registryPlugins = pkgs.callPackage "${inputs.dms-plugin-registry}/nix/default.nix" { };
 
@@ -65,28 +65,28 @@
         '';
       };
 
-      vayoriHomeByUser = lib.concatMapStringsSep "\n" (
+      vayumeHomeByUser = lib.concatMapStringsSep "\n" (
         name: ''"${name}") echo "${config.users.users.${name}.home}" ;;''
-      ) (builtins.attrNames config.vayori.users);
+      ) (builtins.attrNames config.vayume.users);
 
-      vayoriRebuildScript = pkgs.writeShellScript "vayori-rebuild" ''
+      vayumeRebuildScript = pkgs.writeShellScript "vayume-rebuild" ''
         homeDir="$(case "''${SUDO_USER:-$USER}" in
-        ${vayoriHomeByUser}
+        ${vayumeHomeByUser}
           *) echo "$HOME" ;;
         esac)"
         flakeDir=""
-        for d in "$homeDir/vayori" "$homeDir/dotfiles" "$homeDir/.dotfiles" /etc/nixos; do
+        for d in "$homeDir/vayume" "$homeDir/dotfiles" "$homeDir/.dotfiles" /etc/nixos; do
           [ -f "$d/flake.nix" ] && flakeDir="$d" && break
         done
         if [ -z "$flakeDir" ]; then
-          echo "vayori flake not found (checked $homeDir/vayori, $homeDir/dotfiles, $homeDir/.dotfiles, /etc/nixos) - edit rebuildCommand in dms.nix if it lives elsewhere"
+          echo "vayume flake not found (checked $homeDir/vayume, $homeDir/dotfiles, $homeDir/.dotfiles, /etc/nixos) - edit rebuildCommand in dms.nix if it lives elsewhere"
           exit 1
         fi
         ${pkgs.git}/bin/git config --global --add safe.directory "$flakeDir"
         exec nixos-rebuild switch --flake "path:$flakeDir#${config.networking.hostName}"
       '';
 
-      vayoriGcScript = pkgs.writeShellScript "vayori-gc" "exec nix-collect-garbage -d";
+      vayumeGcScript = pkgs.writeShellScript "vayume-gc" "exec nix-collect-garbage -d";
     in
     {
       services.accounts-daemon.enable = true;
@@ -97,22 +97,22 @@
             users = [ name ];
             commands = [
               {
-                command = "${vayoriRebuildScript}";
+                command = "${vayumeRebuildScript}";
                 options = [ "NOPASSWD" ];
               }
               {
-                command = "${vayoriGcScript}";
+                command = "${vayumeGcScript}";
                 options = [ "NOPASSWD" ];
               }
             ];
           })
           (
-            builtins.filter (name: builtins.elem "wheel" config.vayori.users.${name}.extraGroups) (
-              builtins.attrNames config.vayori.users
+            builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups) (
+              builtins.attrNames config.vayume.users
             )
           );
 
-      home-manager.users = lib.genAttrs (builtins.attrNames config.vayori.users) (
+      home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (
         name: { pkgs, lib, config, ... }: {
           imports = [
             inputs.dms.homeModules.dank-material-shell
@@ -121,7 +121,7 @@
           home.packages = [ materialOSIcons pkgs.swayidle ];
           home.sessionVariables.QS_ICON_THEME = "MaterialOS";
 
-          systemd.user.services.vayori-idle-lock = {
+          systemd.user.services.vayume-idle-lock = {
             Unit = {
               Description = "Lock the screen after 10 minutes idle";
               After = [ "graphical-session.target" ];
@@ -153,12 +153,12 @@
                 rebuildCommand = [
                   "sh"
                   "-c"
-                  "sudo ${vayoriRebuildScript} 2>&1"
+                  "sudo ${vayumeRebuildScript} 2>&1"
                 ];
                 gcCommand = [
                   "sh"
                   "-c"
-                  "sudo ${vayoriGcScript} 2>&1"
+                  "sudo ${vayumeGcScript} 2>&1"
                 ];
                 updateInterval = 300;
               };

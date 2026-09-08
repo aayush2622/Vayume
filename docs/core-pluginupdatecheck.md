@@ -27,8 +27,8 @@ outdated so you can bump it by hand.
 - **Keys match the app's real attribute name exactly** (`Vscode`, not
   `vscode`), so filtering down to "only what's actually enabled on this
   host" needs no translation table, just a straight name comparison.
-- The filtered result lands at `/etc/vayori/plugin-pins.json`, system-wide
-  rather than per-user, since `vayori.apps` itself is host-wide anyway.
+- The filtered result lands at `/etc/vayume/plugin-pins.json`, system-wide
+  rather than per-user, since `vayume.apps` itself is host-wide anyway.
 - **Zen Browser's pins have nothing to version-check** - everything
   installs at whatever's currently latest, there's no pinned version to
   compare against. So for Zen this script checks *existence* instead: did
@@ -59,7 +59,7 @@ outdated so you can bump it by hand.
     silent for a full day over a coincidental blip.
   - Results cache for 24 hours, so rebuilding twice in one day doesn't
     mean two rounds of network calls. Force a fresh check by setting
-    `VAYORI_PLUGIN_CHECK_FORCE=1`.
+    `VAYUME_PLUGIN_CHECK_FORCE=1`.
   - Silent when there's nothing to report - it only ever speaks up when
     it's actually found something, so it's not noise on every build.
 - **Wired in through a zsh hook**, not an alias, since aliases get

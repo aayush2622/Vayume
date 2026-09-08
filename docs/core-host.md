@@ -6,27 +6,27 @@ Every machine starts here. `Host.nix` is the one file that says what this partic
 
 ## `modules/hosts/<name>/Host.nix`
 
-**`vayori.theme`** is a submodule declared right here, not in a shared
-file like `vayori.users`/`vayori.apps` - it's a per-host preference, and
+**`vayume.theme`** is a submodule declared right here, not in a shared
+file like `vayume.users`/`vayume.apps` - it's a per-host preference, and
 there's only one host so far. Comes with sane defaults (JetBrainsMono
 Nerd Font, Bibata-Modern-Ice, Tela-circle). Change one field without
-touching the rest - `vayori.theme.font = "Fira Code";` and it updates
+touching the rest - `vayume.theme.font = "Fira Code";` and it updates
 everywhere at once, since fontconfig, GTK, kitty, and DMS all read the
 same option.
 
-NixOS modules can read `config.vayori.theme.*` directly. Home-manager
+NixOS modules can read `config.vayume.theme.*` directly. Home-manager
 modules can't - they run as a totally separate module tree that never
 sees the parent config - so `Users.nix` hands it over explicitly via
 `extraSpecialArgs`.
 
-Not wired to `vayori.theme`, if you're wondering: the SDDM greeter's
+Not wired to `vayume.theme`, if you're wondering: the SDDM greeter's
 bundled font and GRUB's own theme package. See
 [Fonts.nix / Portals.nix](desktop-portals-fonts.md).
 
 **Two Nix landmines hit while building this file, worth knowing about:**
 
 1. A module can't mix `options.x = ...` with plain top-level config keys.
-   Declare `options.vayori.theme` and suddenly everything else has to
+   Declare `options.vayume.theme` and suddenly everything else has to
    move under `config = { ... };`, or you get a cryptic `unsupported
    attribute 'boot'` error that gives you no hint why.
 2. An inline lambda right after a path in a list doesn't parse the way
@@ -100,8 +100,8 @@ of the greeter's own visible UI, so it doesn't depend on Xcursor
 resolution, Wayland's cursor-surface protocol, or a hardware cursor
 plane existing at all.
 
-**Still `vayori.theme`-driven, not hardcoded**: the arrow's *size* comes
-from `config.vayori.theme.cursorSize`, threaded through via a
+**Still `vayume.theme`-driven, not hardcoded**: the arrow's *size* comes
+from `config.vayume.theme.cursorSize`, threaded through via a
 `cursorSize=` key [`SddmTheme.nix`](../modules/desktop/sddm/SddmTheme.nix) now writes into
 `theme.conf` (SDDM's own QML API exposes every `[General]` key as
 `config.<key>` - the same mechanism the theme could already use for
@@ -143,20 +143,20 @@ gets pointed at it directly via `environment.sessionVariables` instead.
 Verified live: `gsettings get org.gnome.desktop.interface gtk-theme`
 failed before this, returned the real `adw-gtk3` value after.
 
-**Apps** (`vayori.apps`) is the one setting most new machines actually
+**Apps** (`vayume.apps`) is the one setting most new machines actually
 need to touch - one real, individually-named boolean option per module
-under `modules/apps/`, e.g. `vayori.apps.Vscode.enable = true;`. Each
+under `modules/apps/`, e.g. `vayume.apps.Vscode.enable = true;`. Each
 name comes straight from `builtins.attrNames self.homeModules.apps`
 ([core/Users.nix](core-users.md)), so it's discoverable by typing
-`vayori.apps.` in an editor with Nix LSP support instead of needing to
+`vayume.apps.` in an editor with Nix LSP support instead of needing to
 already know the exact string a plain `listOf` would've required - and a
 typo'd app name is a real evaluation error (unknown option) rather than
 a silently-ignored list entry. `false` entries are written explicitly
 rather than deleted, so it's visible at a glance which apps exist on
 this machine but are off, not just missing. Internally,
-`config.vayori.apps` is filtered down to the flat list of enabled names
+`config.vayume.apps` is filtered down to the flat list of enabled names
 (`enabledAppNames`) before anything downstream - the home-manager
-imports, `vayoriApps` passed to app modules, `PluginUpdateCheck.nix`'s
+imports, `vayumeApps` passed to app modules, `PluginUpdateCheck.nix`'s
 pin filtering - ever sees it; those consumers are unaware the option
 itself changed shape.
 
@@ -164,7 +164,7 @@ itself changed shape.
 [Gaming.nix](apps-gaming.md) - see that page
 for why.
 
-**Users** (`vayori.users`) - **not set here any more.** It used to be a
+**Users** (`vayume.users`) - **not set here any more.** It used to be a
 plain block in this file, but that meant real usernames, group
 memberships, and a password hash sat in git history the moment the repo
 went public. It's set from `_user.nix` instead now - a gitignored sibling

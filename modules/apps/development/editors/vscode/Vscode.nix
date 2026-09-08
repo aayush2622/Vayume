@@ -13,11 +13,11 @@ let
 in {
   flake.pluginPins.Vscode = lib.concatMap (l: l.vscode.manualExtensions or [ ]) (lib.attrValues self.devLanguages);
 
-  flake.homeModules.apps.Vscode = { pkgs, lib, vayoriTheme, vayoriApps, vayoriSecrets, ... }:
+  flake.homeModules.apps.Vscode = { pkgs, lib, vayumeTheme, vayumeApps, vayumeSecrets, ... }:
   let
-    hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
+    hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
-    languageVscode = lib.mapAttrsToList (_: l: l.vscode or { }) (self.enabledDevLanguages vayoriApps);
+    languageVscode = lib.mapAttrsToList (_: l: l.vscode or { }) (self.enabledDevLanguages vayumeApps);
 
     resolveNixpkgsExtension = dotted:
       lib.attrByPath (lib.splitString "." dotted)
@@ -59,7 +59,7 @@ in {
       "security.workspace.trust.untrustedFiles" = "open";
       "files.autoSave" = "onWindowChange";
 
-      "editor.fontFamily" = vayoriTheme.font;
+      "editor.fontFamily" = vayumeTheme.font;
       "editor.fontLigatures" = true;
       "editor.fontSize" = 15;
       "editor.fontWeight" = "normal";
@@ -179,7 +179,7 @@ in {
       "git.enableSmartCommit" = true;
       "git.autofetch" = true;
       "git.confirmSync" = false;
-    } // lib.optionalAttrs (builtins.elem "FreeClaudeCode" vayoriApps) {
+    } // lib.optionalAttrs (builtins.elem "FreeClaudeCode" vayumeApps) {
       "claudeCode.disableLoginPrompt" = true;
       "claudeCode.environmentVariables" =
         lib.mapAttrsToList (name: value: { inherit name value; }) self.freeClaudeCode.clientEnv;
@@ -224,7 +224,7 @@ in {
 
     home.activation.vscodeWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (
       lib.optionalString hasWakatime ''
-        run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key ${lib.escapeShellArg vayoriSecrets.WAKATIME_API_KEY}
+        run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key ${lib.escapeShellArg vayumeSecrets.WAKATIME_API_KEY}
       ''
     );
   };

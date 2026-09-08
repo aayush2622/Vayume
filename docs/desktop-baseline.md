@@ -213,7 +213,7 @@ opt-in pick, it's just part of what this desktop *is*.
     the stylesheet's own first line is a **relative**
     `@import url("colors.css")`, so it resolves inside the theme dir with
     no path rewriting. The gtk3 color template renders to
-    `~/.cache/vayori/gtk3-colors.css`, deliberately *not* into
+    `~/.cache/vayume/gtk3-colors.css`, deliberately *not* into
     `~/.config/gtk-3.0/`, so nothing is ever tempted to `@import` it from
     the PRIORITY_USER file and re-introduce the shadowing bug.
   - **Verified the whole GTK3 chain end-to-end against real GTK**, not

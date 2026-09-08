@@ -7,7 +7,6 @@ let
     { name = "Chrome Mask"; slug = "chrome-mask"; guid = "chrome-mask@overengineer.dev"; }
     { name = "Claude Counter"; slug = "claude-counter"; guid = "{cf7799c8-d878-41ff-8005-167bee7ab3d6}"; }
     { name = "Zen Internet"; slug = "zen-internet"; guid = "{91aa3897-2634-4a8a-9092-279db23a7689}"; }
-    { name = "ClearURLs"; slug = "clearurls"; guid = "{74145f27-f039-47ce-a470-a662b129930a}"; }
     { name = "Cookie Quick Manager"; slug = "cookie-quick-manager"; guid = "{60f82f00-9ad5-4de5-b31c-b16a47c51558}"; }
     { name = "Dark Reader"; slug = "darkreader"; guid = "addon@darkreader.org"; }
     { name = "Enable Picture-in-Picture"; slug = "enable-picture-in-picture"; guid = "{31a4c81b-add0-4ce4-b6e4-b54dcb0f4d1b}"; }
@@ -36,9 +35,9 @@ in {
     mods = zenModsSpec;
   };
 
-  flake.homeModules.apps.ZenBrowser = { pkgs, lib, config, vayoriTheme, ... }:
+  flake.homeModules.apps.ZenBrowser = { pkgs, lib, config, vayumeTheme, ... }:
   let
-    theme = vayoriTheme;
+    theme = vayumeTheme;
 
     mkPrefLines = fn: prefs: lib.concatLines (
       lib.mapAttrsToList (name: value: "${fn}(${builtins.toJSON name}, ${builtins.toJSON value});") prefs
@@ -237,7 +236,7 @@ in {
 
     zenUserJs = pkgs.writeText "user.js" (mkPrefLines "user_pref" zenUserPrefs);
 
-    zen-reload = pkgs.writeShellScriptBin "vayori-zen-reload" ''
+    zen-reload = pkgs.writeShellScriptBin "vayume-zen-reload" ''
       set -u
 
       # wrapFirefox's launcher exec's `.zen-wrapped`, so the running process's
@@ -282,7 +281,7 @@ in {
       }
     '';
 
-    vayori.matugenTemplates.zen = ''
+    vayume.matugenTemplates.zen = ''
       [templates.zen]
       input_path = '${config.home.homeDirectory}/.config/matugen/templates/zen-matugen-vars.json'
       output_path = '${config.home.homeDirectory}/.zen/default/chrome/matugen-vars.json'
@@ -306,7 +305,7 @@ in {
 
       # --- Keep the profile Zen launches at the "default" path -------------
       # Everything below deploys into $ZEN_BASE/default. A backup restored
-      # from outside `vayori-app-state` (a raw ~/.zen copy, a snapshot tool,
+      # from outside `vayume-app-state` (a raw ~/.zen copy, a snapshot tool,
       # Zen's own profile import) brings its own profiles.ini / installs.ini
       # that can make a differently-named profile the default - then Zen
       # shows the restored data while this activation keeps writing to an
@@ -350,7 +349,7 @@ in {
         local ts; ts="$(${pkgs.coreutils}/bin/date +%s)"
         echo "  restored backup points Zen at '$chosen'; relocating it onto the 'default' path (old default -> *.pre-restore.$ts)"
 
-        # $PROFILE_DIR may be the vayori-session symlink; act on its real target
+        # $PROFILE_DIR may be the vayume-session symlink; act on its real target
         local realdefault="$PROFILE_DIR"
         [ -L "$PROFILE_DIR" ] && realdefault="$(${pkgs.coreutils}/bin/readlink -f "$PROFILE_DIR")"
         run ${pkgs.coreutils}/bin/mkdir -p "$(dirname "$realdefault")"

@@ -21,7 +21,7 @@ They just agree on what shape this data comes in.
   file exists to close.
 - **Every language folder sets two things**: a normal app
   (`flake.homeModules.apps.<Lang>`, installs the actual LSP + toolchain,
-  toggled through `vayori.apps` like anything else) and pure data
+  toggled through `vayume.apps` like anything else) and pure data
   (`flake.devLanguages.<Lang>`, no packages, just what each editor should
   grab). The data has a loose conventional shape but nothing enforces
   it - an editor reads whichever keys it understands and ignores the
@@ -30,7 +30,7 @@ They just agree on what shape this data comes in.
 - **Editors do their own filtering.** The published data is unfiltered -
   it's flake-level, evaluated once, with no host to filter against yet.
   Each editor works out which languages are actually enabled on its own,
-  right where `vayori.apps` is actually available, then folds in
+  right where `vayume.apps` is actually available, then folds in
   whatever each enabled language contributed. Turn a language off and
   its extensions disappear from every editor on the next rebuild -
   nothing to go update by hand.

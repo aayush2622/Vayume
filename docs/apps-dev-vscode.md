@@ -58,7 +58,7 @@ grew enough config to earn its own module.
   plugins across editors all read that one file by convention. Same
   disable-when-missing rule too: `wakatime.vscode-wakatime` only gets
   appended to `nixpkgsExtensions` (`lib.optional hasWakatime ...`) when
-  `vayoriSecrets.WAKATIME_API_KEY` is a real value, so a fresh setup
+  `vayumeSecrets.WAKATIME_API_KEY` is a real value, so a fresh setup
   with no key yet doesn't install an extension that would just sit
   there erroring.
 - **One Dark syntax highlighting sits on top of the matugen theme,

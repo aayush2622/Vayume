@@ -6,20 +6,20 @@ The one thing in this repo that isn't declarative on purpose - real, irreplaceab
 
 ## `modules/apps/utils/stateBackup/StateBackup.nix`
 
-One canonical folder - `~/.config/vayori/session` - for every app's real
+One canonical folder - `~/.config/vayume/session` - for every app's real
 login/session state (Zen Browser's profile, Vesktop, VS Code/Zed account
 sign-ins, the JetBrains/Android Studio data dir, rbw's own session, the
 Bitwarden desktop app's local storage, Free Claude Code's `.env` - see
 [core.md](core-users.md)), plus one command to move that
 folder around safely. Fixed under `$HOME`, on purpose - completely
 independent of wherever this flake repo happens to be checked out, so
-it's the same folder whether the repo lives at `~/vayori`, got cloned
+it's the same folder whether the repo lives at `~/vayume`, got cloned
 somewhere else entirely, or isn't even on disk right now (restoring a
 backup doesn't need the repo present at all).
 
 **`home.activation.linkSessionState`** runs on every rebuild. For each
 path in the list above, it symlinks the app's real config location into
-`~/.config/vayori/session/<same path>` instead of leaving it where the
+`~/.config/vayume/session/<same path>` instead of leaving it where the
 app would normally put it - so that one folder becomes the single thing
 that ever needs to move for a fresh install to come back already logged
 into everything.
@@ -40,12 +40,12 @@ into everything.
   locations, not guesses, but worth a quick check against the real
   thing.
 
-**`vayori-app-state backup <file>` / `restore <file>`** turns that same
+**`vayume-app-state backup <file>` / `restore <file>`** turns that same
 folder into a single password-encrypted archive and back - AES-256-CBC,
 keyed via PBKDF2 (SHA-256, 10000 iterations) from a passphrase typed at
 the prompt, never passed as a CLI argument (that'd leak through process
 listings/shell history). For a same-trust move - a USB drive only you
-touch, say - a plain `cp -r ~/.config/vayori/session` is just as valid
+touch, say - a plain `cp -r ~/.config/vayume/session` is just as valid
 and a lot faster; this command exists for moving that folder somewhere
 *less* trusted (cloud sync, email to yourself) without shipping it in
 the clear.
@@ -60,7 +60,7 @@ the clear.
 - **Restore never clobbers outright.** It decrypts and unpacks into a
   temporary directory first, only swapping it into place after
   confirming the archive actually contained a real `session/` folder -
-  and if `~/.config/vayori/session` already exists, it gets moved aside
+  and if `~/.config/vayume/session` already exists, it gets moved aside
   with a timestamp suffix instead of being deleted, so a restore never
   destroys data by mistake.
 

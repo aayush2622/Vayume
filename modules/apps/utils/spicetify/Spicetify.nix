@@ -1,5 +1,5 @@
 { inputs, ... }: {
-  flake.homeModules.apps.Spicetify = { pkgs, vayoriTheme, ... }:
+  flake.homeModules.apps.Spicetify = { pkgs, vayumeTheme, ... }:
   let
     spicePkgs =
       inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
@@ -16,10 +16,10 @@
       wayland = true;
 
       theme = spicePkgs.themes.hazy // {
-        extraPkgs = [ vayoriTheme.fontPackage ];
+        extraPkgs = [ vayumeTheme.fontPackage ];
         additionalCss = ''
           :root {
-            --font-family: "${vayoriTheme.font}", sans-serif !important;
+            --font-family: "${vayumeTheme.font}", sans-serif !important;
           }
         '';
       };

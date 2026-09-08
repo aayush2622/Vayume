@@ -33,7 +33,7 @@ The default file manager on this host - and the one that quietly proves how much
 - **Matugen reaches it for free, because it's a GTK3 app.** There's no
   Thunar-specific template anywhere in this repo and there shouldn't be:
   it links `libgtk-3.so.0`, so it picks up the rotating
-  `vayori-dank-*` named theme out of
+  `vayume-dank-*` named theme out of
   [Baseline.nix](desktop-baseline.md) like every other GTK3 app,
   live-reload included. The one setting that matters for this is
   `misc-use-csd = true` - with client-side decorations on, the window's

@@ -1,9 +1,9 @@
 { self, ... }: {
-  flake.homeModules.apps.Zed = { pkgs, lib, vayoriTheme, vayoriApps, vayoriSecrets, ... }:
+  flake.homeModules.apps.Zed = { pkgs, lib, vayumeTheme, vayumeApps, vayumeSecrets, ... }:
   let
-    hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
+    hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
-    languageZed = lib.mapAttrsToList (_: l: l.zed or { }) (self.enabledDevLanguages vayoriApps);
+    languageZed = lib.mapAttrsToList (_: l: l.zed or { }) (self.enabledDevLanguages vayumeApps);
 
     languageExtensions = lib.unique (lib.concatMap (v: v.extensions or [ ]) languageZed);
     languageSettings = lib.foldl' lib.recursiveUpdate { } (map (v: v.settings or { }) languageZed);
@@ -30,8 +30,8 @@
       cli_default_open_behavior = "existing_window";
       project_panel.dock = "left";
       ui_font_weight = 400.0;
-      ui_font_family = vayoriTheme.font;
-      buffer_font_family = vayoriTheme.font;
+      ui_font_family = vayumeTheme.font;
+      buffer_font_family = vayumeTheme.font;
       ui_font_size = 16;
       buffer_font_size = 15;
       base_keymap = "JetBrains";
@@ -62,7 +62,7 @@
     home.activation.zedWakatimeKey = lib.hm.dag.entryAfter [ "writeBoundary" "zedSettingsActivation" ] (
       lib.optionalString hasWakatime ''
         SETTINGS_FILE="$HOME/.config/zed/settings.json"
-        WAKATIME_KEY=${lib.escapeShellArg vayoriSecrets.WAKATIME_API_KEY}
+        WAKATIME_KEY=${lib.escapeShellArg vayumeSecrets.WAKATIME_API_KEY}
         SETTINGS_TMP="$(mktemp)"
 
         ${pkgs.jq}/bin/jq \

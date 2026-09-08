@@ -1,7 +1,7 @@
 { self, ... }: {
   flake.nixosModules.PluginUpdateCheck = { config, lib, pkgs, ... }:
   let
-    checkerScript = pkgs.writers.writePython3Bin "vayori-check-plugin-updates" { } ''
+    checkerScript = pkgs.writers.writePython3Bin "vayume-check-plugin-updates" { } ''
       import base64
       import hashlib
       import json
@@ -14,14 +14,14 @@
       from concurrent.futures import ThreadPoolExecutor
       from pathlib import Path
 
-      DEFAULT_PINS = "/etc/vayori/plugin-pins.json"
+      DEFAULT_PINS = "/etc/vayume/plugin-pins.json"
       DEFAULT_CACHE = str(
-          Path.home() / ".cache" / "vayori" / "plugin-update-check.json"
+          Path.home() / ".cache" / "vayume" / "plugin-update-check.json"
       )
-      PINS_PATH = Path(os.environ.get("VAYORI_PLUGIN_PINS", DEFAULT_PINS))
-      CACHE_PATH = Path(os.environ.get("VAYORI_PLUGIN_CHECK_CACHE", DEFAULT_CACHE))
-      TTL = int(os.environ.get("VAYORI_PLUGIN_CHECK_TTL", "86400"))
-      FORCE = os.environ.get("VAYORI_PLUGIN_CHECK_FORCE") == "1"
+      PINS_PATH = Path(os.environ.get("VAYUME_PLUGIN_PINS", DEFAULT_PINS))
+      CACHE_PATH = Path(os.environ.get("VAYUME_PLUGIN_CHECK_CACHE", DEFAULT_CACHE))
+      TTL = int(os.environ.get("VAYUME_PLUGIN_CHECK_TTL", "86400"))
+      FORCE = os.environ.get("VAYUME_PLUGIN_CHECK_FORCE") == "1"
       REQUEST_TIMEOUT = 4
 
       VSCODE_QUERY_URL = (
@@ -74,7 +74,7 @@
               else:
                   return None
               req = urllib.request.Request(
-                  url, headers={"User-Agent": "vayori-plugin-update-check"}
+                  url, headers={"User-Agent": "vayume-plugin-update-check"}
               )
               with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
                   return sri_sha256(resp.read())
@@ -233,7 +233,7 @@
           )
           if pending_hash:
               lines.append(
-                  "  (resolving hashes... run `vayori-check-plugin-updates` "
+                  "  (resolving hashes... run `vayume-check-plugin-updates` "
                   "directly if they don't appear)"
               )
           return "\n".join(lines)
@@ -313,9 +313,9 @@
           main()
     '';
   in {
-    environment.etc."vayori/plugin-pins.json".text = builtins.toJSON (
+    environment.etc."vayume/plugin-pins.json".text = builtins.toJSON (
       lib.filterAttrs
-        (name: _: config.vayori.apps.${name}.enable or false)
+        (name: _: config.vayume.apps.${name}.enable or false)
         self.pluginPins
     );
     environment.systemPackages = [ checkerScript pkgs.coreutils ];

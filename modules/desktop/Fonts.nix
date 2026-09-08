@@ -1,6 +1,6 @@
 {
   flake.nixosModules.Fonts = { pkgs, config, ... }:
-  let theme = config.vayori.theme; in
+  let theme = config.vayume.theme; in
   {
     fonts.packages = with pkgs; [
       inter

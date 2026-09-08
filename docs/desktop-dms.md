@@ -210,16 +210,16 @@ enabling it alone isn't enough.
 - **The rebuild button was actually broken - a real, confirmed bug, not
   a hypothesis.** Reproduced end-to-end in a real VM boot: `sudo`
   resets `$HOME` to `/root` for the process it runs (standard sudo
-  behavior, `env_reset` on by default), so the script's old `"$HOME/vayori"`
-  search always looked in `/root/vayori` - which never exists - and
-  failed with "vayori flake not found" every single time the button was
+  behavior, `env_reset` on by default), so the script's old `"$HOME/vayume"`
+  search always looked in `/root/vayume` - which never exists - and
+  failed with "vayume flake not found" every single time the button was
   clicked, regardless of where the flake actually lived. This is also
   why the generation count looked stuck: the plugin only calls
   `refreshData()` after a rebuild exits 0, so a rebuild that never gets
   past this check never refreshes anything, which just looks like "the
   number doesn't update." Fixed by resolving the *invoking* user's home
-  directory instead of trusting `$HOME` - `vayoriHomeByUser` builds a
-  `case` statement mapping every `config.vayori.users` name to its real
+  directory instead of trusting `$HOME` - `vayumeHomeByUser` builds a
+  `case` statement mapping every `config.vayume.users` name to its real
   `config.users.users.<name>.home` at eval time (correct even if a
   user's home is ever customized off the `/home/<name>` default), keyed
   off `$SUDO_USER` (sudo's own record of who invoked it, unaffected by
@@ -291,7 +291,7 @@ enabling it alone isn't enough.
   locks on idle for it to inhibit - the widget existed, the mechanism it
   was built to counteract didn't.
 
-  `systemd.user.services.vayori-idle-lock` runs `swayidle -w timeout 600
+  `systemd.user.services.vayume-idle-lock` runs `swayidle -w timeout 600
   '... dms ipc call lock lock'`, bound to `graphical-session.target` the
   same way DMS's own service is, so it starts under either compositor
   automatically - no niri- or Hyprland-specific wiring needed. swayidle
@@ -302,7 +302,7 @@ enabling it alone isn't enough.
   built unit: `ExecStart` resolves to the actual `dms`/`swayidle` store
   paths (not bare `$PATH` lookups, matching this repo's own convention),
   and it's correctly linked into
-  `graphical-session.target.wants/vayori-idle-lock.service`. Not verified
+  `graphical-session.target.wants/vayume-idle-lock.service`. Not verified
   live - whether it actually fires after ten real minutes of idle needs a
   real session to watch.
 

@@ -60,7 +60,7 @@
       # Privileged half - always runs as root (via the sudo rule below), so no
       # id check. -a 13 matches the current LineageOS (lineage-20) images;
       # WAYDROID_ANDROID_VERSION=11 selects the older channel.
-      sigspoofPriv = pkgs.writeShellScript "vayori-waydroid-sigspoof-priv" ''
+      sigspoofPriv = pkgs.writeShellScript "vayume-waydroid-sigspoof-priv" ''
         set -eu
 
         if [ ! -e /var/lib/waydroid/images/system.img ]; then
@@ -97,11 +97,11 @@
       '';
 
       # User-facing half - hops to root through the NOPASSWD rule, matching the
-      # vayori-tor / vayori-rebuild pattern (the rule keys on this exact store
+      # vayume-tor / vayume-rebuild pattern (the rule keys on this exact store
       # path, so it must be called by path, which `sudo -n` here does).
-      #   vayori-waydroid-sigspoof            # signature spoofing only
-      #   vayori-waydroid-sigspoof microg     # + microG
-      sigspoof = pkgs.writeShellScriptBin "vayori-waydroid-sigspoof" ''
+      #   vayume-waydroid-sigspoof            # signature spoofing only
+      #   vayume-waydroid-sigspoof microg     # + microG
+      sigspoof = pkgs.writeShellScriptBin "vayume-waydroid-sigspoof" ''
         exec sudo -n --preserve-env=WAYDROID_ANDROID_VERSION ${sigspoofPriv} "$@"
       '';
     in
@@ -114,7 +114,7 @@
         pkgs.waydroid-helper # GTK front-end for the same extension jobs
       ];
 
-      security.sudo.extraRules = lib.mkIf (config ? vayori && config.vayori ? users) (
+      security.sudo.extraRules = lib.mkIf (config ? vayume && config.vayume ? users) (
         map (name: {
           users = [ name ];
           commands = [
@@ -126,7 +126,7 @@
               ];
             }
           ];
-        }) (builtins.attrNames config.vayori.users)
+        }) (builtins.attrNames config.vayume.users)
       );
     };
 }

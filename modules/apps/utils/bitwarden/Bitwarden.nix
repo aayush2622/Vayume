@@ -1,7 +1,7 @@
 {
-  flake.homeModules.apps.Bitwarden = { pkgs, lib, vayoriSecrets, ... }:
+  flake.homeModules.apps.Bitwarden = { pkgs, lib, vayumeSecrets, ... }:
   let
-    hasEmail = vayoriSecrets.RBW_EMAIL != "REPLACE_ME";
+    hasEmail = vayumeSecrets.RBW_EMAIL != "REPLACE_ME";
   in
   {
     home.packages = [ pkgs.bitwarden-desktop pkgs.pinentry-gtk2 ];
@@ -13,7 +13,7 @@
     home.activation.rbwEmail = lib.hm.dag.entryAfter [ "writeBoundary" ] (
       lib.optionalString hasEmail ''
         CONFIG_FILE="$HOME/.config/rbw/config.json"
-        EMAIL=${lib.escapeShellArg vayoriSecrets.RBW_EMAIL}
+        EMAIL=${lib.escapeShellArg vayumeSecrets.RBW_EMAIL}
 
         run mkdir -p "$(dirname "$CONFIG_FILE")"
 

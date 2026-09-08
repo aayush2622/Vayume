@@ -1,5 +1,5 @@
 {
-  description = "Vayori - a NixOS flake config built around niri and DankMaterialShell";
+  description = "Vayume - a NixOS flake config built around niri and DankMaterialShell";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

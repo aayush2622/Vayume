@@ -7,14 +7,14 @@
         xwayland.enable = true;
       };
 
-      # Backend for vayori-type-clipboard. ydotool injects real evdev key
+      # Backend for vayume-type-clipboard. ydotool injects real evdev key
       # events via /dev/uinput, so they pass through the compositor's own
       # keymap - unlike wtype's virtual-keyboard keymap, which Chromium /
       # Electron apps (NeoColab, exam browsers, ...) garble into random
       # characters. Enabling this adds a hardened `ydotoold` system
       # service and an `ydotool` group; every configured user joins it.
       programs.ydotool.enable = true;
-      users.groups.ydotool.members = lib.attrNames config.vayori.users;
+      users.groups.ydotool.members = lib.attrNames config.vayume.users;
     };
 
   flake.homeModules.Hyprland =
@@ -30,7 +30,7 @@
       # the nixos module above) rather than wtype, because apps that read
       # raw key positions turn wtype's output into gibberish. ASCII only -
       # non-ASCII bytes in the clipboard are skipped.
-      typeClipboard = pkgs.writeShellScriptBin "vayori-type-clipboard" ''
+      typeClipboard = pkgs.writeShellScriptBin "vayume-type-clipboard" ''
         set -euo pipefail
 
         # Per-keystroke delay in ms; override as the first argument.
@@ -204,13 +204,13 @@
             (bind "E" (spawn "thunar"))
             (bind "C" (spawn "code"))
             (bind "B" (spawn "zen"))
-            (bind "SHIFT + B" (spawn "vayori-zen-reload"))
+            (bind "SHIFT + B" (spawn "vayume-zen-reload"))
             (bindBare "CTRL + SHIFT + ESCAPE" (spawn "kitty -e btop") { })
 
             (bind "S" (lua "hl.dsp.workspace.toggle_special()"))
             (bind "A" (dms "spotlight toggle"))
             (bind "V" (dms "clipboard toggle"))
-            (bindBare "ALT + V" (spawn "vayori-type-clipboard") { })
+            (bindBare "ALT + V" (spawn "vayume-type-clipboard") { })
             (bind "COMMA" (dms "settings toggle"))
             (bind "L" (dms "lock lock"))
             (bind "SHIFT + W" (spawn "dms ipc wallpaperCarousel open"))

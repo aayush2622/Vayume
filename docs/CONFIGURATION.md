@@ -90,8 +90,8 @@ Three option namespaces get filled in across all these files:
 | Namespace | Set by | Read by |
 | --- | --- | --- |
 | `flake.nixosModules.*` | `hosts/`, `desktop/`, `system/`, `core/Users.nix` | `Host.nix`'s `modules` list |
-| `flake.homeModules.apps.*` | `modules/apps/**/*.nix` (any depth) | `core/Users.nix`, via `vayori.apps` |
-| `flake.devLanguages.*` | `modules/apps/development/languages/*/*.nix` | `Vscode.nix`/`AndroidStudio.nix`, filtered by `vayori.apps` |
+| `flake.homeModules.apps.*` | `modules/apps/**/*.nix` (any depth) | `core/Users.nix`, via `vayume.apps` |
+| `flake.devLanguages.*` | `modules/apps/development/languages/*/*.nix` | `Vscode.nix`/`AndroidStudio.nix`, filtered by `vayume.apps` |
 
 None of this cares about file paths, only attribute names - `Host.nix`
 imports `self.nixosModules.dms`, never a path. Move a file wherever you
@@ -106,13 +106,13 @@ modules/
   desktop/     the DE stack — compositor, shell, login theme, fonts,
                portals, and the GTK/Qt baseline every user gets
   system/      system-level infra unrelated to the desktop
-  apps/        per-user opt-in modules (vayori.apps), one folder each
+  apps/        per-user opt-in modules (vayume.apps), one folder each
   assets/      static, non-code files (wallpapers)
 ```
 
 The `core`/`desktop`/`system` split, quickly: **core** is pure plumbing -
 nothing in it is itself a setting, just the framework that lets settings
-exist (`Parts.nix`, `Registry.nix`, the `vayori.users`/`vayori.apps`
+exist (`Parts.nix`, `Registry.nix`, the `vayume.users`/`vayume.apps`
 definitions). **desktop** is everything that makes this rice look and
 feel the way it does - swap the compositor or shell and this whole
 category changes. **system** is infra that doesn't care what desktop

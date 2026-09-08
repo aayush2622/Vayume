@@ -25,7 +25,7 @@ specific settings of its own to begin with.
   write to it from its own UI.
 - **The WakaTime API key isn't declared in this file's own settings** -
   it's spliced in separately, after Zed's own settings merge has run, by
-  a small `jq` patch that sets it from the `vayoriSecrets.WAKATIME_API_KEY`
+  a small `jq` patch that sets it from the `vayumeSecrets.WAKATIME_API_KEY`
   argument (see [core/Users.nix](core-users.md) - the same
   mechanism Free Claude Code's provider keys and VS Code/Android
   Studio's own WakaTime setup all go through), so it lands after
@@ -35,7 +35,7 @@ specific settings of its own to begin with.
 - **No real key, no extension.** `"wakatime"` only gets appended to
   `extensions` (`lib.optional hasWakatime "wakatime"`) and the `jq`
   patch above only runs (`lib.optionalString hasWakatime`) when
-  `vayoriSecrets.WAKATIME_API_KEY` is a real value - a fresh setup with
+  `vayumeSecrets.WAKATIME_API_KEY` is a real value - a fresh setup with
   no key yet gets neither, instead of an extension configured with a
   key that would just fail.
 - Fonts here track the one shared theme font setting, not a hardcoded

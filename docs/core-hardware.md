@@ -36,7 +36,7 @@ real: deleting `_hardware.nix` and running `nix flake check` prints the
 > `requireLocalFile` throw with real `_hardware.nix`/`_user.nix` sitting
 > right there on disk; `nix eval path:$PWD#nixosConfigurations.Diablo...`
 > evaluated clean. The rebuild button
-> ([Dms.nix](desktop-dms.md)'s `vayoriRebuildScript`)
+> ([Dms.nix](desktop-dms.md)'s `vayumeRebuildScript`)
 > and every command in the README already use `path:` - this is only a
 > trap if you type a `nixos-rebuild`/`nix build` command by hand and
 > forget it.

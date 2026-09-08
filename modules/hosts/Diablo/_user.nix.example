@@ -10,7 +10,7 @@
 # username. Every field except the name itself is optional; see
 # modules/core/Users.nix's `userSubmodule` for the full list and defaults.
 {
-  vayori.users = {
+  vayume.users = {
     ash = {
       fullName = "Ash";
       extraGroups = [ "networkmanager" "wheel" "video" "input" ];
@@ -22,7 +22,7 @@
       # by default, see .gitignore) and point at it here, e.g.:
       # avatar = ./someimage.png;
 
-      # Optional: passed straight to every app module as `vayoriSecrets`.
+      # Optional: passed straight to every app module as `vayumeSecrets`.
       # Leave the whole block out (or any key inside it) for
       # "REPLACE_ME" placeholders instead, which disables whatever that
       # key would've configured (no WakaTime extension, no rbw email,

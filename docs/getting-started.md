@@ -22,8 +22,8 @@ carry someone's real disk UUIDs or password hash.
 ### Trying it on the existing host
 
 ```bash
-git clone https://github.com/aayush2622/Vayori-Rice.git vayori
-cd vayori
+git clone https://github.com/aayush2622/Vayume-Rice.git vayume
+cd vayume
 cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
 cp modules/hosts/Diablo/_user.nix.example modules/hosts/Diablo/_user.nix
 $EDITOR modules/hosts/Diablo/_user.nix   # at least pick a username
@@ -56,14 +56,14 @@ up everyone exactly once.
 Every module under `modules/apps/` is one boolean in `Host.nix`:
 
 ```nix
-vayori.apps = {
+vayume.apps = {
   Vscode.enable = true;
   Gaming.enable = true;
   Rust.enable = false;
 };
 ```
 
-Type `vayori.apps.` in an editor with Nix LSP support and every available
+Type `vayume.apps.` in an editor with Nix LSP support and every available
 app shows up by name. A typo is a real evaluation error, not a silently
 ignored entry. Leaving one `false` rather than deleting it keeps it
 visible that the app exists and is simply off.

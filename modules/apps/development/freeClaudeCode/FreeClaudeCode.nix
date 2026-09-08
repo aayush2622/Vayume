@@ -28,7 +28,7 @@ in {
 
   config.flake.freeClaudeCode = freeClaudeCodeSpec;
 
-  config.flake.homeModules.apps.FreeClaudeCode = { pkgs, lib, config, vayoriSecrets, ... }:
+  config.flake.homeModules.apps.FreeClaudeCode = { pkgs, lib, config, vayumeSecrets, ... }:
     let
       fccDir = "${config.home.homeDirectory}/.local/share/free-claude-code";
       fccConfigDir = "${config.home.homeDirectory}/.fcc";
@@ -47,7 +47,7 @@ in {
       );
       claudeAcpEnv = self.freeClaudeCode.clientEnv;
 
-      realProviders = lib.filterAttrs (n: v: v != "REPLACE_ME") (vayoriSecrets.PROVIDERS or { });
+      realProviders = lib.filterAttrs (n: v: v != "REPLACE_ME") (vayumeSecrets.PROVIDERS or { });
 
       providersEnvFile = pkgs.writeText "fcc-providers.env" (
         lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "${n}=${v}") realProviders) + "\n"

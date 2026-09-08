@@ -11,11 +11,11 @@ identical from the outside.
 
 ## `modules/system/network/Network.nix`
 
-Everything here is driven from `vayori.network` in
+Everything here is driven from `vayume.network` in
 [Host.nix](core-host.md):
 
 ```nix
-vayori.network = {
+vayume.network = {
   dns = {
     provider = "cloudflare";      # quad9 | mullvad | adguard | google
     overTls = "opportunistic";    # "true" (strict) | "false"
@@ -66,10 +66,10 @@ While it's on, three sets of rules are in place:
 
 | Chain | Table | Does |
 | --- | --- | --- |
-| `VAYORI_TOR` | nat OUTPUT | all TCP → TransPort 9040, all DNS → DNSPort 9053 |
-| `VAYORI_TORLEAK` | filter OUTPUT | rejects everything that isn't TCP or DNS |
-| `VAYORI_TOR_PRE` / `VAYORI_TOR_FWD` | nat PREROUTING / filter FORWARD | the same, for container traffic |
-| `VAYORI_TOR6` | filter OUTPUT (v6) | rejects all outbound IPv6 |
+| `VAYUME_TOR` | nat OUTPUT | all TCP → TransPort 9040, all DNS → DNSPort 9053 |
+| `VAYUME_TORLEAK` | filter OUTPUT | rejects everything that isn't TCP or DNS |
+| `VAYUME_TOR_PRE` / `VAYUME_TOR_FWD` | nat PREROUTING / filter FORWARD | the same, for container traffic |
+| `VAYUME_TOR6` | filter OUTPUT (v6) | rejects all outbound IPv6 |
 
 Ports 9040 and 9053 aren't chosen here - they come from NixOS's own
 `services.tor.client.transparentProxy.enable` and `client.dns.enable`,
@@ -122,11 +122,11 @@ both directions are ordered defensively:
   firewall (re)start if `tor.service` is active.
 
 Privilege follows the same pattern as the rebuild/GC scripts in
-[Dms.nix](desktop-dms.md): a root-side `vayori-torctl` that accepts only
+[Dms.nix](desktop-dms.md): a root-side `vayume-torctl` that accepts only
 `start`, `stop` and `newnym`, allowed NOPASSWD - never general
-`systemctl` access. The user-facing `vayori-tor` wrapper shells out to it.
+`systemctl` access. The user-facing `vayume-tor` wrapper shells out to it.
 
-`vayori-tor newnym` asks Tor for fresh circuits over its control socket.
+`vayume-tor newnym` asks Tor for fresh circuits over its control socket.
 That lives on the privileged side because the socket is root-owned.
 
 ### The widget
@@ -143,7 +143,7 @@ entire contract for showing up there. The rest of the surface
 `onCcWidgetToggled`) is modelled on DMS's own `TailscaleWidget.qml`,
 which is the closest built-in analogue since it's also a service toggle.
 
-The widget re-polls `vayori-tor status` every 5s rather than trusting its
+The widget re-polls `vayume-tor status` every 5s rather than trusting its
 own last click, so starting or stopping Tor from a terminal doesn't leave
 the toggle lying.
 
@@ -163,7 +163,7 @@ loss rather than an obvious error.
 The ruleset was applied for real in an unprivileged user+network
 namespace, not just eyeballed: it applies cleanly (nat 4→20 rules, filter
 3→23, v6 3→7), tears back down to the exact baseline with zero leftover
-`VAYORI_*` chains, is idempotent when torn down twice, and survives
+`VAYUME_*` chains, is idempotent when torn down twice, and survives
 repeated up/down cycles. Rule *order* was checked too - exemptions first,
 catch-all `REJECT` last - since that ordering is the entire difference
 between blocking leaks and blocking your own network.

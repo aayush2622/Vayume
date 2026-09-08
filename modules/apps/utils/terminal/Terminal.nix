@@ -1,7 +1,7 @@
 { self, inputs, ... }: {
-  flake.homeModules.apps.Terminal = { pkgs, lib, config, vayoriTheme, ... }:
+  flake.homeModules.apps.Terminal = { pkgs, lib, config, vayumeTheme, ... }:
   let
-    theme = vayoriTheme;
+    theme = vayumeTheme;
 
     fastfetchImageExts = [ "png" "jpg" "jpeg" "webp" "icon" ];
     fastfetchImageFiles = builtins.filter
@@ -121,7 +121,7 @@
       settings.color_theme = "matugen";
     };
 
-    vayori.matugenTemplates = {
+    vayume.matugenTemplates = {
       btop = ''
         [templates.btop]
         input_path = '${config.home.homeDirectory}/.config/matugen/templates/btop-matugen.theme'
@@ -169,15 +169,15 @@
         # Plugin update check
         # ─────────────────────────────────────────────
 
-        vayori_check_plugin_updates_preexec() {
+        vayume_check_plugin_updates_preexec() {
           case "$1" in
             *nixos-rebuild*|*"home-manager switch"*|*"nix build"*|*"nix flake"*|*"nix run"*)
-              timeout 10s vayori-check-plugin-updates
+              timeout 10s vayume-check-plugin-updates
               ;;
           esac
         }
         autoload -Uz add-zsh-hook
-        add-zsh-hook preexec vayori_check_plugin_updates_preexec
+        add-zsh-hook preexec vayume_check_plugin_updates_preexec
 
         # ─────────────────────────────────────────────
         # Fastfetch

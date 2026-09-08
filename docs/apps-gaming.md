@@ -6,7 +6,7 @@ Steam, Lutris, Heroic, and Proton - one toggle, split across a few files so no s
 
 ## `modules/apps/gaming/Gaming.nix`
 
-One `vayori.apps` toggle (`Gaming`), split across four files so it doesn't
+One `vayume.apps` toggle (`Gaming`), split across four files so it doesn't
 turn into a wall of text - Lutris + Heroic as the launchers, Steam
 alongside them, plus everything shared between them:
 

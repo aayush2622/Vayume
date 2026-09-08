@@ -16,7 +16,7 @@ that reaches the network at eval time isn't reproducible.
 
 | File | Kind | Rendered to |
 | --- | --- | --- |
-| `gtk3-colors.css.template` | matugen template, 50 vars | `~/.cache/vayori/gtk3-colors.css` |
+| `gtk3-colors.css.template` | matugen template, 50 vars | `~/.cache/vayume/gtk3-colors.css` |
 | `gtk4-colors.css.template` | matugen template, 121 vars | `~/.config/gtk-4.0/colors.css` |
 | `gtk3.css` | static, 6251 lines | the rotating theme's `gtk.css`/`gtk-dark.css` |
 | `gtk4.css` | static, 9973 lines | `~/.config/gtk-4.0/gtk.css` |

@@ -8,7 +8,7 @@
     }:
 
     let
-      cfg = config.vayori.ubuntuBox;
+      cfg = config.vayume.ubuntuBox;
 
       hostApps = "${config.home.homeDirectory}/.local/share/applications";
 
@@ -185,7 +185,7 @@
       '';
 
       # Enter the container.
-      box = pkgs.writeShellScriptBin "vayori-box" ''
+      box = pkgs.writeShellScriptBin "vayume-box" ''
         set -eu
 
         ${ensureBox}
@@ -200,19 +200,19 @@
       # Run a command INSIDE the container.
       #
       # Example:
-      #   vayori-box-run some-app.AppImage
+      #   vayume-box-run some-app.AppImage
       #
       # A bare filename is resolved against the box's Applications
       # directory. Note that an unquoted ~ is expanded by the host
       # shell before this script runs, so "~/x.AppImage" points at the
       # host's home, not the box's.
-      boxRun = pkgs.writeShellScriptBin "vayori-box-run" ''
+      boxRun = pkgs.writeShellScriptBin "vayume-box-run" ''
           set -eu
 
           ${ensureBox}
 
           if [ "$#" -eq 0 ]; then
-            echo "usage: vayori-box-run <command> [args...]" >&2
+            echo "usage: vayume-box-run <command> [args...]" >&2
             exit 2
           fi
 
@@ -232,7 +232,7 @@
 
             *)
               # A bare name resolves against the box's Applications
-              # dir, so "vayori-box-run foo.AppImage" just works.
+              # dir, so "vayume-box-run foo.AppImage" just works.
               # Anything else (ls, apt, ...) falls through untouched.
               if [ -e ${lib.escapeShellArg "${boxHome}/Applications"}/"$target" ]; then
                 target=${lib.escapeShellArg "${boxHome}/Applications"}/"$target"
@@ -247,11 +247,11 @@
           exec ${boxEnter} "$target" "$@"
       '';
 
-      boxInstall = pkgs.writeShellScriptBin "vayori-box-install" ''
+      boxInstall = pkgs.writeShellScriptBin "vayume-box-install" ''
         set -eu
 
         if [ "$#" -eq 0 ]; then
-          echo "usage: vayori-box-install <file.AppImage|file.deb|apt-package>..." >&2
+          echo "usage: vayume-box-install <file.AppImage|file.deb|apt-package>..." >&2
           exit 2
         fi
 
@@ -296,10 +296,10 @@
               echo "  ${boxHome}/Applications/$base"
               echo
               echo "Run:"
-              echo "  vayori-box-run $base"
+              echo "  vayume-box-run $base"
               echo
               echo "If FUSE fails:"
-              echo "  vayori-box-run $base --appimage-extract-and-run"
+              echo "  vayume-box-run $base --appimage-extract-and-run"
               ;;
 
             *.deb)
@@ -332,7 +332,7 @@
         echo "Done."
       '';
 
-      boxApps = pkgs.writeShellScriptBin "vayori-box-apps" ''
+      boxApps = pkgs.writeShellScriptBin "vayume-box-apps" ''
         set -eu
 
         ${ensureBox}
@@ -352,11 +352,11 @@
         '
       '';
 
-      boxExport = pkgs.writeShellScriptBin "vayori-box-export" ''
+      boxExport = pkgs.writeShellScriptBin "vayume-box-export" ''
         set -eu
 
         if [ "$#" -eq 0 ]; then
-          echo "usage: vayori-box-export <app-name>..." >&2
+          echo "usage: vayume-box-export <app-name>..." >&2
           exit 2
         fi
 
@@ -375,7 +375,7 @@
         echo "Exported to the host launcher."
       '';
 
-      boxSync = pkgs.writeShellScriptBin "vayori-box-sync" ''
+      boxSync = pkgs.writeShellScriptBin "vayume-box-sync" ''
         set -eu
 
         ${ensureBox}
@@ -396,7 +396,7 @@
         echo "Box '${cfg.name}' is in sync."
       '';
 
-      boxReset = pkgs.writeShellScriptBin "vayori-box-reset" ''
+      boxReset = pkgs.writeShellScriptBin "vayume-box-reset" ''
         set -eu
 
         echo
@@ -437,12 +437,12 @@
         echo "minutes and prints nothing - it is not stuck."
         echo
         echo "Reinstall the AppImage dependencies with:"
-        echo "  vayori-box-install <file.AppImage>"
+        echo "  vayume-box-install <file.AppImage>"
       '';
 
     in
     {
-      options.vayori.ubuntuBox = {
+      options.vayume.ubuntuBox = {
 
         name = lib.mkOption {
           type = lib.types.str;
@@ -467,7 +467,7 @@
 
         homeDir = lib.mkOption {
           type = lib.types.str;
-          default = "${config.home.homeDirectory}/.local/share/vayori-boxes/${cfg.name}";
+          default = "${config.home.homeDirectory}/.local/share/vayume-boxes/${cfg.name}";
           description = ''
             Host directory used as the container's home when
             isolateHome is enabled.
@@ -530,7 +530,7 @@
             Set to "" to leave the runtime default alone.
 
             Changing this only takes effect on a freshly created
-            container, so run vayori-box-reset afterwards.
+            container, so run vayume-box-reset afterwards.
           '';
         };
 

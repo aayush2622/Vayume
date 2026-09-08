@@ -31,7 +31,7 @@ Android apps in a container - and an honest admission that not everything on a N
   that matters - microG is useless without it, since it has to convince
   apps it's Google Play Services.
 - **Split into a privileged half and a user half**, same pattern as
-  `vayori-tor` over in [Network.nix](system-network.md). `vayori-waydroid-sigspoof`
+  `vayume-tor` over in [Network.nix](system-network.md). `vayume-waydroid-sigspoof`
   is what you run; it `sudo -n`s to a root-only script through a NOPASSWD
   rule. The rule keys on that script's exact store path, which means it
   has to be invoked *by path* - and it means the rule stops applying by
@@ -43,11 +43,11 @@ Android apps in a container - and an honest admission that not everything on a N
   one. `sudo` strips environment variables by default, so without
   `SETENV` that variable would silently never reach the privileged half
   and you'd always get the default.
-- **The sudo rules are generated from `vayori.users`**, not hardcoded -
+- **The sudo rules are generated from `vayume.users`**, not hardcoded -
   every user this host declares gets the rule, so adding a second user
   in `_user.nix` doesn't mean remembering to edit this file too. It's
-  guarded with a `config ? vayori` check so the module still evaluates
-  if it's ever imported somewhere `vayori.users` doesn't exist.
+  guarded with a `config ? vayume` check so the module still evaluates
+  if it's ever imported somewhere `vayume.users` doesn't exist.
 - **`waydroid-helper` is included as a GTK front-end** for the same
   extension jobs, for when a menu is nicer than remembering a
   subcommand.
@@ -55,8 +55,8 @@ Android apps in a container - and an honest admission that not everything on a N
 Usage, once, after `sudo waydroid init`:
 
 ```bash
-vayori-waydroid-sigspoof            # signature spoofing only
-vayori-waydroid-sigspoof microg     # + microG
+vayume-waydroid-sigspoof            # signature spoofing only
+vayume-waydroid-sigspoof microg     # + microG
 ```
 
 Then open Waydroid's Settings, find microG's Self-Check, grant "Spoof

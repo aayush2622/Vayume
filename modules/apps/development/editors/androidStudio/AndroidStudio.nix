@@ -24,11 +24,11 @@ in {
   flake.pluginPins.AndroidStudio = androidStudioManualPluginsSpec
     ++ (lib.concatMap (l: l.androidStudio.manualPlugins or [ ]) (lib.attrValues self.devLanguages));
 
-  flake.homeModules.apps.AndroidStudio = { pkgs, lib, config, vayoriTheme, vayoriApps, vayoriSecrets, ... }:
+  flake.homeModules.apps.AndroidStudio = { pkgs, lib, config, vayumeTheme, vayumeApps, vayumeSecrets, ... }:
   let
-    hasWakatime = vayoriSecrets.WAKATIME_API_KEY != "REPLACE_ME";
+    hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
-    languageAndroidStudio = lib.mapAttrsToList (_: l: l.androidStudio or { }) (self.enabledDevLanguages vayoriApps);
+    languageAndroidStudio = lib.mapAttrsToList (_: l: l.androidStudio or { }) (self.enabledDevLanguages vayumeApps);
 
     allAutoPlugins = androidStudioAutoPlugins ++ (lib.concatMap (v: v.autoPlugins or [ ]) languageAndroidStudio);
     allManualPluginsSpec = otherManualPluginsSpec
@@ -85,7 +85,7 @@ in {
             <option name="VERSION" value="1" />
             <option name="FONT_SIZE" value="14" />
             <option name="FONT_SIZE_2D" value="14.0" />
-            <option name="FONT_FAMILY" value="${vayoriTheme.font}" />
+            <option name="FONT_FAMILY" value="${vayumeTheme.font}" />
             <option name="FONT_BOLD_SUB_FAMILY" value="Regular" />
             <option name="LINE_SPACING" value="1.0" />
           </component>
@@ -136,7 +136,7 @@ in {
     };
 
     androidStudioWithFcc =
-      if builtins.elem "FreeClaudeCode" vayoriApps then
+      if builtins.elem "FreeClaudeCode" vayumeApps then
         pkgs.symlinkJoin {
           name = "android-studio-with-fcc";
           paths = [ pkgs.androidStudioPackages.stable ];
@@ -158,7 +158,7 @@ in {
     home.sessionVariables = {
       ANDROID_SDK_ROOT = "$HOME/Android/Sdk";
       ANDROID_HOME = "$HOME/Android/Sdk";
-    } // lib.optionalAttrs (builtins.elem "ZenBrowser" vayoriApps) {
+    } // lib.optionalAttrs (builtins.elem "ZenBrowser" vayumeApps) {
       CHROME_EXECUTABLE = "zen";
     };
 
@@ -166,11 +166,11 @@ in {
 
     home.activation.androidStudioWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (
       lib.optionalString hasWakatime ''
-        run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key ${lib.escapeShellArg vayoriSecrets.WAKATIME_API_KEY}
+        run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key ${lib.escapeShellArg vayumeSecrets.WAKATIME_API_KEY}
       ''
     );
 
-    vayori.matugenTemplates.androidStudio = ''
+    vayume.matugenTemplates.androidStudio = ''
       [templates.androidStudio]
       input_path = '${matugenTemplatePath}'
       output_path = '${matugenOutputPath}'

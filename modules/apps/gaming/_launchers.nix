@@ -1,4 +1,4 @@
-{ self, pkgs, lib, config, gamesDir, vayoriTheme, ... }:
+{ self, pkgs, lib, config, gamesDir, vayumeTheme, ... }:
 {
   home.packages = with pkgs; [
     lutris
@@ -18,7 +18,7 @@
     ".config/matugen/templates/steam-colors.css".text = self.matugenTemplates.steam;
   };
 
-  vayori.matugenTemplates = {
+  vayume.matugenTemplates = {
     heroic = ''
       [templates.heroic]
       input_path = '${config.home.homeDirectory}/.config/matugen/templates/heroic-matugen.css'
@@ -49,11 +49,11 @@
       run sh -c "printf '{\"settings\":{}}' > '$HEROIC_CONFIG'"
     fi
 
-    HEROIC_CONFIG_TMP="$HEROIC_CONFIG.vayori-tmp"
+    HEROIC_CONFIG_TMP="$HEROIC_CONFIG.vayume-tmp"
 
     if ${pkgs.jq}/bin/jq \
       --arg themesPath "$HOME/.config/heroic/themes/matugen" \
-      --arg font ${lib.escapeShellArg vayoriTheme.font} \
+      --arg font ${lib.escapeShellArg vayumeTheme.font} \
       --arg winePrefix "$HEROIC_PREFIX" \
       '.settings.customThemesPath = $themesPath
        | .theme = "matugen.css"

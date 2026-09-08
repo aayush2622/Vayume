@@ -1,8 +1,8 @@
 {
-  flake.homeModules.apps.Vesktop = { self, pkgs, lib, config, vayoriTheme, ... }:
+  flake.homeModules.apps.Vesktop = { self, pkgs, lib, config, vayumeTheme, ... }:
   let
     discordTemplate =
-      lib.replaceStrings [ "@@FONT@@" ] [ vayoriTheme.font ] self.matugenTemplates.discord;
+      lib.replaceStrings [ "@@FONT@@" ] [ vayumeTheme.font ] self.matugenTemplates.discord;
 
     vesktopSettings = {
       discordBranch = "stable";
@@ -19,7 +19,7 @@
       useQuickCss = true;
       themeLinks = [ ];
       eagerPatches = false;
-      enabledThemes = [ "vayori-discord.css" ];
+      enabledThemes = [ "vayume-discord.css" ];
       enableReactDevtools = false;
       frameless = false;
       transparent = false;
@@ -249,12 +249,12 @@
       vencord.settings = vencordSettings // { plugins = vencordPlugins; };
     };
 
-    home.file.".config/matugen/templates/vayori-discord.css".text = discordTemplate;
+    home.file.".config/matugen/templates/vayume-discord.css".text = discordTemplate;
 
-    vayori.matugenTemplates.vesktop = ''
+    vayume.matugenTemplates.vesktop = ''
       [templates.vesktop]
-      input_path = '${config.home.homeDirectory}/.config/matugen/templates/vayori-discord.css'
-      output_path = '${config.home.homeDirectory}/.config/vesktop/themes/vayori-discord.css'
+      input_path = '${config.home.homeDirectory}/.config/matugen/templates/vayume-discord.css'
+      output_path = '${config.home.homeDirectory}/.config/vesktop/themes/vayume-discord.css'
     '';
 
   };

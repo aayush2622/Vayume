@@ -14,7 +14,7 @@ makes sure the app itself is there.
 **`programs.rbw`** is a separate CLI vault, unrelated to the desktop
 app's own login - it's what the Bitwarden launcher plugin in DMS actually
 talks to behind the scenes. Its account email now comes from
-`vayoriSecrets.RBW_EMAIL` (see
+`vayumeSecrets.RBW_EMAIL` (see
 [core/Users.nix](core-users.md)) rather than a manual
 `rbw config set email`, merged into `~/.config/rbw/config.json` every
 rebuild via `jq`, leaving everything else already in that file
@@ -26,7 +26,7 @@ goes through Nix, or anywhere else in this repo. That one stays a
 manual, interactive step on purpose.
 
 **No real email, no config write.** The whole `rbwEmail` activation
-script is wrapped in `lib.optionalString (vayoriSecrets.RBW_EMAIL !=
+script is wrapped in `lib.optionalString (vayumeSecrets.RBW_EMAIL !=
 "REPLACE_ME")` - `programs.rbw` still gets enabled either way (the CLI
 itself doesn't need an email to exist), but `rbw`'s config file is left
 exactly as it is rather than getting seeded with a literal

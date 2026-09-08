@@ -20,7 +20,7 @@ in {
     modules = [
       inputs.home-manager.nixosModules.home-manager
 
-      self.nixosModules.VayoriUsers
+      self.nixosModules.VayumeUsers
       self.nixosModules.Niri
       self.nixosModules.Hyprland
       self.nixosModules.Dms
@@ -41,13 +41,13 @@ in {
       ({ pkgs, lib, config, ... }:
       let
         cursorEnvVars = {
-          XCURSOR_THEME = config.vayori.theme.cursorTheme;
-          XCURSOR_SIZE = toString config.vayori.theme.cursorSize;
-          XCURSOR_PATH = "${config.vayori.theme.cursorPackage}/share/icons";
+          XCURSOR_THEME = config.vayume.theme.cursorTheme;
+          XCURSOR_SIZE = toString config.vayume.theme.cursorSize;
+          XCURSOR_PATH = "${config.vayume.theme.cursorPackage}/share/icons";
         };
       in
       {
-        options.vayori.theme = lib.mkOption {
+        options.vayume.theme = lib.mkOption {
           description = "System-wide look & feel - one place to set the font, cursor theme, and icon theme, used everywhere they're needed.";
           default = { };
           type = lib.types.submodule {
@@ -97,11 +97,11 @@ in {
         };
 
         config = {
-          # One line per app under modules/apps/ - type `vayori.apps.` in an
+          # One line per app under modules/apps/ - type `vayume.apps.` in an
           # editor with Nix LSP support and every available app shows up by
           # name. `false` entries are kept, not deleted, so it's visible at
           # a glance which apps exist but are off, not just missing.
-          vayori.apps = {
+          vayume.apps = {
             # development
             Vscode.enable = true;
             AndroidStudio.enable = true;
@@ -162,7 +162,7 @@ in {
           # DNS resolver, the Tor toggle behind the control-center
           # widget, and the network-stack hardening sysctls. See
           # docs/system-network.md.
-          vayori.network = {
+          vayume.network = {
             dns = {
               provider = "cloudflare";
               overTls = "opportunistic";
@@ -305,7 +305,7 @@ in {
             brightnessctl
             pavucontrol
             adwaita-icon-theme
-            config.vayori.theme.cursorPackage
+            config.vayume.theme.cursorPackage
           ];
           environment.sessionVariables = {
             inherit (cursorEnvVars) XCURSOR_THEME XCURSOR_SIZE;
@@ -314,8 +314,8 @@ in {
           };
 
           services.displayManager.sddm.settings.Theme = {
-            CursorTheme = config.vayori.theme.cursorTheme;
-            CursorSize = config.vayori.theme.cursorSize;
+            CursorTheme = config.vayume.theme.cursorTheme;
+            CursorSize = config.vayume.theme.cursorSize;
           };
 
           services.displayManager.sddm.settings.General.GreeterEnvironment =

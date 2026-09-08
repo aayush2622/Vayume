@@ -15,11 +15,11 @@ The login screen - the one piece of this desktop that has to look right before a
 - **`theme.conf` is generated, not shipped.** It's the one file in the
   theme that isn't copied verbatim - it's written with
   `pkgs.writeText` and installed over the top, so `cursorTheme` and
-  `cursorSize` come from `vayori.theme` instead of being a second place
+  `cursorSize` come from `vayume.theme` instead of being a second place
   you'd have to remember to update. Change
-  `vayori.theme.cursorSize` in [Host.nix](core-host.md) and the greeter's
+  `vayume.theme.cursorSize` in [Host.nix](core-host.md) and the greeter's
   cursor changes with everything else's.
-- **`font=Itim` deliberately does *not* come from `vayori.theme`.**
+- **`font=Itim` deliberately does *not* come from `vayume.theme`.**
   This is one of the two documented gaps in
   [Fonts.nix / Portals.nix](desktop-portals-fonts.md): the theme's clock
   and labels were designed around its own bundled font, and pointing

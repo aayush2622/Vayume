@@ -31,7 +31,7 @@ integration is its whole design - but that means anything installed in
 the box can read every file you own, which is the wrong default for
 vendor software you don't control and can't audit. `isolateHome`
 (on by default) gives the box its own home under
-`~/.local/share/vayori-boxes/<name>` instead, and `unshare` defaults to
+`~/.local/share/vayume-boxes/<name>` instead, and `unshare` defaults to
 `[ "ipc" "process" ]` for namespace separation on top.
 
 `netns` and `devsys` are deliberately *not* in that default. Unsharing
@@ -43,13 +43,13 @@ a given box genuinely wants them.
 Isolation has one consequence worth knowing: `distrobox-export` writes
 its `.desktop` entry into the *box's* home, which is no longer the
 host's, so an exported app would never reach the launcher. Both
-`vayori-box-export` and `vayori-box-sync` therefore copy new entries and
+`vayume-box-export` and `vayume-box-sync` therefore copy new entries and
 icons back out to `~/.local/share/{applications,icons}` and refresh the
 desktop database, so launcher integration still works exactly as it
 would with a shared home.
 
 **Flags only apply at creation time.** An existing box does not
-retroactively gain an isolated home or new namespaces - `vayori-box-reset`
+retroactively gain an isolated home or new namespaces - `vayume-box-reset`
 destroys and recreates it (prompting first, and keeping the box's home
 directory) for when the options change.
 
@@ -64,20 +64,20 @@ Six commands, all idempotent:
 
 | Command | Does |
 | --- | --- |
-| `vayori-box` | Enter the box; with arguments, run them inside it |
-| `vayori-box-install <x.deb\|apt-pkg>...` | Install local `.deb` files (apt resolves their dependencies) or plain apt packages |
-| `vayori-box-apps` | List desktop entries the box now provides |
-| `vayori-box-export <app>...` | Export an entry to the host launcher, so it shows up in DMS's spotlight like any native app |
-| `vayori-box-sync` | Re-apply `vayori.ubuntuBox.aptPackages` + `exportApps` declaratively |
-| `vayori-box-reset` | Destroy and recreate the box, picking up changed creation flags |
+| `vayume-box` | Enter the box; with arguments, run them inside it |
+| `vayume-box-install <x.deb\|apt-pkg>...` | Install local `.deb` files (apt resolves their dependencies) or plain apt packages |
+| `vayume-box-apps` | List desktop entries the box now provides |
+| `vayume-box-export <app>...` | Export an entry to the host launcher, so it shows up in DMS's spotlight like any native app |
+| `vayume-box-sync` | Re-apply `vayume.ubuntuBox.aptPackages` + `exportApps` declaratively |
+| `vayume-box-reset` | Destroy and recreate the box, picking up changed creation flags |
 
-So the CodeTantra path is `vayori-box-install ~/Downloads/codetantra.deb`,
-then `vayori-box-apps` to see what it registered, then
-`vayori-box-export <name>`.
+So the CodeTantra path is `vayume-box-install ~/Downloads/codetantra.deb`,
+then `vayume-box-apps` to see what it registered, then
+`vayume-box-export <name>`.
 
-**`vayori.ubuntuBox` makes the result reproducible** once you know the
+**`vayume.ubuntuBox` makes the result reproducible** once you know the
 names: `aptPackages` and `exportApps` are re-applied by
-`vayori-box-sync`, so a rebuilt machine gets the same box without
+`vayume-box-sync`, so a rebuilt machine gets the same box without
 repeating the discovery. A downloaded `.deb` can't be declared this way -
 it isn't in any apt repo and often sits behind a login - so that stays a
 one-liner rather than a lie about being declarative. `name`/`image`

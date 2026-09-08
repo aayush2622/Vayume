@@ -54,7 +54,7 @@ and Android Studio's plugin.
   only written if the file doesn't exist yet, same "seed once" pattern
   as the Papirus icon copy elsewhere. Provider API keys are handled
   separately, and *do* re-sync every rebuild: `PROVIDERS` from
-  `vayoriSecrets` (see [core/Users.nix](core-users.md) for
+  `vayumeSecrets` (see [core/Users.nix](core-users.md) for
   the full schema) is first filtered down to entries that aren't still
   `"REPLACE_ME"` (`lib.filterAttrs`), then that survivors-only set gets
   baked into a flat `KEY=value` file at eval time and merged into `.env`
@@ -106,14 +106,14 @@ and Android Studio's plugin.
   actually needs gets installed.
 - **The connection details live in exactly one shared place**, not
   copied into three separate files - it used to be copied, and that was
-  a real bug: turning FCC off in `vayori.apps` left VS Code and Android
+  a real bug: turning FCC off in `vayume.apps` left VS Code and Android
   Studio still pointed at a proxy that was never actually started, with
   no error, just a Claude Code integration silently trying to talk to a
   dead port instead of falling back to the real API. Fixed by
   publishing the connection info from one shared place and having both
   editors check whether FCC is actually enabled before using it -
   verified in both directions: built with FCC on (nothing changed), then
-  built again with it stripped from `vayori.apps` and confirmed both
+  built again with it stripped from `vayume.apps` and confirmed both
   editors cleanly fell back to their plain, unwrapped configuration.
 - **Android Studio's `CHROME_EXECUTABLE = "zen"` got the identical
   fix, for the identical reason** - it only gets set when Zen Browser is

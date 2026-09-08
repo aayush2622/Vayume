@@ -2,7 +2,7 @@
   flake.nixosModules.Network =
     { pkgs, lib, config, ... }:
     let
-      cfg = config.vayori.network;
+      cfg = config.vayume.network;
 
       ipt = "${pkgs.iptables}/bin/iptables";
       ipt6 = "${pkgs.iptables}/bin/ip6tables";
@@ -67,83 +67,83 @@
         lib.optionalString cfg.tor.includeContainers (
           lib.concatMapStringsSep "\n"
             (net: ''
-              ${ipt} -t nat -A VAYORI_TOR_PRE -s ${net} -p udp --dport 53 -j REDIRECT --to-ports 9053
-              ${ipt} -t nat -A VAYORI_TOR_PRE -s ${net} -p tcp -j REDIRECT --to-ports 9040
-              ${ipt} -A VAYORI_TOR_FWD -s ${net} -p tcp -j RETURN
-              ${ipt} -A VAYORI_TOR_FWD -s ${net} -p udp --dport 53 -j RETURN
-              ${ipt} -A VAYORI_TOR_FWD -s ${net} -j REJECT --reject-with icmp-port-unreachable
+              ${ipt} -t nat -A VAYUME_TOR_PRE -s ${net} -p udp --dport 53 -j REDIRECT --to-ports 9053
+              ${ipt} -t nat -A VAYUME_TOR_PRE -s ${net} -p tcp -j REDIRECT --to-ports 9040
+              ${ipt} -A VAYUME_TOR_FWD -s ${net} -p tcp -j RETURN
+              ${ipt} -A VAYUME_TOR_FWD -s ${net} -p udp --dport 53 -j RETURN
+              ${ipt} -A VAYUME_TOR_FWD -s ${net} -j REJECT --reject-with icmp-port-unreachable
             '')
             containerNets
         );
 
-      torUp = pkgs.writeShellScript "vayori-tor-rules-up" ''
+      torUp = pkgs.writeShellScript "vayume-tor-rules-up" ''
         set -eu
 
         # Locally generated traffic: all TCP into Tor's TransPort, all
         # DNS into its DNSPort. Tor's own uid is exempt or it redirects
         # into itself.
-        ${ipt} -t nat -N VAYORI_TOR
-        ${ipt} -t nat -A VAYORI_TOR -m owner --uid-owner tor -j RETURN
-        ${returnDirect "nat" "VAYORI_TOR"}
-        ${ipt} -t nat -A VAYORI_TOR -p udp --dport 53 -j REDIRECT --to-ports 9053
-        ${ipt} -t nat -A VAYORI_TOR -p tcp -j REDIRECT --to-ports 9040
-        ${ipt} -t nat -I OUTPUT 1 -j VAYORI_TOR
+        ${ipt} -t nat -N VAYUME_TOR
+        ${ipt} -t nat -A VAYUME_TOR -m owner --uid-owner tor -j RETURN
+        ${returnDirect "nat" "VAYUME_TOR"}
+        ${ipt} -t nat -A VAYUME_TOR -p udp --dport 53 -j REDIRECT --to-ports 9053
+        ${ipt} -t nat -A VAYUME_TOR -p tcp -j REDIRECT --to-ports 9040
+        ${ipt} -t nat -I OUTPUT 1 -j VAYUME_TOR
 
         # TCP and DNS are handled above; everything else leaving this box
         # (QUIC, WireGuard, NTP, ICMP) is rejected rather than allowed
         # out in the clear, because Tor cannot carry it.
-        ${ipt} -N VAYORI_TORLEAK
-        ${ipt} -A VAYORI_TORLEAK -m owner --uid-owner tor -j RETURN
-        ${ipt} -A VAYORI_TORLEAK -o lo -j RETURN
-        ${returnDirect "filter" "VAYORI_TORLEAK"}
-        ${ipt} -A VAYORI_TORLEAK -p tcp -j RETURN
-        ${ipt} -A VAYORI_TORLEAK -p udp --dport 53 -j RETURN
-        ${ipt} -A VAYORI_TORLEAK -j REJECT --reject-with icmp-port-unreachable
-        ${ipt} -I OUTPUT 1 -j VAYORI_TORLEAK
+        ${ipt} -N VAYUME_TORLEAK
+        ${ipt} -A VAYUME_TORLEAK -m owner --uid-owner tor -j RETURN
+        ${ipt} -A VAYUME_TORLEAK -o lo -j RETURN
+        ${returnDirect "filter" "VAYUME_TORLEAK"}
+        ${ipt} -A VAYUME_TORLEAK -p tcp -j RETURN
+        ${ipt} -A VAYUME_TORLEAK -p udp --dport 53 -j RETURN
+        ${ipt} -A VAYUME_TORLEAK -j REJECT --reject-with icmp-port-unreachable
+        ${ipt} -I OUTPUT 1 -j VAYUME_TORLEAK
 
         # Container traffic is forwarded, not locally generated, so the
         # OUTPUT chains above never see it.
-        ${ipt} -t nat -N VAYORI_TOR_PRE
-        ${ipt} -N VAYORI_TOR_FWD
+        ${ipt} -t nat -N VAYUME_TOR_PRE
+        ${ipt} -N VAYUME_TOR_FWD
         ${containerRedirect}
-        ${ipt} -t nat -I PREROUTING 1 -j VAYORI_TOR_PRE
-        ${ipt} -I FORWARD 1 -j VAYORI_TOR_FWD
+        ${ipt} -t nat -I PREROUTING 1 -j VAYUME_TOR_PRE
+        ${ipt} -I FORWARD 1 -j VAYUME_TOR_FWD
 
         # The TransPort is v4-only, so v6 has to be closed or it becomes
         # the leak path around all of the above.
-        ${ipt6} -N VAYORI_TOR6
-        ${ipt6} -A VAYORI_TOR6 -o lo -j RETURN
-        ${ipt6} -A VAYORI_TOR6 -j REJECT --reject-with icmp6-port-unreachable
-        ${ipt6} -I OUTPUT 1 -j VAYORI_TOR6
+        ${ipt6} -N VAYUME_TOR6
+        ${ipt6} -A VAYUME_TOR6 -o lo -j RETURN
+        ${ipt6} -A VAYUME_TOR6 -j REJECT --reject-with icmp6-port-unreachable
+        ${ipt6} -I OUTPUT 1 -j VAYUME_TOR6
       '';
 
-      torDown = pkgs.writeShellScript "vayori-tor-rules-down" ''
+      torDown = pkgs.writeShellScript "vayume-tor-rules-down" ''
         # Deliberately no `set -e`: teardown must run to completion even
         # when a chain is already gone, or a half-removed ruleset strands
         # the machine with no working network.
-        ${ipt} -t nat -D OUTPUT -j VAYORI_TOR 2>/dev/null || true
-        ${ipt} -t nat -F VAYORI_TOR 2>/dev/null || true
-        ${ipt} -t nat -X VAYORI_TOR 2>/dev/null || true
+        ${ipt} -t nat -D OUTPUT -j VAYUME_TOR 2>/dev/null || true
+        ${ipt} -t nat -F VAYUME_TOR 2>/dev/null || true
+        ${ipt} -t nat -X VAYUME_TOR 2>/dev/null || true
 
-        ${ipt} -t nat -D PREROUTING -j VAYORI_TOR_PRE 2>/dev/null || true
-        ${ipt} -t nat -F VAYORI_TOR_PRE 2>/dev/null || true
-        ${ipt} -t nat -X VAYORI_TOR_PRE 2>/dev/null || true
+        ${ipt} -t nat -D PREROUTING -j VAYUME_TOR_PRE 2>/dev/null || true
+        ${ipt} -t nat -F VAYUME_TOR_PRE 2>/dev/null || true
+        ${ipt} -t nat -X VAYUME_TOR_PRE 2>/dev/null || true
 
-        ${ipt} -D OUTPUT -j VAYORI_TORLEAK 2>/dev/null || true
-        ${ipt} -F VAYORI_TORLEAK 2>/dev/null || true
-        ${ipt} -X VAYORI_TORLEAK 2>/dev/null || true
+        ${ipt} -D OUTPUT -j VAYUME_TORLEAK 2>/dev/null || true
+        ${ipt} -F VAYUME_TORLEAK 2>/dev/null || true
+        ${ipt} -X VAYUME_TORLEAK 2>/dev/null || true
 
-        ${ipt} -D FORWARD -j VAYORI_TOR_FWD 2>/dev/null || true
-        ${ipt} -F VAYORI_TOR_FWD 2>/dev/null || true
-        ${ipt} -X VAYORI_TOR_FWD 2>/dev/null || true
+        ${ipt} -D FORWARD -j VAYUME_TOR_FWD 2>/dev/null || true
+        ${ipt} -F VAYUME_TOR_FWD 2>/dev/null || true
+        ${ipt} -X VAYUME_TOR_FWD 2>/dev/null || true
 
-        ${ipt6} -D OUTPUT -j VAYORI_TOR6 2>/dev/null || true
-        ${ipt6} -F VAYORI_TOR6 2>/dev/null || true
-        ${ipt6} -X VAYORI_TOR6 2>/dev/null || true
+        ${ipt6} -D OUTPUT -j VAYUME_TOR6 2>/dev/null || true
+        ${ipt6} -F VAYUME_TOR6 2>/dev/null || true
+        ${ipt6} -X VAYUME_TOR6 2>/dev/null || true
         exit 0
       '';
 
-      torCtl = pkgs.writeShellScript "vayori-torctl" ''
+      torCtl = pkgs.writeShellScript "vayume-torctl" ''
         set -u
 
         case "''${1:-}" in
@@ -183,25 +183,25 @@
                 }
             ;;
           *)
-            echo "usage: vayori-torctl start|stop|newnym" >&2
+            echo "usage: vayume-torctl start|stop|newnym" >&2
             exit 2
             ;;
         esac
       '';
 
-      torToggle = pkgs.writeShellScriptBin "vayori-tor" ''
+      torToggle = pkgs.writeShellScriptBin "vayume-tor" ''
         set -u
         case "''${1:-status}" in
           status) ${pkgs.systemd}/bin/systemctl is-active tor.service 2>/dev/null || true ;;
           start)  exec sudo -n ${torCtl} start ;;
           stop)   exec sudo -n ${torCtl} stop ;;
           newnym) exec sudo -n ${torCtl} newnym ;;
-          *)      echo "usage: vayori-tor start|stop|status|newnym" >&2; exit 2 ;;
+          *)      echo "usage: vayume-tor start|stop|status|newnym" >&2; exit 2 ;;
         esac
       '';
     in
     {
-      options.vayori.network = {
+      options.vayume.network = {
         dns = {
           provider = lib.mkOption {
             type = lib.types.enum (builtins.attrNames dnsProviders);
@@ -360,9 +360,9 @@
                 options = [ "NOPASSWD" ];
               }
             ];
-          }) (builtins.attrNames config.vayori.users);
+          }) (builtins.attrNames config.vayume.users);
 
-          home-manager.users = lib.genAttrs (builtins.attrNames config.vayori.users) (name: {
+          home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {
             home.packages = [ torToggle ];
 
             # Install through the DMS plugin option, not a bare xdg.configFile

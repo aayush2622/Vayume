@@ -1,0 +1,85 @@
+
+[sudo] password for ash: 
+building the system configuration...
+Checking switch inhibitors... done
+updating GRUB 2 menu...
+Warning: os-prober will be executed to detect other bootable partitions.
+Its output will be used to detect bootable binaries on them and create new boot entries.
+lsblk: /dev/mapper/no*[0-9]: No such file or directory
+lsblk: /dev/mapper/block*[0-9]: No such file or directory
+lsblk: /dev/mapper/devices*[0-9]: No such file or directory
+lsblk: /dev/mapper/found*[0-9]: No such file or directory
+Found EndeavourOS Linux (rolling) on /dev/nvme0n1p2
+activating the configuration...
+setting up /etc...
+reloading user units for ash...
+restarting the following user units: nixos-activation.service
+restarting sysinit-reactivation.target
+the following new units were started: NetworkManager-dispatcher.service, sysinit-reactivation.target, systemd-tmpfiles-resetup.service
+warning: the following units failed: home-manager-ash.service
+× home-manager-ash.service - Home Manager environment for ash
+     Loaded: loaded (/etc/systemd/system/home-manager-ash.service; enabled; preset: ignored)
+     Active: failed (Result: exit-code) since Wed 2026-09-09 00:37:39 IST; 258ms ago
+ Invocation: 0b91157764f04e868b2940ab8c989b1b
+    Process: 11359 ExecStart=/nix/store/11707psiahn479sh46l6s4n184fxd1w1-hm-setup-env /nix/store/5s6zmjm0ykfmkkddk3ksnsqprf522x6h-home-manager-generation (code=exited, status=1/FAILURE)
+   Main PID: 11359 (code=exited, status=1/FAILURE)
+         IP: 0B in, 0B out
+         IO: 768K read, 0B written
+   Mem peak: 17.7M
+        CPU: 322ms
+
+Sep 09 00:37:39 Diablo hm-activate-ash[11359]: Activating androidStudioWakatimeConfig
+Sep 09 00:37:39 Diablo hm-activate-ash[11359]: Activating checkFilesChanged
+Sep 09 00:37:39 Diablo hm-activate-ash[11359]: Activating linkGeneration
+Sep 09 00:37:39 Diablo hm-activate-ash[11359]: Cleaning up orphan links from /home/ash
+Sep 09 00:37:39 Diablo hm-activate-ash[11359]: Creating home file links in /home/ash
+Sep 09 00:37:39 Diablo hm-activate-ash[11680]: mkdir: cannot create directory ‘/home/ash/.local/share/Google’: File exists
+Sep 09 00:37:39 Diablo hm-activate-ash[11681]: ln: failed to create symbolic link '/home/ash/.local/share/Google/AndroidStudio2026.1.3/lsp4ij': No such file or directory
+Sep 09 00:37:39 Diablo systemd[1]: home-manager-ash.service: Main process exited, code=exited, status=1/FAILURE
+Sep 09 00:37:39 Diablo systemd[1]: home-manager-ash.service: Failed with result 'exit-code'.
+Sep 09 00:37:39 Diablo systemd[1]: Failed to start Home Manager environment for ash.
+Command 'systemd-run -E LOCALE_ARCHIVE -E NIXOS_INSTALL_BOOTLOADER -E NIXOS_NO_CHECK --collect --no-ask-password --pipe --quiet --service-type=exec --unit=nixos-rebuild-switch-to-configuration /nix/store/n2n6ah7r8im67fnibvjllj198s42ghs0-nixos-system-Diablo-26.11.20260802.6438090/bin/switch-to-configuration switch' returned non-zero exit status 4.
+ash ~ took 8s ❯ sudo nixos-rebuild switch --flake path:vayume#Diablo
+
+building the system configuration...
+evaluation warning: 'system' has been renamed to/replaced by 'stdenv.hostPlatform.system'
+Checking switch inhibitors... done
+updating GRUB 2 menu...
+Warning: os-prober will be executed to detect other bootable partitions.
+Its output will be used to detect bootable binaries on them and create new boot entries.
+lsblk: /dev/mapper/no*[0-9]: No such file or directory
+lsblk: /dev/mapper/block*[0-9]: No such file or directory
+lsblk: /dev/mapper/devices*[0-9]: No such file or directory
+lsblk: /dev/mapper/found*[0-9]: No such file or directory
+Found EndeavourOS Linux (rolling) on /dev/nvme0n1p2
+activating the configuration...
+setting up /etc...
+reloading user units for ash...
+restarting the following user units: nixos-activation.service
+restarting sysinit-reactivation.target
+restarting the following units: home-manager-random.service
+the following new units were started: NetworkManager-dispatcher.service
+warning: the following units failed: home-manager-ash.service
+× home-manager-ash.service - Home Manager environment for ash
+     Loaded: loaded (/etc/systemd/system/home-manager-ash.service; enabled; preset: ignored)
+     Active: failed (Result: exit-code) since Wed 2026-09-09 00:43:39 IST; 259ms ago
+ Invocation: ec689ef693704017825a5399a3964882
+    Process: 23126 ExecStart=/nix/store/11707psiahn479sh46l6s4n184fxd1w1-hm-setup-env /nix/store/01aqagna2dz9y36s5sgbxag7cjbn31fd-home-manager-generation (code=exited, status=1/FAILURE)
+   Main PID: 23126 (code=exited, status=1/FAILURE)
+         IP: 0B in, 0B out
+         IO: 96K read, 0B written
+   Mem peak: 17.1M
+        CPU: 373ms
+
+Sep 09 00:43:39 Diablo hm-activate-ash[23401]: Path '/home/ash/.local/share/Google/AndroidStudio2026.1.3/git-worktree-manager' does not link into a Home Manager generation. Skipping delete.
+Sep 09 00:43:39 Diablo hm-activate-ash[23401]: Path '/home/ash/.local/share/Google/AndroidStudio2026.1.3/github-copilot-intellij' does not link into a Home Manager generation. Skipping delete.
+Sep 09 00:43:39 Diablo hm-activate-ash[23401]: Path '/home/ash/.local/share/Google/AndroidStudio2026.1.3/claude-code-jetbrains-plugin' does not link into a Home Manager generation. Skipping delete.
+Sep 09 00:43:39 Diablo hm-activate-ash[23401]: Path '/home/ash/.local/share/Google/AndroidStudio2026.1.3/JetBrains-Discord-Integration' does not link into a Home Manager generation. Skipping delete.
+Sep 09 00:43:39 Diablo hm-activate-ash[23126]: Creating home file links in /home/ash
+Sep 09 00:43:39 Diablo hm-activate-ash[23544]: mkdir: cannot create directory ‘/home/ash/.config/vesktop’: File exists
+Sep 09 00:43:39 Diablo hm-activate-ash[23545]: ln: failed to create symbolic link '/home/ash/.config/vesktop/settings/settings.json': No such file or directory
+Sep 09 00:43:39 Diablo systemd[1]: home-manager-ash.service: Main process exited, code=exited, status=1/FAILURE
+Sep 09 00:43:39 Diablo systemd[1]: home-manager-ash.service: Failed with result 'exit-code'.
+Sep 09 00:43:39 Diablo systemd[1]: Failed to start Home Manager environment for ash.
+Command 'systemd-run -E LOCALE_ARCHIVE -E NIXOS_INSTALL_BOOTLOADER -E NIXOS_NO_CHECK --collect --no-ask-password --pipe --quiet --service-type=exec --unit=nixos-rebuild-switch-to-configuration /nix/store/39y0r7a201551wfswy8b7c2i0b7kba0x-nixos-system-Diablo-26.11.20260802.6438090/bin/switch-to-configuration switch' returned non-zero exit status 4.
+ash ~ took 29s ❯ 

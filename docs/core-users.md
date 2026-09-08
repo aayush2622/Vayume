@@ -6,11 +6,11 @@ Who's allowed to log in, and what they're allowed to turn on - the framework the
 
 ## `modules/core/Users.nix`
 
-The shared framework behind every `vayori.users.<name>` entry - what
+The shared framework behind every `vayume.users.<name>` entry - what
 fields exist, what they do, and (new) where the whole list actually
 comes from now.
 
-**`vayori.users` defaults to `{ }` here and gets its real value from
+**`vayume.users` defaults to `{ }` here and gets its real value from
 `_user.nix`**, a plain NixOS module living next to `Host.nix` (see
 [_hardware.nix](core-hardware.md) above for the
 gitignored/required/`path:` mechanics, shared with `_user.nix`). This used
@@ -22,7 +22,7 @@ that's never committed:
 ```nix
 # modules/hosts/Diablo/_user.nix
 {
-  vayori.users = {
+  vayume.users = {
     ash = {
       fullName = "Ash";
       extraGroups = [ "networkmanager" "wheel" "video" "input" ];
@@ -43,7 +43,7 @@ that's never committed:
 ```
 
 - **No fallback test user any more.** Earlier versions of this repo read
-  an out-of-repo `/etc/vayori/config.json` at eval time and fell back to
+  an out-of-repo `/etc/vayume/config.json` at eval time and fell back to
   a single passwordless account if it didn't exist, so a fresh public
   clone could still evaluate with zero setup. That's gone: the build now
   hard-fails with a clear message (see above) instead of silently
@@ -54,7 +54,7 @@ that's never committed:
   the users even are before any of their home directories, let alone
   home-manager, exist.
 - **`secrets`, per user, optional**: passed to every app module as
-  `vayoriSecrets` (see below) - missing keys, or the whole block, fall
+  `vayumeSecrets` (see below) - missing keys, or the whole block, fall
   back to `"REPLACE_ME"` placeholders instead of erroring.
 - **Plain Nix values, no encryption layer.** Fine, since `_user.nix` is
   gitignored and only ever readable by whoever already has read access
@@ -89,12 +89,12 @@ Field meanings:
 
 **Also where secrets reach the apps that need them - no runtime file any
 more, straight from `_user.nix`.** `home-manager.users`'s per-user module
-sets `_module.args.vayoriSecrets = lib.recursiveUpdate defaultUserSecrets
+sets `_module.args.vayumeSecrets = lib.recursiveUpdate defaultUserSecrets
 u.secrets;` - a plain module argument, the exact same mechanism
-`vayoriTheme`/`vayoriApps` already use via `extraSpecialArgs`, just
+`vayumeTheme`/`vayumeApps` already use via `extraSpecialArgs`, just
 per-user instead of shared. Any app module that needs a secret just adds
-`vayoriSecrets` to its own function signature and reads
-`vayoriSecrets.WAKATIME_API_KEY` (etc.) directly - no file, no `jq`
+`vayumeSecrets` to its own function signature and reads
+`vayumeSecrets.WAKATIME_API_KEY` (etc.) directly - no file, no `jq`
 lookup, no activation-ordering dance.
 
 - **`lib.recursiveUpdate defaultUserSecrets u.secrets`, not a plain
@@ -102,7 +102,7 @@ lookup, no activation-ordering dance.
   `secrets.WAKATIME_API_KEY` in `_user.nix` still leaves `RBW_EMAIL` and
   `PROVIDERS.NVIDIA_NIM_API_KEY` resolving to their `"REPLACE_ME"`
   defaults instead of erroring on a missing attribute - every consumer
-  can access `vayoriSecrets.<key>` unconditionally, always. This repo
+  can access `vayumeSecrets.<key>` unconditionally, always. This repo
   previously ran these through
   [sops-nix](https://github.com/Mic92/sops-nix) (age-encrypted at rest),
   then through a hand-rolled JSON file seeded once and edited by hand;
@@ -147,7 +147,7 @@ lookup, no activation-ordering dance.
   higher-stakes.
 - **A missing secret disables the thing that needed it, instead of
   configuring it with a useless placeholder.** Every consumer checks
-  `vayoriSecrets.<key> != "REPLACE_ME"` before doing anything: no real
+  `vayumeSecrets.<key> != "REPLACE_ME"` before doing anything: no real
   `WAKATIME_API_KEY` means the `wakatime` extension/plugin is left out
   of Zed's `extensions`, VS Code's `nixpkgsExtensions`, and Android
   Studio's `allManualPluginsSpec` entirely (not installed with a broken

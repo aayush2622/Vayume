@@ -22,7 +22,7 @@ Rectangle {
     property int userIndex: (typeof userModel !== "undefined" && userModel.lastIndex >= 0) ? userModel.lastIndex : 0
     property real ui: 0
 
-    // Cursor size, from vayori.theme.cursorSize via theme.conf (see SddmTheme.nix) -
+    // Cursor size, from vayume.theme.cursorSize via theme.conf (see SddmTheme.nix) -
     // falls back to a sane default if the config key isn't there for any reason.
     readonly property real cursorSizePx: (typeof config !== "undefined" && config.cursorSize) ? Number(config.cursorSize) : 24
 

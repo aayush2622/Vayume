@@ -79,7 +79,7 @@ machine, pinned as real Nix packages instead of fetched live every time:
   plugins for virtually every editor read from, JetBrains included, so
   it's the correct place regardless of what this repo does elsewhere.
   An activation script sets just the `api_key` line via `crudini`
-  (from `vayoriSecrets.WAKATIME_API_KEY`, see
+  (from `vayumeSecrets.WAKATIME_API_KEY`, see
   [core/Users.nix](core-users.md)), leaving any other
   settings already in that file - proxy config, excluded projects -
   untouched. VS Code's own WakaTime extension reads the exact same
@@ -89,7 +89,7 @@ machine, pinned as real Nix packages instead of fetched live every time:
   `com.wakatime.intellij.plugin` entry out entirely** (by `id`, so it
   doesn't disturb `androidStudioManualPluginsSpec`'s own use as the
   `flake.pluginPins` source, which stays complete regardless of any one
-  user's secrets) when `vayoriSecrets.WAKATIME_API_KEY` is still
+  user's secrets) when `vayumeSecrets.WAKATIME_API_KEY` is still
   `"REPLACE_ME"`, and the `crudini` activation above becomes a no-op via
   `lib.optionalString` - so there's no plugin sitting there pointed at a
   placeholder key that would just fail every heartbeat.
