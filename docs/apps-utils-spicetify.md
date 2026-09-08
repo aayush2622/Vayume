@@ -15,4 +15,4 @@ freeform attrset.
 
 ---
 
-[← ZenBrowser.nix](apps-utils-zenbrowser.md) · [Index](CONFIGURATION.md) · [Nautilus.nix →](apps-utils-nautilus.md)
+[← ZenBrowser.nix](apps-utils-zenbrowser.md) · [Index](CONFIGURATION.md) · [Fastpotify.nix →](apps-utils-fastpotify.md)

@@ -99,6 +99,28 @@
         "url": "https://github.com/vinceliuice/Elegant-grub2-themes"
       }
     },
+    "fastpotify": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "lastModified": 1788649190,
+        "narHash": "sha256-1GfrCmTw2ClhqpXZ/2NoVNAiBC6DajgH85qxGm5bLsc=",
+        "owner": "dim-ghub",
+        "repo": "fastpotify-theming",
+        "rev": "891bb245818c02ee63b41c44ac099a56f740eef3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dim-ghub",
+        "ref": "astra-redesign",
+        "repo": "fastpotify-theming",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -279,6 +301,7 @@
         "dms": "dms",
         "dms-plugin-registry": "dms-plugin-registry",
         "elegant-grub2-themes": "elegant-grub2-themes",
+        "fastpotify": "fastpotify",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "import-tree": "import-tree",
@@ -292,6 +315,27 @@
         "zsh-autosuggestions": "zsh-autosuggestions",
         "zsh-syntax-highlighting": "zsh-syntax-highlighting",
         "zsh-you-should-use": "zsh-you-should-use"
+      }
+    },
+    "rust-overlay": {
+      "inputs": {
+        "nixpkgs": [
+          "fastpotify",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787834454,
+        "narHash": "sha256-jXSvqn04IOecJCvSvl8+g3PsbDVNP6qKs6dKUs/b16k=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "dc2fd1acc537f3583744e1373597a5731ff7a6e3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
       }
     },
     "spicetify-nix": {

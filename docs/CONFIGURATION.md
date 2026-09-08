@@ -59,13 +59,14 @@ dive.
 **Apps - utils**
 26. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
 27. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
-28. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
-29. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
-30. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
-31. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
-32. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
-33. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
-34. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
+28. [apps/utils/fastpotify/Fastpotify.nix](apps-utils-fastpotify.md)
+29. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
+30. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
+31. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
+32. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
+33. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
+34. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
+35. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
 
 ---
 

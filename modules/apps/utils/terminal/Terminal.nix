@@ -192,7 +192,7 @@
         fi
         if [ -n "$FASTFETCH_IMAGE" ]; then
           fastfetch \
-            --logo-type kitty \
+            --logo-type kitty-icat \
             --logo "$FASTFETCH_IMAGE" \
             --logo-width 32 \
             --logo-height 16

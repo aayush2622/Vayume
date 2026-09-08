@@ -127,6 +127,7 @@ in {
             ZenBrowser.enable = true;
             Vesktop.enable = true;
             Spicetify.enable = true;
+            Fastpotify.enable = true;
             Bitwarden.enable = true;
             StateBackup.enable = true;
             Distrobox.enable = true;

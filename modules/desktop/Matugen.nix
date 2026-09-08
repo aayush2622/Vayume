@@ -11,6 +11,31 @@
 
     discord = builtins.readFile ../apps/utils/vesktop/vendor/discord.css.template;
 
+    fastpotify = ''
+      {
+        "mode": "{{mode}}",
+        "colours": {
+          "background": "{{colors.background.default.hex}}",
+          "surfaceContainerLowest": "{{colors.surface_container_lowest.default.hex}}",
+          "surfaceContainerLow": "{{colors.surface_container_low.default.hex}}",
+          "surfaceContainer": "{{colors.surface_container.default.hex}}",
+          "surfaceContainerHigh": "{{colors.surface_container_high.default.hex}}",
+          "surfaceContainerHighest": "{{colors.surface_container_highest.default.hex}}",
+          "onSurface": "{{colors.on_surface.default.hex}}",
+          "onSurfaceVariant": "{{colors.on_surface_variant.default.hex}}",
+          "outline": "{{colors.outline.default.hex}}",
+          "outlineVariant": "{{colors.outline_variant.default.hex}}",
+          "primary": "{{colors.primary.default.hex}}",
+          "primaryFixed": "{{colors.primary_fixed.default.hex}}",
+          "onPrimary": "{{colors.on_primary.default.hex}}",
+          "primaryContainer": "{{colors.primary_container.default.hex}}",
+          "onPrimaryContainer": "{{colors.on_primary_container.default.hex}}",
+          "error": "{{colors.error.default.hex}}",
+          "shadow": "{{colors.shadow.default.hex}}"
+        }
+      }
+    '';
+
     btop = ''
       theme[main_bg]=""
       theme[main_fg]="{{colors.on_surface.default.hex}}"

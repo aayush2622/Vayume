@@ -58,7 +58,7 @@ sysctls, and a Tor transparent proxy behind a DMS control-center toggle that
 routes the whole machine rather than just a browser.
 
 **Everything else** — Zen Browser (chrome-scripted so its theme reloads
-live), Nautilus and Thunar, Spicetify, Bitwarden, Vesktop, an ASUS control
+live), Nautilus and Thunar, Spicetify and Fastpotify, Bitwarden, Vesktop, an ASUS control
 widget, Waydroid for Android apps (signature spoofing and microG included),
 native AppImage support, and an isolated Distrobox escape hatch for the
 Ubuntu-only tail.
