@@ -23,4 +23,4 @@ grant anything on its own anymore, it's basically a fossil.
 
 ---
 
-[← Matugen.nix](desktop-matugen.md) · [Index](CONFIGURATION.md) · [Zram.nix →](system-zram.md)
+[← SddmTheme.nix](desktop-sddm.md) · [Index](CONFIGURATION.md) · [Zram.nix →](system-zram.md)

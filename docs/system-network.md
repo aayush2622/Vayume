@@ -174,4 +174,4 @@ browsing through it.
 
 ---
 
-[← GrubTheme.nix](system-grubtheme.md) · [Index](CONFIGURATION.md) · [AndroidStudio.nix →](apps-dev-androidstudio.md)
+[← GrubTheme.nix](system-grubtheme.md) · [Index](CONFIGURATION.md) · [Waydroid.nix →](system-waydroid.md)

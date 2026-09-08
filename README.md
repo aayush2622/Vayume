@@ -53,8 +53,13 @@ wires a free-tier model into your CLI and editors.
 **Gaming** — Steam, Lutris, Heroic, GE-Proton, MangoHud. Color-matched too,
 down to the Wine dialogs.
 
+**Network** — Cloudflare DNS over TLS by default, network-stack hardening
+sysctls, and a Tor transparent proxy behind a DMS control-center toggle that
+routes the whole machine rather than just a browser.
+
 **Everything else** — Zen Browser (chrome-scripted so its theme reloads
-live), Nautilus, Spicetify, Bitwarden, Vesktop, an ASUS control widget,
+live), Nautilus and Thunar, Spicetify, Bitwarden, Vesktop, an ASUS control
+widget, Waydroid for Android apps (signature spoofing and microG included),
 native AppImage support, and an isolated Distrobox escape hatch for the
 Ubuntu-only tail.
 

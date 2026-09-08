@@ -86,7 +86,7 @@ over Wayland specifically - the three fixes above get the env vars to
 the process, but that resolution step turned out not to be reliable
 enough to depend on.
 
-Fix: stop depending on it. [`Theme/Main.qml`](sddm/Theme/Main.qml) now
+Fix: stop depending on it. [`Theme/Main.qml`](../modules/desktop/sddm/Theme/Main.qml) now
 draws its own cursor - a `HoverHandler` on the root item tracks the
 pointer position (observe-only, doesn't grab clicks, so it can't break
 the password field or the session/reboot/power buttons underneath it),
@@ -102,7 +102,7 @@ plane existing at all.
 
 **Still `vayori.theme`-driven, not hardcoded**: the arrow's *size* comes
 from `config.vayori.theme.cursorSize`, threaded through via a
-`cursorSize=` key [`SddmTheme.nix`](sddm/SddmTheme.nix) now writes into
+`cursorSize=` key [`SddmTheme.nix`](../modules/desktop/sddm/SddmTheme.nix) now writes into
 `theme.conf` (SDDM's own QML API exposes every `[General]` key as
 `config.<key>` - the same mechanism the theme could already use for
 `background`/`font`/`themeMode`, just not exercised for anything

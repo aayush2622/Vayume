@@ -96,4 +96,4 @@ machine, pinned as real Nix packages instead of fetched live every time:
 
 ---
 
-[← Network.nix](system-network.md) · [Index](CONFIGURATION.md) · [Vscode.nix →](apps-dev-vscode.md)
+[← Waydroid.nix](system-waydroid.md) · [Index](CONFIGURATION.md) · [Vscode.nix →](apps-dev-vscode.md)

@@ -7,9 +7,10 @@ Seven small files that are secretly two things at once: an app that installs a t
 ## `modules/apps/development/languages/*/*.nix`
 
 Seven independent toggles, each installing one language's own tooling
-and telling the three editors above what to install for it. All seven
-are on by default here - and this was actually checked as a group, not
-just individually: flip all seven off at once, rebuild, and every
+and telling the three editors above what to install for it. They
+are independent, and five of the seven are on for this host (`Rust` and
+`Flutter` are the two currently `false`). The isolation was checked as a
+group, not just individually: flip all seven off at once, rebuild, and every
 editor's extension list should drop to exactly its generic baseline with
 zero language packages left anywhere on `$PATH`. That's exactly what
 happened (VS Code 50→21, Android Studio 17→10, Zed 16→8), then flipping
@@ -17,7 +18,7 @@ them back on rebuilt clean again.
 
 | App | Packages | VSCode extension(s) | Android Studio | Zed |
 | --- | --- | --- | --- | --- |
-| `Cpp` | `clang-tools` (clangd + clang-format), `cmake`, `gdb` | `ms-vscode.cpptools`(-extension-pack), `cmake-tools`, `twxs.cmake`, `vadimcn.vscode-lldb`, `boundarystudio.cpp-extentions-pack` (manual) + 3 marketplace | - | `neocmake` |
+| `Cpp` | `gcc`, `gnumake`, `clang-tools` (clangd + clang-format), `cmake`, `gdb` | `ms-vscode.cpptools`(-extension-pack), `cmake-tools`, `twxs.cmake`, `vadimcn.vscode-lldb`, `boundarystudio.cpp-extentions-pack` (manual) + 3 marketplace | - | `neocmake` |
 | `Rust` | `rustc`, `cargo`, `rust-analyzer`, `rustfmt`, `clippy` | `rust-lang.rust-analyzer` | - | - (bundled) |
 | `Kotlin` | `kotlin`, `kotlin-language-server` | `mathiasfrohlich.kotlin`, `vscjava.vscode-gradle` + `fwcd.kotlin`/`esafirm.kotlin-formatter`/`naco-siren.gradle-language` (marketplace) | `kmm-plugin` (Kotlin Multiplatform - regular Kotlin support is already built in) | `kotlin`, `java`, `groovy` + JVM target/language-server settings |
 | `Flutter` | `flutter` (bundles its own Dart SDK - covers Dart too, see below) | `dart-code.dart-code` + `dart-code.flutter` | `Dart`, Flutter Enhancement Suite, `flutter-intellij`, `flutter-intl` | `dart`, `flutter-snippets` |
@@ -38,6 +39,18 @@ them back on rebuilt clean again.
   broke `home-manager`'s build outright, since both packages ship a
   file at the same internal path and can't coexist in one profile. Not
   a style call - a real conflict that merging them sidesteps completely.
+- **A compiler is part of the toggle, not assumed to be there.**
+  `clang-tools` ships clangd and clang-format but no compiler at all, so
+  for a while the editors had a working language server and no way to
+  actually build anything - VS Code's C/C++ extension in particular just
+  reports "cannot find compiler" rather than failing loudly. `gcc` and
+  `gnumake` are in the package list for that reason, and the extension
+  is pointed straight at the store path
+  (`C_Cpp.default.compilerPath = "${pkgs.gcc}/bin/g++"`) instead of
+  being left to search `$PATH`, which on NixOS is exactly where that
+  search goes wrong. Standards are pinned alongside it - C++23 and C17 -
+  so IntelliSense agrees with what the compiler would actually accept.
+
 - **C and C++ are one toggle, not two** - nothing in this setup treats
   plain C differently from C++, so splitting them would just be two
   toggles that always get flipped on together anyway.

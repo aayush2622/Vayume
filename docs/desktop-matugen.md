@@ -39,4 +39,4 @@ spliced in instead - see its own section for the full story on that one.
 
 ---
 
-[← Baseline.nix](desktop-baseline.md) · [Index](CONFIGURATION.md) · [DevTooling.nix →](system-devtooling.md)
+[← Baseline.nix](desktop-baseline.md) · [Index](CONFIGURATION.md) · [SddmTheme.nix →](desktop-sddm.md)

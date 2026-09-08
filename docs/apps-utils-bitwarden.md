@@ -34,4 +34,4 @@ exactly as it is rather than getting seeded with a literal
 
 ---
 
-[← Nautilus.nix](apps-utils-nautilus.md) · [Index](CONFIGURATION.md) · [StateBackup.nix →](apps-utils-statebackup.md)
+[← Thunar.nix](apps-utils-thunar.md) · [Index](CONFIGURATION.md) · [StateBackup.nix →](apps-utils-statebackup.md)

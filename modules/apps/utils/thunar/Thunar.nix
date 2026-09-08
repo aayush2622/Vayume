@@ -68,7 +68,7 @@
         # backends it shells out to, and without them thumbnails are
         # silently blank for anything that isn't a plain image.
         ffmpegthumbnailer
-        poppler_utils
+        poppler-utils
         libgsf
         webp-pixbuf-loader
       ];

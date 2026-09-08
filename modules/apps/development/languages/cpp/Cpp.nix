@@ -37,7 +37,6 @@ in {
 
   flake.homeModules.apps.Cpp = { pkgs, ... }: {
     home.packages = with pkgs; [
-  
       gcc
       gnumake
       clang-tools

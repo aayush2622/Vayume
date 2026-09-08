@@ -21,4 +21,4 @@ The file manager - small file, and a lesson in exactly how two settings blocks t
 
 ---
 
-[← Spicetify.nix](apps-utils-spicetify.md) · [Index](CONFIGURATION.md) · [Bitwarden.nix →](apps-utils-bitwarden.md)
+[← Spicetify.nix](apps-utils-spicetify.md) · [Index](CONFIGURATION.md) · [Thunar.nix →](apps-utils-thunar.md)
