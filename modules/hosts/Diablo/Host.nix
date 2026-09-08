@@ -123,6 +123,7 @@ in {
             # utils
             Terminal.enable = true;
             Nautilus.enable = true;
+            Thunar.enable = true;
             ZenBrowser.enable = true;
             Vesktop.enable = true;
             Spicetify.enable = true;

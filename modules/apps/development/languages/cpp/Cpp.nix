@@ -18,13 +18,16 @@ in {
         { publisher = "ms-vscode"; name = "cpptools-themes"; }
       ];
       manualExtensions = cppManualExtensionsSpec;
-      settings = {
+      settings = pkgs: {
         "[cpp]" = {
           "editor.defaultFormatter" = "ms-vscode.cpptools";
           "editor.formatOnSave" = true;
         };
         "C_Cpp.clang_format_style" = "file";
         "C_Cpp.clang_format_fallbackStyle" = "Google";
+        "C_Cpp.default.compilerPath" = "${pkgs.gcc}/bin/g++";
+        "C_Cpp.default.cppStandard" = "c++23";
+        "C_Cpp.default.cStandard" = "c17";
       };
     };
     zed = {
@@ -34,6 +37,9 @@ in {
 
   flake.homeModules.apps.Cpp = { pkgs, ... }: {
     home.packages = with pkgs; [
+  
+      gcc
+      gnumake
       clang-tools
       cmake
       gdb
