@@ -1,6 +1,6 @@
 {
   flake.homeModules.apps.Thunar =
-    { pkgs, lib, ... }:
+    { pkgs, lib, config, ... }:
     let
       # Plugins have to be baked in with an override rather than listed
       # alongside as separate packages - Thunar only looks for them
@@ -40,12 +40,33 @@
           <property name="misc-recursive-search" type="string" value="THUNAR_RECURSIVE_SEARCH_LOCAL"/>
           <property name="misc-remember-geometry" type="bool" value="true"/>
 
+          <!-- Without this, "Delete" (permanent, no Trash) only shows in
+               the right-click menu while Shift is held - this pins it
+               there all the time, next to "Move to Trash". -->
+          <property name="misc-show-delete-action" type="bool" value="true"/>
+
           <!-- Client-side decorations, so the window follows the GTK
                theme instead of drawing an XFCE-styled titlebar that
                matugen never touches. -->
           <property name="misc-use-csd" type="bool" value="true"/>
         </channel>
       '';
+
+      # Thunar's sidebar auto-lists the XDG special dirs (created by
+      # Baseline.nix's xdg.userDirs) under "Places" once they exist on
+      # disk - but it reads the classic ~/.gtk-bookmarks for its
+      # user-pinnable "Bookmarks" section, and starts with that file
+      # empty. Seeding it means Downloads/Documents/etc. show up
+      # immediately rather than depending on activation-order timing
+      # between folder creation and the sidebar's own directory scan.
+      gtkBookmarks = pkgs.writeText "gtk-bookmarks" (lib.concatStringsSep "\n" [
+        "file://${config.xdg.userDirs.desktop}"
+        "file://${config.xdg.userDirs.documents}"
+        "file://${config.xdg.userDirs.download}"
+        "file://${config.xdg.userDirs.music}"
+        "file://${config.xdg.userDirs.pictures}"
+        "file://${config.xdg.userDirs.videos}"
+      ]);
 
       # GTK's own file-chooser dialog is dconf-backed and separate from
       # Thunar's preferences - this is what every GTK open/save dialog
@@ -80,21 +101,34 @@
         };
       };
 
-      xdg.mimeApps.defaultApplications = {
-        "inode/directory" = "thunar.desktop";
-        "x-directory/normal" = "thunar.desktop";
+      # `enable` isn't implied by setting `defaultApplications` - it
+      # defaults to false in home-manager, and without it this whole
+      # block is silently inert and no mimeapps.list ever gets written.
+      xdg.mimeApps = {
+        enable = true;
+        defaultApplications = {
+          "inode/directory" = "thunar.desktop";
+          "x-directory/normal" = "thunar.desktop";
+        };
       };
 
       # Seeded once rather than symlinked from the store: Thunar rewrites
-      # this file itself whenever a window is resized or a view changed,
-      # and a read-only symlink makes every one of those writes fail.
-      # Same pattern as seedDmsSession in Dms.nix.
+      # both of these itself - the preferences on every window resize or
+      # view change, the bookmarks on every sidebar add/remove - and a
+      # read-only symlink makes every one of those writes fail. Same
+      # pattern as seedDmsSession in Dms.nix.
       home.activation.seedThunarConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/thunar.xml"
         if [ ! -e "$dest" ]; then
           run mkdir -p "$(dirname "$dest")"
           run cp "${thunarXml}" "$dest"
           run chmod u+w "$dest"
+        fi
+
+        bookmarks="$HOME/.gtk-bookmarks"
+        if [ ! -e "$bookmarks" ]; then
+          run cp "${gtkBookmarks}" "$bookmarks"
+          run chmod u+w "$bookmarks"
         fi
       '';
     };

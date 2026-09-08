@@ -122,7 +122,7 @@ in {
 
             # utils
             Terminal.enable = true;
-            Nautilus.enable = true;
+            Nautilus.enable = false;
             Thunar.enable = true;
             ZenBrowser.enable = true;
             Vesktop.enable = true;

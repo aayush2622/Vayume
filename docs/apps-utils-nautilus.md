@@ -2,7 +2,7 @@
 
 ---
 
-The file manager - small file, and a lesson in exactly how two settings blocks that look identical can still need to stay two blocks.
+A second file manager - kept as a toggle, not deleted, even though [Thunar](apps-utils-thunar.md) is the one actually claiming folders on this host. Small file, and a lesson in exactly how two settings blocks that look identical can still need to stay two blocks.
 
 ## `modules/apps/utils/nautilus/Nautilus.nix`
 

@@ -2,7 +2,7 @@
 
 ---
 
-The second file manager - and the one that quietly proves how much of this repo's theming is a GTK story rather than a per-app one.
+The default file manager on this host - and the one that quietly proves how much of this repo's theming is a GTK story rather than a per-app one.
 
 ## `modules/apps/utils/thunar/Thunar.nix`
 
@@ -53,11 +53,37 @@ The second file manager - and the one that quietly proves how much of this repo'
   GTK open/save *dialog* reads, in any app, whether Thunar is installed
   or not. Same two-blocks-that-look-identical situation as
   [Nautilus.nix](apps-utils-nautilus.md), for the same reason.
-- **Both file managers can be on at once.** They don't collide;
-  `xdg.mimeApps` decides which one actually opens a folder, and this
-  module claims `inode/directory` for Thunar. Flip
-  `Nautilus.enable`/`Thunar.enable` independently and the last one to
-  claim the mimetype wins.
+- **`xdg.mimeApps.enable` isn't implied by setting
+  `defaultApplications`.** It defaults to `false` in home-manager, and
+  without setting it explicitly the whole `defaultApplications` block
+  silently does nothing - no `mimeapps.list` gets written at all, so
+  neither file manager actually claims `inode/directory` and whichever
+  one opens a folder comes down to desktop-file discovery order instead
+  of this repo's own config. Caught by building the real activation
+  package and grepping the output for `thunar.desktop` rather than
+  trusting that `nix flake check` would catch it - it doesn't, since the
+  option evaluates and builds fine either way. This is the one module
+  on this host where `Thunar.enable`/`Nautilus.enable` actually matter:
+  Thunar is on, Nautilus is off, on purpose - one file manager, not two
+  competing for the same mimetype.
+- **The right-click menu's permanent "Delete" is one xfconf property.**
+  By default it only shows up in the context menu while Shift is held;
+  `misc-show-delete-action = true` in `thunar.xml` pins it there
+  alongside "Move to Trash" all the time, so you don't need to remember
+  a modifier key just to skip the trash.
+- **Downloads/Documents/etc. show up in the sidebar two different ways,
+  and this module relies on both.** Thunar auto-lists the XDG special
+  directories under "Places" once they exist on disk - which they do,
+  since [Baseline.nix](desktop-baseline.md) turns on
+  `xdg.userDirs.createDirectories` for every user - but it separately
+  reads the classic `~/.gtk-bookmarks` for its own pinnable "Bookmarks"
+  section, which starts out empty. `gtkBookmarks` seeds that file with
+  the same six folders (pulled from `config.xdg.userDirs.*`, not
+  hardcoded paths) so they show up immediately rather than depending on
+  activation-order timing between folder creation and Thunar's own
+  directory scan - same seed-once pattern as `thunar.xml`, since Thunar
+  rewrites this file too whenever a bookmark is added or removed by
+  hand.
 
 ---
 

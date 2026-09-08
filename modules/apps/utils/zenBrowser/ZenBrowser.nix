@@ -162,12 +162,23 @@ in {
       "network.prefetch-next" = false;
       "privacy.popups.showBrowserMessage" = false;
 
+      # These are only the *fallback* fonts a page gets when it never
+      # specifies its own font-family - not a page-wide override.
+      # `use_document_fonts` used to be forced off, which meant every
+      # page's own CSS fonts got silently replaced by this (monospace)
+      # font instead of just the fallback. Google's own sites depend on
+      # custom icon fonts for things like the gear/search/home glyphs -
+      # force a different font over those and the glyphs render as their
+      # literal fallback text instead of icons, which is exactly what
+      # broke. Leaving `use_document_fonts` at Firefox's own default (on)
+      # fixes that; the browser's own chrome - tabs, URL bar, sidebar -
+      # still gets `theme.font` regardless, via `theme.custom_uifont.custom`
+      # below.
       "font.name.serif.x-western" = theme.font;
       "font.name.sans-serif.x-western" = theme.font;
       "font.name.monospace.x-western" = theme.font;
       "font.name.cursive.x-western" = theme.font;
       "font.name.fantasy.x-western" = theme.font;
-      "browser.display.use_document_fonts" = 0;
       "layout.css.prefers-color-scheme.content-override" = 0;
 
       "mod.cleanedurlbar.customcolor" = "hsl(0 0 10)";
