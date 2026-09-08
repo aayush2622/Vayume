@@ -16,7 +16,7 @@ let
   };
 
   otherManualPluginsSpec = [
-    { dirName = "github-copilot-intellij"; id = "com.github.copilot"; version = "1.16.1-251"; hash = "sha256-LM2pLbOyOc2R3E90LSlbBxiGNWkzqG5pimKxvswaPQg="; }
+    { dirName = "github-copilot-intellij"; id = "com.github.copilot"; version = "1.17.0-251"; hash = "sha256-pyWPca0k8wUDq7XmKw84bqNs8RlKcII3ZpeRpcavNMQ="; }
   ];
 
   androidStudioManualPluginsSpec = [ wakatimeManualPlugin ] ++ otherManualPluginsSpec;

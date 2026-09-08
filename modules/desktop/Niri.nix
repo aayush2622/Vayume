@@ -20,7 +20,7 @@
 
     niriBinds = {
       "Mod+Return" = titled "Open Terminal" { spawn = [ "kitty" ]; };
-      "Mod+E" = titled "Open File Manager" { spawn = [ "nautilus" ]; };
+      "Mod+E" = titled "Open File Manager" { spawn = [ "thunar" ]; };
       "Mod+C" = titled "Open VS Code" { spawn = [ "code" ]; };
       "Mod+B" = titled "Open Browser" { spawn = [ "zen" ]; };
       "Mod+Shift+B" = titled "Reload Zen (apply new theme)" { spawn = [ "vayori-zen-reload" ]; };

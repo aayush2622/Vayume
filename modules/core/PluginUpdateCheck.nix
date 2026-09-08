@@ -2,6 +2,8 @@
   flake.nixosModules.PluginUpdateCheck = { config, lib, pkgs, ... }:
   let
     checkerScript = pkgs.writers.writePython3Bin "vayori-check-plugin-updates" { } ''
+      import base64
+      import hashlib
       import json
       import os
       import sys
@@ -27,6 +29,15 @@
           "/extensionquery"
       )
       JETBRAINS_LIST_URL = "https://plugins.jetbrains.com/plugins/list?pluginId={}"
+      JETBRAINS_DOWNLOAD_URL = (
+          "https://plugins.jetbrains.com/plugin/download?pluginId={}&version={}"
+      )
+      VSCODE_VSIX_URL = (
+          "https://{publisher}.gallery.vsassets.io/_apis/public/gallery"
+          "/publisher/{publisher}/extension/{name}/{version}/assetbyname"
+          "/Microsoft.VisualStudio.Services.VSIXPackage"
+      )
+      DOWNLOAD_TIMEOUT = 60
       AMO_ADDON_URL = "https://addons.mozilla.org/api/v5/addons/addon/{}/"
       ZEN_THEME_STORE_URL = (
           "https://raw.githubusercontent.com/zen-browser/theme-store"
@@ -38,6 +49,37 @@
           req = urllib.request.Request(url, data=data, headers=headers or {})
           with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
               return json.loads(resp.read().decode())
+
+
+      def sri_sha256(data):
+          return "sha256-" + base64.b64encode(hashlib.sha256(data).digest()).decode()
+
+
+      def compute_hash(item):
+          """Fetch the artifact for the latest version and return its SRI hash.
+
+          Mirrors what pkgs.fetchurl pins (flat sha256 over the raw file), so the
+          value can be pasted straight into the matching *.nix plugin spec.
+          """
+          try:
+              kind = item.get("kind")
+              if kind == "jetbrains":
+                  url = JETBRAINS_DOWNLOAD_URL.format(item["id"], item["latest"])
+              elif kind == "vscode":
+                  url = VSCODE_VSIX_URL.format(
+                      publisher=item["publisher"],
+                      name=item["pkg_name"],
+                      version=item["latest"],
+                  )
+              else:
+                  return None
+              req = urllib.request.Request(
+                  url, headers={"User-Agent": "vayori-plugin-update-check"}
+              )
+              with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
+                  return sri_sha256(resp.read())
+          except Exception:
+              return None
 
 
       def check_vscode(item):
@@ -70,7 +112,8 @@
           if latest != item["version"]:
               return {
                   "app": "VS Code", "name": label, "pinned": item["version"],
-                  "latest": latest, "note": None,
+                  "latest": latest, "note": None, "kind": "vscode",
+                  "publisher": item["publisher"], "pkg_name": item["name"],
               }
           return None
 
@@ -99,6 +142,7 @@
               return {
                   "app": "Android Studio", "name": item["dirName"],
                   "pinned": item["version"], "latest": latest, "note": None,
+                  "kind": "jetbrains", "id": item["id"],
               }
           return None
 
@@ -160,6 +204,7 @@
 
       def format_report(outdated):
           lines = ["plugin updates available:"]
+          pending_hash = False
           for item in outdated:
               if item["note"]:
                   lines.append(
@@ -174,11 +219,54 @@
                           item["latest"],
                       )
                   )
+                  if item.get("hash"):
+                      lines.append(
+                          "      version = \"{}\"; hash = \"{}\";".format(
+                              item["latest"], item["hash"]
+                          )
+                      )
+                  elif item.get("kind"):
+                      pending_hash = True
           lines.append(
               "update the pinned version/hash in the matching "
               "modules/apps/*/*.nix file"
           )
+          if pending_hash:
+              lines.append(
+                  "  (resolving hashes... run `vayori-check-plugin-updates` "
+                  "directly if they don't appear)"
+              )
           return "\n".join(lines)
+
+
+      def resolve_hashes(outdated):
+          """Best-effort: fill item['hash'] for entries still missing it.
+
+          Returns True if any hash was newly resolved. Kept separate from the
+          report so a slow download can't delay (or, under `timeout`, suppress)
+          the version listing.
+          """
+          todo = [
+              r for r in outdated
+              if r.get("kind") and r.get("note") is None
+              and r.get("latest") and not r.get("hash")
+          ]
+          if not todo:
+              return False
+          resolved = False
+          with ThreadPoolExecutor(max_workers=8) as pool:
+              for item, digest in zip(todo, pool.map(compute_hash, todo)):
+                  if digest:
+                      item["hash"] = digest
+                      resolved = True
+          return resolved
+
+
+      def write_cache(checked_at, outdated):
+          CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+          CACHE_PATH.write_text(
+              json.dumps({"checked_at": checked_at, "outdated": outdated})
+          )
 
 
       def main():
@@ -195,23 +283,30 @@
           if not FORCE and CACHE_PATH.exists():
               try:
                   cache = json.loads(CACHE_PATH.read_text())
-                  if now - cache.get("checked_at", 0) < TTL:
-                      if cache.get("outdated"):
-                          print(format_report(cache["outdated"]), file=sys.stderr)
-                      return
               except Exception:
-                  pass
+                  cache = None
+              if cache and now - cache.get("checked_at", 0) < TTL:
+                  outdated = cache.get("outdated") or []
+                  if outdated:
+                      print(format_report(outdated), file=sys.stderr)
+                      # An earlier run may have been killed before it could
+                      # resolve every hash; try again and persist progress.
+                      if resolve_hashes(outdated):
+                          write_cache(cache.get("checked_at", now), outdated)
+                          print(format_report(outdated), file=sys.stderr)
+                  return
 
           outdated, attempted, skipped = run_checks(pins)
 
           if attempted == 0 or skipped < attempted:
-              CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-              CACHE_PATH.write_text(
-                  json.dumps({"checked_at": now, "outdated": outdated})
-              )
+              write_cache(now, outdated)
 
           if outdated:
               print(format_report(outdated), file=sys.stderr)
+              if resolve_hashes(outdated):
+                  if attempted == 0 or skipped < attempted:
+                      write_cache(now, outdated)
+                  print(format_report(outdated), file=sys.stderr)
 
 
       if __name__ == "__main__":

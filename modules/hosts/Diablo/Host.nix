@@ -200,7 +200,18 @@ in {
             variant = "";
           };
 
-          hardware.bluetooth.enable = true;
+          hardware.bluetooth = {
+            enable = true;
+            powerOnBoot = true;
+            settings = {
+              General = {
+                Experimental = "330859bc-7506-492d-9370-9a6f0614037f";
+                FastConnectable = true;
+                JustWorksRepairing = "always";
+                MultiProfile = "multiple";
+              };
+            };
+          };
           services.upower.enable = true;
 
           services.printing.enable = true;
@@ -233,12 +244,38 @@ in {
             alsa.enable = true;
             alsa.support32Bit = true;
             pulse.enable = true;
+            wireplumber.extraConfig."51-bluez" = {
+              "monitor.bluez.properties" = {
+               
+                "bluez5.autoswitch-profile" = false;
+                "bluez5.enable-sbc-xq" = true;
+                "bluez5.enable-msbc" = true;
+                "bluez5.enable-hw-volume" = true;
+                "bluez5.codecs" = [ "ldac" "aptx_hd" "aptx" "aac" "sbc_xq" "sbc" ];
+              };
+              "wireplumber.settings"."bluetooth.autoswitch-to-headset-profile" = false;
+              "monitor.bluez.rules" = [
+                {
+                  matches = [ { "node.name" = "~bluez_output.*"; } ];
+                  actions.update-props."session.suspend-timeout-seconds" = 2;
+                }
+              ];
+            };
           };
 
           services.udisks2.enable = true;
           programs.dconf.enable = true;
           services.gvfs.enable = true;
           services.tumbler.enable = true;
+
+          services.gnome.gnome-keyring.enable = true;
+          security.pam.services.sddm.enableGnomeKeyring = true;
+          security.pam.services.login.enableGnomeKeyring = true;
+
+          security.sudo.extraConfig = ''
+            Defaults timestamp_type=global
+            Defaults timestamp_timeout=15
+          '';
 
           environment.systemPackages = with pkgs; [
             gsettings-desktop-schemas

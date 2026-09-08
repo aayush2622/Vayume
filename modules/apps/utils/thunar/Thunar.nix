@@ -6,8 +6,8 @@
       # alongside as separate packages - Thunar only looks for them
       # inside its own prefix, which is exactly what nixpkgs' own
       # programs.thunar module does too.
-      thunarWithPlugins = pkgs.xfce.thunar.override {
-        thunarPlugins = with pkgs.xfce; [
+      thunarWithPlugins = pkgs.thunar.override {
+        thunarPlugins = with pkgs; [
           thunar-archive-plugin
           thunar-media-tags-plugin
           thunar-volman

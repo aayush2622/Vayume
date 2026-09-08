@@ -201,7 +201,7 @@
 
           bind = [
             (bind "RETURN" (spawn "kitty"))
-            (bind "E" (spawn "nautilus"))
+            (bind "E" (spawn "thunar"))
             (bind "C" (spawn "code"))
             (bind "B" (spawn "zen"))
             (bind "SHIFT + B" (spawn "vayori-zen-reload"))
