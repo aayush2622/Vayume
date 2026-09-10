@@ -92,6 +92,7 @@
         poppler-utils
         libgsf
         webp-pixbuf-loader
+        xfconf
       ];
 
       dconf.settings = {
@@ -112,16 +113,48 @@
         };
       };
 
-      # Seeded once rather than symlinked from the store: Thunar rewrites
-      # both of these itself - the preferences on every window resize or
-      # view change, the bookmarks on every sidebar add/remove - and a
-      # read-only symlink makes every one of those writes fail. Same
-      # pattern as seedDmsSession in Dms.nix.
+      
+      systemd.user.services.xfconfd = {
+        Unit.Description = "Xfce configuration service";
+        Service = {
+          Type = "dbus";
+          BusName = "org.xfce.Xfconf";
+          ExecStart = "${pkgs.xfconf}/lib/xfce4/xfconf/xfconfd";
+        };
+      };
+
+      home.file = {
+        ".local/share/xfce4/helpers/kitty.desktop".text = ''
+          [Desktop Entry]
+          NoDisplay=true
+          Version=1.0
+          Encoding=UTF-8
+          Type=X-XFCE-Helper
+          X-XFCE-Category=TerminalEmulator
+          X-XFCE-Commands=kitty
+          X-XFCE-CommandsWithParameter=kitty %s
+          Icon=kitty
+          Name=kitty
+        '';
+
+        ".config/xfce4/helpers.rc".text = ''
+          TerminalEmulator=kitty
+        '';
+      };
+
+      
       home.activation.seedThunarConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/thunar.xml"
-        if [ ! -e "$dest" ]; then
+        if ! ${pkgs.diffutils}/bin/cmp -s "${thunarXml}" "$dest"; then
           run mkdir -p "$(dirname "$dest")"
-          run cp "${thunarXml}" "$dest"
+
+          ${pkgs.procps}/bin/pkill -x xfconfd || true
+          for _ in $(${pkgs.coreutils}/bin/seq 1 50); do
+            ${pkgs.procps}/bin/pgrep -x xfconfd >/dev/null 2>&1 || break
+            ${pkgs.coreutils}/bin/sleep 0.02
+          done
+
+          run cp -f "${thunarXml}" "$dest"
           run chmod u+w "$dest"
         fi
 

@@ -17,6 +17,16 @@
         { dirName = "python-ce"; id = "PythonCore"; }
       ];
     };
+    zed = {
+      tasks = [
+        {
+          label = "Python: Run current file";
+          command = ''python3 "$ZED_FILE"'';
+          cwd = "$ZED_DIRNAME";
+          tags = [ "run" ];
+        }
+      ];
+    };
   };
 
   flake.homeModules.apps.Python = { pkgs, ... }: {

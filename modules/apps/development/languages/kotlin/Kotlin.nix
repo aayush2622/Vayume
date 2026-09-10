@@ -22,6 +22,14 @@
         lsp.kotlin-language-server.settings.compiler.jvm.target = "21";
         languages.Kotlin.language_servers = [ "kotlin-lsp" ];
       };
+      tasks = [
+        {
+          label = "Kotlin: Run current file";
+          command = ''jar="$(mktemp --suffix=.jar)" && kotlinc "$ZED_FILE" -include-runtime -d "$jar" && java -jar "$jar"'';
+          cwd = "$ZED_DIRNAME";
+          tags = [ "run" ];
+        }
+      ];
     };
   };
 

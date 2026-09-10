@@ -1,5 +1,5 @@
 { self, ... }: {
-  flake.homeModules.apps.Zed = { pkgs, lib, vayumeTheme, vayumeApps, vayumeSecrets, ... }:
+  flake.homeModules.apps.Zed = { pkgs, lib, config, vayumeTheme, vayumeApps, vayumeSecrets, ... }:
   let
     hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
@@ -7,6 +7,7 @@
 
     languageExtensions = lib.unique (lib.concatMap (v: v.extensions or [ ]) languageZed);
     languageSettings = lib.foldl' lib.recursiveUpdate { } (map (v: v.settings or { }) languageZed);
+    languageTasks = lib.concatMap (v: v.tasks or [ ]) languageZed;
 
     extensions = [
       "catppuccin"
@@ -57,7 +58,16 @@
       enable = true;
       inherit extensions;
       userSettings = settings;
+      userTasks = languageTasks;
     };
+
+    home.file.".config/matugen/templates/dank-zed-theme.json".text = self.matugenTemplates.zed;
+
+    vayume.matugenTemplates.zed = ''
+      [templates.zed]
+      input_path = '${config.home.homeDirectory}/.config/matugen/templates/dank-zed-theme.json'
+      output_path = '${config.home.homeDirectory}/.config/zed/themes/dank-zed-theme.json'
+    '';
 
     home.activation.zedWakatimeKey = lib.hm.dag.entryAfter [ "writeBoundary" "zedSettingsActivation" ] (
       lib.optionalString hasWakatime ''

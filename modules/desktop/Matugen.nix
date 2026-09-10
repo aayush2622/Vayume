@@ -9,6 +9,8 @@
     gtk3 = builtins.readFile ./vendor/matugen-gtk/gtk3-colors.css.template;
     gtk4 = builtins.readFile ./vendor/matugen-gtk/gtk4-colors.css.template;
 
+    zed = builtins.readFile ./vendor/matugen-zed/dank-zed-one-dark.json;
+
     discord = builtins.readFile ../apps/utils/vesktop/vendor/discord.css.template;
 
     fastpotify = ''

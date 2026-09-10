@@ -31,6 +31,20 @@
     };
     zed = {
       extensions = [ "dart" "flutter-snippets" ];
+      tasks = [
+        {
+          label = "Dart: Run current file";
+          command = ''dart run "$ZED_FILE"'';
+          cwd = "$ZED_DIRNAME";
+          tags = [ "run" ];
+        }
+        {
+          label = "Flutter: Run";
+          command = "flutter run";
+          cwd = "$ZED_WORKTREE_ROOT";
+          tags = [ "run" ];
+        }
+      ];
     };
   };
 

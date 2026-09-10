@@ -32,6 +32,20 @@ in {
     };
     zed = {
       extensions = [ "neocmake" ];
+      tasks = [
+        {
+          label = "C++: Run current file";
+          command = ''bin="$(mktemp)" && g++ -std=c++23 -Wall -O0 -g "$ZED_FILE" -o "$bin" && "$bin"'';
+          cwd = "$ZED_DIRNAME";
+          tags = [ "run" ];
+        }
+        {
+          label = "C: Run current file";
+          command = ''bin="$(mktemp)" && gcc -std=c17 -Wall -O0 -g "$ZED_FILE" -o "$bin" && "$bin"'';
+          cwd = "$ZED_DIRNAME";
+          tags = [ "run" ];
+        }
+      ];
     };
   };
 

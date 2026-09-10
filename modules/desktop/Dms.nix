@@ -272,6 +272,7 @@
               lockBeforeSuspend = true;
 
               matugenTemplateZenBrowser = false;
+              matugenTemplateZed = false;
 
               blurEnabled = true;
 

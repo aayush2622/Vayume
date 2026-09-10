@@ -14,7 +14,6 @@
 
       hostIcons = "${config.home.homeDirectory}/.local/share/icons";
 
-      # This is the host directory that becomes $HOME inside the box.
       boxHome = if cfg.isolateHome then cfg.homeDir else config.home.homeDirectory;
 
       createFlags = lib.concatStringsSep " " (
@@ -31,9 +30,7 @@
           cfg.homeDir
         ]
 
-        # These are distrobox's OWN flags, not the container
-        # manager's, so they must not go through --additional-flags
-        # (podman rejects them: "unknown flag: --unshare-ipc").
+
         ++ lib.map (u: "--unshare-${u}") cfg.unshare
 
         ++ lib.optionals cfg.fuse [
@@ -49,8 +46,6 @@
 
       boxEnter = ''${pkgs.distrobox}/bin/distrobox enter "${cfg.name}" --'';
 
-      # AppImage runtimes and the Electron apps inside them link
-      # against system libraries that the bundle does NOT ship.
       appImageDeps = [
         "fuse3"
         "libfuse2t64"
@@ -78,9 +73,6 @@
         "libatspi2.0-0t64"
         "libxcb1"
 
-        # gsettings + the schemas lockdown-style apps write to.
-        # Without these the app retries failing gsettings calls on
-        # startup and never finishes painting its window.
         "libglib2.0-bin"
         "gsettings-desktop-schemas"
         "dconf-gsettings-backend"
@@ -88,14 +80,12 @@
         "gnome-shell-common"
         "gnome-settings-daemon-common"
 
-        # Chromium expects a system bus and xdg-settings to exist.
+
         "dbus"
         "dbus-x11"
         "xdg-utils"
       ];
 
-      # Installs whatever is still missing, so adding a package to
-      # appImageDeps later is picked up on the next run.
       ensureAppImageDeps = ''
         ${boxEnter} sh -c '
           missing=""
@@ -111,8 +101,7 @@
         ' || true
       '';
 
-      # Chromium-based apps log a stream of errors and misbehave when
-      # there is no system bus. The box has no init, so start one.
+
       ensureDbus = ''
         ${boxEnter} sudo sh -c '
           mkdir -p /run/dbus
@@ -121,17 +110,6 @@
         ' >/dev/null 2>&1 || true
       '';
 
-      # An AppImage has to be started by its OWN runtime: apps often
-      # refuse to run when their parent process is a shell or a
-      # sandbox wrapper such as bwrap.
-      #
-      # binfmt_misc registrations are inherited from the host, and the
-      # host's interpreter path (/run/binfmt/...) does not exist in
-      # the container's mount namespace, so exec fails with ENOENT.
-      #
-      # Mounting a private, empty binfmt_misc inside the box makes the
-      # kernel exec the AppImage directly, with its own runtime as the
-      # parent. The host's registration is left untouched.
       ensureBinfmt = ''
         ${boxEnter} sh -c '
           if [ -e /proc/sys/fs/binfmt_misc/appimage_type_2 ] ||
@@ -196,16 +174,6 @@
 
         exec ${boxEnter} "$@"
       '';
-
-      # Run a command INSIDE the container.
-      #
-      # Example:
-      #   vayume-box-run some-app.AppImage
-      #
-      # A bare filename is resolved against the box's Applications
-      # directory. Note that an unquoted ~ is expanded by the host
-      # shell before this script runs, so "~/x.AppImage" points at the
-      # host's home, not the box's.
       boxRun = pkgs.writeShellScriptBin "vayume-box-run" ''
           set -eu
 
@@ -485,8 +453,6 @@
             ]
           );
 
-          # Network is intentionally NOT isolated because this
-          # container is intended for a browser.
           default = [
             "ipc"
             "process"
