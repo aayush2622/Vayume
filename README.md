@@ -5,7 +5,7 @@
   <img alt="Compositor" src="https://img.shields.io/badge/compositor-niri%20%2B%20Hyprland-blue">
   <img alt="Shell" src="https://img.shields.io/badge/shell-DankMaterialShell-purple">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
-  <a href="https://github.com/aayush2622/Vayume-Rice/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/aayush2622/Vayume-Rice?style=flat&color=yellow"></a>
+  <a href="https://github.com/aayush2622/Vayume/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/aayush2622/Vayume-Rice?style=flat&color=yellow"></a>
 </p>
 
 My NixOS setup. [niri](https://github.com/YaLTeR/niri) and
