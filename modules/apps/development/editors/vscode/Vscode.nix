@@ -179,10 +179,6 @@ in {
       "git.enableSmartCommit" = true;
       "git.autofetch" = true;
       "git.confirmSync" = false;
-    } // lib.optionalAttrs (builtins.elem "FreeClaudeCode" vayumeApps) {
-      "claudeCode.disableLoginPrompt" = true;
-      "claudeCode.environmentVariables" =
-        lib.mapAttrsToList (name: value: { inherit name value; }) self.freeClaudeCode.clientEnv;
     }) languageSettings;
 
     vscodeKeybindings = [

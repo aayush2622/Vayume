@@ -58,12 +58,6 @@ them back on rebuilt clean again.
   language servers on all three editors do their own thing without
   needing a separate binary, so the interpreter is the one thing
   actually missing without this toggle.
-- **A Python interpreter shows up on `$PATH` even with this toggle
-  off** - not a bug, checked this directly while testing the toggle:
-  Free Claude Code installs its own Python unconditionally for its setup
-  step, completely unrelated to this language toggle. Both things can be
-  true: no Python-specific editor extensions without the toggle, but
-  still a Python binary around if Free Claude Code is also enabled.
 - Nix's own packages overlap with what's already installed system-wide
   for root-level editing - left as-is on purpose, since the Nix store
   dedups the actual files regardless and the two lists serve genuinely

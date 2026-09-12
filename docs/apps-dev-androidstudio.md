@@ -66,14 +66,6 @@ machine, pinned as real Nix packages instead of fetched live every time:
   matugen writes it directly on every wallpaper change, and letting
   home-manager also claim ownership would just mean the two fight over
   the same file.
-- **The Free Claude Code wrapper** takes the real Android Studio binary
-  and wraps it (`symlinkJoin` + `makeWrapper`) to set FCC's environment
-  variables on that process specifically, not system-wide. Checked the
-  built wrapper directly: it sets the vars, then execs the real binary
-  under its original name, and the app's own `.desktop` entry references
-  it by that same bare name - so both the app launcher and a plain
-  terminal launch resolve to the wrapped version automatically, no
-  desktop-file patching needed.
 - **The WakaTime plugin's key comes from `~/.wakatime.cfg`**, not a
   plugin-specific settings file - that's the one file WakaTime's own
   plugins for virtually every editor read from, JetBrains included, so

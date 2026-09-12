@@ -84,6 +84,24 @@ one-liner rather than a lie about being declarative. `name`/`image`
 default to `ubuntu`/`ubuntu:24.04` and exist for when something needs a
 different base.
 
+**`vayume.ubuntuBox.count` turns one box into N independent ones.** The
+default, 1, is exactly the six commands above, unnumbered, entering
+`name`. Set it higher - say 3 - and those six become eighteen instead:
+`vayume-box1` .. `vayume-box3` (and each one's `-install`/`-apps`/
+`-export`/`-sync`/`-reset`), one real container per number. Every other
+option - `image`, `unshare`, `fuse`, `shmSize`, `aptPackages`,
+`exportApps` - is shared across all of them; there's no per-box override
+for those, just per-box identity and storage.
+
+box1 is special: its container name and `homeDir` are always exactly
+`name`/`homeDir` as configured, at any `count` - never `<name>1`. So if
+you already have a box running under `count = 1` and raise `count`
+afterward, box1 *is* that same container and home directory, addressed
+as `vayume-box1` from then on instead of `vayume-box` - nothing gets
+recreated, nothing moves, no mismatch. Only box2..N are genuinely new,
+numbered containers (`<name>2`..`<name><count>`), each with its own
+auto-derived home under `~/.local/share/vayume-boxes/`.
+
 **A container is not a VM, and it can't pretend to be a bare-metal
 host.** Distrobox shares the host kernel, so `/proc`, cgroups,
 `/run/.containerenv` and `systemd-detect-virt` all identify it from the

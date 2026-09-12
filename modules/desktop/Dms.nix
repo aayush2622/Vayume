@@ -113,12 +113,22 @@
           );
 
       home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (
-        name: { pkgs, lib, config, ... }: {
+        name:
+        {
+          pkgs,
+          lib,
+          config,
+          ...
+        }:
+        {
           imports = [
             inputs.dms.homeModules.dank-material-shell
             inputs.dms-plugin-registry.nixosModules.default
           ];
-          home.packages = [ materialOSIcons pkgs.swayidle ];
+          home.packages = [
+            materialOSIcons
+            pkgs.swayidle
+          ];
           home.sessionVariables.QS_ICON_THEME = "MaterialOS";
 
           systemd.user.services.vayume-idle-lock = {
@@ -615,7 +625,8 @@
               };
 
               clipboardClickToPaste = true;
-
+              frameEnabled = true;
+              frameOpacity = 0.45;
               configVersion = 13;
             };
           };

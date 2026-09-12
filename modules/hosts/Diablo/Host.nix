@@ -107,7 +107,7 @@ in {
             AndroidStudio.enable = true;
             Zed.enable = true;
             DevTools.enable = true;
-            FreeClaudeCode.enable = false;
+            CcSwitch.enable = true;
 
             Cpp.enable = true;
             Rust.enable = false;

@@ -117,4 +117,4 @@ Lutris/Heroic's own prefixes are out of reach for the same reason
 
 ---
 
-[← FreeClaudeCode.nix](apps-dev-freeclaudecode.md) · [Index](CONFIGURATION.md) · [ZenBrowser.nix →](apps-utils-zenbrowser.md)
+[← CcSwitch.nix](apps-dev-ccswitch.md) · [Index](CONFIGURATION.md) · [ZenBrowser.nix →](apps-utils-zenbrowser.md)

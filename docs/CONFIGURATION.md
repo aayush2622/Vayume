@@ -51,7 +51,7 @@ dive.
 21. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
 22. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt, Python)
 23. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
-24. [apps/development/freeClaudeCode/FreeClaudeCode.nix](apps-dev-freeclaudecode.md)
+24. [apps/development/ccSwitch/CcSwitch.nix](apps-dev-ccswitch.md)
 
 **Apps - gaming**
 25. [apps/gaming/Gaming.nix](apps-gaming.md)

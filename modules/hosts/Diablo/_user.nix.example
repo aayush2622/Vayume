@@ -25,16 +25,12 @@
       # Optional: passed straight to every app module as `vayumeSecrets`.
       # Leave the whole block out (or any key inside it) for
       # "REPLACE_ME" placeholders instead, which disables whatever that
-      # key would've configured (no WakaTime extension, no rbw email,
-      # that Free Claude Code provider skipped) rather than configuring
-      # it with a useless value - see docs/core.md for what reads each
-      # one.
+      # key would've configured (no WakaTime extension, no rbw email)
+      # rather than configuring it with a useless value - see
+      # docs/core.md for what reads each one.
       secrets = {
         WAKATIME_API_KEY = "REPLACE_ME";
         RBW_EMAIL = "REPLACE_ME";
-        PROVIDERS = {
-          NVIDIA_NIM_API_KEY = "REPLACE_ME";
-        };
       };
     };
 

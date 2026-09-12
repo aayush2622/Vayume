@@ -31,6 +31,7 @@
           <property name="last-show-hidden" type="bool" value="true"/>
           <property name="last-statusbar-visible" type="bool" value="true"/>
           <property name="last-details-view-fixed-columns" type="bool" value="true"/>
+          <property name="last-restore-tabs" type="bool" value="true"/>
 
           <property name="misc-single-click" type="bool" value="false"/>
           <property name="misc-folders-first" type="bool" value="true"/>
@@ -105,11 +106,46 @@
       # `enable` isn't implied by setting `defaultApplications` - it
       # defaults to false in home-manager, and without it this whole
       # block is silently inert and no mimeapps.list ever gets written.
+      #
+      # The code/text mimetypes below are what extensions on this
+      # machine's shared-mime-info database actually resolve to right
+      # now (checked with `xdg-mime query filetype`, not guessed) -
+      # notably .ts is "text/vnd.trolltech.linguist" and .tsx is
+      # "application/x-tiled-tsx" here, both Qt/Tiled leftovers with
+      # nothing TypeScript about the name. Doesn't matter for double-
+      # click behaviour (Thunar dispatches on the resolved mimetype
+      # either way, so .ts/.tsx still open in VS Code) - just don't be
+      # confused re-reading this list later.
       xdg.mimeApps = {
         enable = true;
         defaultApplications = {
           "inode/directory" = "thunar.desktop";
           "x-directory/normal" = "thunar.desktop";
+
+          "text/plain" = "code.desktop";
+          "text/markdown" = "code.desktop";
+          "text/x-python" = "code.desktop";
+          "text/javascript" = "code.desktop";
+          "text/vnd.trolltech.linguist" = "code.desktop"; # .ts
+          "application/x-tiled-tsx" = "code.desktop"; # .tsx
+          "application/json" = "code.desktop";
+          "application/yaml" = "code.desktop";
+          "application/toml" = "code.desktop";
+          "application/x-shellscript" = "code.desktop";
+          "text/x-csrc" = "code.desktop";
+          "text/x-chdr" = "code.desktop";
+          "text/x-c++src" = "code.desktop";
+          "text/x-c++hdr" = "code.desktop";
+          "text/rust" = "code.desktop";
+          "text/x-go" = "code.desktop";
+          "text/html" = "code.desktop";
+          "text/css" = "code.desktop";
+          "application/xml" = "code.desktop";
+          "text/x-log" = "code.desktop";
+          "text/x-lua" = "code.desktop";
+          "application/x-ruby" = "code.desktop";
+          "application/x-php" = "code.desktop";
+          "application/sql" = "code.desktop";
         };
       };
 

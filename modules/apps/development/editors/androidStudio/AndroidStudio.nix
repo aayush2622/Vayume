@@ -135,22 +135,9 @@ in {
       "${matugenDirRel}/templates/android-studio-colors.icls" = { text = matugenIclsTemplate; };
     };
 
-    androidStudioWithFcc =
-      if builtins.elem "FreeClaudeCode" vayumeApps then
-        pkgs.symlinkJoin {
-          name = "android-studio-with-fcc";
-          paths = [ pkgs.androidStudioPackages.stable ];
-          buildInputs = [ pkgs.makeWrapper ];
-          postBuild = ''
-            wrapProgram $out/bin/android-studio \
-              ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "--set ${n} ${lib.escapeShellArg v}") self.freeClaudeCode.clientEnv)}
-          '';
-        }
-      else
-        pkgs.androidStudioPackages.stable;
   in {
     home.packages = with pkgs; [
-      androidStudioWithFcc
+      androidStudioPackages.stable
       jdk17
       android-tools
     ];

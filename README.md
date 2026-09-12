@@ -47,8 +47,8 @@ kitty + zsh with fastfetch.
 
 **Dev** — VS Code, Android Studio and Zed, pre-configured. Seven language
 toggles that install the toolchain *and* tell all three editors what to load
-for it. [Free Claude Code](https://github.com/Alishahryar1/free-claude-code)
-wires a free-tier model into your CLI and editors.
+for it. [cc-switch](https://github.com/farion1231/cc-switch) for switching
+Claude Code between API providers without hand-editing its config.
 
 **Gaming** — Steam, Lutris, Heroic, GE-Proton, MangoHud. Color-matched too,
 down to the Wine dialogs.
@@ -89,23 +89,6 @@ vayume.users.<yourname>.secrets = {
 
   # Bitwarden's rbw client, to pre-fill the email prompt
   RBW_EMAIL = "you@example.com";
-
-  # Open-ended - each one becomes an env var for Free Claude Code.
-  # Any provider it supports works here; these are the common ones.
-  PROVIDERS = {
-    NVIDIA_NIM_API_KEY = "nvapi-...";
-    OPENROUTER_API_KEY = "sk-or-...";
-    GROQ_API_KEY       = "gsk_...";
-    GEMINI_API_KEY     = "...";
-    DEEPSEEK_API_KEY   = "sk-...";
-    MISTRAL_API_KEY    = "...";
-    TOGETHER_API_KEY   = "...";
-    CEREBRAS_API_KEY   = "csk-...";
-    FIREWORKS_API_KEY  = "fw_...";
-    HUGGINGFACE_API_KEY = "hf_...";
-    COHERE_API_KEY     = "...";
-    # Full list: github.com/Alishahryar1/free-claude-code#readme
-  };
 };
 ```
 
@@ -156,7 +139,7 @@ modules/
   desktop/            niri, Hyprland, DMS, fonts/portals, GTK/Qt, matugen
   system/             docker/podman, zram, GRUB theme
   apps/               opt-in per-user modules, toggled in Host.nix
-    development/        editors, languages, dev-tools, Free Claude Code
+    development/        editors, languages, dev-tools, cc-switch
     gaming/             launchers, proton, performance tweaks
     utils/              terminal, browser, everything else
   assets/wallpapers/  default wallpaper set
@@ -188,7 +171,7 @@ The `.nix` files stay comment-free; all the "why" lives in those pages.
 | [matugen](https://github.com/InioX/matugen) | the color engine behind all of it |
 | [home-manager](https://github.com/nix-community/home-manager) · [flake-parts](https://flake.parts/) · [import-tree](https://github.com/vic/import-tree) | the Nix plumbing |
 | [Bibata](https://github.com/ful1e5/Bibata_Cursor) · [Catppuccin](https://github.com/catppuccin) | cursor/editor theme |
-| [Free Claude Code](https://github.com/Alishahryar1/free-claude-code) · [WakaTime](https://wakatime.com/) | the dev-editor integrations |
+| [cc-switch](https://github.com/farion1231/cc-switch) · [WakaTime](https://wakatime.com/) | the dev-editor integrations |
 | [Vencord](https://github.com/Vendicated/Vencord) · [DankAsusControl](https://github.com/shazzaam7/DankAsusControl) | Discord mods, ASUS widget |
 
 Full pinned list: `flake.nix`.

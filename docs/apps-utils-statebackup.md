@@ -9,7 +9,7 @@ The one thing in this repo that isn't declarative on purpose - real, irreplaceab
 One canonical folder - `~/.config/vayume/session` - for every app's real
 login/session state (Zen Browser's profile, Vesktop, VS Code/Zed account
 sign-ins, the JetBrains/Android Studio data dir, rbw's own session, the
-Bitwarden desktop app's local storage, Free Claude Code's `.env` - see
+Bitwarden desktop app's local storage, cc-switch's provider configs - see
 [core.md](core-users.md)), plus one command to move that
 folder around safely. Fixed under `$HOME`, on purpose - completely
 independent of wherever this flake repo happens to be checked out, so

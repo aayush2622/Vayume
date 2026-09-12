@@ -11,7 +11,7 @@
       ".config/rbw"
       ".cache/rbw"
       ".config/Bitwarden"
-      ".fcc"
+      ".cc-switch"
     ];
 
     pathsBashArray = builtins.concatStringsSep " " (map (p: "\"${p}\"") statePaths);
@@ -26,8 +26,8 @@
         echo "       vayume-app-state restore <input-file>" >&2
         echo "" >&2
         echo "Every app's real login/session state (Zen Browser profile, Vesktop," >&2
-        echo "VS Code/Zed accounts, rbw session, Bitwarden desktop, Free Claude" >&2
-        echo "Code's .env, ...) lives at" >&2
+        echo "VS Code/Zed accounts, rbw session, Bitwarden desktop, cc-switch's" >&2
+        echo "provider configs, ...) lives at" >&2
         echo "~/.config/vayume/session - always that same fixed path, regardless" >&2
         echo "of where this flake is checked out." >&2
         echo "Apps are symlinked there automatically (see linkSessionState), so" >&2

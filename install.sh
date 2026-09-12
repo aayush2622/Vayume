@@ -191,8 +191,7 @@ USR="$HOSTDIR/_user.nix"
 build_user_block() {
   local uname fullname groups extra_groups g hash pw pw2
   local -a group_list pkg_list
-  local pkgs_in pkg avatar avatar_ref wk rbw provline
-  local -a prov_lines
+  local pkgs_in pkg avatar avatar_ref wk rbw
 
   uname=$(ask "  username")
   [[ $uname =~ ^[a-z_][a-z0-9_-]*$ ]] || { warn "invalid username, skipping"; return 1; }
@@ -232,18 +231,10 @@ build_user_block() {
     else warn "  ignoring odd package name: $pkg"; fi
   done
 
-  wk=""; rbw=""; prov_lines=()
-  if confirm "  set any secrets (WakaTime / rbw email / API keys)?" N; then
+  wk=""; rbw=""
+  if confirm "  set any secrets (WakaTime key / rbw email)?" N; then
     wk=$(ask "    WAKATIME_API_KEY (blank to skip)" "")
     rbw=$(ask "    RBW_EMAIL (blank to skip)" "")
-    info  "    PROVIDERS - one KEY=value per line for Free Claude Code (e.g. OPENROUTER_API_KEY=sk-...); blank line ends"
-    while :; do
-      provline=$(ask "    provider" ""); [[ -z $provline ]] && break
-      [[ $provline == *=* ]] || { warn "    need KEY=value"; continue; }
-      local k=${provline%%=*} v=${provline#*=}
-      [[ $k =~ ^[A-Z0-9_]+$ ]] || { warn "    key must be UPPER_SNAKE"; continue; }
-      prov_lines+=("          $k = \"$(nix_str "$v")\";")
-    done
   fi
 
   # ---- emit ----
@@ -255,15 +246,10 @@ build_user_block() {
   if (( ${#pkg_list[@]} )); then
     printf '      extraPackages = with pkgs; [ %s ];\n' "${pkg_list[*]}"
   fi
-  if [[ -n $wk || -n $rbw || ${#prov_lines[@]} -gt 0 ]]; then
+  if [[ -n $wk || -n $rbw ]]; then
     printf '      secrets = {\n'
     [[ -n $wk  ]] && printf '        WAKATIME_API_KEY = "%s";\n' "$(nix_str "$wk")"
     [[ -n $rbw ]] && printf '        RBW_EMAIL = "%s";\n' "$(nix_str "$rbw")"
-    if (( ${#prov_lines[@]} )); then
-      printf '        PROVIDERS = {\n'
-      printf '%s\n' "${prov_lines[@]}"
-      printf '        };\n'
-    fi
     printf '      };\n'
   fi
   printf '    };\n'

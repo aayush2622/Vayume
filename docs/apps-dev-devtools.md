@@ -11,4 +11,4 @@ flakes need it available regardless of which apps anyone's picked.
 
 ---
 
-[← languages/*/*.nix](apps-dev-languages.md) · [Index](CONFIGURATION.md) · [FreeClaudeCode.nix →](apps-dev-freeclaudecode.md)
+[← languages/*/*.nix](apps-dev-languages.md) · [Index](CONFIGURATION.md) · [CcSwitch.nix →](apps-dev-ccswitch.md)

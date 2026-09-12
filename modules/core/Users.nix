@@ -4,9 +4,6 @@
     defaultUserSecrets = {
       WAKATIME_API_KEY = "REPLACE_ME";
       RBW_EMAIL = "REPLACE_ME";
-      PROVIDERS = {
-        NVIDIA_NIM_API_KEY = "REPLACE_ME";
-      };
     };
 
     cfg = config.vayume.users;
@@ -48,19 +45,18 @@
           type = lib.types.attrsOf lib.types.anything;
           default = { };
           description = ''
-            Small per-app credentials (WakaTime key, rbw email, Free
-            Claude Code provider keys - see docs/core-users.md for the full
-            shape) passed straight to every app module as the
-            `vayumeSecrets` argument. Left-out keys, or the whole
-            attrset, fall back to "REPLACE_ME" placeholders - a key
-            still equal to that disables whatever it would've
-            configured (no WakaTime extension installed, no rbw email
-            written, that Free Claude Code provider skipped) instead of
-            configuring it with a useless value. Plain values, no
-            encryption layer - fine given _user.nix is already
-            gitignored and owner-only on disk; lands in the
-            world-readable Nix store wherever a consuming app module
-            writes it out, same as any other Nix-declared value.
+            Small per-app credentials (WakaTime key, rbw email - see
+            docs/core-users.md for the full shape) passed straight to
+            every app module as the `vayumeSecrets` argument. Left-out
+            keys, or the whole attrset, fall back to "REPLACE_ME"
+            placeholders - a key still equal to that disables whatever
+            it would've configured (no WakaTime extension installed, no
+            rbw email written) instead of configuring it with a useless
+            value. Plain values, no encryption layer - fine given
+            _user.nix is already gitignored and owner-only on disk;
+            lands in the world-readable Nix store wherever a consuming
+            app module writes it out, same as any other Nix-declared
+            value.
           '';
         };
 

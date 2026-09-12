@@ -30,7 +30,6 @@ that's never committed:
       secrets = {
         WAKATIME_API_KEY = "...";
         RBW_EMAIL = "...";
-        PROVIDERS = { OPENROUTER_API_KEY = "..."; };
       };
     };
 
@@ -99,52 +98,37 @@ lookup, no activation-ordering dance.
 
 - **`lib.recursiveUpdate defaultUserSecrets u.secrets`, not a plain
   fallback swap.** Merges key-by-key, so setting only
-  `secrets.WAKATIME_API_KEY` in `_user.nix` still leaves `RBW_EMAIL` and
-  `PROVIDERS.NVIDIA_NIM_API_KEY` resolving to their `"REPLACE_ME"`
-  defaults instead of erroring on a missing attribute - every consumer
-  can access `vayumeSecrets.<key>` unconditionally, always. This repo
-  previously ran these through
+  `secrets.WAKATIME_API_KEY` in `_user.nix` still leaves `RBW_EMAIL`
+  resolving to its `"REPLACE_ME"` default instead of erroring on a
+  missing attribute - every consumer can access `vayumeSecrets.<key>`
+  unconditionally, always. This repo previously ran these through
   [sops-nix](https://github.com/Mic92/sops-nix) (age-encrypted at rest),
   then through a hand-rolled JSON file seeded once and edited by hand;
   both added a moving part (a keypair, or a second file to keep in
-  sync) for values that aren't actually that sensitive (a proxy token, a
-  time-tracking key, an email address) and already live in a file
-  (`_user.nix`) that's gitignored and required on its own.
+  sync) for values that aren't actually that sensitive (a time-tracking
+  key, an email address) and already live in a file (`_user.nix`)
+  that's gitignored and required on its own.
   ```nix
   # in _user.nix, per user
   secrets = {
     WAKATIME_API_KEY = "...";
     RBW_EMAIL = "...";
-    PROVIDERS = {
-      NVIDIA_NIM_API_KEY = "...";
-    };
   };
   ```
-- **`PROVIDERS` is open-ended, on purpose - this is the actual answer to
-  "where do I put a second/third/Nth API key."** Free Claude Code
-  ([FreeClaudeCode.nix](apps-dev-freeclaudecode.md))
-  proxies to whichever provider `MODEL` names, and each provider it
-  supports (17+, per its own docs) just needs its own correctly-named
-  key - `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`,
-  whatever matches the provider prefix in `MODEL`, straight from
-  upstream's own naming, not something this repo invents. Add as many
-  as you want directly to `PROVIDERS` in `_user.nix` - `FreeClaudeCode.nix`
-  filters out any entry still equal to `"REPLACE_ME"`
-  (`lib.filterAttrs`), builds a flat `KEY=value` file from whatever's
-  left at eval time, and merges it into `.fcc/.env` on every activation,
-  replacing only matching keys - so it's genuinely N real keys, not
-  three hardcoded ones, and a provider nobody's set a key for never gets
-  written at all.
+  There used to be a third, open-ended `PROVIDERS` bag here too - API
+  keys for the old Free Claude Code module's 17+ supported model
+  providers. Gone along with that module: [cc-switch](apps-dev-ccswitch.md),
+  its replacement, manages providers through its own UI and its own
+  on-disk state, not through anything Nix-declared.
 - **Read at build time, not activation time - the trade this made.**
   Every consumer (`crudini` for VS Code/Android Studio's WakaTime key,
-  `jq`-merged JSON for Zed/rbw, the `PROVIDERS` loop above for Free
-  Claude Code) gets its value baked in as a literal by Nix, since
-  there's no runtime file left to read from. That means every value in
-  `secrets` ends up sitting somewhere in `/nix/store` - world-readable
-  on this machine, same as any other Nix-built config - which the old
-  `secrets.json` design deliberately avoided. Acceptable for what's
-  actually in here (see above); genuinely not the place for anything
-  higher-stakes.
+  `jq`-merged JSON for Zed/rbw) gets its value baked in as a literal by
+  Nix, since there's no runtime file left to read from. That means
+  every value in `secrets` ends up sitting somewhere in `/nix/store` -
+  world-readable on this machine, same as any other Nix-built config -
+  which the old `secrets.json` design deliberately avoided. Acceptable
+  for what's actually in here (see above); genuinely not the place for
+  anything higher-stakes.
 - **A missing secret disables the thing that needed it, instead of
   configuring it with a useless placeholder.** Every consumer checks
   `vayumeSecrets.<key> != "REPLACE_ME"` before doing anything: no real
@@ -153,17 +137,14 @@ lookup, no activation-ordering dance.
   Studio's `allManualPluginsSpec` entirely (not installed with a broken
   key - not installed at all), and the WakaTime-config activation script
   for whichever editor becomes a no-op (`lib.optionalString`). Same
-  pattern for `RBW_EMAIL` (the `rbwEmail` activation script no-ops, so
+  pattern for `RBW_EMAIL` - the `rbwEmail` activation script no-ops, so
   `rbw`'s config file is left alone rather than seeded with
-  `"REPLACE_ME"` as an email) and each `PROVIDERS` entry individually
-  (filtered out above, so a provider `MODEL` never actually points at
-  doesn't clutter `.fcc/.env` with a key that would just fail auth).
-  Checked directly: with no `secrets` block set at all, the built
-  activation script has zero `WAKATIME_KEY=`/rbw-config lines and
-  `fcc-providers.env` comes out as an empty file, and VS Code's
-  extensions manifest has no `wakatime` entry. Fill the value in in
-  `_user.nix` and rebuild to turn it back on - takes effect immediately,
-  no first-run-only seeding step to work around.
+  `"REPLACE_ME"` as an email. Checked directly: with no `secrets` block
+  set at all, the built activation script has zero `WAKATIME_KEY=`/rbw-
+  config lines, and VS Code's extensions manifest has no `wakatime`
+  entry. Fill the value in in `_user.nix` and rebuild to turn it back
+  on - takes effect immediately, no first-run-only seeding step to work
+  around.
 
 - **The 1-2 minute stall on the boot screen was this file's own
   `network-online.target` dependency.** `home-manager-<user>.service`
@@ -180,12 +161,11 @@ lookup, no activation-ordering dance.
   the only two are Zen's mods-index fetch and its per-mod downloads
   ([ZenBrowser.nix](apps-utils-zenbrowser.md)),
   both already `--max-time`-bounded and guarded so a failure prints
-  "could not reach the mods index, skipping" and moves on. Free Claude
-  Code's `git clone` looks like a counterexample but isn't - it lives in
-  `fccBootstrapScript`, run by `free-claude-code-bootstrap.service`,
-  which carries its own `After=network-online.target`. That's the right
-  place for a network dependency: a real service that can take its time,
-  not the activation the login prompt is queued behind.
+  "could not reach the mods index, skipping" and moves on. (The old Free
+  Claude Code module's `git clone` used to be a real counterexample -
+  handled by giving its own one-shot service its own
+  `After=network-online.target` rather than letting activation wait on
+  it - but that whole module is gone now along with the clone.)
 
   `TimeoutStartSec` stays at 180s deliberately. A *fresh* account still
   runs Zen's one-time `timeout 120s ... -CreateProfile`, so trimming the
