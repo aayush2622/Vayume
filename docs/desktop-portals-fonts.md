@@ -47,6 +47,37 @@ The unglamorous plumbing that makes screen sharing, file pickers, and one shared
   reusing niri's exact block here would have installed the right package
   and then never actually routed to it.
 
+**Emoji rendered broken and inconsistent system-wide (Zen most
+visibly) - some codepoints fine, others wrong or monochrome, no
+apparent pattern.** `fonts.fontconfig.defaultFonts.emoji = "Noto Color
+Emoji"` looked like it should already cover this, and Firefox/Zen's own
+built-in default (`font.name-list.emoji`) already prioritizes Noto
+Color Emoji too - neither was the actual problem, confirmed directly
+with `fc-match`, not guessed: `fc-match -s "JetBrainsMono Nerd
+Font:charset=1F600"` (simulating exactly what happens when the
+system's UI font, set as the fallback for every generic CSS family,
+lacks a glyph and needs a substitute) put **DejaVu Sans first**, ahead
+of Noto Color Emoji - DejaVu ships crude/incomplete glyphs for a
+surprising number of emoji-range codepoints, and plain, unqualified
+fontconfig charset-fallback ranks it ahead of the real emoji font
+whenever a *specific* (non-generic) family is requested and falls
+through, which is exactly the code path apps hit when the app's own UI
+font is explicitly set (as it is nearly everywhere in this repo). The
+`emoji` alias and Firefox's own pref only govern the small subset of
+lookups that explicitly ask for the generic `emoji` family or an
+emoji-presentation-flagged character - most real-world fallback
+doesn't go through either. Fixed with an unconditional
+`fonts.fontconfig.localConf` rule that appends `Noto Color Emoji` to
+*every* font pattern's candidate list (`mode="append" binding="strong"`,
+no family test) - safe for ordinary text since fontconfig only actually
+selects a candidate that truly covers the requested codepoint, and Noto
+Color Emoji has none of DejaVu's Latin/CJK glyphs to wrongly win with.
+Verified directly before deploying: `fc-match` for a plain Latin
+character was unaffected, while both U+1F600 (grinning face) and
+U+2764 (heart, commonly used with an emoji-presentation selector)
+correctly resolved to Noto Color Emoji with the rule in place, DejaVu
+Sans/Sans Mono without it.
+
 **One font setting drives everything declarative**: system font, GTK app
 text, terminal, and DMS's own UI all read the same shared font option.
 Two things it doesn't reach: the SDDM login screen's clock/labels use a

@@ -76,29 +76,74 @@ in {
       "JS/Matugen/MatugenParent.sys.mjs" = ./vendor/fx-autoconfig/chrome/JS/Matugen/MatugenParent.sys.mjs;
     };
 
-    # The eight placeholders only seed :root fallbacks - the bridge
-    # overwrites the same --matugen-* variables at runtime, which is what
-    # makes a palette change reach an already-open window. So these are
-    # substituted once at build time rather than re-rendered per wallpaper.
+    # The eight placeholders only seed :root fallbacks for first boot,
+    # before matugen has ever run - the bridge overwrites the same
+    # --matugen-* variables live for the browser chrome, and
+    # zenThemeSyncScript below re-renders these same two files on every
+    # real theme change for everything the bridge can't reach (isolated
+    # content documents like about:preferences). Both exist because
+    # neither alone covers every surface.
     #
     # ./theme is this repo's own colour-only cut of parazeeknova/zen-wabi:
     # every border-radius / border / box-shadow / layout rule has been
     # dropped so Zen's UI shape is left untouched and only colours change.
     renderTheme = name: src: pkgs.runCommand name { } ''
       ${pkgs.gnused}/bin/sed \
-        -e 's/{{bg}}/#14140b/g' \
-        -e 's/{{bg_dark}}/#0f0f08/g' \
-        -e 's/{{bg_light}}/#1e1e12/g' \
-        -e 's/{{fg}}/#e6e3d3/g' \
-        -e 's/{{fg_light}}/#c9c6b6/g' \
-        -e 's/{{accent}}/#fffdd5/g' \
-        -e 's/{{secondary}}/#cbc9a6/g' \
-        -e 's/{{tertiary}}/#a3c9a8/g' \
+        -e 's/{{bg}}/#121319/g' \
+        -e 's/{{bg_dark}}/#121319/g' \
+        -e 's/{{bg_light}}/#38393f/g' \
+        -e 's/{{fg}}/#e2e2ea/g' \
+        -e 's/{{fg_light}}/#c4c6d4/g' \
+        -e 's/{{accent}}/#b4c5ff/g' \
+        -e 's/{{secondary}}/#bac5f0/g' \
+        -e 's/{{tertiary}}/#fcaaff/g' \
         ${src} > $out
     '';
 
     zenUserChrome = renderTheme "userChrome.css" ./theme/userChrome.css.template;
     zenUserContent = renderTheme "userContent.css" ./theme/userContent.css.template;
+
+    # Re-renders the same two templates against whatever matugen just
+    # wrote to matugen-vars.json, run as that template's own post_hook -
+    # so the two colour-only .css seeds above stop being "correct once,
+    # at whatever nixos-rebuild last ran" and start tracking every real
+    # theme change instead. Doesn't make the seed *live* for an
+    # already-open window - see the "no live reload" note below for why
+    # that's a genuine Firefox/Zen limitation, not something this script
+    # could fix - but it does mean the next Zen restart (a keybind away,
+    # not a full rebuild away) always picks up today's actual palette.
+    zenThemeSyncScript = pkgs.writeShellScript "vayume-zen-theme-sync" ''
+      set -euo pipefail
+      vars="$HOME/.zen/default/chrome/matugen-vars.json"
+      [ -f "$vars" ] || exit 0
+
+      bg="$(${pkgs.jq}/bin/jq -r '.bg' "$vars")"
+      bg_dark="$(${pkgs.jq}/bin/jq -r '."bg-dark"' "$vars")"
+      bg_light="$(${pkgs.jq}/bin/jq -r '."bg-light"' "$vars")"
+      fg="$(${pkgs.jq}/bin/jq -r '.fg' "$vars")"
+      fg_light="$(${pkgs.jq}/bin/jq -r '."fg-light"' "$vars")"
+      accent="$(${pkgs.jq}/bin/jq -r '.accent' "$vars")"
+      secondary="$(${pkgs.jq}/bin/jq -r '.secondary' "$vars")"
+      tertiary="$(${pkgs.jq}/bin/jq -r '.tertiary' "$vars")"
+
+      render() {
+        ${pkgs.gnused}/bin/sed \
+          -e "s/{{bg}}/$bg/g" \
+          -e "s/{{bg_dark}}/$bg_dark/g" \
+          -e "s/{{bg_light}}/$bg_light/g" \
+          -e "s/{{fg}}/$fg/g" \
+          -e "s/{{fg_light}}/$fg_light/g" \
+          -e "s/{{accent}}/$accent/g" \
+          -e "s/{{secondary}}/$secondary/g" \
+          -e "s/{{tertiary}}/$tertiary/g" \
+          "$1"
+      }
+
+      out="$HOME/.zen/default/chrome"
+      mkdir -p "$out"
+      render ${./theme/userChrome.css.template} > "$out/userChrome.css"
+      render ${./theme/userContent.css.template} > "$out/userContent.css"
+    '';
 
     zen-browser = pkgs.wrapFirefox
       inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped
@@ -178,6 +223,7 @@ in {
       "font.name.monospace.x-western" = theme.font;
       "font.name.cursive.x-western" = theme.font;
       "font.name.fantasy.x-western" = theme.font;
+      "font.name-list.emoji" = "Noto Color Emoji";
       "layout.css.prefers-color-scheme.content-override" = 0;
 
       "mod.cleanedurlbar.customcolor" = "hsl(0 0 10)";
@@ -285,6 +331,7 @@ in {
       [templates.zen]
       input_path = '${config.home.homeDirectory}/.config/matugen/templates/zen-matugen-vars.json'
       output_path = '${config.home.homeDirectory}/.zen/default/chrome/matugen-vars.json'
+      post_hook = '${zenThemeSyncScript}'
     '';
 
     home.packages = [ zen-browser zen-reload ];

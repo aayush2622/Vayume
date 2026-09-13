@@ -9,6 +9,11 @@ The command-line half of "developer machine" - the tools no single language or e
 `git` isn't listed here - it's already installed system-wide, since
 flakes need it available regardless of which apps anyone's picked.
 
+`claude-code` is the CLI (`claude`), nixpkgs-packaged - just the binary,
+no API key or provider config here. Point it at a provider through
+[cc-switch](apps-dev-ccswitch.md) instead of hand-editing
+`~/.claude/settings.json`.
+
 ---
 
 [← languages/*/*.nix](apps-dev-languages.md) · [Index](CONFIGURATION.md) · [CcSwitch.nix →](apps-dev-ccswitch.md)

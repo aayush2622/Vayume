@@ -15,5 +15,13 @@
       monospace = [ theme.font ];
       emoji = [ "Noto Color Emoji" ];
     };
+
+    fonts.fontconfig.localConf = ''
+      <match target="pattern">
+        <edit name="family" mode="append" binding="strong">
+          <string>Noto Color Emoji</string>
+        </edit>
+      </match>
+    '';
   };
 }

@@ -9,13 +9,6 @@
 
   perSystem = { pkgs, lib, ... }:
   let
-    # niri's hotkey-overlay only shows a good label for its own recognized
-    # actions - a bare `spawn` bind falls back to just the program name, so
-    # every "dms ipc call ..." entry showed up as an indistinguishable
-    # "dms". `hotkey-overlay-title` is a real KDL node property, not a
-    # child, so it can only reach the output through this repo's "special
-    # function" bind shape (props + content) - see wlib.toKdl - rather than
-    # the plain `"Key".action = value;` sugar used everywhere else below.
     titled = title: content: _: { props.hotkey-overlay-title = title; inherit content; };
 
     niriBinds = {
@@ -63,11 +56,12 @@
       "Mod+R".switch-preset-column-width = _: { };
 
       "Mod+Shift+P" = titled "Pick Color" { spawn = [ "hyprpicker" "-a" ]; };
-      "Print".screenshot = _: { };
+      "Print" = titled "Screenshot (region)" { spawn = [ "dms" "ipc" "call" "screenshotPlus" "capture" ]; };
       "Shift+Print" = titled "Screenshot (save)" {
         spawn-sh = "mkdir -p \"$HOME/Pictures/Screenshots\" && grim \"$HOME/Pictures/Screenshots/$(date +%Y-%m-%d_%H-%M-%S).png\"";
       };
-      "Mod+Shift+S" = titled "Screenshot (DMS)" { spawn = [ "dms" "ipc" "call" "niri" "screenshot" ]; };
+
+      "Mod+Escape" = titled "Power Menu" { spawn = [ "dms" "ipc" "call" "fullscreenPowerMenu" "toggle" ]; };
 
       "XF86AudioMute" = titled "Mute Audio" { spawn = [ "dms" "ipc" "call" "audio" "mute" ]; };
       "XF86AudioLowerVolume" = titled "Volume Down" { spawn = [ "dms" "ipc" "call" "audio" "decrement" "5" ]; };
@@ -132,14 +126,6 @@
       settings = {
         prefer-no-csd = true;
 
-        # Print opens niri's interactive screenshot UI, which has no
-        # per-bind write-to-disk property (only screenshot-screen and
-        # screenshot-window do - checked against niri 26.04's own KDL
-        # parser). Null here is the only lever that stops it writing a
-        # file, so Print becomes clipboard-only and Shift+Print does the
-        # saving explicitly via grim below.
-        screenshot-path = null;
-
         environment = {
           QT_QPA_PLATFORMTHEME = "qt6ct";
           QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
@@ -187,6 +173,11 @@
               blur = true;
               saturation = 1.15;
             };
+          }
+
+          {
+            matches = [ { app-id = "^zen$"; title = "^Picture-in-Picture$"; } ];
+            open-floating = true;
           }
         ];
 

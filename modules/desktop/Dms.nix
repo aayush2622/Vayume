@@ -13,6 +13,21 @@
 
       registryPlugins = pkgs.callPackage "${inputs.dms-plugin-registry}/nix/default.nix" { };
 
+      audioIsPlayingScript = pkgs.writeShellScript "vayume-audio-is-playing" ''
+        set -euo pipefail
+        ${pkgs.pipewire}/bin/pw-dump | ${pkgs.jq}/bin/jq -e --arg cava cava '
+          (map(select(.type=="PipeWire:Interface:Metadata" and .props["metadata.name"]=="default"))
+            | .[0].metadata[]? | select(.key=="default.audio.sink") | .value.name) as $sinkname
+          | . as $all
+          | ($all | map(select(.type=="PipeWire:Interface:Node" and .info.props["node.name"]==$sinkname)) | .[0].id) as $sinkid
+          | ($all | map(select(.type=="PipeWire:Interface:Node"))
+              | map({(.id|tostring): (.info.props["application.name"] // .info.props["node.name"] // "")}) | add) as $nodenames
+          | ($all | map(select(.type=="PipeWire:Interface:Link" and .info.state=="active" and .info.props["link.input.node"]==$sinkid))) as $activelinks
+          | ($activelinks | map($nodenames[(.info.props["link.output.node"]|tostring)] // "")) as $names
+          | ($names | any(. != $cava))
+        ' > /dev/null
+      '';
+
       assertPatched = file: needle: ''
         grep -qF ${lib.escapeShellArg needle} "${file}" || {
           echo "patch verification failed: ${lib.escapeShellArg needle} not found in ${file} (upstream source likely changed - update the patch in dms.nix)" >&2
@@ -49,6 +64,127 @@
             ${assertPatched "$out/DankAsusControlCenter.qml" "size: root.showBatteryIcon ? 18 : root.iconSize"}
             ${assertPatchedLine "$out/DankAsusControlCenter.qml" 521 "Theme.spacingXS"}
           '';
+
+      cavaVisualizerPatched =
+        let
+          watchdogProps = lib.concatStringsSep "\n" [
+            "readonly property int maxRetries: 3"
+            ""
+            "    property bool playbackActive: false"
+            ""
+            "    Timer {"
+            "        interval: 2000"
+            "        running: true"
+            "        repeat: true"
+            "        triggeredOnStart: true"
+            "        onTriggered: playbackCheck.running = true"
+            "    }"
+            ""
+            "    Process {"
+            "        id: playbackCheck"
+            ("        command: [\"" + "${audioIsPlayingScript}" + "\"]")
+            "        running: false"
+            "        onExited: exitCode => {"
+            "            root.playbackActive = exitCode === 0"
+            "            if (root.playbackActive) {"
+            "                if (!configWriter.running && !cavaProcess.running)"
+            "                    configWriter.running = true"
+            "            } else if (cavaProcess.running) {"
+            "                cavaProcess.running = false"
+            "            }"
+            "        }"
+            "    }"
+          ];
+
+          oldRetryGuard = "if (!running && !configWriter.running) {";
+          newRetryGuard = "if (!running && !configWriter.running && root.playbackActive) {";
+        in
+        mkPatchedPlugin "cavaVisualizer" registryPlugins.cavaVisualizer ''
+          substituteInPlace $out/CavaVisualizerTab.qml \
+            --replace-quiet ${lib.escapeShellArg "readonly property int maxRetries: 3"} ${lib.escapeShellArg watchdogProps}
+          ${assertPatched "$out/CavaVisualizerTab.qml" "playbackActive"}
+
+          substituteInPlace $out/CavaVisualizerTab.qml \
+            --replace-quiet \
+              '"[general]\n" +' \
+              '"[input]\n" + "method = pipewire\n" + "source = auto\n" + "\n" + "[general]\n" +'
+          ${assertPatched "$out/CavaVisualizerTab.qml" "source = auto"}
+
+          substituteInPlace $out/CavaVisualizerTab.qml \
+            --replace-quiet ${lib.escapeShellArg oldRetryGuard} ${lib.escapeShellArg newRetryGuard}
+          ${assertPatched "$out/CavaVisualizerTab.qml" "playbackActive) {"}
+        '';
+
+      dmsShellPatched =
+        let
+          origDmsShell = inputs.dms.packages.${pkgs.system}.dms-shell;
+
+          inputReplacement = lib.concatStringsSep "\n" [
+            "[input]"
+            "method=pipewire"
+            "source=auto"
+            ""
+            "[general]"
+          ];
+
+          watchdogBlock = lib.concatStringsSep "\n" [
+            "property bool playbackActive: false"
+            ""
+            "    Timer {"
+            "        interval: 2000"
+            "        running: root.refCount > 0 && root.cavaAvailable"
+            "        repeat: true"
+            "        triggeredOnStart: true"
+            "        onTriggered: playbackCheck.running = true"
+            "    }"
+            ""
+            "    Process {"
+            "        id: playbackCheck"
+            ("        command: [\"" + "${audioIsPlayingScript}" + "\"]")
+            "        running: false"
+            "        onExited: exitCode => {"
+            "            root.playbackActive = exitCode === 0;"
+            "        }"
+            "    }"
+            ""
+            "    Process {"
+            "        id: cavaProcess"
+          ];
+
+          oldRunning = "running: root.cavaAvailable && root.refCount > 0";
+          newRunning = "running: root.cavaAvailable && root.refCount > 0 && root.playbackActive";
+        in
+        pkgs.runCommand "${origDmsShell.name}-cava-patched" {
+          meta = (origDmsShell.meta or { }) // {
+            mainProgram = "dms";
+          };
+        } ''
+          cp -r ${origDmsShell} $out
+          chmod -R u+w $out
+
+          substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
+            --replace-quiet ${lib.escapeShellArg "[general]"} ${lib.escapeShellArg inputReplacement}
+          ${assertPatched "$out/share/quickshell/dms/Services/CavaService.qml" "source=auto"}
+
+          substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
+            --replace-quiet ${lib.escapeShellArg "    Process {\n        id: cavaProcess"} ${lib.escapeShellArg watchdogBlock}
+          substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
+            --replace-quiet ${lib.escapeShellArg oldRunning} ${lib.escapeShellArg newRunning}
+          ${assertPatched "$out/share/quickshell/dms/Services/CavaService.qml" "playbackActive"}
+
+          substituteInPlace $out/share/quickshell/dms/shell.qml \
+            --replace-quiet \
+              ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && CompositorService.isNiri"} \
+              ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && (CompositorService.isNiri || CompositorService.isHyprland)"}
+          ${assertPatched "$out/share/quickshell/dms/shell.qml" "CompositorService.isHyprland"}
+
+          substituteInPlace $out/bin/dms \
+            --replace-quiet "${origDmsShell}/share/quickshell/dms" "$out/share/quickshell/dms"
+          if grep -qF ${lib.escapeShellArg "${origDmsShell}/share/quickshell/dms"} "$out/bin/dms"; then
+            echo "patch verification failed: bin/dms still references the original share/quickshell/dms path (upstream wrapper script format likely changed - update the patch in dms.nix)" >&2
+            exit 1
+          fi
+        '';
 
       materialOSIcons = pkgs.stdenvNoCC.mkDerivation {
         pname = "materialos-icon-theme";
@@ -124,12 +260,19 @@
           imports = [
             inputs.dms.homeModules.dank-material-shell
             inputs.dms-plugin-registry.nixosModules.default
+            inputs.danksession.homeManagerModules.default
           ];
           home.packages = [
             materialOSIcons
             pkgs.swayidle
           ];
           home.sessionVariables.QS_ICON_THEME = "MaterialOS";
+
+          services.dankSession = {
+            enable = true;
+            package = inputs.danksession.packages.${pkgs.system}.default;
+            autoStart = true;
+          };
 
           systemd.user.services.vayume-idle-lock = {
             Unit = {
@@ -195,8 +338,7 @@
 
           programs.dank-material-shell = {
             enable = true;
-
-            dgop.package = inputs.dgop.packages.${pkgs.system}.default;
+            package = lib.mkForce dmsShellPatched;
 
             systemd = {
               enable = true;
@@ -212,6 +354,8 @@
 
                 settings = {
                   enabled = true;
+                  wallpaperDirectory = "${./../assets/wallpapers}";
+
                   borderWidth = 0;
                   itemHeight = 472;
                   selectedScale = 106;
@@ -265,6 +409,28 @@
                   nixpkgsChannel = "nixos-unstable";
                   updateCheckInterval = 3600;
                 };
+              };
+
+              fullscreenPowerMenu.enable = true;
+
+              cavaVisualizer = {
+                enable = true;
+                src = lib.mkForce cavaVisualizerPatched;
+              };
+
+              nixPackageRunner = {
+                enable = true;
+                settings = {
+
+                  runSourceMode = "latest_unstable";
+                };
+              };
+
+              screenshotPlus.enable = true;
+
+              dankSession = {
+                enable = true;
+                src = lib.mkForce inputs.danksession.outPath;
               };
             };
 
@@ -338,9 +504,6 @@
                   width = 50;
                 }
                 {
-                  # modules/system/network/Network.nix installs the
-                  # plugin this id refers to - DMS prefixes plugin
-                  # widget ids with "plugin_".
                   id = "plugin_tor";
                   enabled = true;
                   width = 50;
@@ -480,6 +643,11 @@
                       enabled = true;
                     }
 
+                    {
+                      id = "dankSession";
+                      enabled = true;
+                    }
+
                     "controlCenterButton"
                   ];
 
@@ -545,7 +713,7 @@
 
                   clickThrough = false;
 
-                  hoverPopouts = false;
+                  hoverPopouts = true;
                   hoverPopoutDelay = 150;
                 }
               ];
@@ -610,6 +778,36 @@
                     x = 0;
                     width = 9999;
                     height = 253;
+                  };
+                }
+
+                {
+                  id = "dw_1789200000000_cavaviz01";
+                  widgetType = "cavaVisualizer";
+                  name = "Cava Visualizer";
+                  enabled = true;
+
+                  config = {
+                    vizMode = "curve-outline";
+                    curvePoints = 24;
+                    curveLineWidth = 3;
+                    barCount = 20;
+                    barSpacing = 4;
+                    barWidth = 0;
+                    orientation = "bottom";
+                    sensitivity = 100;
+                    channels = "mono";
+                    colorChoice = "primary";
+                    silenceTimeout = 5;
+                    bgOpacity = 0;
+                    opacity = 100;
+                    syncPositionAcrossScreens = true;
+                  };
+                  positions._synced = {
+                    x = 0;
+                    y = 0.9;
+                    width = 9999;
+                    height = 120;
                   };
                 }
               ];

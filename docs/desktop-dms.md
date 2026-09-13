@@ -237,6 +237,188 @@ enabling it alone isn't enough.
   [core.md](core-hardware.md)) actually resolve
   instead of looking "missing" through git's tracked-files-only view of
   the repo.
+- **`controlCenterWidgets`' `plugin_tor` entry** refers to the plugin
+  [Network.nix](system-network.md) installs - DMS prefixes plugin widget
+  ids with `plugin_`.
+- **DankSession** (window-session restore - remembers open windows,
+  workspaces, and Hyprland scrolling-layout geometry across logout/
+  login) was fully wired in Nix from early in this repo's history -
+  `services.dankSession` (the backend daemon, `autoStart = true`) and
+  `programs.dank-material-shell.plugins.dankSession` (the bar widget's
+  QML) both enabled, matching upstream's own recommended Home Manager
+  config verbatim - but the widget was never actually added to any bar
+  section, so there was nothing to click. Added to `rightWidgets`,
+  unprefixed (`id = "dankSession"`, matching `dankAsusControlCenter`'s
+  own plain id in this same list - bar widget ids don't take the
+  `plugin_` prefix that `controlCenterWidgets` entries do, e.g.
+  `plugin_tor` above). **Hyprland-only per DankSession's own README** -
+  window/scrolling-geometry restore isn't implemented for niri yet, so
+  the widget will show far less on a niri session (this repo runs
+  both). Automatic *saving* runs as soon as the daemon's up; automatic
+  *restoration* stays opt-in on purpose - upstream's own guidance is to
+  configure explicit application rules in
+  `~/.config/danksession/config.json` (DankSession never derives launch
+  commands from a running process, only from rules you write), use the
+  widget's **Preview**/`danksession restore --dry-run` to check what
+  would happen, and only then flip "Restore after login" in the
+  plugin's own settings - that toggle is live app state, not something
+  this repo's Nix config should set on someone's behalf.
+- **The blurred-wallpaper layer only ever showed on niri, never on
+  Hyprland, regardless of `blurredWallpaperLayer`.** Not a config bug -
+  DMS's own `shell.qml` hardcodes `active: SettingsData.blurredWallpaperLayer
+  && CompositorService.isNiri`, gating the whole layer to niri no matter
+  what the setting says. Patched (same technique as the cava patches)
+  to `(CompositorService.isNiri || CompositorService.isHyprland)`.
+  Requested despite the real risk that it visually stacks with
+  Hyprland's own native compositor blur (`decoration.blur` in
+  [Hyprland.nix](desktop-hyprland.md)) rather than replacing it - DMS's
+  blur here is entirely self-contained (a GPU shader over a captured
+  wallpaper texture, no compositor protocol involved), so nothing
+  *stops* it from rendering under Hyprland's own blur too; whether the
+  combined look is actually wanted needs eyes on the real screen, not
+  assumed from source alone.
+- **Cava stopped attaching at all, even with genuine active playback -
+  the fixed `pw-dump`/`jq` detection script had its own bug.** Its
+  `!= ""` guard, meant to skip a failed name lookup, also silently
+  excluded any REAL client that legitimately reports an empty
+  `application.name`/`node.name` - confirmed live against `fastpotify`
+  (this repo's Spotify client), whose PipeWire node has both set to
+  `""` (checked directly via `pw-dump`, not assumed). A blank name is
+  still a real, active client - the only name that should ever be
+  excluded is literally `"cava"` itself, to avoid a self-referential
+  match. Fixed by dropping the `!= ""` half of the guard.
+- **`cavaVisualizer`'s config file only lists an estimated `curvePoints`/
+  `curveLineWidth` (`24`/`3`)** - read off slider handle position in a
+  screenshot, not the actual values. Confirm/correct these once the real
+  numbers are available.
+- **Bluetooth dual-connect couldn't hand off audio to the phone - two
+  orphaned `cava` processes were the real cause, not JBL firmware.** This
+  plugin's own widget and DMS core's `enableAudioWavelength` each run
+  their own `cava`, and both were permanently capturing the Bluetooth
+  sink's *monitor* port (to draw the visualizer) regardless of whether
+  anything was actually playing. PipeWire won't idle-suspend a sink while
+  any client - even a monitor-only capture client like cava - stays
+  attached, and BlueZ won't release the A2DP media transport while
+  PipeWire's local representation of the sink stays un-suspended. So
+  cava, just by existing, was the one thing keeping the Bluetooth link
+  busy enough that it never handed off to the phone. Confirmed live by
+  directly attaching/detaching cava from the Bluetooth sink and watching
+  handover succeed or fail in lockstep - not a guess.
+
+  The fix is `audioIsPlayingScript` (shared by both patches below): exit
+  0 if the current default sink has a genuine, non-cava active playback
+  link right now, exit 1 otherwise. It's deliberately keyed on "is
+  anything ELSE already keeping this sink busy," not amplitude/silence -
+  if something else holds the sink open, cava piggybacking costs
+  nothing; if nothing else does, cava must not become the sole reason the
+  sink can't idle-suspend. A plain silence check would still leave cava
+  as that sole reason on a truly idle Bluetooth sink.
+
+  It matches on `pw-dump`'s numeric node ids, not `wpctl status`'s
+  display names - `wpctl`'s own text turned out not to be internally
+  consistent: the internal speaker shows as "Raptor Lake-P/U/H cAVS
+  Speaker" in the Sinks list but gets abbreviated to just "Speaker" in a
+  Streams link line (`> Speaker:playback_FL [active]`). A first version
+  of this script parsed exactly that display text and silently never
+  matched for the internal speaker - it only ever happened to work for
+  the JBL headphones, whose short and long names coincide. `pw-dump`'s
+  link objects carry `link.output.node`/`link.input.node` as plain node
+  ids instead, immune to this whole class of display-string mismatch.
+  Found and fixed by instrumenting the actual running watchdog (a
+  filesystem side-effect counter, since plain `console.log` calls from
+  inside a `Process.onExited` handler never showed up in DMS's own logs
+  for reasons never fully explained) and confirming the poll loop was
+  firing correctly but the name match inside it wasn't.
+
+  **The `cavaVisualizer` plugin controls its `cava` process entirely by
+  imperative assignment**, unlike DMS core's own clean declarative
+  `running: <expr>` binding - `configWriter.onRunningChanged` sets
+  `cavaProcess.running = true`, and the plugin's own `rebuildTimer`/
+  `retryTimer` do too. A plain `&& root.playbackActive` added to a
+  binding wouldn't even apply here, and worse, the existing retry-timer
+  crash-recovery logic would actively fight an intentional stop: it
+  treats any stop where `configWriter` also isn't running as a crash and
+  reschedules a restart within 2 seconds, undoing the watchdog's own
+  stop. Both the starting condition and that retry guard have to be
+  patched explicitly for the watchdog to actually hold. The watchdog
+  reconciles `playbackActive` and cava's running state on *every single
+  poll*, rather than reacting only to `playbackActive`'s `onChanged`:
+  the widget's own unpatched `Component.onCompleted` always kicks cava
+  off once at startup regardless of whether anything's actually playing
+  yet, and an `onChanged` handler would never fire (never see a
+  transition) if playback simply stays inactive the whole time - leaving
+  that initial unconditional start never corrected. Reconciling
+  unconditionally on every poll is correct no matter the starting state.
+
+  Patching in the cava config's `[input]` section (`method = pipewire`,
+  `source = auto`) used plain bash single-quoted literals inside the
+  build script, rather than building the replacement text as a Nix
+  string - the search/replace target is JS string-concatenation source
+  (`"...\n" +` fragments), and single-quoting sidesteps stacking Nix's
+  own escaping on top of JS's. `source = auto` is only safe now that
+  `running` is actually gated on real playback activity - before, cava
+  had no `[input]` section at all and fell back to whatever pipewire
+  picked as its default capture source.
+
+  **DMS core's own `CavaService.qml` got the same watchdog**, patched
+  into `inputs.dms.packages.${system}.dms-shell` rather than a small
+  plugin - a much bigger, riskier target. `source=auto` here is what lets
+  cava actually follow whatever's currently playing, Bluetooth included,
+  since each start re-resolves "auto" fresh and the watchdog Timer is
+  exactly what triggers a fresh start when playback resumes. The new
+  Timer/Process pair is inserted as a sibling of the existing
+  `cavaProcess`, not nested inside it - Quickshell's `Process` type isn't
+  documented as supporting arbitrary child objects the way a plain `Item`
+  does. That Timer's own `running` condition was deliberately written to
+  *not* be textually identical to the old `cavaProcess.running`
+  condition it's extending: a first version of this patch used one
+  blanket search/replace for both, which matched the Timer's own
+  `running:` line too and silently deadlocked the whole thing - once
+  `playbackActive` went false, the Timer doing the polling stopped right
+  along with it, so nothing was left running to ever notice playback
+  resume. The poll loop has to stay unconditional; only `cavaProcess`'s
+  own `running` gets the `playbackActive` gate.
+
+  Patching the whole `dms-shell` package needed a real `cp -r`, not
+  `pkgs.symlinkJoin` (which failed with completely empty, unreadable
+  build logs, never root-caused) - and not a shallow copy either:
+  `bin/dms` is a wrapper script that hardcodes its *own* original store
+  path in its `exec ... -c <path>/share/quickshell/dms` line, verified by
+  reading it directly. A first patch attempt copied `share/quickshell/dms`
+  but left `bin/dms` untouched, and it silently kept loading the
+  unpatched QML from the original path. The build's own verification step
+  had to check for the OLD path's *absence* rather than the new patch's
+  presence, written as `if grep ...; then exit 1; fi` rather than
+  `grep ... && { exit 1; }` - the latter's own exit status (1, on the
+  successful/expected path where grep finds nothing) becomes the whole
+  script's exit status when it's the last command run, failing the Nix
+  build even when the patch worked correctly.
+- **`dms.service` failed to start after a real `nixos-rebuild switch` -
+  `203/EXEC` on `bin/dms-shell`, a binary that doesn't exist (only
+  `bin/dms` does).** `pkgs.runCommand` doesn't carry over `meta` from
+  the package it copies, so `dmsShellPatched` lost the original
+  `dms-shell` derivation's `meta.mainProgram = "dms";` - confirmed by
+  the build's own warning ("does not have the meta.mainProgram
+  attribute... assume the main program has the same name"). Without it,
+  `lib.getExe` (used by DMS's own home-manager module to build this
+  service's `ExecStart`) falls back to guessing the binary is named
+  after the *package* (`dms-shell`) instead of reading the real one off
+  disk. Silent for a long stretch of iteration because that whole time
+  used lightweight `systemctl --user restart` plus manually-edited
+  `ExecStart` lines to test each patch quickly, never re-running a full
+  `nixos-rebuild switch` that would let home-manager regenerate the unit
+  file from its own (buggy) `getExe` call - so the bug was latent until
+  the first real rebuild after `dmsShellPatched` existed. Fixed by
+  passing `meta.mainProgram = "dms";` through explicitly on the patched
+  derivation.
+- **That same rebuild also failed home-manager's own collision check**
+  on `~/.config/DankMaterialShell/plugins/cavaVisualizer` -
+  "existing file would be clobbered." Also self-inflicted: a manually
+  created `ln -sfn` symlink from the same live-testing above, used to
+  swap in test builds of the plugin without a full rebuild, pointed at
+  a specific store path home-manager itself didn't manage. Deleting the
+  stray symlink (it was never real data, just a testing shortcut) let
+  home-manager place its own back on the next activation.
 - **Nix monitor logs a harmless "manifest load failed" warning for
   `.../plugins/NixMonitor/config.json`** on every login - that capital-N
   `NixMonitor` directory only exists because the plugin's own bundled
