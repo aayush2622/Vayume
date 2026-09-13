@@ -47,6 +47,14 @@ ever ends up empty.
   app with matugen was never the goal; not clobbering deliberately-tuned
   settings mattered more.
 
+- **`background_opacity`/`dynamic_background_opacity`** are what
+  actually make kitty's background blur nicely under Hyprland -
+  see [Hyprland.nix](desktop-hyprland.md) for why this, specifically,
+  is the right tool (a per-app translucent background with the app's
+  own text staying fully opaque) versus Hyprland's own window opacity
+  (a single whole-surface multiplier that dims text along with
+  everything else).
+
 ---
 
 [← StateBackup.nix](apps-utils-statebackup.md) · [Index](CONFIGURATION.md) · [Vesktop.nix →](apps-utils-vesktop.md)

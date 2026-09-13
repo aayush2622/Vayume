@@ -70,6 +70,25 @@ Verified against the real built `niri-config.kdl`, not assumed - it
 renders as a genuine `environment { ... }` block, matching niri's own
 documented config syntax exactly.
 
+**Plain `Print` goes through the `screenshotPlus` plugin, not niri's own
+interactive screenshot action** - region capture with live annotation
+beats niri's bare picker. `Shift+Print` (whole output, via `grim`) is
+untouched, since screenshotPlus only does interactive region selection,
+no whole-output equivalent. With nothing left binding niri's own
+`screenshot`/`screenshot-screen`/`screenshot-window` actions, the
+`screenshot-path = null` setting that used to suppress niri's own
+picker writing a file became dead config and was removed along with it.
+
+**Zen's Picture-in-Picture popup floats instead of tiling into the
+layout** - matched by `app-id = "^zen$"` (confirmed against Zen's real
+desktop file, `StartupWMClass=zen`) plus `title = "^Picture-in-Picture$"`
+(the fixed title every Firefox-family browser gives its PiP window), so
+only that specific popup is affected, never Zen's main window. Verified
+against the real built config with `niri validate`, not just eval.
+niri has no equivalent to Hyprland's `pin` (stay visible across
+workspace switches) - `open-floating` is the most this compositor can
+do for a PiP window.
+
 ---
 
 [← Dms.nix](desktop-dms.md) · [Index](CONFIGURATION.md) · [Hyprland.nix →](desktop-hyprland.md)

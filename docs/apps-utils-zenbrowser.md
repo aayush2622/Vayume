@@ -133,6 +133,63 @@ It gets reused and re-synced on every rebuild.
   look identical from the outside with zero output. This makes the
   difference visible in a normal terminal, not just buried in
   `journalctl`.
+- **Emoji rendered broken and inconsistent - some codepoints fine,
+  others wrong or monochrome, no visible pattern.** `zenUserPrefs` pins
+  `font.name-list.emoji` explicitly, but that turned out not to be the
+  actual cause - Firefox already defaults it to Noto Color Emoji first.
+  The real bug was system-wide, in fontconfig's own fallback ranking,
+  not Zen-specific at all - see [Fonts.nix](desktop-portals-fonts.md)
+  for the actual root cause and fix (a `DejaVu Sans` vs `Noto Color
+  Emoji` fontconfig priority bug that hit every app using the system
+  UI font as a fallback, Zen just made it most visible). The
+  `font.name-list.emoji` pref here is harmless and slightly more
+  explicit than Firefox's own default, but wasn't what fixed it.
+- **Zen's settings page (and any other isolated `about:` content
+  document) showed a jarring green that didn't match the rest of the
+  desktop at all.** Correctly diagnosed as a theme bug, not the
+  Hyprland blur tint fixed alongside it - two unrelated things that
+  happened to surface around the same time. `renderTheme`'s eight
+  `{{placeholder}}` colors are a Nix-build-time seed, substituted once
+  and baked into the derivation - `matugen-bridge.uc.js` only
+  overwrites them live for the browser *chrome* (tabs, toolbar,
+  sidebar), by setting `--matugen-*` custom properties on
+  `document.documentElement`. `about:preferences` and similar pages
+  are separate top-level content documents outside that chrome DOM
+  entirely - privileged chrome JS has no route into them, so whatever
+  the seed says is what they show, permanently, not just for a brief
+  flash before the bridge catches up. The seed values were also just
+  stale - a warm, olive-toned palette (`tertiary: #a3c9a8`, a sage
+  green) left over from whenever this template was first wired up,
+  completely unrelated to the actual blue/purple/pink palette the
+  current wallpaper generates (checked directly against the live
+  `~/.zen/default/chrome/matugen-vars.json`, not guessed). Updated the
+  eight hardcoded values to match today's real palette - a fix for
+  right now, but the underlying gap (seed only ever refreshed at
+  `nixos-rebuild` time) was still there.
+- **Made the seed itself track real theme changes**, closing that gap
+  properly rather than leaving it as a "fixed for today" patch.
+  `zenThemeSyncScript` re-renders the same two `./theme/*.template`
+  files - the exact same `{{bg}}`-style substitution `renderTheme`
+  does at Nix build time - but reads its color values from
+  `matugen-vars.json` instead of hardcoding them, and runs as that
+  file's own matugen `post_hook`, so it fires every time matugen
+  actually regenerates it (every real theme change), not just at the
+  next rebuild. `renderTheme`'s build-time version still exists and
+  still matters - it's the only seed that exists *before* matugen has
+  ever run (first boot, or a profile that predates this mechanism);
+  the sync script only has something to read once
+  `~/.zen/default/chrome/matugen-vars.json` exists at all, so it exits
+  quietly rather than erroring when it doesn't yet. Verified the whole
+  chain for real, not just by reading the script: swapped in
+  synthetic, unmistakable colors (`#ff0000`/`#00ff00`/`#0000ff`) in
+  place of a real matugen run, ran the built script directly, confirmed
+  all three landed in the rendered `userChrome.css`, then restored the
+  genuine palette the same way and re-verified. This still doesn't make
+  an *already-open* Zen window repaint live - see the "no live reload"
+  finding above for why that's a real Firefox/Zen limitation this
+  script can't route around - but it does mean the file itself is
+  always correct by the next restart, not stuck until the next
+  `nixos-rebuild`.
 - **Zen Mods** live in the same activation script (theming, `user.js`,
   and mods all need the same resolved profile path), traced through
   Zen's own source rather than guessed at:

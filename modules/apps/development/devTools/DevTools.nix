@@ -4,6 +4,7 @@
       gh
       lazygit
       docker-compose
+      claude-code
     ];
   };
 }

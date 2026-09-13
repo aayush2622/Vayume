@@ -92,6 +92,9 @@
         hide_window_decorations = "yes";
         cursor_trail = 1;
 
+        background_opacity = "0.65";
+        dynamic_background_opacity = "yes";
+
         tab_bar_min_tabs = 1;
         tab_bar_edge = "bottom";
         tab_bar_style = "separator";

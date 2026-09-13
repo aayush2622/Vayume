@@ -7,12 +7,7 @@
         xwayland.enable = true;
       };
 
-      # Backend for vayume-type-clipboard. ydotool injects real evdev key
-      # events via /dev/uinput, so they pass through the compositor's own
-      # keymap - unlike wtype's virtual-keyboard keymap, which Chromium /
-      # Electron apps (NeoColab, exam browsers, ...) garble into random
-      # characters. Enabling this adds a hardened `ydotoold` system
-      # service and an `ydotool` group; every configured user joins it.
+      
       programs.ydotool.enable = true;
       users.groups.ydotool.members = lib.attrNames config.vayume.users;
     };
@@ -22,24 +17,14 @@
     let
       lua = lib.generators.mkLuaInline;
 
-      # Types out the current clipboard as synthetic keystrokes instead of
-      # pasting - for fields that swallow a real paste (some password
-      # prompts, SPICE/VNC consoles, remote sessions, exam browsers).
-      #
-      # Uses ydotool (real evdev events, needs the ydotoold service from
-      # the nixos module above) rather than wtype, because apps that read
-      # raw key positions turn wtype's output into gibberish. ASCII only -
-      # non-ASCII bytes in the clipboard are skipped.
+    
       typeClipboard = pkgs.writeShellScriptBin "vayume-type-clipboard" ''
         set -euo pipefail
 
-        # Per-keystroke delay in ms; override as the first argument.
         delay="''${1:-8}"
 
         export YDOTOOL_SOCKET="''${YDOTOOL_SOCKET:-/run/ydotoold/socket}"
 
-        # Grace period to refocus / click into the target field before
-        # the keystrokes start. Override as the second argument.
         ${pkgs.coreutils}/bin/sleep "''${2:-1}"
 
         ${pkgs.wl-clipboard}/bin/wl-paste --no-newline \
@@ -121,6 +106,8 @@
 
         configType = "lua";
 
+        systemd.variables = [ "--all" ];
+
         settings = {
           mod = {
             _var = "SUPER";
@@ -170,18 +157,22 @@
             decoration = {
               rounding = 24;
 
-              active_opacity = 0.90;
+              active_opacity = 0.85;
               inactive_opacity = 0.80;
               blur = {
                 enabled = true;
                 brightness = 0.8;
-                passes = 2;
-                size = 4;
+                passes = 3;
+                size = 7;
                 noise = 0.02;
                 vibrancy = 0.35;
 
                 vibrancy_darkness = 0.35;
-                contrast = 2;
+                contrast = 1.0;
+                new_optimizations = true;
+                ignore_opacity = true;
+                xray = true;
+                popups = true;
               };
 
               shadow = {
@@ -198,6 +189,29 @@
               disable_splash_rendering = true;
             };
           };
+
+          window_rule = [
+            {
+              name = "zen-pip-float";
+              match = {
+                class = "^zen$";
+                title = "^Picture-in-Picture$";
+              };
+              float = true;
+              pin = true;
+            }
+          ];
+
+          layer_rule = [
+            {
+              name = "dms-blur";
+              match = { namespace = "^dms:.*$"; };
+              blur = true;
+              blur_popups = true;
+              xray = true;
+              ignore_alpha = 0.2;
+            }
+          ];
 
           bind = [
             (bind "RETURN" (spawn "kitty"))
@@ -226,17 +240,15 @@
             (bind "CTRL + H" (lua "hl.dsp.group.prev()"))
             (bind "CTRL + L" (lua "hl.dsp.group.next()"))
             (bind "DELETE" (lua "hl.dsp.exit()"))
+            (bind "ESCAPE" (dms "fullscreenPowerMenu toggle"))
             (bind "R" (lua "hl.dsp.window.pseudo()"))
             (bind "TAB" (lua "hl.dsp.window.cycle_next()"))
 
             (bind "SHIFT + P" (spawn "hyprpicker -a"))
 
-            # Only Shift+Print writes a file. The interactive grabs go to
-            # the clipboard and nowhere else - hyprshot's --clipboard-only.
-            (bindBare "PRINT" (spawn "hyprshot -m region -z --clipboard-only") { })
+            (bindBare "PRINT" (dms "screenshotPlus capture") { })
             (bindBare "SHIFT + PRINT" (spawn "hyprshot -m output") { })
             (bind "PRINT" (spawn "hyprshot -m window -z --clipboard-only"))
-            (bind "SHIFT + S" (spawn "hyprshot -m region -z --clipboard-only"))
 
             (bind "CTRL + Right" (lua ''hl.dsp.focus({ workspace = "e+1" })''))
             (bind "CTRL + Left" (lua ''hl.dsp.focus({ workspace = "e-1" })''))

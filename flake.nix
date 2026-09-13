@@ -39,10 +39,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    dgop = {
-      url = "github:AvengeMedia/dgop";
+  
+    danksession = {
+      url = "github:alcxyz/DankSession/v0.3.5";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
     zsh-autosuggestions = {
       url = "github:zsh-users/zsh-autosuggestions";
       flake = false;
