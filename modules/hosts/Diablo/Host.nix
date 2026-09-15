@@ -110,7 +110,7 @@ in {
             CcSwitch.enable = true;
 
             Cpp.enable = true;
-            Rust.enable = false;
+            Rust.enable = true;
             Kotlin.enable = true;
             Flutter.enable = true;
             Nix.enable = true;
