@@ -48,7 +48,59 @@
     };
   };
 
-  flake.homeModules.apps.Flutter = { pkgs, ... }: {
-    home.packages = with pkgs; [ flutter ];
-  };
+  flake.homeModules.apps.Flutter = { self, pkgs, lib, ... }:
+    let
+    
+      wpewebkit = self.vayumeLib.loadOrBuild { inherit self pkgs; } "wpewebkit"
+        (pkgs.callPackage ./_vendor/wpewebkit/package.nix { });
+
+   
+      wpeDeps = with pkgs; [
+        wpewebkit
+        libwpe
+        libwpe-fdo
+        gtk3
+        libepoxy
+        libsecret
+        wayland
+        libxkbcommon
+        libglvnd
+      ];
+
+    
+      buildTools = with pkgs; [ pkg-config ninja patchelf ];
+
+
+      otherPluginDeps = with pkgs; [
+        alsa-lib
+        xz
+        libva
+        libvdpau
+        gnutls
+        libunwind
+        libarchive
+        libpulseaudio
+        xorg.libXScrnSaver
+        xorg.libXv
+      ];
+
+      allDeps = wpeDeps ++ otherPluginDeps;
+    in {
+      home.packages = with pkgs; [ flutter ] ++ allDeps ++ buildTools;
+
+      home.sessionVariables.PKG_CONFIG_PATH =
+        "${lib.makeSearchPath "lib/pkgconfig" (map lib.getDev allDeps)}:$PKG_CONFIG_PATH";
+
+      home.sessionVariables.CMAKE_PREFIX_PATH =
+        "${lib.concatMapStringsSep ":" (p: "${lib.getDev p}:${lib.getLib p}") allDeps}:$CMAKE_PREFIX_PATH";
+
+      home.sessionVariables.CPATH =
+        "${lib.makeSearchPath "include" (map lib.getDev allDeps)}:$CPATH";
+
+      home.sessionVariables.FLUTTER_NIX_LIB_DIRS =
+        lib.concatMapStringsSep ":" (p: "${lib.getLib p}/lib") allDeps;
+
+      home.file.".local/share/dart-sdk".source = "${pkgs.flutter}/bin/cache/dart-sdk";
+      home.file.".local/share/flutter-sdk".source = "${pkgs.flutter}";
+    };
 }
