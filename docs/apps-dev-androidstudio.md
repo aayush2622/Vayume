@@ -66,6 +66,22 @@ machine, pinned as real Nix packages instead of fetched live every time:
   matugen writes it directly on every wallpaper change, and letting
   home-manager also claim ownership would just mean the two fight over
   the same file.
+- **The whole IDE chrome (title bar, panels, toolbars), not just the
+  editor pane, follows the live matugen palette too**, via a locally-
+  authored "fake plugin" (`dankmatugen-theme`) dropped straight into the
+  user plugins folder - IntelliJ discovers plugins by scanning that
+  folder for a subdirectory with its own `META-INF/plugin.xml`, the same
+  way the real fetched plugins above are installed, so this one just
+  declares a `themeProvider` pointing at a matugen-templated
+  `.theme.json` instead of shipping compiled code. It shows up as its
+  own entry ("DankMatugen") in Settings > Appearance > Theme. The
+  generated `.theme.json` has to live under `classes/`, not the plugin
+  root - `plugin.xml` at the root is a special-cased entry point the
+  descriptor loader checks directly, but `UIThemeProvider` resolves its
+  `path` via the plugin's normal runtime classloader, which for an
+  exploded (non-jar) plugin is `classes/` + `lib/*.jar`, not the bare
+  plugin directory (confirmed via `idea.log`: the plugin loaded fine,
+  but logged "Cannot find theme resource" until moved here).
 - **The WakaTime plugin's key comes from `~/.wakatime.cfg`**, not a
   plugin-specific settings file - that's the one file WakaTime's own
   plugins for virtually every editor read from, JetBrains included, so
