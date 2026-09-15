@@ -21,7 +21,7 @@
       thunarXml = pkgs.writeText "thunar.xml" ''
         <?xml version="1.0" encoding="UTF-8"?>
         <channel name="thunar" version="1.0">
-          <property name="last-view" type="string" value="ThunarDetailsView"/>
+          <property name="last-view" type="string" value="ThunarIconView"/>
           <property name="last-icon-view-zoom-level" type="string" value="THUNAR_ZOOM_LEVEL_100_PERCENT"/>
           <property name="last-details-view-zoom-level" type="string" value="THUNAR_ZOOM_LEVEL_38_PERCENT"/>
           <property name="last-window-width" type="int" value="1100"/>
