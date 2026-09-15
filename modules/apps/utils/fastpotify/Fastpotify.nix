@@ -1,7 +1,8 @@
 { inputs, ... }: {
   flake.homeModules.apps.Fastpotify = { self, pkgs, config, ... }: {
     home.packages = [
-      inputs.fastpotify.packages.${pkgs.stdenv.hostPlatform.system}.fastpotify
+      (self.vayumeLib.loadOrBuild { inherit self pkgs; } "fastpotify"
+        inputs.fastpotify.packages.${pkgs.stdenv.hostPlatform.system}.fastpotify)
     ];
 
     xdg.mimeApps = {
