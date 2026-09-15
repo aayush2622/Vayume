@@ -71,6 +71,22 @@ in {
     androidStudioBuild = pkgs.androidStudioPackages.stable.version;
     jbAutoPluginsAtBuild = inputs.nix-jetbrains-plugins.plugins.${pkgs.stdenv.hostPlatform.system}."android-studio".${androidStudioBuild};
 
+    # Swaps in a JCEF-enabled jbr - see docs/apps-dev-androidstudio.md.
+    androidStudioUnwrapped = pkgs.androidStudioPackages.stable.unwrapped;
+    androidStudioJcef = androidStudioUnwrapped.overrideAttrs (old: {
+      postFixup = (old.postFixup or "") + ''
+        rm -rf $out/jbr
+        ln -s ${pkgs.jetbrains.jdk}/lib/openjdk $out/jbr
+      '';
+    });
+    androidStudioWithJcef = pkgs.androidStudioPackages.stable.overrideAttrs (old: {
+      startScript = builtins.replaceStrings
+        [ "${androidStudioUnwrapped}" ]
+        [ "${androidStudioJcef}" ]
+        old.startScript;
+      passthru = old.passthru // { unwrapped = androidStudioJcef; };
+    });
+
     manualPluginFiles = lib.listToAttrs (map
       (p:
         let
@@ -166,9 +182,10 @@ in {
 
   in {
     home.packages = with pkgs; [
-      androidStudioPackages.stable
+      androidStudioWithJcef
       jdk17
       android-tools
+      nodejs
     ];
 
     home.sessionVariables = {
