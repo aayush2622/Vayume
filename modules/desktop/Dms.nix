@@ -713,7 +713,7 @@
 
                   clickThrough = false;
 
-                  hoverPopouts = true;
+                  hoverPopouts = false;
                   hoverPopoutDelay = 150;
                 }
               ];
