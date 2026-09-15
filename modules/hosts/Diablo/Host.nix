@@ -112,7 +112,7 @@ in {
             Cpp.enable = true;
             Rust.enable = false;
             Kotlin.enable = true;
-            Flutter.enable = false;
+            Flutter.enable = true;
             Nix.enable = true;
             Qt.enable = true;
             Python.enable = true;
