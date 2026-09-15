@@ -82,6 +82,35 @@ machine, pinned as real Nix packages instead of fetched live every time:
   exploded (non-jar) plugin is `classes/` + `lib/*.jar`, not the bare
   plugin directory (confirmed via `idea.log`: the plugin loaded fine,
   but logged "Cannot find theme resource" until moved here).
+- **JCEF (the embedded Chromium used for the Gemini/Assistant panel,
+  App Quality Insights, and any in-IDE browser preview) is swapped in.**
+  Google's own Android Studio download ships a JBR with no JCEF at all -
+  not the native Chromium bits, not even the `jcef-plugin` directory
+  every JetBrains-branded IDE bundles, just the bare
+  `intellij.libraries.jcef.jar` on the Java side, so every JCEF-backed
+  feature is silently unavailable out of the box. `jetbrains.jdk` is the
+  same JBR line built from source with JCEF enabled (its default), and
+  is exactly what nixpkgs' own JetBrains IDE packages (idea, pycharm,
+  clion, ...) use for this, so it gets swapped in for the bundled `jbr`
+  the same way. Its `libcef.so` is a proper Nix build linked against
+  nixpkgs' own cairo/pango/nss/etc, not the FHS-style blob other IDEs
+  ship, so no `LD_LIBRARY_PATH` additions are needed on top. One
+  subtlety: `jetbrains.jdk`'s own output is *not* a JBR root - it's one
+  level above it, with `bin`/`include` symlinked down into `lib/openjdk`
+  so plain `java` still resolves `java.home` correctly through them.
+  Android Studio's native launcher doesn't do that same resolution - it
+  opens `$IDE_ROOT/jbr/lib/server/libjvm.so` directly - so linking `jbr`
+  straight to `jetbrains.jdk` leaves it looking one level too shallow
+  and the IDE fails to start ("Failed to load 'libjvm.so'"); it has to
+  point at `lib/openjdk` itself, which *is* a flat JBR root. The
+  launcher's `startScript` also has the unpatched store path hardcoded
+  into it at eval time, so overriding `unwrapped` alone doesn't reach
+  it - the reference gets rewritten too.
+- **`nodejs` is in `home.packages` for the Claude Code plugin
+  (`claude-code-jetbrains-plugin`) specifically** - it runs its own Node
+  backend (`backend.mjs`) in-process and just shells out to whatever
+  `node` it finds on `PATH`, and nothing else in this config puts a JS
+  runtime there.
 - **The WakaTime plugin's key comes from `~/.wakatime.cfg`**, not a
   plugin-specific settings file - that's the one file WakaTime's own
   plugins for virtually every editor read from, JetBrains included, so
