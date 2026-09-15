@@ -25,6 +25,11 @@ modules/hosts/*/*
 !modules/hosts/*/Vm.nix
 !modules/hosts/*/*.nix.example
 
+# Optional local binary cache (see modules/lib/LoadOrBuild.nix) - a zip
+# per package, dropped in by hand to skip an expensive from-source
+# build (e.g. WPE WebKit). Large and machine-specific, never committed.
+/bin/
+
 # Editor files
 .vscode/
 .claude/
