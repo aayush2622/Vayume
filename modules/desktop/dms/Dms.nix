@@ -11,181 +11,9 @@
     let
       theme = config.vayume.theme;
 
-      registryPlugins = pkgs.callPackage "${inputs.dms-plugin-registry}/nix/default.nix" { };
-
-      audioIsPlayingScript = pkgs.writeShellScript "vayume-audio-is-playing" ''
-        set -euo pipefail
-        ${pkgs.pipewire}/bin/pw-dump | ${pkgs.jq}/bin/jq -e --arg cava cava '
-          (map(select(.type=="PipeWire:Interface:Metadata" and .props["metadata.name"]=="default"))
-            | .[0].metadata[]? | select(.key=="default.audio.sink") | .value.name) as $sinkname
-          | . as $all
-          | ($all | map(select(.type=="PipeWire:Interface:Node" and .info.props["node.name"]==$sinkname)) | .[0].id) as $sinkid
-          | ($all | map(select(.type=="PipeWire:Interface:Node"))
-              | map({(.id|tostring): (.info.props["application.name"] // .info.props["node.name"] // "")}) | add) as $nodenames
-          | ($all | map(select(.type=="PipeWire:Interface:Link" and .info.state=="active" and .info.props["link.input.node"]==$sinkid))) as $activelinks
-          | ($activelinks | map($nodenames[(.info.props["link.output.node"]|tostring)] // "")) as $names
-          | ($names | any(. != $cava))
-        ' > /dev/null
-      '';
-
-      assertPatched = file: needle: ''
-        grep -qF ${lib.escapeShellArg needle} "${file}" || {
-          echo "patch verification failed: ${lib.escapeShellArg needle} not found in ${file} (upstream source likely changed - update the patch in dms.nix)" >&2
-          exit 1
-        }
-      '';
-
-      assertPatchedLine = file: line: needle: ''
-        sed -n '${toString line}p' "${file}" | grep -qF ${lib.escapeShellArg needle} || {
-          echo "patch verification failed: line ${toString line} of ${file} doesn't say ${lib.escapeShellArg needle} (upstream source likely changed - update the patch in dms.nix)" >&2
-          exit 1
-        }
-      '';
-
-      mkPatchedPlugin =
-        name: src: patchScript:
-        pkgs.runCommand "dms-plugin-${name}-patched" { } ''
-          cp -r ${src} $out
-          chmod -R u+w $out
-          ${patchScript}
-        '';
-
-      nixMonitorPatched = mkPatchedPlugin "nixMonitor" registryPlugins.nixMonitor ''
-        sed -i '110s/Theme\.primary$/Theme.widgetIconColor/' $out/NixMonitor.qml
-        ${assertPatchedLine "$out/NixMonitor.qml" 110 "Theme.widgetIconColor"}
-      '';
-
-      dankAsusControlCenterPatched =
-        mkPatchedPlugin "dankAsusControlCenter" registryPlugins.dankAsusControlCenter
-          ''
-            substituteInPlace $out/DankAsusControlCenter.qml \
-              --replace-quiet "size: root.showBatteryIcon ? 18 : Theme.iconSize * 0.85" "size: root.showBatteryIcon ? 18 : root.iconSize"
-            sed -i '521s/spacing: 4$/spacing: Theme.spacingXS/' $out/DankAsusControlCenter.qml
-            ${assertPatched "$out/DankAsusControlCenter.qml" "size: root.showBatteryIcon ? 18 : root.iconSize"}
-            ${assertPatchedLine "$out/DankAsusControlCenter.qml" 521 "Theme.spacingXS"}
-          '';
-
-      cavaVisualizerPatched =
-        let
-          watchdogProps = lib.concatStringsSep "\n" [
-            "readonly property int maxRetries: 3"
-            ""
-            "    property bool playbackActive: false"
-            ""
-            "    Timer {"
-            "        interval: 2000"
-            "        running: true"
-            "        repeat: true"
-            "        triggeredOnStart: true"
-            "        onTriggered: playbackCheck.running = true"
-            "    }"
-            ""
-            "    Process {"
-            "        id: playbackCheck"
-            ("        command: [\"" + "${audioIsPlayingScript}" + "\"]")
-            "        running: false"
-            "        onExited: exitCode => {"
-            "            root.playbackActive = exitCode === 0"
-            "            if (root.playbackActive) {"
-            "                if (!configWriter.running && !cavaProcess.running)"
-            "                    configWriter.running = true"
-            "            } else if (cavaProcess.running) {"
-            "                cavaProcess.running = false"
-            "            }"
-            "        }"
-            "    }"
-          ];
-
-          oldRetryGuard = "if (!running && !configWriter.running) {";
-          newRetryGuard = "if (!running && !configWriter.running && root.playbackActive) {";
-        in
-        mkPatchedPlugin "cavaVisualizer" registryPlugins.cavaVisualizer ''
-          substituteInPlace $out/CavaVisualizerTab.qml \
-            --replace-quiet ${lib.escapeShellArg "readonly property int maxRetries: 3"} ${lib.escapeShellArg watchdogProps}
-          ${assertPatched "$out/CavaVisualizerTab.qml" "playbackActive"}
-
-          substituteInPlace $out/CavaVisualizerTab.qml \
-            --replace-quiet \
-              '"[general]\n" +' \
-              '"[input]\n" + "method = pipewire\n" + "source = auto\n" + "\n" + "[general]\n" +'
-          ${assertPatched "$out/CavaVisualizerTab.qml" "source = auto"}
-
-          substituteInPlace $out/CavaVisualizerTab.qml \
-            --replace-quiet ${lib.escapeShellArg oldRetryGuard} ${lib.escapeShellArg newRetryGuard}
-          ${assertPatched "$out/CavaVisualizerTab.qml" "playbackActive) {"}
-        '';
-
-      dmsShellPatched =
-        let
-          origDmsShell = inputs.dms.packages.${pkgs.system}.dms-shell;
-
-          inputReplacement = lib.concatStringsSep "\n" [
-            "[input]"
-            "method=pipewire"
-            "source=auto"
-            ""
-            "[general]"
-          ];
-
-          watchdogBlock = lib.concatStringsSep "\n" [
-            "property bool playbackActive: false"
-            ""
-            "    Timer {"
-            "        interval: 2000"
-            "        running: root.refCount > 0 && root.cavaAvailable"
-            "        repeat: true"
-            "        triggeredOnStart: true"
-            "        onTriggered: playbackCheck.running = true"
-            "    }"
-            ""
-            "    Process {"
-            "        id: playbackCheck"
-            ("        command: [\"" + "${audioIsPlayingScript}" + "\"]")
-            "        running: false"
-            "        onExited: exitCode => {"
-            "            root.playbackActive = exitCode === 0;"
-            "        }"
-            "    }"
-            ""
-            "    Process {"
-            "        id: cavaProcess"
-          ];
-
-          oldRunning = "running: root.cavaAvailable && root.refCount > 0";
-          newRunning = "running: root.cavaAvailable && root.refCount > 0 && root.playbackActive";
-        in
-        pkgs.runCommand "${origDmsShell.name}-cava-patched" {
-          meta = (origDmsShell.meta or { }) // {
-            mainProgram = "dms";
-          };
-        } ''
-          cp -r ${origDmsShell} $out
-          chmod -R u+w $out
-
-          substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
-            --replace-quiet ${lib.escapeShellArg "[general]"} ${lib.escapeShellArg inputReplacement}
-          ${assertPatched "$out/share/quickshell/dms/Services/CavaService.qml" "source=auto"}
-
-          substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
-            --replace-quiet ${lib.escapeShellArg "    Process {\n        id: cavaProcess"} ${lib.escapeShellArg watchdogBlock}
-          substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
-            --replace-quiet ${lib.escapeShellArg oldRunning} ${lib.escapeShellArg newRunning}
-          ${assertPatched "$out/share/quickshell/dms/Services/CavaService.qml" "playbackActive"}
-
-          substituteInPlace $out/share/quickshell/dms/shell.qml \
-            --replace-quiet \
-              ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && CompositorService.isNiri"} \
-              ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && (CompositorService.isNiri || CompositorService.isHyprland)"}
-          ${assertPatched "$out/share/quickshell/dms/shell.qml" "CompositorService.isHyprland"}
-
-          substituteInPlace $out/bin/dms \
-            --replace-quiet "${origDmsShell}/share/quickshell/dms" "$out/share/quickshell/dms"
-          if grep -qF ${lib.escapeShellArg "${origDmsShell}/share/quickshell/dms"} "$out/bin/dms"; then
-            echo "patch verification failed: bin/dms still references the original share/quickshell/dms path (upstream wrapper script format likely changed - update the patch in dms.nix)" >&2
-            exit 1
-          fi
-        '';
-
+      # The dms-shell package itself is patched too - see ShellPatch.nix,
+      # which sets programs.dank-material-shell.package directly rather
+      # than handing the derivation back here.
       materialOSIcons = pkgs.stdenvNoCC.mkDerivation {
         pname = "materialos-icon-theme";
         version = "unstable-2026-08-27";
@@ -289,41 +117,14 @@
           xdg.configFile = {
             "DankMaterialShell/settings.json".force = true;
             "DankMaterialShell/plugin_settings.json".force = true;
-
-            "DankMaterialShell/plugins/NixMonitor/config.json" = {
-              force = true;
-              text = builtins.toJSON {
-                generationsCommand = [
-                  "sh"
-                  "-c"
-                  "ls -d /nix/var/nix/profiles/per-user/$(whoami)/home-manager-*-link 2>/dev/null | wc -l"
-                ];
-                storeSizeCommand = [
-                  "sh"
-                  "-c"
-                  "du -sh /nix/store 2>/dev/null | cut -f1"
-                ];
-                rebuildCommand = [
-                  "sh"
-                  "-c"
-                  "sudo ${vayumeRebuildScript} 2>&1"
-                ];
-                gcCommand = [
-                  "sh"
-                  "-c"
-                  "sudo ${vayumeGcScript} 2>&1"
-                ];
-                updateInterval = 300;
-              };
-            };
           };
           home.activation.seedDmsSession =
             let
               defaultSession = pkgs.writeText "dms-default-session.json" (
                 builtins.toJSON {
                   configVersion = 4;
-                  wallpaperPath = "${./../assets/wallpapers}/wallhaven-w5xdzx.jpg";
-                  wallpaperCyclingFolderPath = "${./../assets/wallpapers}";
+                  wallpaperPath = "${./../../assets/wallpapers}/wallhaven-w5xdzx.jpg";
+                  wallpaperCyclingFolderPath = "${./../../assets/wallpapers}";
                 }
               );
             in
@@ -338,7 +139,6 @@
 
           programs.dank-material-shell = {
             enable = true;
-            package = lib.mkForce dmsShellPatched;
 
             systemd = {
               enable = true;
@@ -348,13 +148,22 @@
             enableSystemMonitoring = true;
             enableDynamicTheming = true;
             enableAudioWavelength = true;
+
+            # dankAsusControlCenter, cavaVisualizer and tor each have real
+            # custom Nix behind them (a patch, or a locally-authored QML
+            # widget) and get their own file under
+            # modules/desktop/dms/plugins/ - the module system merges
+            # their `programs.dank-material-shell.plugins.X` definitions
+            # into this same option. Every plugin below is a plain
+            # `enable`/`settings` passthrough with nothing custom to
+            # split out, so they stay here.
             plugins = {
               wallpaperCarousel = {
                 enable = true;
 
                 settings = {
                   enabled = true;
-                  wallpaperDirectory = "${./../assets/wallpapers}";
+                  wallpaperDirectory = "${./../../assets/wallpapers}";
 
                   borderWidth = 0;
                   itemHeight = 472;
@@ -362,15 +171,6 @@
                   expandMultiplier = 118;
                   cornerRadius = 3;
                   overlayOpacity = 84;
-                };
-              };
-
-              dankAsusControlCenter = {
-                enable = true;
-                src = lib.mkForce dankAsusControlCenterPatched;
-                settings = {
-                  showBatteryIcon = false;
-                  useThemeColors = true;
                 };
               };
 
@@ -398,40 +198,14 @@
 
               pureLyrics.enable = true;
 
-              nixMonitor = {
-                enable = true;
-                src = lib.mkForce nixMonitorPatched;
-                settings = {
-                  showGenerations = true;
-                  showStoreSize = true;
-                  gcThresholdGB = 50;
-                  checkUpdates = true;
-                  nixpkgsChannel = "nixos-unstable";
-                  updateCheckInterval = 3600;
-                };
-              };
-
               fullscreenPowerMenu.enable = true;
-
-              cavaVisualizer = {
-                enable = true;
-                src = lib.mkForce cavaVisualizerPatched;
-              };
 
               nixPackageRunner = {
                 enable = true;
-                settings = {
-
-                  runSourceMode = "latest_unstable";
-                };
+                settings.runSourceMode = "latest_unstable";
               };
 
               screenshotPlus.enable = true;
-
-              dankSession = {
-                enable = true;
-                src = lib.mkForce inputs.danksession.outPath;
-              };
             };
 
             settings = {
@@ -514,6 +288,15 @@
                   width = 50;
                   mountPath = "/";
                   showMountPath = true;
+                }
+                {
+                  # Plugin-backed control-center widgets are looked up by
+                  # `id.replace("plugin_", "")` in DMS's own
+                  # DragDropGrid.qml - the bare plugin id (matching
+                  # "plugin_tor" above for the same reason).
+                  id = "plugin_dankAsusControlCenter";
+                  enabled = true;
+                  width = 50;
                 }
               ];
 
@@ -617,12 +400,7 @@
                   ];
 
                   rightWidgets = [
-                    {
-                      id = "nixMonitor";
-                      enabled = true;
-                    }
                     "systemTray"
-                    "clipboard"
                     "cpuUsage"
                     "memUsage"
 
@@ -636,16 +414,6 @@
                       showBatteryTime = false;
                       batteryPillStyle = false;
                       batteryPillPercentSign = false;
-                    }
-
-                    {
-                      id = "dankAsusControlCenter";
-                      enabled = true;
-                    }
-
-                    {
-                      id = "dankSession";
-                      enabled = true;
                     }
 
                     "controlCenterButton"
