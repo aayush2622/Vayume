@@ -46,7 +46,7 @@ in
       self.nixosModules.PluginUpdateCheck
 
       (requireLocalFile ./_hardware.nix "_hardware.nix")
-      (requireLocalFile ./_user.nix "_user.nix")
+      (requireLocalFile ./_config.nix "_config.nix")
 
       (
         {
@@ -64,42 +64,6 @@ in
         in
         {
           config = {
-            # One line per app under modules/apps/ - type `vayume.apps.` in an
-            # editor with Nix LSP support and every available app shows up by
-            # name. `false` entries are kept, not deleted, so it's visible at
-            # a glance which apps exist but are off, not just missing.
-            vayume.apps = {
-              # development
-              Vscode.enable = true;
-              AndroidStudio.enable = true;
-              Zed.enable = true;
-              DevTools.enable = true;
-              CcSwitch.enable = true;
-
-              Cpp.enable = true;
-              Rust.enable = true;
-              Kotlin.enable = true;
-              Flutter.enable = true;
-              Nix.enable = true;
-              Qt.enable = true;
-              Python.enable = true;
-
-              # gaming
-              Gaming.enable = true;
-
-              # utils
-              Terminal.enable = true;
-              Nautilus.enable = false;
-              Thunar.enable = true;
-              ZenBrowser.enable = true;
-              Vesktop.enable = true;
-              Spicetify.enable = true;
-              Fastpotify.enable = true;
-              Bitwarden.enable = true;
-              StateBackup.enable = true;
-              Distrobox.enable = true;
-            };
-
             nix.settings.experimental-features = [
               "nix-command"
               "flakes"

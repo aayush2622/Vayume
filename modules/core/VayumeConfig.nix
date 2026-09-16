@@ -99,8 +99,8 @@
             repo                          repo path, git branch, dirty state (JSON)
             apps list                     every vayume.apps.* module and its state (JSON)
             apps set <Name> <true|false> [--if-unmodified-since <epoch>]
-                                           toggle one app in Host.nix, validated + atomic
-            validate                      re-evaluate Host.nix, report pass/fail
+                                           toggle one app in _config.nix, validated + atomic
+            validate                      re-evaluate _config.nix, report pass/fail
           EOF
             exit 2
           }
@@ -117,14 +117,14 @@
           }
 
           flake_dir=$(discover_repo)
-          host_file="$flake_dir/modules/hosts/${hostName}/Host.nix"
+          config_file="$flake_dir/modules/hosts/${hostName}/_config.nix"
 
-          [ -f "$host_file" ] || {
-            echo "vayume-config: $host_file missing - is this host still called '${hostName}'?" >&2
+          [ -f "$config_file" ] || {
+            echo "vayume-config: $config_file missing - copy _config.nix.example and fill it in (see docs/getting-started.md)" >&2
             exit 1
           }
 
-          validate_host_file() {
+          validate_config_file() {
             nix eval --impure --json --expr \
               "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.apps" \
               >/dev/null
@@ -140,15 +140,15 @@
               dirty=false
             fi
             jq -n --arg path "$flake_dir" --arg branch "$branch" --argjson dirty "$dirty" \
-              --arg hostFile "$host_file" \
-              '{path: $path, branch: $branch, dirty: $dirty, hostFile: $hostFile}'
+              --arg configFile "$config_file" \
+              '{path: $path, branch: $branch, dirty: $dirty, configFile: $configFile}'
           }
 
           cmd_apps_list() {
             local available configured
             available=$(nix eval --impure --json --expr \
               "builtins.attrNames (builtins.getFlake \"path:$flake_dir\").homeModules.apps")
-            configured=$(awk -v mode=list -f ${appsAwk} "$host_file" \
+            configured=$(awk -v mode=list -f ${appsAwk} "$config_file" \
               | jq -R -s '
                   split("\n") | map(select(length > 0) | split(" ")) |
                   map({(.[0]): (.[1] == "true")}) | add // {}
@@ -172,34 +172,34 @@
             fi
             case "$value" in true|false) ;; *) echo "vayume-config: value must be true or false" >&2; exit 2;; esac
 
-            mtime=$(stat -c %Y "$host_file")
+            mtime=$(stat -c %Y "$config_file")
             if [ -n "$since" ] && [ "$since" != "$mtime" ]; then
-              echo "vayume-config: $host_file changed since it was last read (reload before editing)" >&2
+              echo "vayume-config: $config_file changed since it was last read (reload before editing)" >&2
               exit 3
             fi
 
-            tmp="$host_file.vayume-config.tmp"
-            if ! awk -v mode=set -v target="$name" -v value="$value" -f ${appsAwk} "$host_file" > "$tmp"; then
+            tmp="$config_file.vayume-config.tmp"
+            if ! awk -v mode=set -v target="$name" -v value="$value" -f ${appsAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
             fi
 
-            cp -p "$host_file" "$host_file.bak"
-            mv "$tmp" "$host_file"
+            cp -p "$config_file" "$config_file.bak"
+            mv "$tmp" "$config_file"
 
-            if validate_host_file; then
-              rm -f "$host_file.bak"
+            if validate_config_file; then
+              rm -f "$config_file.bak"
               jq -n --arg name "$name" --arg value "$value" \
                 '{ok: true, name: $name, enabled: ($value == "true")}'
             else
-              mv "$host_file.bak" "$host_file"
-              echo "vayume-config: new configuration failed to evaluate - reverted $host_file" >&2
+              mv "$config_file.bak" "$config_file"
+              echo "vayume-config: new configuration failed to evaluate - reverted $config_file" >&2
               exit 1
             fi
           }
 
           cmd_validate() {
-            if validate_host_file; then
+            if validate_config_file; then
               jq -n '{ok: true}'
             else
               jq -n '{ok: false}'

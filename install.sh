@@ -4,8 +4,9 @@
 # It does the three things a fresh machine needs (see docs/getting-started.md):
 #   1. host dir   - modules/hosts/<host>/ (copied + renamed from Diablo if new)
 #   2. _hardware.nix - from `nixos-generate-config` (or an existing file you point at)
-#   3. _user.nix     - built interactively: users, groups, sudo, password hash,
-#                      extra packages, per-user secrets, avatar
+#   3. _config.nix   - the one user-facing file: built interactively (users,
+#                      groups, sudo, password hash, extra packages, per-user
+#                      secrets, avatar), plus every app disabled by default
 # then offers to run `sudo nixos-rebuild switch --flake path:.#<host>`.
 #
 # Usage:  ./install.sh [--host NAME] [--system SYS] [--hardware-file PATH]
@@ -131,7 +132,7 @@ if [[ $HOST != Diablo && ! -d $HOSTDIR ]]; then
   info "creating $HOSTDIR from the Diablo template"
   run cp -r modules/hosts/Diablo "$HOSTDIR"
   # drop the template's personal files; keep tracked scaffolding
-  run rm -f "$HOSTDIR/_hardware.nix" "$HOSTDIR/_user.nix" "$HOSTDIR/me.jpg"
+  run rm -f "$HOSTDIR/_hardware.nix" "$HOSTDIR/_config.nix" "$HOSTDIR/me.jpg"
   # rename Diablo -> $HOST inside the tracked .nix / .example files
   if (( DRY_RUN )); then
     info "would rename Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
@@ -186,8 +187,8 @@ else
     warn "check $HW - it may still have placeholders or need the dGPU block removed"
 fi
 
-# ---------------------------------------------------------------- _user.nix ----
-USR="$HOSTDIR/_user.nix"
+# ---------------------------------------------------------------- _config.nix --
+CFG="$HOSTDIR/_config.nix"
 build_user_block() {
   local uname fullname groups extra_groups g hash pw pw2
   local -a group_list pkg_list
@@ -255,8 +256,8 @@ build_user_block() {
   printf '    };\n'
 }
 
-if [[ -f $USR ]] && ! confirm "$USR exists - rebuild it?" N; then
-  info "keeping existing $USR"
+if [[ -f $CFG ]] && ! confirm "$CFG exists - rebuild it?" N; then
+  info "keeping existing $CFG"
 else
   say "Users for $HOST - add at least one."
   users_nix=""
@@ -264,19 +265,33 @@ else
     if block=$(build_user_block); then users_nix+="$block"$'\n'; fi
     confirm "Add another user?" N || break
   done
-  [[ -n $users_nix ]] || die "no users defined - _user.nix needs at least one"
-  { printf '{ pkgs, ... }:\n{\n  vayume.users = {\n%s  };\n}\n' "$users_nix"; } | write_file "$USR"
+  [[ -n $users_nix ]] || die "no users defined - _config.nix needs at least one"
+
+  info "listing available apps (modules/apps/**) ..."
+  app_names=$(nix eval --extra-experimental-features 'nix-command flakes' --impure --json \
+    --expr 'builtins.attrNames (builtins.getFlake "path:'"$REPO"'").homeModules.apps' 2>/dev/null) \
+    || app_names="[]"
+  apps_nix=""
+  while IFS= read -r name; do
+    [[ -n $name ]] && apps_nix+="    ${name}.enable = false;"$'\n'
+  done < <(printf '%s' "$app_names" | tr -d '[]"' | tr ',' '\n' | sort)
+
+  {
+    printf '{ pkgs, ... }:\n{\n  vayume.users = {\n%s  };\n\n' "$users_nix"
+    printf '  vayume.apps = {\n%s  };\n}\n' "$apps_nix"
+  } | write_file "$CFG"
+  info "every app starts disabled - flip the ones you want in $CFG, or from DMS's Vayume Settings after first boot"
 fi
 
 # ---------------------------------------------------------------- wrap up ------
 if (( IS_GIT && ! DRY_RUN )) && [[ -d $HOSTDIR && $HOST != Diablo ]]; then
   git -C "$REPO" add "$HOSTDIR/Host.nix" "$HOSTDIR/Vm.nix" "$HOSTDIR"/*.nix.example 2>/dev/null || true
-  info "staged the tracked files in $HOSTDIR (_hardware.nix / _user.nix stay gitignored)"
+  info "staged the tracked files in $HOSTDIR (_hardware.nix / _config.nix stay gitignored)"
 fi
 
 echo
 say "Done. ${bold}$HOSTDIR${rst} now has:"
-for f in Host.nix _hardware.nix _user.nix; do
+for f in Host.nix _hardware.nix _config.nix; do
   if [[ -f $HOSTDIR/$f ]]; then info "${grn}✓${rst} $f"; else info "${ylw}–${rst} $f (skipped)"; fi
 done
 echo

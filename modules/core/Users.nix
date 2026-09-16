@@ -27,7 +27,7 @@
           default = null;
           description = ''
             Hashed password (mkpasswd -m sha-512). Set this from
-            _user.nix (a gitignored file that lives next to Host.nix,
+            _config.nix (a gitignored file that lives next to Host.nix,
             never committed - see docs/core-users.md), not a tracked Nix file,
             so the repo has zero personal data in it and stays safe to
             publish. Leave unset to fall back to initialPassword
@@ -53,7 +53,7 @@
             it would've configured (no WakaTime extension installed, no
             rbw email written) instead of configuring it with a useless
             value. Plain values, no encryption layer - fine given
-            _user.nix is already gitignored and owner-only on disk;
+            _config.nix is already gitignored and owner-only on disk;
             lands in the world-readable Nix store wherever a consuming
             app module writes it out, same as any other Nix-declared
             value.
@@ -84,7 +84,7 @@
       default = { };
       description = ''
         One entry per person using this machine. Set from
-        modules/hosts/<name>/_user.nix (see docs/core-users.md) - a gitignored
+        modules/hosts/<name>/_config.nix (see docs/core-users.md) - a gitignored
         file, required, not a Nix-declared block here, so the repo has
         zero personal data in it and stays safe to publish. Fine to set
         directly in a tracked host file instead if you'd rather commit
@@ -110,7 +110,10 @@
         individually-named option per module under modules/apps/ - type
         `vayume.apps.` in an editor with Nix LSP support and every
         available app shows up by name, instead of needing to already
-        know the exact quoted string a `listOf` would require.
+        know the exact quoted string a `listOf` would require. Set from
+        modules/hosts/<name>/_config.nix, same file as `vayume.users` -
+        also the file DMS's "Vayume Settings" plugin edits, through
+        `vayume-config` (see docs/core-vayume-config.md).
       '';
     };
 

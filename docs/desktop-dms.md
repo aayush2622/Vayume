@@ -233,7 +233,7 @@ enabling it alone isn't enough.
   itself found rather than a blanket `safe.directory = *`. A third fix
   landed here later, for a different reason: the final
   `nixos-rebuild switch --flake` call uses a `path:$flakeDir` ref, not a
-  bare one, so `_hardware.nix`/`_user.nix` (gitignored, see
+  bare one, so `_hardware.nix`/`_config.nix` (gitignored, see
   [core.md](core-hardware.md)) actually resolve
   instead of looking "missing" through git's tracked-files-only view of
   the repo.

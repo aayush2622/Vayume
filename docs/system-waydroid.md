@@ -45,7 +45,7 @@ Android apps in a container - and an honest admission that not everything on a N
   and you'd always get the default.
 - **The sudo rules are generated from `vayume.users`**, not hardcoded -
   every user this host declares gets the rule, so adding a second user
-  in `_user.nix` doesn't mean remembering to edit this file too. It's
+  in `_config.nix` doesn't mean remembering to edit this file too. It's
   guarded with a `config ? vayume` check so the module still evaluates
   if it's ever imported somewhere `vayume.users` doesn't exist.
 - **`waydroid-helper` is included as a GTK front-end** for the same

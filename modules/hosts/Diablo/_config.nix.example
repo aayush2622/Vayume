@@ -1,0 +1,87 @@
+# Template for _config.nix - the one file a normal user edits: who logs
+# into this machine, and what Vayume gives them. It's gitignored (a real
+# username, group list, password hash, and app choices aren't something
+# to publish) and required: Host.nix refuses to evaluate without a real
+# _config.nix sitting next to it. To make your own:
+#
+#   cp modules/hosts/Diablo/_config.nix.example modules/hosts/Diablo/_config.nix
+#   mkpasswd -m sha-512          # paste the result in as hashedPassword
+#
+# then edit the attrsets below.
+{
+  vayume.users = {
+    # One entry per person, keyed by their Linux username. Every field
+    # except the name itself is optional - see modules/core/Users.nix's
+    # `userSubmodule` for the full list and defaults.
+    ash = {
+      fullName = "Ash";
+      extraGroups = [ "networkmanager" "wheel" "video" "input" ];
+      # mkpasswd -m sha-512 - leave unset for a "changeme" initial password.
+      hashedPassword = "REPLACE_ME";
+
+      # Optional: a .face avatar image (Noctalia profile card + qylock).
+      # Drop the image file anywhere under this Diablo folder (gitignored
+      # by default, see .gitignore) and point at it here, e.g.:
+      # avatar = ./someimage.png;
+
+      # Optional: passed straight to every app module as `vayumeSecrets`.
+      # Leave the whole block out (or any key inside it) for
+      # "REPLACE_ME" placeholders instead, which disables whatever that
+      # key would've configured (no WakaTime extension, no rbw email)
+      # rather than configuring it with a useless value - see
+      # docs/core-users.md for what reads each one.
+      secrets = {
+        WAKATIME_API_KEY = "REPLACE_ME";
+        RBW_EMAIL = "REPLACE_ME";
+      };
+    };
+
+    random = {
+      fullName = "Random";
+      extraGroups = [ "networkmanager" "video" "input" ];
+      # No hashedPassword -> logs in with the "changeme" initial password.
+    };
+  };
+
+  # Every module under modules/apps/ is one boolean here - type
+  # `vayume.apps.` in an editor with Nix LSP support and every available
+  # app shows up by name. Keep an app listed as `false` rather than
+  # deleting it, so it's visible at a glance that it exists and is
+  # simply off, not missing. Same options DMS's own "Vayume Settings"
+  # panel edits - see docs/core-vayume-config.md.
+  vayume.apps = {
+    Vscode.enable = true;
+    AndroidStudio.enable = false;
+    Zed.enable = false;
+    DevTools.enable = true;
+    CcSwitch.enable = false;
+
+    Cpp.enable = false;
+    Rust.enable = false;
+    Kotlin.enable = false;
+    Flutter.enable = false;
+    Nix.enable = true;
+    Qt.enable = false;
+    Python.enable = false;
+
+    Gaming.enable = false;
+
+    Terminal.enable = true;
+    Nautilus.enable = false;
+    Thunar.enable = true;
+    ZenBrowser.enable = true;
+    Vesktop.enable = false;
+    Spicetify.enable = false;
+    Fastpotify.enable = false;
+    Bitwarden.enable = false;
+    StateBackup.enable = false;
+    Distrobox.enable = false;
+  };
+
+  # Optional - only set the fields you want to change from the defaults
+  # (JetBrainsMono Nerd Font, Bibata-Modern-Ice, Adwaita). See
+  # modules/core/Theme.nix / docs/core-theme.md.
+  # vayume.theme = {
+  #   font = "Fira Code";
+  # };
+}
