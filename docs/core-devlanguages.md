@@ -60,4 +60,4 @@ They just agree on what shape this data comes in.
 
 ---
 
-[← Users.nix](core-users.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)
+[← Theme.nix](core-theme.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)

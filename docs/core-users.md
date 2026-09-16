@@ -174,4 +174,4 @@ lookup, no activation-ordering dance.
 
 ---
 
-[← Vm.nix](core-vm.md) · [Index](CONFIGURATION.md) · [DevLanguages.nix →](core-devlanguages.md)
+[← Vm.nix](core-vm.md) · [Index](CONFIGURATION.md) · [Theme.nix →](core-theme.md)
