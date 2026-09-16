@@ -15,6 +15,18 @@ at the SDDM greeter changes the compositor, not the muscle memory. Both
 to their niri counterparts in `Host.nix`/`Users.nix` - both compositors
 are always available, picked per-login, not toggled by a single option.
 
+**The actual app launch commands (terminal, file manager, editor,
+browser, its reload script, the system monitor, the color picker) live
+in one place**, [`modules/lib/DesktopActions.nix`](../modules/lib/DesktopActions.nix)'s
+`flake.vayumeLib.desktopActions` - both this file and
+[Niri.nix](desktop-niri.md) read the same attrset instead of each
+hardcoding its own copy of `"kitty"`/`"thunar"`/etc. Niri's `spawn`
+takes the argv list directly; Hyprland's own `spawn` helper wants one
+shell string, so this file joins each list with spaces once, in the
+`let` block, rather than at every call site. Genuinely shared *data*,
+not a shared binding syntax - each compositor still declares its own
+binds its own way.
+
 **DMS needed nothing new to run under it.** It starts as a systemd user
 service bound to `graphical-session.target`
 ([Dms.nix](desktop-dms.md)'s `systemd.enable = true;`), which

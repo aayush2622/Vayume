@@ -9,15 +9,16 @@
 
   perSystem = { pkgs, lib, ... }:
   let
+    actions = self.vayumeLib.desktopActions;
     titled = title: content: _: { props.hotkey-overlay-title = title; inherit content; };
 
     niriBinds = {
-      "Mod+Return" = titled "Open Terminal" { spawn = [ "kitty" ]; };
-      "Mod+E" = titled "Open File Manager" { spawn = [ "thunar" ]; };
-      "Mod+C" = titled "Open VS Code" { spawn = [ "code" ]; };
-      "Mod+B" = titled "Open Browser" { spawn = [ "zen" ]; };
-      "Mod+Shift+B" = titled "Reload Zen (apply new theme)" { spawn = [ "vayume-zen-reload" ]; };
-      "Control+Shift+Escape" = titled "Open System Monitor" { spawn = [ "kitty" "-e" "btop" ]; };
+      "Mod+Return" = titled "Open Terminal" { spawn = actions.terminal; };
+      "Mod+E" = titled "Open File Manager" { spawn = actions.fileManager; };
+      "Mod+C" = titled "Open VS Code" { spawn = actions.editor; };
+      "Mod+B" = titled "Open Browser" { spawn = actions.browser; };
+      "Mod+Shift+B" = titled "Reload Zen (apply new theme)" { spawn = actions.browserReload; };
+      "Control+Shift+Escape" = titled "Open System Monitor" { spawn = actions.systemMonitor; };
 
       "Mod+S" = titled "Toggle App Launcher" { spawn = [ "dms" "ipc" "call" "spotlight" "toggle" ]; };
       "Mod+V" = titled "Toggle Clipboard History" { spawn = [ "dms" "ipc" "call" "clipboard" "toggle" ]; };
@@ -55,7 +56,7 @@
       "Mod+Shift+Ctrl+Down".set-window-height = "+10%";
       "Mod+R".switch-preset-column-width = _: { };
 
-      "Mod+Shift+P" = titled "Pick Color" { spawn = [ "hyprpicker" "-a" ]; };
+      "Mod+Shift+P" = titled "Pick Color" { spawn = actions.colorPicker; };
       "Print" = titled "Screenshot (region)" { spawn = [ "dms" "ipc" "call" "screenshotPlus" "capture" ]; };
       "Shift+Print" = titled "Screenshot (save)" {
         spawn-sh = "mkdir -p \"$HOME/Pictures/Screenshots\" && grim \"$HOME/Pictures/Screenshots/$(date +%Y-%m-%d_%H-%M-%S).png\"";

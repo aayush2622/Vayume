@@ -13,8 +13,9 @@
     };
 
   flake.homeModules.Hyprland =
-    { lib, pkgs, ... }:
+    { lib, pkgs, self, ... }:
     let
+      actions = lib.mapAttrs (_: lib.concatStringsSep " ") self.vayumeLib.desktopActions;
       lua = lib.generators.mkLuaInline;
 
     
@@ -214,12 +215,12 @@
           ];
 
           bind = [
-            (bind "RETURN" (spawn "kitty"))
-            (bind "E" (spawn "thunar"))
-            (bind "C" (spawn "code"))
-            (bind "B" (spawn "zen"))
-            (bind "SHIFT + B" (spawn "vayume-zen-reload"))
-            (bindBare "CTRL + SHIFT + ESCAPE" (spawn "kitty -e btop") { })
+            (bind "RETURN" (spawn actions.terminal))
+            (bind "E" (spawn actions.fileManager))
+            (bind "C" (spawn actions.editor))
+            (bind "B" (spawn actions.browser))
+            (bind "SHIFT + B" (spawn actions.browserReload))
+            (bindBare "CTRL + SHIFT + ESCAPE" (spawn actions.systemMonitor) { })
 
             (bind "S" (lua "hl.dsp.workspace.toggle_special()"))
             (bind "A" (dms "spotlight toggle"))
@@ -244,7 +245,7 @@
             (bind "R" (lua "hl.dsp.window.pseudo()"))
             (bind "TAB" (lua "hl.dsp.window.cycle_next()"))
 
-            (bind "SHIFT + P" (spawn "hyprpicker -a"))
+            (bind "SHIFT + P" (spawn actions.colorPicker))
 
             (bindBare "PRINT" (dms "screenshotPlus capture") { })
             (bindBare "SHIFT + PRINT" (spawn "hyprshot -m output") { })
