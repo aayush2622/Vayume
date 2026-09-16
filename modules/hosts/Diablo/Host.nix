@@ -25,6 +25,7 @@ in
 
       self.nixosModules.VayumeUsers
       self.nixosModules.Theme
+      self.nixosModules.VayumeConfig
       self.nixosModules.Niri
       self.nixosModules.Hyprland
       self.nixosModules.Dms
