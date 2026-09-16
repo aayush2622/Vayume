@@ -60,4 +60,4 @@ They just agree on what shape this data comes in.
 
 ---
 
-[← Theme.nix](core-theme.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)
+[← VayumeConfig.nix](core-vayume-config.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)

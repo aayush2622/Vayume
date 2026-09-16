@@ -31,4 +31,4 @@ bundled font and GRUB's own theme package. See
 
 ---
 
-[← Users.nix](core-users.md) · [Index](CONFIGURATION.md) · [DevLanguages.nix →](core-devlanguages.md)
+[← Users.nix](core-users.md) · [Index](CONFIGURATION.md) · [VayumeConfig.nix →](core-vayume-config.md)
