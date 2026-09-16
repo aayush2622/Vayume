@@ -196,6 +196,15 @@ enabling it alone isn't enough.
   machine runs btrfs and has none to show.
 - The ASUS widget hides its own battery icon, since a separate battery
   widget already covers that.
+**Rebuild/GC integration lives in its own file, `modules/desktop/dms/Rebuild.nix`**
+(`flake.nixosModules.DmsRebuild`) - the sudoers `NOPASSWD` rule, the two
+underlying scripts, and the stable `vayume-rebuild`/`vayume-gc` bare
+commands, all pulled out of `Dms.nix` proper since none of it is really
+DMS-specific (it's what any GUI, or a person's own terminal, needs to
+trigger a rebuild without a password prompt) - see
+[core-vayume-config.md](core-vayume-config.md) for the stable-wrapper
+rationale.
+
 - **Nix monitor's rebuild/GC buttons read their commands from their own
   separate config file**, not the plugin-settings mechanism everything
   else uses - traced directly through the plugin's QML, confirmed against
