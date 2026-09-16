@@ -314,6 +314,11 @@
                   enabled = true;
                   width = 50;
                 }
+                {
+                  id = "plugin_vayumeSettings";
+                  enabled = true;
+                  width = 50;
+                }
               ];
 
               showWorkspaceIndex = true;

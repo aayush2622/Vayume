@@ -4,7 +4,7 @@
 
 The bar, the launcher, the lock screen, the notification center - one shell, DankMaterialShell, doing the job four separate GNOME/KDE daemons usually split between them.
 
-## `modules/desktop/Dms.nix`
+## `modules/desktop/dms/`
 
 **Applies to every user, not just one hardcoded account** - an earlier
 version had this hardcoded, and the bug it caused was exactly what you'd
@@ -487,6 +487,16 @@ enabling it alone isn't enough.
   `graphical-session.target.wants/vayume-idle-lock.service`. Not verified
   live - whether it actually fires after ten real minutes of idle needs a
   real session to watch.
+
+**`vayumeSettings`** is this repo's own plugin, not a community one -
+see [core-vayume-config.md](core-vayume-config.md) for the backend it
+drives and why DMS talks to the real `Host.nix` through a CLI instead of
+its own state. The widget itself
+(`modules/desktop/dms/plugins/vayumeSettings/`) is a normal
+`ccDetailContent` popout: the compact pill polls `vayume-config repo`
+every 15s for a cheap dirty/clean indicator, and the detail view only
+runs the pricier `vayume-config apps list` (a real Nix evaluation) once
+actually opened, not continuously in the background.
 
 ---
 

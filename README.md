@@ -43,7 +43,10 @@ If this saves you an evening, a star costs nothing. ⭐
 **Desktop** — niri and Hyprland, both always available and swappable at the
 greeter, with matching binds so muscle memory carries over. DMS handles the
 bar, launcher, notifications and lock screen. Themed SDDM greeter and GRUB,
-kitty + zsh with fastfetch.
+kitty + zsh with fastfetch. A "Vayume Settings" control-center widget lets
+you flip `vayume.apps.*` toggles from DMS itself — it edits the real
+`Host.nix` through a small CLI ([docs/core-vayume-config.md](docs/core-vayume-config.md)),
+not a separate database, so the repo stays the one source of truth.
 
 **Dev** — VS Code, Android Studio and Zed, pre-configured. Seven language
 toggles that install the toolchain *and* tell all three editors what to load

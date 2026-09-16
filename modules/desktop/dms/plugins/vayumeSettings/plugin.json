@@ -1,0 +1,11 @@
+{
+    "id": "vayumeSettings",
+    "name": "Vayume Settings",
+    "description": "Toggle Vayume apps and trigger rebuilds from the control center - reads and writes the real Host.nix in your Vayume repo",
+    "version": "1.0.0",
+    "author": "vayume",
+    "icon": "settings_suggest",
+    "type": "widget",
+    "component": "./VayumeSettingsWidget.qml",
+    "requires_dms": ">=1.2.0"
+}
