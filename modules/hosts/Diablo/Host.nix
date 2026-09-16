@@ -33,6 +33,7 @@ in
       self.nixosModules.DmsPluginDankAsusControlCenter
       self.nixosModules.DmsPluginCavaVisualizer
       self.nixosModules.DmsPluginTor
+      self.nixosModules.DmsPluginVayumeSettings
       self.nixosModules.Fonts
       self.nixosModules.Portals
       self.nixosModules.SddmTheme
