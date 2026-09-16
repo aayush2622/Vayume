@@ -7,20 +7,24 @@ Who's allowed to log in, and what they're allowed to turn on - the framework the
 ## `modules/core/Users.nix`
 
 The shared framework behind every `vayume.users.<name>` entry - what
-fields exist, what they do, and (new) where the whole list actually
-comes from now.
+fields exist, what they do, and where the whole list actually comes
+from now: the same one file as `vayume.apps`.
 
-**`vayume.users` defaults to `{ }` here and gets its real value from
-`_user.nix`**, a plain NixOS module living next to `Host.nix` (see
-[_hardware.nix](core-hardware.md) above for the
-gitignored/required/`path:` mechanics, shared with `_user.nix`). This used
-to live directly in `Host.nix` - real usernames, group memberships, a
-password hash, all committed to git. That's fine for a private repo,
-genuinely not fine for a public one, so it moved out to its own file
-that's never committed:
+**`vayume.users` and `vayume.apps` both default to `{ }` here and get
+their real values from `_config.nix`** - a plain NixOS module living
+next to `Host.nix` (see [_hardware.nix](core-hardware.md) above for the
+gitignored/required/`path:` mechanics, shared with `_config.nix`). Both
+used to live somewhere else entirely - `vayume.users` directly in
+`Host.nix` (real usernames, group memberships, a password hash, all
+committed to git - fine for a private repo, genuinely not for a public
+one), `vayume.apps` in `Host.nix` too, just tracked (no secrets in it,
+but still a second file a person had to find and edit for completely
+ordinary configuration). One file now covers both - the actual answer
+to "where do I configure Vayume for myself":
 
 ```nix
-# modules/hosts/Diablo/_user.nix
+# modules/hosts/Diablo/_config.nix
+{ pkgs, ... }:
 {
   vayume.users = {
     ash = {
@@ -38,6 +42,12 @@ that's never committed:
       extraGroups = [ "networkmanager" "video" "input" ];
     };
   };
+
+  vayume.apps = {
+    Vscode.enable = true;
+    Gaming.enable = false;
+    # ...one line per module under modules/apps/
+  };
 }
 ```
 
@@ -46,8 +56,8 @@ that's never committed:
   a single passwordless account if it didn't exist, so a fresh public
   clone could still evaluate with zero setup. That's gone: the build now
   hard-fails with a clear message (see above) instead of silently
-  standing up an account nobody asked for - copy `_user.nix.example` and
-  pick a real username before the first rebuild, every time.
+  standing up an account nobody asked for - copy `_config.nix.example`
+  and pick a real username before the first rebuild, every time.
 - **Read at plain Nix module-evaluation time**, not through
   home-manager activation - it has to be, since NixOS needs to know who
   the users even are before any of their home directories, let alone
@@ -55,14 +65,20 @@ that's never committed:
 - **`secrets`, per user, optional**: passed to every app module as
   `vayumeSecrets` (see below) - missing keys, or the whole block, fall
   back to `"REPLACE_ME"` placeholders instead of erroring.
-- **Plain Nix values, no encryption layer.** Fine, since `_user.nix` is
-  gitignored and only ever readable by whoever already has read access
-  to this checkout - see below for the one real trade-off this makes.
+- **Plain Nix values, no encryption layer.** Fine, since `_config.nix`
+  is gitignored and only ever readable by whoever already has read
+  access to this checkout - see below for the one real trade-off this
+  makes.
+- **DMS's "Vayume Settings" plugin edits the `vayume.apps` half of this
+  same file** through `vayume-config` - see
+  [core-vayume-config.md](core-vayume-config.md). It never touches
+  `vayume.users` (nothing in the DMS UI exposes accounts/secrets); a
+  person still edits those fields directly.
 
 Field meanings:
 
 - `hashedPassword`: generate with `mkpasswd -m sha-512`. Leave it unset
-  (`null`) in `_user.nix` and you get `changeme` as a fallback initial
+  (`null`) in `_config.nix` and you get `changeme` as a fallback initial
   password instead.
 - `extraGroups`: `"wheel"` for sudo, `"adbusers"` for Android debugging.
 - The list of valid app names auto-discovers from every `.nix` file under
@@ -87,7 +103,7 @@ Field meanings:
   simply taking a while.
 
 **Also where secrets reach the apps that need them - no runtime file any
-more, straight from `_user.nix`.** `home-manager.users`'s per-user module
+more, straight from `_config.nix`.** `home-manager.users`'s per-user module
 sets `_module.args.vayumeSecrets = lib.recursiveUpdate defaultUserSecrets
 u.secrets;` - a plain module argument, the exact same mechanism
 `vayumeTheme`/`vayumeApps` already use via `extraSpecialArgs`, just
@@ -98,7 +114,7 @@ lookup, no activation-ordering dance.
 
 - **`lib.recursiveUpdate defaultUserSecrets u.secrets`, not a plain
   fallback swap.** Merges key-by-key, so setting only
-  `secrets.WAKATIME_API_KEY` in `_user.nix` still leaves `RBW_EMAIL`
+  `secrets.WAKATIME_API_KEY` in `_config.nix` still leaves `RBW_EMAIL`
   resolving to its `"REPLACE_ME"` default instead of erroring on a
   missing attribute - every consumer can access `vayumeSecrets.<key>`
   unconditionally, always. This repo previously ran these through
@@ -106,10 +122,10 @@ lookup, no activation-ordering dance.
   then through a hand-rolled JSON file seeded once and edited by hand;
   both added a moving part (a keypair, or a second file to keep in
   sync) for values that aren't actually that sensitive (a time-tracking
-  key, an email address) and already live in a file (`_user.nix`)
+  key, an email address) and already live in a file (`_config.nix`)
   that's gitignored and required on its own.
   ```nix
-  # in _user.nix, per user
+  # in _config.nix, per user
   secrets = {
     WAKATIME_API_KEY = "...";
     RBW_EMAIL = "...";
@@ -142,7 +158,7 @@ lookup, no activation-ordering dance.
   `"REPLACE_ME"` as an email. Checked directly: with no `secrets` block
   set at all, the built activation script has zero `WAKATIME_KEY=`/rbw-
   config lines, and VS Code's extensions manifest has no `wakatime`
-  entry. Fill the value in in `_user.nix` and rebuild to turn it back
+  entry. Fill the value in in `_config.nix` and rebuild to turn it back
   on - takes effect immediately, no first-run-only seeding step to work
   around.
 

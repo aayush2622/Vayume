@@ -11,7 +11,7 @@ The one file in this repo that isn't a proper flake-parts module - no
 underscore keeps import-tree from trying anyway; it only ever gets pulled
 in through `Host.nix`'s own `./_hardware.nix` import.
 
-**Gitignored and required**, along with its sibling `_user.nix` (usernames,
+**Gitignored and required**, along with its sibling `_config.nix` (usernames,
 groups, password hash, secrets - full shape under
 [core/Users.nix](core-users.md) below, mechanics shared with this
 file explained here). Both hold exactly the two things that made this repo
@@ -33,7 +33,7 @@ real: deleting `_hardware.nix` and running `nix flake check` prints the
 > covering it, "missing" or not. `path:` copies the real directory as-is
 > instead, so both files are visible once they actually exist on disk.
 > Confirmed directly: `nix eval .#nixosConfigurations.Diablo...` hit the
-> `requireLocalFile` throw with real `_hardware.nix`/`_user.nix` sitting
+> `requireLocalFile` throw with real `_hardware.nix`/`_config.nix` sitting
 > right there on disk; `nix eval path:$PWD#nixosConfigurations.Diablo...`
 > evaluated clean. The rebuild button
 > ([Dms.nix](desktop-dms.md)'s `vayumeRebuildScript`)

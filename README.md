@@ -45,7 +45,7 @@ greeter, with matching binds so muscle memory carries over. DMS handles the
 bar, launcher, notifications and lock screen. Themed SDDM greeter and GRUB,
 kitty + zsh with fastfetch. A "Vayume Settings" control-center widget lets
 you flip `vayume.apps.*` toggles from DMS itself — it edits the real
-`Host.nix` through a small CLI ([docs/core-vayume-config.md](docs/core-vayume-config.md)),
+`_config.nix` through a small CLI ([docs/core-vayume-config.md](docs/core-vayume-config.md)),
 not a separate database, so the repo stays the one source of truth.
 
 **Dev** — VS Code, Android Studio and Zed, pre-configured. Seven language
@@ -66,7 +66,7 @@ widget, Waydroid for Android apps (signature spoofing and microG included),
 native AppImage support, and an isolated Distrobox escape hatch for the
 Ubuntu-only tail.
 
-Everything under `modules/apps/` is one boolean in `Host.nix`:
+Everything under `modules/apps/` is one boolean in `_config.nix`:
 
 ```nix
 vayume.apps = {
@@ -80,7 +80,7 @@ vayume.apps = {
 
 ## Secrets
 
-API keys live in `_user.nix` (gitignored), under
+API keys live in `_config.nix` (gitignored), under
 `vayume.users.<name>.secrets` — `<name>` is whichever key you picked for
 yourself in `vayume.users` above it. `ash` is just this repo author's
 username, not a reserved word:
@@ -138,19 +138,20 @@ Full lists: [Niri.nix](modules/desktop/Niri.nix) ·
 flake.nix          inputs + import-tree ./modules
 modules/
   core/               flake-parts wiring, the shared user/app framework
-  hosts/<name>/       Host.nix + _hardware.nix + _user.nix
+  hosts/<name>/       Host.nix (machine facts) + _hardware.nix + _config.nix (you)
   desktop/            niri, Hyprland, DMS, fonts/portals, GTK/Qt, matugen
   system/             docker/podman, zram, GRUB theme
-  apps/               opt-in per-user modules, toggled in Host.nix
+  apps/               opt-in per-user modules, toggled in _config.nix
     development/        editors, languages, dev-tools, cc-switch
     gaming/             launchers, proton, performance tweaks
     utils/              terminal, browser, everything else
   assets/wallpapers/  default wallpaper set
 ```
 
-**Add a person**: an entry in `_user.nix`. **Add an app**: a folder under
+**Add a person**: an entry in `_config.nix`. **Add an app**: a folder under
 `modules/apps/*/` setting `flake.homeModules.apps.<Name>` — picked up
-automatically. **Add a host**: copy `modules/hosts/Diablo/`.
+automatically, then flip it on in `_config.nix`. **Add a host**: copy
+`modules/hosts/Diablo/`.
 
 ---
 

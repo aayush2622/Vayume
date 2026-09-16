@@ -2,7 +2,7 @@
 
 ---
 
-Every machine starts here. `Host.nix` is the one file that says what this particular computer is - its name, its apps, its bootloader - and everything else in this repo exists to serve what gets decided in it.
+Every machine starts here. `Host.nix` is the one file that says what this particular computer is - its name, its bootloader, its hardware-adjacent services - and everything else in this repo exists to serve what gets decided in it. What the *person using* that machine wants (which apps, their account, their theme) lives one file over, in [`_config.nix`](core-users.md) - see that page for the one-file user story.
 
 ## `modules/hosts/<name>/Host.nix`
 
@@ -144,34 +144,21 @@ gets pointed at it directly via `environment.sessionVariables` instead.
 Verified live: `gsettings get org.gnome.desktop.interface gtk-theme`
 failed before this, returned the real `adw-gtk3` value after.
 
-**Apps** (`vayume.apps`) is the one setting most new machines actually
-need to touch - one real, individually-named boolean option per module
-under `modules/apps/`, e.g. `vayume.apps.Vscode.enable = true;`. Each
-name comes straight from `builtins.attrNames self.homeModules.apps`
-([core/Users.nix](core-users.md)), so it's discoverable by typing
-`vayume.apps.` in an editor with Nix LSP support instead of needing to
-already know the exact string a plain `listOf` would've required - and a
-typo'd app name is a real evaluation error (unknown option) rather than
-a silently-ignored list entry. `false` entries are written explicitly
-rather than deleted, so it's visible at a glance which apps exist on
-this machine but are off, not just missing. Internally,
-`config.vayume.apps` is filtered down to the flat list of enabled names
-(`enabledAppNames`) before anything downstream - the home-manager
-imports, `vayumeApps` passed to app modules, `PluginUpdateCheck.nix`'s
-pin filtering - ever sees it; those consumers are unaware the option
-itself changed shape.
+**Apps (`vayume.apps`) and users (`vayume.users`) are not set here at
+all.** Both used to be: `vayume.apps` as a plain block right in this
+file, `vayume.users` before that too. Two problems with that - a real
+username, group memberships, and a password hash sitting in git history
+the moment the repo goes public, and a second, separate place (this
+file) a person had to know about just to turn an app on or off, on top
+of `_user.nix` for their own account. Both now come from one file,
+[`_config.nix`](core-users.md) - a gitignored sibling of `_hardware.nix`,
+never committed, required (the build refuses to evaluate without it).
+Full story, and the exact schema, in [core/Users.nix](core-users.md)
+below.
 
 **`programs.steam.enable`** lives here, not in
 [Gaming.nix](apps-gaming.md) - see that page
 for why.
-
-**Users** (`vayume.users`) - **not set here any more.** It used to be a
-plain block in this file, but that meant real usernames, group
-memberships, and a password hash sat in git history the moment the repo
-went public. It's set from `_user.nix` instead now - a gitignored sibling
-of `_hardware.nix`, never committed, required (the build refuses to
-evaluate without it). Full story in [core/Users.nix](core-users.md)
-below.
 
 ---
 

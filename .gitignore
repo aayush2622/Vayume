@@ -17,7 +17,7 @@ secrets/
 # hashes, disk UUIDs, avatar images, whatever else ends up in there. Deny
 # everything, then explicitly allow just the files actually meant to be
 # tracked, so a new personal file dropped in here doesn't need a new
-# .gitignore line to stay untracked. _hardware.nix/_user.nix (required, see
+# .gitignore line to stay untracked. _hardware.nix/_config.nix (required, see
 # modules/hosts/Diablo/Host.nix) fall out of this automatically - copy the
 # matching *.nix.example next to them and fill it in.
 modules/hosts/*/*
