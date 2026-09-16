@@ -362,19 +362,13 @@
             ];
           }) (builtins.attrNames config.vayume.users);
 
+          # `vayume-tor` (the CLI the widget shells out to by bare name,
+          # relying on PATH) lives here since it's a networking concern -
+          # the widget's own DMS plugin registration is
+          # modules/desktop/dms/plugins/Tor.nix now, alongside the rest of
+          # DMS's plugins.
           home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {
             home.packages = [ torToggle ];
-
-            # Install through the DMS plugin option, not a bare xdg.configFile
-            # drop: DMS only loads a plugin whose id has `enabled: true` in
-            # plugin_settings.json, and that file is generated solely from
-            # `programs.dank-material-shell.plugins`. Dropping the files alone
-            # leaves the widget on disk but never loaded, so `plugin_tor`
-            # never appears in the control center.
-            programs.dank-material-shell.plugins.tor = {
-              enable = true;
-              src = ./torWidget;
-            };
           });
         })
       ];
