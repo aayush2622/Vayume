@@ -53,21 +53,52 @@
         </channel>
       '';
 
-      # Thunar's sidebar auto-lists the XDG special dirs (created by
-      # Baseline.nix's xdg.userDirs) under "Places" once they exist on
-      # disk - but it reads the classic ~/.gtk-bookmarks for its
-      # user-pinnable "Bookmarks" section, and starts with that file
-      # empty. Seeding it means Downloads/Documents/etc. show up
-      # immediately rather than depending on activation-order timing
-      # between folder creation and the sidebar's own directory scan.
-      gtkBookmarks = pkgs.writeText "gtk-bookmarks" (lib.concatStringsSep "\n" [
-        "file://${config.xdg.userDirs.desktop}"
-        "file://${config.xdg.userDirs.documents}"
-        "file://${config.xdg.userDirs.download}"
-        "file://${config.xdg.userDirs.music}"
-        "file://${config.xdg.userDirs.pictures}"
-        "file://${config.xdg.userDirs.videos}"
-      ]);
+      # A dedicated script instead of an inline `bash -c '...' -- %f` -
+      # Thunar substitutes %f with a single shell-quoted argument and
+      # parses the whole command line itself before spawning it, so
+      # handing it a plain executable + one argument avoids stacking our
+      # own quoting on top of Thunar's.
+      copyPathScript = pkgs.writeShellScript "thunar-copy-path" ''
+        exec ${pkgs.wl-clipboard}/bin/wl-copy -- "$1"
+      '';
+
+      # Thunar's custom actions (right-click menu items beyond the
+      # built-ins) live in their own plain XML file, not xfconf - Thunar
+      # just re-reads it, no xfconfd restart needed.
+      ucaXml = pkgs.writeText "uca.xml" ''
+        <?xml version="1.0" encoding="UTF-8"?>
+        <actions>
+          <action>
+            <icon>edit-copy</icon>
+            <name>Copy Path</name>
+            <unique-id>1700000000000001-1</unique-id>
+            <command>${copyPathScript} %f</command>
+            <description>Copy the selected file's path to the clipboard</description>
+            <patterns>*</patterns>
+            <directories/>
+            <audio-files/>
+            <image-files/>
+            <other-files/>
+            <text-files/>
+            <video-files/>
+          </action>
+        </actions>
+      '';
+
+      # Thunar's sidebar "Places" bookmarks come from GTK3's own bookmark
+      # file, ~/.config/gtk-3.0/bookmarks - NOT the legacy ~/.gtk-bookmarks
+      # (still readable by some apps, but Thunar/GTK3 don't write or read
+      # it anymore). Listed here so Downloads/Documents/etc. show up
+      # without the user having to drag each one into the sidebar by hand.
+      # Desktop is deliberately left out - GTK's places sidebar already
+      # pins it automatically, and adding it here just duplicates the row.
+      standardBookmarkDirs = [
+        config.xdg.userDirs.documents
+        config.xdg.userDirs.download
+        config.xdg.userDirs.music
+        config.xdg.userDirs.pictures
+        config.xdg.userDirs.videos
+      ];
 
       # GTK's own file-chooser dialog is dconf-backed and separate from
       # Thunar's preferences - this is what every GTK open/save dialog
@@ -94,6 +125,9 @@
         libgsf
         webp-pixbuf-loader
         xfconf
+
+        # For the "Copy Path" custom action below.
+        wl-clipboard
       ];
 
       dconf.settings = {
@@ -194,10 +228,30 @@
           run chmod u+w "$dest"
         fi
 
-        bookmarks="$HOME/.gtk-bookmarks"
-        if [ ! -e "$bookmarks" ]; then
-          run cp "${gtkBookmarks}" "$bookmarks"
-          run chmod u+w "$bookmarks"
+        bookmarks="$HOME/.config/gtk-3.0/bookmarks"
+        run mkdir -p "$(dirname "$bookmarks")"
+        run touch "$bookmarks"
+
+        # One-time cleanup: an earlier version of this seed added a
+        # bare, unlabelled Desktop bookmark - remove exactly that line
+        # (never a user's own labelled one) since GTK already pins
+        # Desktop in Places on its own.
+        ${pkgs.gnused}/bin/sed -i \
+          '\|^file://${config.xdg.userDirs.desktop}$|d' \
+          "$bookmarks"
+
+        for dir in ${lib.concatStringsSep " " (map lib.escapeShellArg standardBookmarkDirs)}; do
+          uri="file://$dir"
+          if ! ${pkgs.gnugrep}/bin/grep -qF "$uri" "$bookmarks"; then
+            echo "$uri" >> "$bookmarks"
+          fi
+        done
+
+        ucaDest="$HOME/.config/Thunar/uca.xml"
+        if ! ${pkgs.diffutils}/bin/cmp -s "${ucaXml}" "$ucaDest"; then
+          run mkdir -p "$(dirname "$ucaDest")"
+          run cp -f "${ucaXml}" "$ucaDest"
+          run chmod u+w "$ucaDest"
         fi
       '';
     };
