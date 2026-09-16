@@ -118,28 +118,6 @@
         "url": "https://github.com/vinceliuice/Elegant-grub2-themes"
       }
     },
-    "fastpotify": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "rust-overlay": "rust-overlay"
-      },
-      "locked": {
-        "lastModified": 1788649190,
-        "narHash": "sha256-1GfrCmTw2ClhqpXZ/2NoVNAiBC6DajgH85qxGm5bLsc=",
-        "owner": "dim-ghub",
-        "repo": "fastpotify-theming",
-        "rev": "891bb245818c02ee63b41c44ac099a56f740eef3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "dim-ghub",
-        "ref": "astra-redesign",
-        "repo": "fastpotify-theming",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -338,7 +316,6 @@
         "dms": "dms",
         "dms-plugin-registry": "dms-plugin-registry",
         "elegant-grub2-themes": "elegant-grub2-themes",
-        "fastpotify": "fastpotify",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "import-tree": "import-tree",
@@ -346,6 +323,7 @@
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixpkgs": "nixpkgs",
         "spicetify-nix": "spicetify-nix",
+        "spotifast": "spotifast",
         "wrapper-modules": "wrapper-modules",
         "zen-browser": "zen-browser",
         "zsh-256color": "zsh-256color",
@@ -357,7 +335,7 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
-          "fastpotify",
+          "spotifast",
           "nixpkgs"
         ]
       },
@@ -393,6 +371,28 @@
       "original": {
         "owner": "Gerg-L",
         "repo": "spicetify-nix",
+        "type": "github"
+      }
+    },
+    "spotifast": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "lastModified": 1789495311,
+        "narHash": "sha256-BLOJ7tPsO1ILjqKagkzB0iSLQ3GGqFEcaMJIyjElN7I=",
+        "ref": "refs/heads/main",
+        "rev": "96509d18e7d2309f5c6bb336f36fa6872d55ea16",
+        "revCount": 554,
+        "type": "git",
+        "url": "https://github.com/crmne/spotifast.git"
+      },
+      "original": {
+        "owner": "crmne",
+        "repo": "spotifast",
         "type": "github"
       }
     },

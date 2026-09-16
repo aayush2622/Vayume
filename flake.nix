@@ -18,8 +18,8 @@
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
     spicetify-nix.inputs.nixpkgs.follows = "nixpkgs";
 
-    fastpotify.url = "github:dim-ghub/fastpotify-theming/astra-redesign";
-    fastpotify.inputs.nixpkgs.follows = "nixpkgs";
+    spotifast.url = "github:crmne/spotifast";
+    spotifast.inputs.nixpkgs.follows = "nixpkgs";
 
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
     nix-vscode-extensions.inputs.nixpkgs.follows = "nixpkgs";
