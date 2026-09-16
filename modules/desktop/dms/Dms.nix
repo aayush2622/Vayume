@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ self, inputs, ... }:
 
 {
   flake.nixosModules.Dms =
@@ -10,6 +10,7 @@
     }:
     let
       theme = config.vayume.theme;
+      repoDiscovery = self.vayumeLib.repoDiscovery;
 
       # The dms-shell package itself is patched too - see ShellPatch.nix,
       # which sets programs.dank-material-shell.package directly rather
@@ -39,11 +40,14 @@
           *) echo "$HOME" ;;
         esac)"
         flakeDir=""
-        for d in "$homeDir/vayume" "$homeDir/dotfiles" "$homeDir/.dotfiles" /etc/nixos; do
+        for d in ${lib.concatStringsSep " " (
+          map (d: ''"$homeDir/${d}"'') repoDiscovery.relativeDirs
+          ++ map (d: ''"${d}"'') repoDiscovery.absoluteDirs
+        )}; do
           [ -f "$d/flake.nix" ] && flakeDir="$d" && break
         done
         if [ -z "$flakeDir" ]; then
-          echo "vayume flake not found (checked $homeDir/vayume, $homeDir/dotfiles, $homeDir/.dotfiles, /etc/nixos) - edit rebuildCommand in dms.nix if it lives elsewhere"
+          echo "vayume flake not found (checked $homeDir/{${lib.concatStringsSep "," repoDiscovery.relativeDirs}}, ${lib.concatStringsSep ", " repoDiscovery.absoluteDirs}) - edit rebuildCommand in dms.nix if it lives elsewhere"
           exit 1
         fi
         ${pkgs.git}/bin/git config --global --add safe.directory "$flakeDir"
@@ -51,6 +55,16 @@
       '';
 
       vayumeGcScript = pkgs.writeShellScript "vayume-gc" "exec nix-collect-garbage -d";
+
+      vayumeRebuildCommand = pkgs.writeShellApplication {
+        name = "vayume-rebuild";
+        text = ''exec sudo -n ${vayumeRebuildScript} "$@"'';
+      };
+
+      vayumeGcCommand = pkgs.writeShellApplication {
+        name = "vayume-gc";
+        text = ''exec sudo -n ${vayumeGcScript} "$@"'';
+      };
     in
     {
       services.accounts-daemon.enable = true;
@@ -93,6 +107,8 @@
           home.packages = [
             materialOSIcons
             pkgs.swayidle
+            vayumeRebuildCommand
+            vayumeGcCommand
           ];
           home.sessionVariables.QS_ICON_THEME = "MaterialOS";
 
