@@ -30,33 +30,49 @@
         "libpango-1.0-0"
         "libcairo2"
         "libx11-6"
+        "libx11-xcb1"
         "libxcomposite1"
         "libxdamage1"
         "libxext6"
         "libxfixes3"
         "libxrandr2"
+        "libxi6"
+        "libsm6"
+        "libice6"
+        "libxcb1"
+        "libxcb-cursor0"
+        "libxcb-xkb1"
+        "libxkbcommon0"
+        "libxkbcommon-x11-0"
         "libgbm1"
         "libexpat1"
-        "libxkbcommon0"
         "libudev1"
         "libasound2t64"
+        "libpulse0"
         "libatspi2.0-0t64"
-        "libxcb1"
-
-        # gsettings + the schemas lockdown-style apps write to.
-        # Without these the app retries failing gsettings calls on
-        # startup and never finishes painting its window.
+        "libcups2t64"
         "libglib2.0-bin"
         "gsettings-desktop-schemas"
         "dconf-gsettings-backend"
         "mutter-common"
         "gnome-shell-common"
         "gnome-settings-daemon-common"
-
-        # Chromium expects a system bus and xdg-settings to exist.
         "dbus"
         "dbus-x11"
         "xdg-utils"
+      ];
+
+      # DISPLAY/WAYLAND_DISPLAY are the host's own (distrobox mounts both
+      # sockets in by default, confirmed live: same X server and
+      # compositor as everything else, no bridging needed), so a GUI
+      # app's native clipboard already works - what doesn't is anything
+      # that shells out to sync it (a terminal copy/paste, a script
+      # calling wl-copy/xclip directly), since neither tool exists in a
+      # bare Ubuntu image.
+      clipboardDeps = [
+        "wl-clipboard"
+        "xclip"
+        "xsel"
       ];
 
       # count = 1 (the default) is a single, unnumbered box - boxName
@@ -75,23 +91,25 @@
       # vayume-box1 now, but it's still the exact same container and
       # home directory underneath, zero migration needed. Only box2..N
       # get a numbered name and an auto-derived home.
-      boxSpecs = map
-        (i: {
-          boxName = if i == 1 then cfg.name else "${cfg.name}${toString i}";
-          homeDir =
-            if i == 1 then
-              cfg.homeDir
-            else
-              "${config.home.homeDirectory}/.local/share/vayume-boxes/${cfg.name}${toString i}";
-          cmdSuffix = if cfg.count <= 1 then "" else toString i;
-        })
-        (lib.range 1 cfg.count);
+      boxSpecs = map (i: {
+        boxName = if i == 1 then cfg.name else "${cfg.name}${toString i}";
+        homeDir =
+          if i == 1 then
+            cfg.homeDir
+          else
+            "${config.home.homeDirectory}/.local/share/vayume-boxes/${cfg.name}${toString i}";
+        cmdSuffix = if cfg.count <= 1 then "" else toString i;
+      }) (lib.range 1 cfg.count);
 
       # Everything below used to be built once against a single
       # implicit "the box" - now a function of one boxSpec from above,
       # mapped over all of them. Returns the list of per-box commands.
       mkBox =
-        { boxName, homeDir, cmdSuffix }:
+        {
+          boxName,
+          homeDir,
+          cmdSuffix,
+        }:
         let
           # This is the host directory that becomes $HOME inside the box.
           boxHome = if cfg.isolateHome then homeDir else config.home.homeDirectory;
@@ -135,6 +153,24 @@
               missing=""
 
               for p in ${lib.concatStringsSep " " appImageDeps}; do
+                dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"
+              done
+
+              if [ -n "$missing" ]; then
+                sudo apt-get update
+                sudo apt-get install -y $missing
+              fi
+            ' || true
+          '';
+
+          # Same idempotent shape as ensureAppImageDeps, but run from
+          # ensureBox itself (below) rather than only the AppImage paths -
+          # clipboard sync matters for every box, not just AppImages.
+          ensureClipboardDeps = ''
+            ${boxEnter} sh -c '
+              missing=""
+
+              for p in ${lib.concatStringsSep " " clipboardDeps}; do
                 dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"
               done
 
@@ -192,6 +228,7 @@
 
             ${ensureBinfmt}
             ${ensureDbus}
+            ${ensureClipboardDeps}
           '';
 
           # Every box's exported launchers/icons land in the SAME host
@@ -247,58 +284,58 @@
           # shell before this script runs, so "~/x.AppImage" points at the
           # host's home, not the box's.
           boxRun = pkgs.writeShellScriptBin "vayume-box${cmdSuffix}-run" ''
-              set -eu
+            set -eu
 
-              ${ensureBox}
+            ${ensureBox}
 
-              if [ "$#" -eq 0 ]; then
-                echo "usage: vayume-box${cmdSuffix}-run <command> [args...]" >&2
-                exit 2
-              fi
+            if [ "$#" -eq 0 ]; then
+              echo "usage: vayume-box${cmdSuffix}-run <command> [args...]" >&2
+              exit 2
+            fi
 
-              target=$1
-              shift
+            target=$1
+            shift
 
-              case "$target" in
-                "~/"*)
-                  # Only reachable when quoted; the host shell expands a
-                  # bare ~ before we ever see it.
-                  target=${lib.escapeShellArg boxHome}/''${target#\~/}
-                  ;;
+            case "$target" in
+              "~/"*)
+                # Only reachable when quoted; the host shell expands a
+                # bare ~ before we ever see it.
+                target=${lib.escapeShellArg boxHome}/''${target#\~/}
+                ;;
 
-                */*)
-                  # An explicit path: use exactly what was given.
-                  ;;
+              */*)
+                # An explicit path: use exactly what was given.
+                ;;
 
-                *)
-                  # A bare name resolves against the box's Applications
-                  # dir, so "vayume-box${cmdSuffix}-run foo.AppImage" just works.
-                  # Anything else (ls, apt, ...) falls through untouched.
-                  if [ -e ${lib.escapeShellArg "${boxHome}/Applications"}/"$target" ]; then
-                    target=${lib.escapeShellArg "${boxHome}/Applications"}/"$target"
-                  fi
-                  ;;
-              esac
+              *)
+                # A bare name resolves against the box's Applications
+                # dir, so "vayume-box${cmdSuffix}-run foo.AppImage" just works.
+                # Anything else (ls, apt, ...) falls through untouched.
+                if [ -e ${lib.escapeShellArg "${boxHome}/Applications"}/"$target" ]; then
+                  target=${lib.escapeShellArg "${boxHome}/Applications"}/"$target"
+                fi
+                ;;
+            esac
 
-              case "$target" in
-                *.AppImage|*.appimage)
-                  # A box only gets these on the first vayume-box${cmdSuffix}-install
-                  # of an AppImage - a fresh box (or one dropped in some
-                  # other way, e.g. copied from another box's
-                  # Applications dir) has never run that and fails with
-                  # "No suitable fusermount binary found". Idempotent
-                  # and cheap once already installed, so just always
-                  # check here too rather than depending on install
-                  # having been the very first thing run against it.
-                  ${ensureAppImageDeps}
-                  ;;
-              esac
+            case "$target" in
+              *.AppImage|*.appimage)
+                # A box only gets these on the first vayume-box${cmdSuffix}-install
+                # of an AppImage - a fresh box (or one dropped in some
+                # other way, e.g. copied from another box's
+                # Applications dir) has never run that and fails with
+                # "No suitable fusermount binary found". Idempotent
+                # and cheap once already installed, so just always
+                # check here too rather than depending on install
+                # having been the very first thing run against it.
+                ${ensureAppImageDeps}
+                ;;
+            esac
 
-              # Run the resolved command directly rather than via a shell
-              # wrapper, so an AppImage's parent process is its own
-              # runtime instead of sh. The rewriting above happens on the
-              # HOST, which keeps that parent chain intact.
-              exec ${boxEnter} "$target" "$@"
+            # Run the resolved command directly rather than via a shell
+            # wrapper, so an AppImage's parent process is its own
+            # runtime instead of sh. The rewriting above happens on the
+            # HOST, which keeps that parent chain intact.
+            exec ${boxEnter} "$target" "$@"
           '';
 
           boxInstall = pkgs.writeShellScriptBin "vayume-box${cmdSuffix}-install" ''
@@ -662,6 +699,7 @@
 
       config.home.packages = [
         pkgs.distrobox
-      ] ++ boxPackages;
+      ]
+      ++ boxPackages;
     };
 }
