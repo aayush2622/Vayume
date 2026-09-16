@@ -13,26 +13,30 @@
 
     discord = builtins.readFile ../apps/utils/vesktop/vendor/discord.css.template;
 
-    fastpotify = ''
+    # Spotifast's custom-theme format (docs/_reference/settings-and-files.md
+    # in that repo, "Custom themes") - a flat "colors" map, not a nested
+    # Material scheme like the old fastpotify-theming fork used, so every
+    # key here is chosen for its closest Material tonal role rather than
+    # translated one-to-one from the old template.
+    spotifast = ''
       {
-        "mode": "{{mode}}",
-        "colours": {
-          "background": "{{colors.background.default.hex}}",
-          "surfaceContainerLowest": "{{colors.surface_container_lowest.default.hex}}",
-          "surfaceContainerLow": "{{colors.surface_container_low.default.hex}}",
-          "surfaceContainer": "{{colors.surface_container.default.hex}}",
-          "surfaceContainerHigh": "{{colors.surface_container_high.default.hex}}",
-          "surfaceContainerHighest": "{{colors.surface_container_highest.default.hex}}",
-          "onSurface": "{{colors.on_surface.default.hex}}",
-          "onSurfaceVariant": "{{colors.on_surface_variant.default.hex}}",
+        "base": "{{mode}}",
+        "colors": {
+          "window": "{{colors.background.default.hex}}",
+          "panel": "{{colors.surface_container_low.default.hex}}",
+          "surface": "{{colors.surface_container.default.hex}}",
+          "surface_hover": "{{colors.surface_container_high.default.hex}}",
+          "surface_active": "{{colors.surface_container_highest.default.hex}}",
           "outline": "{{colors.outline.default.hex}}",
-          "outlineVariant": "{{colors.outline_variant.default.hex}}",
-          "primary": "{{colors.primary.default.hex}}",
-          "primaryFixed": "{{colors.primary_fixed.default.hex}}",
-          "onPrimary": "{{colors.on_primary.default.hex}}",
-          "primaryContainer": "{{colors.primary_container.default.hex}}",
-          "onPrimaryContainer": "{{colors.on_primary_container.default.hex}}",
-          "error": "{{colors.error.default.hex}}",
+          "text": "{{colors.on_surface.default.hex}}",
+          "secondary": "{{colors.on_surface_variant.default.hex}}",
+          "dim": "{{colors.outline_variant.default.hex}}",
+          "accent": "{{colors.primary.default.hex}}",
+          "accent_hover": "{{colors.primary_fixed.default.hex}}",
+          "on_accent": "{{colors.on_primary.default.hex}}",
+          "danger": "{{colors.error.default.hex}}",
+          "warning": "{{colors.tertiary.default.hex}}",
+          "overlay": "{{colors.scrim.default.hex}}",
           "shadow": "{{colors.shadow.default.hex}}"
         }
       }
