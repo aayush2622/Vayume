@@ -20,7 +20,7 @@ would from a terminal.
 
 ```
 vayume-config repo                          # {path, branch, dirty, configFile}
-vayume-config apps list                      # every vayume.apps.* + its state
+vayume-config apps list                      # every vayume.apps.* + state + category
 vayume-config apps set <Name> <true|false> [--if-unmodified-since <epoch>]
 vayume-config validate                       # re-evaluate _config.nix, pass/fail
 ```
@@ -71,6 +71,14 @@ much bigger `Host.nix`, which has several other unrelated
 picked up as false positives once the block had closed. Kept the
 stricter three-state version rather than loosening it back, since
 nothing stops someone adding their own config to `_config.nix` later.
+
+`apps list`'s `category` field (`development`/`gaming`/`utils`) is
+inferred at call time by scanning which `modules/apps/<category>/`
+subtree each app's `.nix` file actually lives under - display-only,
+best-effort (falls back to `utils` for anything it can't place), never
+consulted by `apps set`. It's what lets the DMS plugin group the list
+into Development/Gaming/Applications sections instead of one flat list
+of 23 names.
 
 Toggling an app that's already listed rewrites its one line in place,
 preserving every other line byte-for-byte. Toggling one that was never

@@ -145,7 +145,7 @@
           }
 
           cmd_apps_list() {
-            local available configured
+            local available configured categories cat dir name
             available=$(nix eval --impure --json --expr \
               "builtins.attrNames (builtins.getFlake \"path:$flake_dir\").homeModules.apps")
             configured=$(awk -v mode=list -f ${appsAwk} "$config_file" \
@@ -153,11 +153,23 @@
                   split("\n") | map(select(length > 0) | split(" ")) |
                   map({(.[0]): (.[1] == "true")}) | add // {}
                 ')
-            jq -n --argjson available "$available" --argjson configured "$configured" '
+
+            categories="{}"
+            for cat in development gaming utils; do
+              dir="$flake_dir/modules/apps/$cat"
+              [ -d "$dir" ] || continue
+              while IFS= read -r name; do
+                [ -n "$name" ] || continue
+                categories=$(jq --arg n "$name" --arg c "$cat" '. + {($n): $c}' <<<"$categories")
+              done < <(find "$dir" -name "*.nix" -printf "%f\n" | sed -E 's/\.nix$//')
+            done
+
+            jq -n --argjson available "$available" --argjson configured "$configured" --argjson categories "$categories" '
               $available | map(. as $n | {
                 name: $n,
                 enabled: ($configured[$n] // false),
-                configured: ($configured | has($n))
+                configured: ($configured | has($n)),
+                category: ($categories[$n] // "utils")
               })
             '
           }

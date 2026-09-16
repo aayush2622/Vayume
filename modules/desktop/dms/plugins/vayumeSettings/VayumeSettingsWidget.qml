@@ -62,6 +62,23 @@ PluginComponent {
             property bool rebuildBusy: false
             property string rebuildStatus: ""
 
+            readonly property var categoryOrder: ({ "development": 0, "gaming": 1, "utils": 2 })
+            readonly property var categoryLabels: ({
+                "development": I18n.tr("Development"),
+                "gaming": I18n.tr("Gaming"),
+                "utils": I18n.tr("Applications")
+            })
+            readonly property var sortedApps: {
+                const copy = detailRoot.apps.slice();
+                copy.sort((a, b) => {
+                    const ca = detailRoot.categoryOrder[a.category] ?? 99;
+                    const cb = detailRoot.categoryOrder[b.category] ?? 99;
+                    if (ca !== cb) return ca - cb;
+                    return a.name.localeCompare(b.name);
+                });
+                return copy;
+            }
+
             function refreshApps() {
                 appsLoading = true;
                 appsListProc.running = true;
@@ -137,20 +154,28 @@ PluginComponent {
                     }
                 }
 
-                StyledText {
-                    text: I18n.tr("Applications")
-                    font.pixelSize: Theme.fontSizeMedium
-                    font.weight: Font.Bold
-                    color: Theme.surfaceVariantText
-                }
-
                 ListView {
                     id: appsListView
                     width: parent.width
-                    height: 260
+                    height: 280
                     clip: true
                     spacing: 2
-                    model: detailRoot.apps
+                    model: detailRoot.sortedApps
+
+                    section.property: "category"
+                    section.criteria: ViewSection.FullString
+                    section.delegate: Item {
+                        width: appsListView.width
+                        height: 28
+
+                        StyledText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: detailRoot.categoryLabels[section] ?? section
+                            font.pixelSize: Theme.fontSizeMedium
+                            font.weight: Font.Bold
+                            color: Theme.surfaceVariantText
+                        }
+                    }
 
                     delegate: Item {
                         width: appsListView.width
@@ -241,7 +266,7 @@ PluginComponent {
                     if (exitCode !== 0) {
                         detailRoot.rebuildStatus = I18n.tr("Change failed - reloading current state.");
                     } else {
-                        detailRoot.rebuildStatus = I18n.tr("Saved to Host.nix - rebuild to apply.");
+                        detailRoot.rebuildStatus = I18n.tr("Saved - rebuild to apply.");
                     }
                     detailRoot.refreshApps();
                     repoProc.running = true;
