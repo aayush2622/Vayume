@@ -467,11 +467,40 @@ rationale.
   commands, with any arguments. Not blanket passwordless sudo, just
   enough for the Nix monitor's two buttons to actually work without a
   TTY to type a password into.
-- **The app-launcher icon theme** is a separate icon pack fetched
-  straight from its own repo (not in nixpkgs), scoped to DMS's launcher
-  only via an env var DMS specifically documents for this - it doesn't
-  touch Nautilus or anything else system-wide. Static install is fine
-  here - nothing ever needs to rewrite it at runtime.
+- **The app-launcher icon theme** is a separate icon pack (MaterialOS)
+  fetched straight from its own repo (not in nixpkgs), scoped to DMS's
+  launcher only via an env var DMS specifically documents for this - it
+  doesn't touch Nautilus or anything else system-wide.
+
+  **A `home.activation` step mirrors hicolor into it, because the
+  launcher's real icon-rendering path silently ignores hicolor
+  otherwise.** The launcher grid (`DankLauncherV2`/`ResultItem.qml`)
+  doesn't go through DMS's own `IconThemeService.qml` (a bespoke QML
+  reimplementation of the Inherits-chain walk, which resolves hicolor
+  fine) - it goes through a shared `AppIconRenderer` that calls
+  `Quickshell.iconPath()`, a thin wrapper over Qt's own native
+  `QIconLoader`. Verified directly against the live session with
+  `qs -p` one-off scripts and `--log-rules "*.debug=true"`: even an
+  isolated, otherwise-valid theme literally named "hicolor" - freshly
+  authored, `Hidden=` stripped, containing nothing but one known-good
+  icon - still resolves to nothing through this path, while the exact
+  same file under any other theme name works. So every app whose icon
+  only lives in hicolor (most third-party ones MaterialOS doesn't
+  itself curate - Zen, Vesktop, Lutris, Zed, ...) rendered as a blank
+  letter avatar despite genuinely having a usable icon on disk.
+  `home.activation.materialOSIconFallback` in `Dms.nix` copies
+  MaterialOS's own icons into a user-local `~/.local/share/icons/MaterialOS`
+  first (so its curated icons still win by filename for what it
+  explicitly covers - Spotify, Android Studio, ...), then overlays the
+  real, already-merged `~/.nix-profile/share/icons/hicolor` on top and
+  keeps *its* far more complete `index.theme` (hicolor declares every
+  standard size up to 512px, `@2x` variants, and `scalable/`; MaterialOS's
+  own only goes up to 128px) - a size hicolor ships but MaterialOS's
+  index doesn't declare is a real file sitting in a bucket the theme
+  spec says to ignore. Re-derived fresh on every activation (`rm -rf`
+  first) rather than merged incrementally, since the whole tree is a
+  couple megabytes - cheap enough that "always correct after packages
+  change" beats "slightly faster but can go stale."
 - **`lockBeforeSuspend = true;` and an idle-timeout lock service - the
   system had neither.** Checked DMS's own settings spec directly for
   what's actually available before building anything: `lockBeforeSuspend`
