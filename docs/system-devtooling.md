@@ -8,7 +8,7 @@ Docker and Podman, side by side - infrastructure that doesn't care what desktop 
 
 Named for what it is: system-level stuff for dev workflows, not tied to
 any one app. Used to be called `dev-system.nix`, which read way too much
-like [apps/devTools/DevTools.nix](apps-dev-devtools.md)
+like [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
 - a completely different, per-user file (VS Code/git/gh/lazygit/
 docker-compose) - so it got a better name.
 

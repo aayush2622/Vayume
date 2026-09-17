@@ -14,7 +14,7 @@
         # files alone leaves it on disk but never loaded.
         programs.dank-material-shell.plugins.tor = {
           enable = true;
-          src = ./torWidget;
+          src = ./tor;
         };
       });
     };

@@ -131,7 +131,7 @@ That lives on the privileged side because the socket is root-owned.
 
 ### The widget
 
-`torWidget/` is a small DMS plugin, because nothing in the plugin
+`tor/` is a small DMS plugin, because nothing in the plugin
 registry does Tor - the closest are ProtonVPN, Tailscale and mihomo,
 which are all different things.
 

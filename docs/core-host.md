@@ -153,7 +153,7 @@ file) a person had to know about just to turn an app on or off, on top
 of `_user.nix` for their own account. Both now come from one file,
 [`_config.nix`](core-users.md) - a gitignored sibling of `_hardware.nix`,
 never committed, required (the build refuses to evaluate without it).
-Full story, and the exact schema, in [core/Users.nix](core-users.md)
+Full story, and the exact schema, in [core/VayumeUsers.nix](core-users.md)
 below.
 
 **`programs.steam.enable`** lives here, not in

@@ -4,7 +4,7 @@
 
 Who's allowed to log in, and what they're allowed to turn on - the framework the rest of the repo's per-user config all sits on top of.
 
-## `modules/core/Users.nix`
+## `modules/core/VayumeUsers.nix`
 
 The shared framework behind every `vayume.users.<name>` entry - what
 fields exist, what they do, and where the whole list actually comes
