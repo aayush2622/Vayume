@@ -28,12 +28,21 @@ Rectangle {
             width: parent.width
             spacing: Theme.spacingS
 
-            DankIcon {
+            Rectangle {
+                id: iconChip
                 visible: root.icon.length > 0
-                name: root.icon
-                size: 18
-                color: Theme.primary
+                width: 30
+                height: 30
+                radius: Theme.cornerRadius
+                color: Theme.primaryHoverLight
                 anchors.verticalCenter: parent.verticalCenter
+
+                DankIcon {
+                    anchors.centerIn: parent
+                    name: root.icon
+                    size: 18
+                    color: Theme.primary
+                }
             }
 
             StyledText {
