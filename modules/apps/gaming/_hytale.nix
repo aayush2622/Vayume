@@ -1,20 +1,30 @@
-# Hytale ships only as a proprietary, self-updating launcher - no
-# nixpkgs package, no Steam listing, not Flathub-hosted. JPyke3's
-# hytale-launcher-nix flake (github:JPyke3/hytale-launcher-nix, pinned
-# in flake.nix) already solves this properly: it extracts the official
-# native binary, wraps it in an FHS environment against its
-# webkit2gtk/gtk3 deps, and - unlike a plain Nix store install - lets
-# the launcher's own self-updater write its update into
-# ~/.local/share/Hytale instead of failing against a read-only store.
-# Its CI checks upstream hourly and auto-bumps the pinned hash, so a
-# routine `nix flake update hytale-launcher` is all a version bump
-# needs here.
-{ inputs, pkgs, ... }:
+
+{ inputs, pkgs, lib, gamesDir, ... }:
 {
   home.packages = [ inputs.hytale-launcher.packages.${pkgs.stdenv.hostPlatform.system}.default ];
-
-  # Pick this as the install location when the launcher's first-run
-  # setup asks where to put the game - keeps it next to every other
-  # game under gamesDir instead of the launcher's own default.
   home.file."Games/Hytale/.keep".text = "";
+
+  # The launcher hardcodes ~/.local/share/Hytale (no setting to
+  # redirect it) for its self-updated binary, update-hash file, and by
+  # default the game itself - symlink that into gamesDir instead of
+  # patching the launcher, so everything it ever writes lands under
+  # ~/Games. Idempotent: a real directory from a prior run gets moved
+  # in once, then every later activation just sees the symlink.
+  home.activation.hytaleGamesFolder = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    DATA_DIR="$HOME/.local/share/Hytale"
+    GAMES_HYTALE_DIR=${lib.escapeShellArg "${gamesDir}/Hytale"}
+    run mkdir -p "$GAMES_HYTALE_DIR"
+
+    if [ -L "$DATA_DIR" ]; then
+      : # already redirected
+    elif [ -d "$DATA_DIR" ]; then
+      echo "Moving existing $DATA_DIR into $GAMES_HYTALE_DIR"
+      run ${pkgs.coreutils}/bin/cp -a "$DATA_DIR/." "$GAMES_HYTALE_DIR/"
+      run ${pkgs.coreutils}/bin/rm -rf "$DATA_DIR"
+      run ln -s "$GAMES_HYTALE_DIR" "$DATA_DIR"
+    else
+      run mkdir -p "$(dirname "$DATA_DIR")"
+      run ln -s "$GAMES_HYTALE_DIR" "$DATA_DIR"
+    fi
+  '';
 }

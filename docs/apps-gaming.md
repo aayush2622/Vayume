@@ -46,11 +46,20 @@ launcher's own self-updater write into `~/.local/share/Hytale` instead
 of failing against a read-only Nix store the way a plain derivation
 would. Its CI checks upstream hourly and auto-bumps the pinned hash, so
 picking up a newer launcher here is a routine
-`nix flake update hytale-launcher`, not a hand edit. `Games/Hytale/` is
-pre-created as the folder to pick during the launcher's first-run setup
-so the actual multi-gigabyte game download - which happens at runtime,
-outside Nix entirely - lands next to every other game under `~/Games`
-instead of the launcher's own default location.
+`nix flake update hytale-launcher`, not a hand edit.
+
+**Everything the launcher writes lands under `~/Games` too, not just
+the game itself.** The launcher hardcodes
+`${XDG_DATA_HOME:-~/.local/share}/Hytale` for its self-updated binary,
+update-hash file, and (by default) the game download itself - there's
+no setting to point it elsewhere. `home.activation.hytaleGamesFolder`
+in `_hytale.nix` symlinks that whole directory into
+`${gamesDir}/Hytale` instead of patching the launcher, so everything it
+ever writes lands next to every other game under `~/Games` with zero
+changes to the package. It's idempotent and migration-safe: a real
+directory already there from a prior run gets its contents moved into
+`~/Games/Hytale` once, then every later rebuild just sees the symlink
+and does nothing.
 
 **Steam is enabled in `Host.nix`, not here.** `programs.steam.enable`
 needs system-level stuff (32-bit libs, firewall rules, controller udev
