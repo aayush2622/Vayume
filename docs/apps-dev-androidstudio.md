@@ -117,7 +117,7 @@ machine, pinned as real Nix packages instead of fetched live every time:
   it's the correct place regardless of what this repo does elsewhere.
   An activation script sets just the `api_key` line via `crudini`
   (from `vayumeSecrets.WAKATIME_API_KEY`, see
-  [core/Users.nix](core-users.md)), leaving any other
+  [core/VayumeUsers.nix](core-users.md)), leaving any other
   settings already in that file - proxy config, excluded projects -
   untouched. VS Code's own WakaTime extension reads the exact same
   file, so both editors end up correctly configured from one shared

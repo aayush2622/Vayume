@@ -25,7 +25,7 @@ dive.
 1. [hosts/\<name\>/Host.nix](core-host.md)
 2. [hosts/\<name\>/\_hardware.nix](core-hardware.md)
 3. [hosts/\<name\>/Vm.nix](core-vm.md)
-4. [core/Users.nix](core-users.md)
+4. [core/VayumeUsers.nix](core-users.md)
 5. [core/Theme.nix](core-theme.md)
 6. [core/VayumeConfig.nix](core-vayume-config.md)
 7. [core/DevLanguages.nix](core-devlanguages.md)
@@ -91,12 +91,12 @@ Three option namespaces get filled in across all these files:
 
 | Namespace | Set by | Read by |
 | --- | --- | --- |
-| `flake.nixosModules.*` | `hosts/`, `desktop/`, `system/`, `core/Users.nix` | `Host.nix`'s `modules` list |
-| `flake.homeModules.apps.*` | `modules/apps/**/*.nix` (any depth) | `core/Users.nix`, via `vayume.apps` |
+| `flake.nixosModules.*` | `hosts/`, `desktop/`, `system/`, `core/VayumeUsers.nix` | `Host.nix`'s `modules` list |
+| `flake.homeModules.apps.*` | `modules/apps/**/*.nix` (any depth) | `core/VayumeUsers.nix`, via `vayume.apps` |
 | `flake.devLanguages.*` | `modules/apps/development/languages/*/*.nix` | `Vscode.nix`/`AndroidStudio.nix`, filtered by `vayume.apps` |
 
 None of this cares about file paths, only attribute names - `Host.nix`
-imports `self.nixosModules.dms`, never a path. Move a file wherever you
+imports `self.nixosModules.Dms`, never a path. Move a file wherever you
 want; nothing breaks unless you also rename the attribute.
 
 ## Project structure

@@ -17,7 +17,7 @@ A host is three files under `modules/hosts/<name>/`:
 
 `_config.nix` is the only file a normal user needs to edit for day-to-day
 configuration - see [Turning apps on and off](#turning-apps-on-and-off)
-below and [core/Users.nix](core-users.md) for its full shape. `Host.nix`
+below and [core/VayumeUsers.nix](core-users.md) for its full shape. `Host.nix`
 is implementation: machine identity and system-level services that don't
 change based on who's using the machine or what they want installed.
 
@@ -86,7 +86,7 @@ same file through a small CLI, `vayume-config` (see
 same file; there's only one place this is actually stored.
 
 Full field-by-field shape for users, apps, and secrets:
-[core/Users.nix](core-users.md). What each `Host.nix` option does:
+[core/VayumeUsers.nix](core-users.md). What each `Host.nix` option does:
 [hosts/\<name\>/Host.nix](core-host.md).
 
 ---

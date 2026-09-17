@@ -189,7 +189,7 @@ that may not exist in the file at all yet) and the `cursor_options`/
 
 ### `users set-*`: the one editable surface that's genuinely security-sensitive
 
-`vayume.users` ([core/Users.nix](core-users.md)) is different from
+`vayume.users` ([core/VayumeUsers.nix](core-users.md)) is different from
 `apps`/`theme`: `extraGroups` can grant sudo (`wheel`) and
 `hashedPassword` controls login, so every design choice here is more
 conservative than the rest of this CLI.

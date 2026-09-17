@@ -13,7 +13,7 @@ in through `Host.nix`'s own `./_hardware.nix` import.
 
 **Gitignored and required**, along with its sibling `_config.nix` (usernames,
 groups, password hash, secrets - full shape under
-[core/Users.nix](core-users.md) below, mechanics shared with this
+[core/VayumeUsers.nix](core-users.md) below, mechanics shared with this
 file explained here). Both hold exactly the two things that made this repo
 unsafe to publish before - real disk UUIDs here, a real password hash
 there - so neither is ever committed. `Host.nix` wraps both imports in a
