@@ -166,6 +166,15 @@ fixed six-name array - it silently excluded the six `-Right` variants,
 and would have gone entirely stale the moment `cursorPackage` ever
 changed).
 
+`theme get` resolves the displayed values and both package paths in one
+Nix evaluation, then enumerates those packages with the same helpers the
+setters use. This avoids re-evaluating the host twice without caching
+configuration or weakening write validation. On Diablo, five warm runs
+per version, interleaved old/new, reduced median theme retrieval from
+4.88s to 2.53s and the concurrent five-command settings refresh from
+5.62s to 3.09s. These measure backend completion, not rendered UI latency.
+Setters still resolve their package live on every call.
+
 `iconTheme` stays Nix-only for the same reason, minus a safe per-field
 validation strategy of its own yet - GTK icon themes don't have as
 simple a "real name" signal as a font file's family or an icon theme

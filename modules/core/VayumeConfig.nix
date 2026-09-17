@@ -513,8 +513,12 @@
           # this list either) and `theme set`'s validation.
           cursor_options() {
             local cursorPackage
-            cursorPackage=$(nix eval --impure --raw --expr \
-              "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.cursorPackage")
+            if [ "$#" -gt 0 ]; then
+              cursorPackage=$1
+            else
+              cursorPackage=$(nix eval --impure --raw --expr \
+                "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.cursorPackage")
+            fi
             find "$cursorPackage/share/icons" -maxdepth 1 -mindepth 1 -printf "%f\n" 2>/dev/null | sort
           }
 
@@ -526,20 +530,26 @@
           # font file rather than guessing from the package name.
           font_options() {
             local fontPackage
-            fontPackage=$(nix eval --impure --raw --expr \
-              "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.fontPackage")
+            if [ "$#" -gt 0 ]; then
+              fontPackage=$1
+            else
+              fontPackage=$(nix eval --impure --raw --expr \
+                "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.fontPackage")
+            fi
             find "$fontPackage" \( -iname "*.ttf" -o -iname "*.otf" \) -print0 2>/dev/null \
               | xargs -r -0 -I{} fc-scan --format '%{family[0]}\n' {} 2>/dev/null | sort -u
           }
 
           cmd_theme_get() {
-            local base
+            local base cursorOptions fontOptions
             base=$(nix eval --impure --json --expr \
-              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme; { inherit font fontSize cursorTheme iconTheme; }")
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme; { inherit font fontSize cursorTheme iconTheme; cursorPath = builtins.toString cursorPackage; fontPath = builtins.toString fontPackage; }")
+            cursorOptions=$(cursor_options "$(jq -er '.cursorPath' <<<"$base")" | jq -R -s 'split("\n") | map(select(length > 0))')
+            fontOptions=$(font_options "$(jq -er '.fontPath' <<<"$base")" | jq -R -s 'split("\n") | map(select(length > 0))')
             jq -n --argjson base "$base" \
-              --argjson cursorOptions "$(cursor_options | jq -R -s 'split("\n") | map(select(length > 0))')" \
-              --argjson fontOptions "$(font_options | jq -R -s 'split("\n") | map(select(length > 0))')" \
-              '$base + {cursorOptions: $cursorOptions, fontOptions: $fontOptions}'
+              --argjson cursorOptions "$cursorOptions" \
+              --argjson fontOptions "$fontOptions" \
+              '$base | del(.cursorPath, .fontPath) | . + {cursorOptions: $cursorOptions, fontOptions: $fontOptions}'
           }
 
           cmd_theme_set() {

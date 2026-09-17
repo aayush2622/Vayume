@@ -24,6 +24,16 @@ Rectangle {
     border.width: root.activeFocus ? 1 : 0
     border.color: Theme.primary
 
+    Rectangle {
+        visible: root.active
+        width: 3
+        height: 18
+        radius: 1.5
+        color: Theme.primary
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+    }
+
     Row {
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
@@ -45,17 +55,26 @@ Rectangle {
             font.weight: root.active ? Font.Medium : Font.Normal
             color: root.active ? Theme.surfaceText : Theme.surfaceVariantText
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 18 - Theme.spacingS - (badgeText.visible ? badgeText.width + Theme.spacingS : 0)
+            width: parent.width - 18 - Theme.spacingS - (badgePill.visible ? badgePill.width + Theme.spacingS : 0)
             elide: Text.ElideRight
         }
 
-        StyledText {
-            id: badgeText
+        Rectangle {
+            id: badgePill
             visible: root.badgeCount > 0
-            text: root.badgeCount
-            font.pixelSize: Theme.fontSizeSmall
-            color: Theme.surfaceVariantText
+            width: badgeText.width + 10
+            height: 18
+            radius: 9
+            color: root.active ? Theme.primary : Theme.surfaceContainerHigh
             anchors.verticalCenter: parent.verticalCenter
+
+            StyledText {
+                id: badgeText
+                anchors.centerIn: parent
+                text: root.badgeCount
+                font.pixelSize: Theme.fontSizeSmall
+                color: root.active ? Theme.onPrimary : Theme.surfaceVariantText
+            }
         }
     }
 

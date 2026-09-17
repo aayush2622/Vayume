@@ -38,6 +38,12 @@ DankFloatingWindow {
 
     function openWindow() {
         root.vm.refreshAll();
+        // Closing a floating window via the compositor can leave the QML
+        // `visible` property true while the actual Wayland window is gone,
+        // so a plain `visible = true` re-open is a silent no-op. Reset
+        // first, then re-show - the same resurrection pattern DMS's own
+        // SettingsModal.show() uses.
+        if (visible && !backingWindowVisible) visible = false;
         visible = true;
         raise();
         requestActivate();
@@ -57,13 +63,44 @@ DankFloatingWindow {
                 width: 200
                 height: parent.height
 
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: 1
+                    color: Theme.outline
+                    opacity: 0.2
+                }
+
                 Column {
                     width: parent.width - Theme.spacingS * 2
                     anchors.top: parent.top
-                    anchors.topMargin: Theme.spacingS
+                    anchors.topMargin: Theme.spacingM
                     anchors.left: parent.left
                     anchors.leftMargin: Theme.spacingS
                     spacing: 2
+
+                    Column {
+                        width: parent.width
+                        spacing: 2
+
+                        StyledText {
+                            x: Theme.spacingM
+                            text: I18n.tr("Vayume")
+                            font.pixelSize: Theme.fontSizeLarge
+                            font.weight: Font.Bold
+                            color: Theme.surfaceText
+                        }
+
+                        StyledText {
+                            x: Theme.spacingM
+                            text: I18n.tr("NixOS control")
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
+                        }
+                    }
+
+                    Item { width: 1; height: Theme.spacingS }
 
                     Repeater {
                         model: root.categories
@@ -220,7 +257,14 @@ DankFloatingWindow {
                     anchors.leftMargin: Theme.spacingM
                     anchors.right: logToggle.left
                     anchors.rightMargin: Theme.spacingM
-                    text: root.vm.rebuildStatus
+                    text: {
+                        if (root.vm.lastError) return I18n.tr("Last change failed - see the page where it happened, or run vayume-config validate in a terminal.");
+                        if (root.vm.saving) return I18n.tr("Saving changes...");
+                        if (root.vm.rebuildBusy) return I18n.tr("Rebuilding system configuration...");
+                        if (root.vm.repoKnown && root.vm.repo.rebuildPending) return I18n.tr("Changes saved - rebuild to apply them.");
+                        if (root.vm.rebuildStatus.length > 0) return root.vm.rebuildStatus;
+                        return I18n.tr("Everything up to date.");
+                    }
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.surfaceVariantText
                     elide: Text.ElideRight
