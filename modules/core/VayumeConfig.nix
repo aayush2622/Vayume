@@ -238,6 +238,102 @@
         }
       '';
 
+      # Inserts one whole new `<user> = <value>;` entry just before
+      # `vayume.users`'s own closing brace - same buffered
+      # find-the-block's-end approach as themeAwk, but there's no
+      # "block doesn't exist yet" fallback: unlike `vayume.theme` (always
+      # optional), `vayume.users` is required by every real _config.nix
+      # (Host.nix refuses to evaluate without one), so it's always
+      # already there to insert into.
+      usersAddAwk = pkgs.writeText "vayume-config-users-add.awk" ''
+        BEGIN {
+          value = ENVIRON["USERS_AWK_VALUE"]
+          phase = 0; depth = 0; n = 0
+        }
+        function braceDelta(l) { return gsub(/\{/, "{", l) - gsub(/\}/, "}", l) }
+        { n++; buf[n] = $0 }
+        END {
+          for (i = 1; i <= n; i++) {
+            line = buf[i]
+            if (phase == 0 && line ~ /vayume\.users[ \t]*=[ \t]*\{/) {
+              phase = 1
+              match(line, /^[ \t]*/)
+              indent = substr(line, 1, RLENGTH) "  "
+              depth += braceDelta(line)
+              buf[i] = line
+              continue
+            }
+            if (phase == 1) {
+              depth += braceDelta(line)
+              if (depth <= 0) {
+                insertBefore[i] = indent user " = " value ";"
+                phase = 2
+              }
+            }
+          }
+          if (phase != 2) {
+            print "vayume-config: no vayume.users block found" > "/dev/stderr"
+            exit 1
+          }
+          for (i = 1; i <= n; i++) {
+            if (i in insertBefore) print insertBefore[i]
+            print buf[i]
+          }
+        }
+      '';
+
+      # Deletes one user's whole `<user> = { ... };` entry outright -
+      # every line from its opening brace through the matching close,
+      # inclusive. Same phase/depth tracking as usersAwk's field lookup,
+      # just suppressing lines instead of rewriting one.
+      usersRemoveAwk = pkgs.writeText "vayume-config-users-remove.awk" ''
+        BEGIN {
+          phase = 0; depthUsers = 0; depthUser = 0
+          foundUserOpen = 0
+          userRe = "^[ \t]*" user "[ \t]*=[ \t]*\\{"
+        }
+        function braceDelta(l) { return gsub(/\{/, "{", l) - gsub(/\}/, "}", l) }
+        {
+          line = $0
+
+          if (phase == 0) {
+            if (line ~ /vayume\.users[ \t]*=[ \t]*\{/) {
+              phase = 1
+              depthUsers += braceDelta(line)
+            }
+            print line
+            next
+          }
+
+          if (phase == 1) {
+            if (depthUsers == 1 && !foundUserOpen && line ~ userRe) {
+              foundUserOpen = 1
+              phase = 2
+              depthUsers += braceDelta(line)
+              depthUser = 1
+              next
+            }
+            depthUsers += braceDelta(line)
+            print line
+            next
+          }
+
+          if (phase == 2) {
+            depthUser += braceDelta(line)
+            if (depthUser <= 0) phase = 3
+            next
+          }
+
+          print line
+        }
+        END {
+          if (!foundUserOpen) {
+            print "vayume-config: user " user " not found in vayume.users block" > "/dev/stderr"
+            exit 1
+          }
+        }
+      '';
+
       vayumeConfigScript = pkgs.writeShellApplication {
         name = "vayume-config";
         runtimeInputs = with pkgs; [ gnugrep gawk jq git nix coreutils fontconfig mkpasswd ];
@@ -256,6 +352,10 @@
             theme set <fontSize|cursorTheme|font> <value> [--if-unmodified-since <epoch>]
                                            edit one theme field, validated + atomic
             users list                    every vayume.users.* profile + groupOptions (JSON)
+            users add <user> [fullName] [--if-unmodified-since <epoch>]
+            users remove <user> [--if-unmodified-since <epoch>]
+                                           edits _config.nix only - the account itself is
+                                           only actually deleted on the next rebuild
             users set-name <user> <fullName> [--if-unmodified-since <epoch>]
             users set-secret <user> <WAKATIME_API_KEY|RBW_EMAIL> <value> [--if-unmodified-since <epoch>]
             users set-group <user> <group> <true|false> [--if-unmodified-since <epoch>]
@@ -802,6 +902,78 @@
             fi
           }
 
+          # New user gets nothing but fullName - extraGroups/hashedPassword
+          # are left unset so userSubmodule's own defaults apply
+          # (networkmanager/video/input, "changeme" initial password),
+          # same as _config.nix.example's "random" entry.
+          cmd_users_add() {
+            local user fullName since exists nixValue tmp
+            user=''${1:?user required}
+            fullName=''${2:-}
+            since=""
+            if [ "''${3:-}" = "--if-unmodified-since" ]; then
+              since=''${4:?epoch required after --if-unmodified-since}
+            fi
+            validate_username "$user"
+            check_since "$since"
+
+            exists=$(nix eval --impure --raw --expr \
+              "if builtins.hasAttr \"$(nix_escape "$user")\" (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.users then \"true\" else \"false\"")
+            if [ "$exists" = "true" ]; then
+              echo "vayume-config: user '$user' already exists" >&2
+              exit 2
+            fi
+
+            # Multi-line on purpose, matching every hand-written entry in
+            # _config.nix.example - a one-line `{ fullName = "..."; }`
+            # here would open and close its own braces on the single line
+            # usersRemoveAwk expects to find just the user's opening line
+            # on, throwing off its brace-depth tracking and eating the
+            # next real line (vayume.users's own closing brace) along
+            # with it on a later removal.
+            printf -v nixValue '{\n      fullName = "%s";\n    }' "$(nix_escape "''${fullName:-$user}")"
+
+            tmp="$config_file.vayume-config.tmp"
+            if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -f ${usersAddAwk} "$config_file" > "$tmp"; then
+              rm -f "$tmp"
+              exit 1
+            fi
+
+            if apply_edit "$tmp"; then
+              jq -n --arg user "$user" '{ok: true, user: $user}'
+            else
+              exit 1
+            fi
+          }
+
+          # Only edits _config.nix - doesn't touch the running system.
+          # NixOS's own declarative user management (mutableUsers = false)
+          # is what actually deletes the Linux account, and only on the
+          # next rebuild; this command alone never removes a home
+          # directory or logs anyone out.
+          cmd_users_remove() {
+            local user since tmp
+            user=''${1:?user required}
+            since=""
+            if [ "''${2:-}" = "--if-unmodified-since" ]; then
+              since=''${3:?epoch required after --if-unmodified-since}
+            fi
+            validate_username "$user"
+            check_since "$since"
+
+            tmp="$config_file.vayume-config.tmp"
+            if ! awk -v user="$user" -f ${usersRemoveAwk} "$config_file" > "$tmp"; then
+              rm -f "$tmp"
+              exit 1
+            fi
+
+            if apply_edit "$tmp"; then
+              jq -n --arg user "$user" '{ok: true, user: $user}'
+            else
+              exit 1
+            fi
+          }
+
           cmd_validate() {
             if validate_config_file; then
               jq -n '{ok: true}'
@@ -841,6 +1013,8 @@
               shift
               case "''${1:-}" in
                 list) cmd_users_list;;
+                add) shift; cmd_users_add "$@";;
+                remove) shift; cmd_users_remove "$@";;
                 set-name) shift; cmd_users_set_name "$@";;
                 set-secret) shift; cmd_users_set_secret "$@";;
                 set-group) shift; cmd_users_set_group "$@";;
