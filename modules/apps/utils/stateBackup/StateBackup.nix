@@ -1,4 +1,6 @@
 {
+  flake.appDescriptions.StateBackup = "vayume-app-state: backs up/restores app config dirs (browser, Discord, editors, vault).";
+
   flake.homeModules.apps.StateBackup = { pkgs, lib, ... }:
   let
     statePaths = [

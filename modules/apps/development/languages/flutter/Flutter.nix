@@ -48,6 +48,8 @@
     };
   };
 
+  flake.appDescriptions.Flutter = "Flutter/Dart SDK and editor integrations.";
+
   flake.homeModules.apps.Flutter = { self, pkgs, lib, ... }:
     let
     

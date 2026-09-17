@@ -29,6 +29,8 @@
     };
   };
 
+  flake.appDescriptions.Python = "Python toolchain and editor integrations (Pylance, debugpy).";
+
   flake.homeModules.apps.Python = { pkgs, ... }: {
     home.packages = with pkgs; [ python3 ];
   };

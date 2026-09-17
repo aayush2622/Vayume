@@ -1,4 +1,6 @@
 {
+  flake.appDescriptions.CcSwitch = "cc-switch: quick-switch between Claude API provider profiles.";
+
   flake.homeModules.apps.CcSwitch =
     { pkgs, lib, ... }:
     let

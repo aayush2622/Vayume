@@ -33,6 +33,8 @@
     };
   };
 
+  flake.appDescriptions.Kotlin = "Kotlin/Kotlin-JVM toolchain and editor integrations.";
+
   flake.homeModules.apps.Kotlin = { pkgs, ... }: {
     home.packages = with pkgs; [
       kotlin

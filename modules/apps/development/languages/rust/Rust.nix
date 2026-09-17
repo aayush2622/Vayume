@@ -23,6 +23,8 @@
     };
   };
 
+  flake.appDescriptions.Rust = "Rust toolchain and editor integrations (rust-analyzer, cargo tasks).";
+
   flake.homeModules.apps.Rust = { pkgs, ... }: {
     home.packages = with pkgs; [
 

@@ -13,6 +13,8 @@ let
 in {
   flake.pluginPins.Vscode = lib.concatMap (l: l.vscode.manualExtensions or [ ]) (lib.attrValues self.devLanguages);
 
+  flake.appDescriptions.Vscode = "VS Code, with extensions pulled in per enabled language.";
+
   flake.homeModules.apps.Vscode = { pkgs, lib, vayumeTheme, vayumeApps, vayumeSecrets, ... }:
   let
     hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";

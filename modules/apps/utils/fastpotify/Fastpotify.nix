@@ -1,4 +1,6 @@
 { inputs, ... }: {
+  flake.appDescriptions.Fastpotify = "Spotifast, a lightweight Spotify client themed to match the desktop.";
+
   flake.homeModules.apps.Fastpotify = { self, pkgs, lib, config, ... }:
   let
     spotifastSettingsSeed = pkgs.writeText "spotifast-settings.json" ''

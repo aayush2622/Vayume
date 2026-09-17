@@ -1,4 +1,6 @@
 {
+  flake.appDescriptions.Nautilus = "GNOME Files (Nautilus), with an open-terminal-here plugin and file previews.";
+
   flake.homeModules.apps.Nautilus = { pkgs, ... }:
   let
     baseFileChooserSettings = {

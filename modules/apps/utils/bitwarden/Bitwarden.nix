@@ -1,4 +1,6 @@
 {
+  flake.appDescriptions.Bitwarden = "Bitwarden desktop app plus rbw (CLI vault, GPG-backed).";
+
   flake.homeModules.apps.Bitwarden = { pkgs, lib, vayumeSecrets, ... }:
   let
     hasEmail = vayumeSecrets.RBW_EMAIL != "REPLACE_ME";

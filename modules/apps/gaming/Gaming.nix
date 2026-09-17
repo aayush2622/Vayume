@@ -1,4 +1,6 @@
 {
+  flake.appDescriptions.Gaming = "Game launchers, Proton/GPU tuning, and shader-cache management.";
+
   flake.homeModules.apps.Gaming = { config, ... }:
   let
     gamesDir = "${config.home.homeDirectory}/Games";

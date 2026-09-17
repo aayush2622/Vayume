@@ -28,6 +28,8 @@
     };
   };
 
+  flake.appDescriptions.Nix = "Nix language tooling: nil language server, nixfmt, editor integrations.";
+
   flake.homeModules.apps.Nix = { pkgs, ... }: {
     home.packages = with pkgs; [
       nil
