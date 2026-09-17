@@ -135,15 +135,20 @@ resolve_host_and_system() {
 setup_host_dir() {
   if [[ $HOST != Diablo && ! -d $HOSTDIR ]]; then
     info "creating $HOSTDIR from the Diablo template"
-    run cp -r modules/hosts/Diablo "$HOSTDIR"
-    # drop the template's personal files; keep tracked scaffolding
-    run rm -f "$HOSTDIR/_hardware.nix" "$HOSTDIR/_config.nix" "$HOSTDIR/me.jpg"
-    # rename Diablo -> $HOST inside the tracked .nix / .example files
     if (( DRY_RUN )); then
       info "would rename Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
     else
+      # Build the new host dir at a temp sibling and only `mv` it into place
+      # once fully prepared - a script kill/crash mid-copy or mid-rename then
+      # leaves at most a harmless "$HOSTDIR.new" stray, never a half-renamed
+      # real host dir that a later run or rebuild could silently pick up.
+      local tmp_hostdir="$HOSTDIR.new"
+      rm -rf "$tmp_hostdir"
+      cp -r modules/hosts/Diablo "$tmp_hostdir"
+      rm -f "$tmp_hostdir/_hardware.nix" "$tmp_hostdir/_config.nix" "$tmp_hostdir/me.jpg"
       while IFS= read -r -d '' f; do sed -i "s/Diablo/$HOST/g" "$f"; done \
-        < <(find "$HOSTDIR" -maxdepth 1 -type f \( -name '*.nix' -o -name '*.nix.example' \) -print0)
+        < <(find "$tmp_hostdir" -maxdepth 1 -type f \( -name '*.nix' -o -name '*.nix.example' \) -print0)
+      mv "$tmp_hostdir" "$HOSTDIR"
       info "renamed Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
     fi
   elif [[ -d $HOSTDIR ]]; then
@@ -227,8 +232,8 @@ build_user_block() {
   avatar=$(ask "  avatar image path (blank to skip)" "")
   if [[ -n $avatar ]]; then
     if [[ -f $avatar ]]; then
-      run cp "$avatar" "$HOSTDIR/${uname}-avatar${avatar##*.}"
-      avatar_ref="./${uname}-avatar${avatar##*.}"
+      run cp "$avatar" "$HOSTDIR/${uname}-avatar.${avatar##*.}"
+      avatar_ref="./${uname}-avatar.${avatar##*.}"
     else warn "  $avatar not found - skipping avatar"; fi
   fi
 
@@ -282,7 +287,7 @@ setup_config() {
   info "listing available apps (modules/apps/**) ..."
   app_names=$(nix eval --extra-experimental-features 'nix-command flakes' --impure --json \
     --expr 'builtins.attrNames (builtins.getFlake "path:'"$REPO"'").homeModules.apps' 2>/dev/null) \
-    || app_names="[]"
+    || { app_names="[]"; warn "could not enumerate modules/apps/** (nix eval failed) - _config.nix will list no apps; add \"Name.enable = true;\" lines to vayume.apps yourself"; }
   apps_nix=""
   while IFS= read -r name; do
     [[ -n $name ]] && apps_nix+="    ${name}.enable = false;"$'\n'
