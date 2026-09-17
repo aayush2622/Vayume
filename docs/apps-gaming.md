@@ -18,7 +18,7 @@ Steam alongside them, plus everything shared between them:
   already available everywhere).
 - **`_launchers.nix`**: Lutris/Heroic/AdwSteamGtk packages, the `~/Games`
   folder + GTK bookmark, and the Heroic/Steam themes.
-- **`_hytale.nix`**: the Hytale launcher, packaged by hand (see below).
+- **`_hytale.nix`**: the Hytale launcher, from an external flake (see below).
 - **`_proton.nix`**: the Proton/Wine stack (umu-launcher, wine,
   winetricks, protontricks, protonup-qt), `$WINEPREFIX`, the Wine theme,
   and Lutris's default runner.
@@ -34,22 +34,23 @@ Steam alongside them, plus everything shared between them:
 
 **Hytale has no nixpkgs package, no Steam listing, and isn't on
 Flathub** - the only official distribution is a self-updating native
-binary served from `launcher.hytale.com`. `_hytale.nix` fetches it with
-`pkgs.fetchurl` and wraps it with `autoPatchelfHook` against the
-webkit2gtk/gtk3 stack it needs (it's a Tauri-style app, not an AppImage).
-The fetched URL is upstream's permanent "latest" pointer, not a
-versioned release, so the derivation pins the exact bytes fetched at
-packaging time with a `hash`; picking up a newer launcher means
-re-fetching and bumping both the recorded upstream version and the hash
-by hand - a mismatch just fails the build loudly rather than silently
-serving a stale copy. The launcher's own self-updater will try to
-overwrite its binary in place and fail, because the Nix store it lives
-in is read-only; harmless, but expect it to report that it couldn't
-update itself. `Games/Hytale/` is pre-created as the folder to pick
-during the launcher's first-run setup so the actual multi-gigabyte game
-download - which the launcher fetches at runtime, outside Nix entirely -
-lands next to every other game under `~/Games` instead of the
-launcher's own default location.
+binary served from `launcher.hytale.com`. Rather than packaging that by
+hand, `_hytale.nix` just pulls
+[JPyke3/hytale-launcher-nix](https://github.com/JPyke3/hytale-launcher-nix)
+(pinned as the `hytale-launcher` flake input, `nixpkgs` followed like
+every other input here) and takes its `packages.<system>.default`. That
+flake extracts the official binary, wraps it in an FHS environment
+against the webkit2gtk/gtk3 stack it needs (it's a Tauri-style app, not
+an AppImage), and - the part worth not reinventing - lets the
+launcher's own self-updater write into `~/.local/share/Hytale` instead
+of failing against a read-only Nix store the way a plain derivation
+would. Its CI checks upstream hourly and auto-bumps the pinned hash, so
+picking up a newer launcher here is a routine
+`nix flake update hytale-launcher`, not a hand edit. `Games/Hytale/` is
+pre-created as the folder to pick during the launcher's first-run setup
+so the actual multi-gigabyte game download - which happens at runtime,
+outside Nix entirely - lands next to every other game under `~/Games`
+instead of the launcher's own default location.
 
 **Steam is enabled in `Host.nix`, not here.** `programs.steam.enable`
 needs system-level stuff (32-bit libs, firewall rules, controller udev
