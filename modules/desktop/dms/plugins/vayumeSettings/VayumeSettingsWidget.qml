@@ -22,7 +22,7 @@ PluginComponent {
         return root.repoDirty ? I18n.tr("Uncommitted changes") : I18n.tr("Up to date");
     }
     ccWidgetIsActive: root.repoDirty
-    ccDetailHeight: 480
+    ccDetailHeight: 560
 
     Process {
         id: repoProc
@@ -62,6 +62,32 @@ PluginComponent {
             property bool rebuildBusy: false
             property string rebuildStatus: ""
 
+            property var theme: ({ font: "", fontSize: 11, cursorTheme: "", iconTheme: "" })
+            property string themeStatus: ""
+            readonly property var cursorOptions: [
+                "Bibata-Modern-Ice", "Bibata-Modern-Classic", "Bibata-Modern-Amber",
+                "Bibata-Original-Ice", "Bibata-Original-Classic", "Bibata-Original-Amber"
+            ]
+
+            function refreshTheme() {
+                themeGetProc.running = true;
+            }
+
+            function setFontSize(delta) {
+                const next = detailRoot.theme.fontSize + delta;
+                if (next < 8 || next > 24) return;
+                themeSetProc.command = ["vayume-config", "theme", "set", "fontSize", String(next)];
+                themeSetProc.running = true;
+            }
+
+            function cycleCursor() {
+                const options = detailRoot.cursorOptions;
+                const idx = options.indexOf(detailRoot.theme.cursorTheme);
+                const next = options[(idx + 1 + options.length) % options.length];
+                themeSetProc.command = ["vayume-config", "theme", "set", "cursorTheme", next];
+                themeSetProc.running = true;
+            }
+
             readonly property var categoryOrder: ({ "development": 0, "gaming": 1, "utils": 2 })
             readonly property var categoryLabels: ({
                 "development": I18n.tr("Development"),
@@ -84,7 +110,10 @@ PluginComponent {
                 appsListProc.running = true;
             }
 
-            Component.onCompleted: refreshApps()
+            Component.onCompleted: {
+                refreshApps();
+                refreshTheme();
+            }
 
             Process {
                 id: appsListProc
@@ -99,6 +128,32 @@ PluginComponent {
                             detailRoot.apps = [];
                         }
                     }
+                }
+            }
+
+            Process {
+                id: themeGetProc
+                command: ["vayume-config", "theme", "get"]
+                running: false
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        try {
+                            detailRoot.theme = JSON.parse(text);
+                        } catch (e) {
+                            // keep the previous value on a parse failure
+                        }
+                    }
+                }
+            }
+
+            Process {
+                id: themeSetProc
+                running: false
+                onExited: exitCode => {
+                    detailRoot.themeStatus = exitCode === 0
+                        ? I18n.tr("Applied.")
+                        : I18n.tr("Change rejected - see a terminal for why.");
+                    detailRoot.refreshTheme();
                 }
             }
 
@@ -152,6 +207,106 @@ PluginComponent {
                         color: root.repoDirty ? Theme.error : Theme.surfaceVariantText
                         anchors.verticalCenter: parent.verticalCenter
                     }
+                }
+
+                StyledText {
+                    text: I18n.tr("Appearance")
+                    font.pixelSize: Theme.fontSizeMedium
+                    font.weight: Font.Bold
+                    color: Theme.surfaceVariantText
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: Theme.spacingS
+
+                    StyledText {
+                        text: I18n.tr("Font Size")
+                        font.pixelSize: Theme.fontSizeMedium
+                        color: Theme.surfaceText
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 120
+                    }
+
+                    DankIcon {
+                        name: "remove"
+                        size: 20
+                        color: Theme.surfaceVariantText
+                        anchors.verticalCenter: parent.verticalCenter
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: detailRoot.setFontSize(-1)
+                        }
+                    }
+
+                    StyledText {
+                        text: detailRoot.theme.fontSize
+                        font.pixelSize: Theme.fontSizeMedium
+                        color: Theme.surfaceText
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 24
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    DankIcon {
+                        name: "add"
+                        size: 20
+                        color: Theme.surfaceVariantText
+                        anchors.verticalCenter: parent.verticalCenter
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: detailRoot.setFontSize(1)
+                        }
+                    }
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: Theme.spacingS
+
+                    StyledText {
+                        text: I18n.tr("Cursor")
+                        font.pixelSize: Theme.fontSizeMedium
+                        color: Theme.surfaceText
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 120
+                    }
+
+                    StyledRect {
+                        width: 220
+                        height: 28
+                        radius: Theme.cornerRadius
+                        color: Theme.surfaceContainerLow
+
+                        StyledText {
+                            anchors.centerIn: parent
+                            text: detailRoot.theme.cursorTheme
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceText
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: detailRoot.cycleCursor()
+                        }
+                    }
+
+                    StyledText {
+                        text: detailRoot.themeStatus
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceVariantText
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                StyledText {
+                    text: I18n.tr("Applications")
+                    font.pixelSize: Theme.fontSizeMedium
+                    font.weight: Font.Bold
+                    color: Theme.surfaceVariantText
                 }
 
                 ListView {

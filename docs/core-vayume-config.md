@@ -22,6 +22,8 @@ would from a terminal.
 vayume-config repo                          # {path, branch, dirty, configFile}
 vayume-config apps list                      # every vayume.apps.* + state + category
 vayume-config apps set <Name> <true|false> [--if-unmodified-since <epoch>]
+vayume-config theme get                      # {font, fontSize, cursorTheme, iconTheme}
+vayume-config theme set <fontSize|cursorTheme> <value> [--if-unmodified-since <epoch>]
 vayume-config validate                       # re-evaluate _config.nix, pass/fail
 ```
 
@@ -86,6 +88,39 @@ listed (a module added since `_config.nix` was last touched) inserts a new
 line just before the block's closing `};`, at the same indentation as
 its siblings, rather than guessing at a category comment to attach it
 to.
+
+### Theme fields: why only two of the eight are editable
+
+`vayume.theme` ([core/Theme.nix](core-theme.md)) has eight fields, but
+three of them - `fontPackage`, `cursorPackage`, `iconPackage` - are
+*packages*, not plain values. A package can't be safely produced from a
+DMS text field: there's no safe way to turn an arbitrary typed string
+into a valid `pkgs.<attr>` reference, and a mismatched
+name/package pair (e.g. a `cursorTheme` string the current
+`cursorPackage` doesn't actually ship) would silently fail to resolve a
+cursor at runtime, not error at build time.
+
+Only `fontSize` (a plain int, no coupling to anything) and `cursorTheme`
+are exposed. `cursorTheme` looks safe to edit freely - it's a string -
+but isn't really: it's only meaningful together with whatever
+`cursorPackage` currently is. Rather than accept arbitrary text, `theme
+set cursorTheme` queries the *actual* `cursorPackage` at call time
+(`nix eval ...cursorPackage`, then lists `share/icons/*` in that real
+store path) and rejects anything not in that live list. Correct even if
+a host ever changes `cursorPackage` away from the default
+`bibata-cursors` - the valid-name list is never hardcoded twice.
+
+`font` and `iconTheme` stay Nix-only for the same reason, minus a safe
+per-field validation strategy: there's no small, generic way to ask "is
+this font name real" the way there is for a cursor package's shipped
+directory names. Extending this needs `fontPackage`/`iconPackage` made
+editable too, not just their string half - a genuinely bigger design
+than this file's job is meant to be. `modules/core/VayumeConfig.nix`'s
+`themeAwk` (a second, small state machine alongside `appsAwk` - same
+before/inside/after discipline, but for a flat `field = value;` shape
+that may not exist in the file at all yet) is written generically
+enough that adding a third safe field later is a few lines, not a
+rewrite.
 
 ### Atomic writes, validated before they're trusted
 
