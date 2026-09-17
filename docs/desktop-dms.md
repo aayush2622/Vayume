@@ -499,13 +499,112 @@ rationale.
 
 **`vayumeSettings`** is this repo's own plugin, not a community one -
 see [core-vayume-config.md](core-vayume-config.md) for the backend it
-drives and why DMS talks to the real `Host.nix` through a CLI instead of
-its own state. The widget itself
-(`modules/desktop/dms/plugins/vayumeSettings/`) is a normal
-`ccDetailContent` popout: the compact pill polls `vayume-config repo`
-every 15s for a cheap dirty/clean indicator, and the detail view only
-runs the pricier `vayume-config apps list` (a real Nix evaluation) once
-actually opened, not continuously in the background.
+drives and why DMS talks to the real `_config.nix` through a CLI instead
+of its own state. The control-center pill
+(`modules/desktop/dms/plugins/vayumeSettings/`) polls `vayume-config
+repo` every 60s for a cheap dirty/clean indicator - cheap enough to run
+in the background for the life of the session, unlike the settings
+themselves.
+
+Clicking the pill's expand zone doesn't open an inline popout - it opens
+a genuine separate window (`DankFloatingWindow`, the same base type
+DMS's own Settings modal uses), with a category sidebar down the left
+(Appearance, Development, Applications, Users, System) and a rebuild
+button/status footer along the bottom, closer to DMS's own Settings
+screen than to a control-center card. The pricier `vayume-config apps
+list`/`theme get`/`development list`/`users list` calls (real Nix
+evaluations) only run once when that window opens, not continuously -
+the `ccDetailContent` popout that used to hold all of this is now just
+a one-line "opens in its own window" hint, kept only so DMS still gives
+the pill an expand click zone at all (removing `ccDetailContent`
+entirely turns the row into a plain toggle button with no expand
+affordance).
+
+The QML itself is split by responsibility under
+`modules/desktop/dms/plugins/vayumeSettings/`: the root
+`VayumeSettingsWidget.qml` owns the control-center pill and every
+`Process` that talks to `vayume-config` (the one place that reads/writes
+backend state), and `ui/` holds the presentational pieces -
+`SettingsWindow.qml` (sidebar + footer shell, including the live
+rebuild-log panel), one file per category page (`AppearancePage.qml`,
+`DevelopmentPage.qml`, `ApplicationsPage.qml`, `UsersPage.qml`,
+`SystemPage.qml`), and three small reused pieces (`SettingsCard.qml` -
+the card wrapper every page's content sits in, `SidebarItem.qml`,
+`Badge.qml` - the "Rebuild required"/config-status dots). Pages receive
+the root instance as `vm` and only ever call its functions
+(`setAppEnabled`, `setCursorTheme`, `rebuild`, ...) - they hold no
+`Process` of their own, so there is still exactly one place that
+understands the backend's shape.
+
+The cursor picker is a real `DankDropdown` (the same component DMS's
+own settings dropdowns use under `qs.Widgets`) fed by `theme
+get`'s live `cursorOptions` - not a hardcoded list, and not a
+click-to-cycle button. Every setting shown is `_config.nix`, which only
+ever takes effect on the next rebuild - there is no live-apply tier in
+this plugin, and the sidebar's status badge always reads "Rebuild
+required" once something has changed, never something that implies a
+change already took effect.
+
+Every app/language/editor/tool toggle also shows the one-line
+`description` `vayume-config` reads from `flake.appDescriptions` (see
+[core-vayume-config.md](core-vayume-config.md)) via `DankToggle`'s own
+`description` property - no separate description widget, and nothing
+invented in the UI layer that isn't already declared in the app's own
+`.nix` file.
+
+`SettingsWindow.qml`'s footer streams `vayume-rebuild`'s stdout and
+stderr live, line by line (`Quickshell.Io`'s `SplitParser`, not a
+post-hoc `StdioCollector` read at exit) into a capped 500-line buffer
+on the root widget, so a long `nixos-rebuild switch` is visible as it
+happens rather than only as a final pass/fail line. It lives in the
+footer rather than on one settings page specifically so it's visible
+no matter which sidebar category happens to be open when a rebuild is
+started - it auto-expands the moment a rebuild begins (a
+`Connections { target: root.vm }` on `rebuildBusy`), and can be
+collapsed by hand once it's no longer needed.
+
+### Users page: the one category that can change real access
+
+`vayume.users` is genuinely security-sensitive - group membership can
+grant sudo, and a password controls login - so this page (unlike every
+other category here) exists behind the explicit choice to expose it,
+not by default caution. What it can touch, and why each piece is safe
+to expose:
+
+- **Display name** (`fullName`) - cosmetic only, a plain string field.
+- **App secrets** (WakaTime API key, rbw/Bitwarden email) - already
+  plain values in a gitignored file (see
+  [core-vayume-config.md](core-vayume-config.md)); shown as
+  password-masked `DankTextField`s with a reveal toggle, same widget
+  DMS uses for its own secret-ish fields.
+- **Groups** (`extraGroups`, including `wheel`/sudo) - shown as
+  `DankToggle`s over `vayume-config users list`'s live `groupOptions`
+  (curated shortlist ∩ this system's real `config.users.groups`, see
+  core-vayume-config.md), never free text - a typo'd group name can't
+  reach `_config.nix` at all. "wheel" carries its own description
+  calling out that it's full admin access.
+- **Password** (`hashedPassword`) - a "new password"/"confirm
+  password" pair, only enabled once they match; the plaintext is
+  written over the `vayume-config users set-password` `Process`'s own
+  stdin (`stdinEnabled: true` + `write()`), never as a command-line
+  argument - argv is readable by any process on the machine via
+  `/proc`, stdin isn't. The backend hashes it (`mkpasswd -m sha-512`)
+  before it ever touches `_config.nix`; the plaintext never becomes a
+  long-lived QML property, and the response never echoes it back.
+
+`avatar`, `shell`, and `extraPackages` stay Nix-only, same boundary as
+`iconTheme`/`fontPackage` on the Appearance page: `avatar` is a path
+literal and `shell`/`extraPackages` are packages, none of which can be
+safely produced from a text field. `validate_config_file` (the `nix
+eval` `apply_edit` runs before committing any write) was extended to
+force-evaluate every field this page actually writes -
+`fullName`/`hashedPassword`/`extraGroups`/each secret value - so a
+broken users edit is caught the same way a broken apps/theme edit
+already was, not silently deferred to the next real rebuild.
+
+`vayume.network` is still absent, on purpose: it lives in `Host.nix`
+(machine-level), not `_config.nix` - editing it here would quietly
+reopen the two-file config split this whole plugin exists to avoid.
 
 ---
 

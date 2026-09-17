@@ -5,24 +5,165 @@ import qs.Common
 import qs.Services
 import qs.Widgets
 import qs.Modules.Plugins
+import "./ui"
 
 PluginComponent {
     id: root
 
-    property string repoPath: ""
-    property string repoBranch: ""
-    property bool repoDirty: false
+    property var repo: ({ path: "", branch: "", dirty: false, configFile: "", hostName: "", rebuildPending: false })
     property bool repoKnown: false
+
+    property var apps: []
+    property bool appsLoading: true
+
+    property var development: ({ languages: [], editors: [], tools: [] })
+    property bool developmentLoading: true
+
+    property var theme: ({ font: "", fontSize: 11, cursorTheme: "", iconTheme: "", cursorOptions: [], fontOptions: [] })
+    property bool themeLoading: true
+    readonly property bool themeSaving: themeSetProc.running
+    readonly property bool themePending: themeWriteDebounce.running || themeSaving
+    property string themeStatus: ""
+    property bool themeError: false
+
+    property var users: ({})
+    property var groupOptions: []
+    property bool usersLoading: true
+    property string usersStatus: ""
+    property bool usersError: false
+    readonly property bool usersSaving: usersSetProc.running || usersPasswordProc.running
+
+    property bool rebuildBusy: false
+    property string rebuildStatus: ""
+    property var rebuildLog: []
+
+    // Capped so a runaway or unusually chatty rebuild can't grow this
+    // without bound - only the tail is useful for "what just happened"
+    // anyway.
+    function appendRebuildLog(line) {
+        const next = root.rebuildLog.concat([line]);
+        root.rebuildLog = next.length > 500 ? next.slice(next.length - 500) : next;
+    }
+    function clearRebuildLog() { root.rebuildLog = []; }
+
+    readonly property bool saving: root.themePending || setAppProc.running || root.usersSaving
+    readonly property bool lastError: root.themeError || root.usersError
+
+    function refreshRepo() { repoProc.running = true; }
+    function refreshApps() { appsLoading = true; appsListProc.running = true; }
+    function refreshDevelopment() { developmentLoading = true; developmentListProc.running = true; }
+    function refreshTheme() { themeLoading = true; themeGetProc.running = true; }
+    function refreshUsers() { usersLoading = true; usersListProc.running = true; }
+
+    function refreshAll() {
+        refreshRepo();
+        refreshApps();
+        refreshDevelopment();
+        refreshTheme();
+        refreshUsers();
+    }
+
+    // Every backend write pays for a real `nix eval` (apply_edit's own
+    // validation, never skipped) - too slow to run on every single click of
+    // a +/- spinner. The value shown updates immediately (optimistic - only
+    // rolled back if the write is later rejected); the actual write is
+    // debounced so five quick clicks become one backend call with the final
+    // value, not five sequential validate-evals.
+    function queueThemeWrite(field, value) {
+        themeWriteDebounce.field = field;
+        themeWriteDebounce.value = String(value);
+        themeWriteDebounce.restart();
+    }
+
+    function setFontSize(delta) {
+        const next = root.theme.fontSize + delta;
+        if (next < 8 || next > 24) return;
+        root.theme = Object.assign({}, root.theme, { fontSize: next });
+        queueThemeWrite("fontSize", next);
+    }
+
+    function setFont(value) {
+        root.theme = Object.assign({}, root.theme, { font: value });
+        queueThemeWrite("font", value);
+    }
+
+    function setCursorTheme(value) {
+        root.theme = Object.assign({}, root.theme, { cursorTheme: value });
+        queueThemeWrite("cursorTheme", value);
+    }
+
+    function setAppEnabled(name, enabled) {
+        root.apps = root.apps.map(a => a.name === name ? Object.assign({}, a, { enabled }) : a);
+        root.development = {
+            languages: root.development.languages.map(a => a.name === name ? Object.assign({}, a, { enabled }) : a),
+            editors: root.development.editors.map(a => a.name === name ? Object.assign({}, a, { enabled }) : a),
+            tools: root.development.tools.map(a => a.name === name ? Object.assign({}, a, { enabled }) : a)
+        };
+        setAppProc.command = ["vayume-config", "apps", "set", name, enabled ? "true" : "false"];
+        setAppProc.running = true;
+    }
+
+    function setUserFullName(user, value) {
+        root.users = Object.assign({}, root.users, {
+            [user]: Object.assign({}, root.users[user], { fullName: value })
+        });
+        usersSetProc.command = ["vayume-config", "users", "set-name", user, value];
+        usersSetProc.running = true;
+    }
+
+    function setUserSecret(user, key, value) {
+        const current = root.users[user];
+        root.users = Object.assign({}, root.users, {
+            [user]: Object.assign({}, current, { secrets: Object.assign({}, current.secrets, { [key]: value }) })
+        });
+        usersSetProc.command = ["vayume-config", "users", "set-secret", user, key, value];
+        usersSetProc.running = true;
+    }
+
+    function setUserGroup(user, group, enabled) {
+        const current = root.users[user];
+        const nextGroups = enabled
+            ? current.extraGroups.concat(current.extraGroups.includes(group) ? [] : [group])
+            : current.extraGroups.filter(g => g !== group);
+        root.users = Object.assign({}, root.users, {
+            [user]: Object.assign({}, current, { extraGroups: nextGroups })
+        });
+        usersSetProc.command = ["vayume-config", "users", "set-group", user, group, enabled ? "true" : "false"];
+        usersSetProc.running = true;
+    }
+
+    // Not optimistic (there's no visible field to update ahead of the
+    // write) and deliberately never kept in a long-lived property - the
+    // plaintext only exists in this call's local scope and inside the
+    // Process's own stdin pipe, same reasoning as
+    // vayume-config's own "argv is visible to every process via /proc,
+    // stdin isn't" - see VayumeConfig.nix.
+    function setUserPassword(user, password) {
+        usersPasswordProc.pendingWrite = password;
+        usersPasswordProc.command = ["vayume-config", "users", "set-password", user];
+        usersPasswordProc.running = true;
+    }
+
+    function rebuild() {
+        root.rebuildLog = [];
+        rebuildProc.running = true;
+    }
 
     ccWidgetIcon: "settings_suggest"
     ccWidgetPrimaryText: I18n.tr("Vayume Settings")
     ccWidgetSecondaryText: {
         if (!root.repoKnown)
             return I18n.tr("Loading...");
-        return root.repoDirty ? I18n.tr("Uncommitted changes") : I18n.tr("Up to date");
+        if (root.repo.rebuildPending)
+            return I18n.tr("Rebuild required");
+        return root.repo.dirty ? I18n.tr("Uncommitted changes") : I18n.tr("Up to date");
     }
-    ccWidgetIsActive: root.repoDirty
-    ccDetailHeight: 560
+    ccWidgetIsActive: root.repoKnown && root.repo.rebuildPending
+    ccDetailHeight: 56
+
+    onCcWidgetExpanded: settingsWindow.openWindow()
+
+    Component.onCompleted: refreshAll()
 
     Process {
         id: repoProc
@@ -31,10 +172,7 @@ PluginComponent {
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    const info = JSON.parse(text);
-                    root.repoPath = info.path;
-                    root.repoBranch = info.branch;
-                    root.repoDirty = info.dirty;
+                    root.repo = JSON.parse(text);
                     root.repoKnown = true;
                 } catch (e) {
                     root.repoKnown = false;
@@ -44,389 +182,212 @@ PluginComponent {
     }
 
     Timer {
-        interval: 15000
+        interval: 60000
         running: true
         repeat: true
         onTriggered: if (!repoProc.running) repoProc.running = true
     }
 
-    ccDetailContent: Component {
-        Rectangle {
-            id: detailRoot
-            implicitHeight: detailCol.implicitHeight + Theme.spacingM * 2
-            radius: Theme.cornerRadius
-            color: Theme.surfaceContainerHigh
-
-            property var apps: []
-            property bool appsLoading: true
-            property bool rebuildBusy: false
-            property string rebuildStatus: ""
-
-            property var theme: ({ font: "", fontSize: 11, cursorTheme: "", iconTheme: "" })
-            property string themeStatus: ""
-            readonly property var cursorOptions: [
-                "Bibata-Modern-Ice", "Bibata-Modern-Classic", "Bibata-Modern-Amber",
-                "Bibata-Original-Ice", "Bibata-Original-Classic", "Bibata-Original-Amber"
-            ]
-
-            function refreshTheme() {
-                themeGetProc.running = true;
-            }
-
-            function setFontSize(delta) {
-                const next = detailRoot.theme.fontSize + delta;
-                if (next < 8 || next > 24) return;
-                themeSetProc.command = ["vayume-config", "theme", "set", "fontSize", String(next)];
-                themeSetProc.running = true;
-            }
-
-            function cycleCursor() {
-                const options = detailRoot.cursorOptions;
-                const idx = options.indexOf(detailRoot.theme.cursorTheme);
-                const next = options[(idx + 1 + options.length) % options.length];
-                themeSetProc.command = ["vayume-config", "theme", "set", "cursorTheme", next];
-                themeSetProc.running = true;
-            }
-
-            readonly property var categoryOrder: ({ "development": 0, "gaming": 1, "utils": 2 })
-            readonly property var categoryLabels: ({
-                "development": I18n.tr("Development"),
-                "gaming": I18n.tr("Gaming"),
-                "utils": I18n.tr("Applications")
-            })
-            readonly property var sortedApps: {
-                const copy = detailRoot.apps.slice();
-                copy.sort((a, b) => {
-                    const ca = detailRoot.categoryOrder[a.category] ?? 99;
-                    const cb = detailRoot.categoryOrder[b.category] ?? 99;
-                    if (ca !== cb) return ca - cb;
-                    return a.name.localeCompare(b.name);
-                });
-                return copy;
-            }
-
-            function refreshApps() {
-                appsLoading = true;
-                appsListProc.running = true;
-            }
-
-            Component.onCompleted: {
-                refreshApps();
-                refreshTheme();
-            }
-
-            Process {
-                id: appsListProc
-                command: ["vayume-config", "apps", "list"]
-                running: false
-                stdout: StdioCollector {
-                    onStreamFinished: {
-                        detailRoot.appsLoading = false;
-                        try {
-                            detailRoot.apps = JSON.parse(text);
-                        } catch (e) {
-                            detailRoot.apps = [];
-                        }
-                    }
-                }
-            }
-
-            Process {
-                id: themeGetProc
-                command: ["vayume-config", "theme", "get"]
-                running: false
-                stdout: StdioCollector {
-                    onStreamFinished: {
-                        try {
-                            detailRoot.theme = JSON.parse(text);
-                        } catch (e) {
-                            // keep the previous value on a parse failure
-                        }
-                    }
-                }
-            }
-
-            Process {
-                id: themeSetProc
-                running: false
-                onExited: exitCode => {
-                    detailRoot.themeStatus = exitCode === 0
-                        ? I18n.tr("Applied.")
-                        : I18n.tr("Change rejected - see a terminal for why.");
-                    detailRoot.refreshTheme();
-                }
-            }
-
-            Process {
-                id: rebuildProc
-                command: ["vayume-rebuild"]
-                running: false
-                onStarted: {
-                    detailRoot.rebuildBusy = true;
-                    detailRoot.rebuildStatus = I18n.tr("Rebuilding - this can take a minute...");
-                }
-                onExited: exitCode => {
-                    detailRoot.rebuildBusy = false;
-                    detailRoot.rebuildStatus = exitCode === 0
-                        ? I18n.tr("Rebuild succeeded.")
-                        : I18n.tr("Rebuild failed (exit %1) - check a terminal for details.").arg(exitCode);
-                    detailRoot.refreshApps();
-                    repoProc.running = true;
-                }
-            }
-
-            Column {
-                id: detailCol
-                width: parent.width - Theme.spacingM * 2
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: Theme.spacingM
-                spacing: Theme.spacingM
-
-                Row {
-                    width: parent.width
-                    spacing: Theme.spacingS
-
-                    DankIcon {
-                        name: "folder_code"
-                        size: 18
-                        color: Theme.surfaceVariantText
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    StyledText {
-                        text: root.repoKnown ? root.repoPath : I18n.tr("Locating repo...")
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceVariantText
-                        anchors.verticalCenter: parent.verticalCenter
-                        elide: Text.ElideMiddle
-                        width: parent.width - 140
-                    }
-                    StyledText {
-                        text: root.repoKnown ? root.repoBranch : ""
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: root.repoDirty ? Theme.error : Theme.surfaceVariantText
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-
-                StyledText {
-                    text: I18n.tr("Appearance")
-                    font.pixelSize: Theme.fontSizeMedium
-                    font.weight: Font.Bold
-                    color: Theme.surfaceVariantText
-                }
-
-                Row {
-                    width: parent.width
-                    spacing: Theme.spacingS
-
-                    StyledText {
-                        text: I18n.tr("Font Size")
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 120
-                    }
-
-                    DankIcon {
-                        name: "remove"
-                        size: 20
-                        color: Theme.surfaceVariantText
-                        anchors.verticalCenter: parent.verticalCenter
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: detailRoot.setFontSize(-1)
-                        }
-                    }
-
-                    StyledText {
-                        text: detailRoot.theme.fontSize
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 24
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    DankIcon {
-                        name: "add"
-                        size: 20
-                        color: Theme.surfaceVariantText
-                        anchors.verticalCenter: parent.verticalCenter
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: detailRoot.setFontSize(1)
-                        }
-                    }
-                }
-
-                Row {
-                    width: parent.width
-                    spacing: Theme.spacingS
-
-                    StyledText {
-                        text: I18n.tr("Cursor")
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 120
-                    }
-
-                    StyledRect {
-                        width: 220
-                        height: 28
-                        radius: Theme.cornerRadius
-                        color: Theme.surfaceContainerLow
-
-                        StyledText {
-                            anchors.centerIn: parent
-                            text: detailRoot.theme.cursorTheme
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceText
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: detailRoot.cycleCursor()
-                        }
-                    }
-
-                    StyledText {
-                        text: detailRoot.themeStatus
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceVariantText
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-
-                StyledText {
-                    text: I18n.tr("Applications")
-                    font.pixelSize: Theme.fontSizeMedium
-                    font.weight: Font.Bold
-                    color: Theme.surfaceVariantText
-                }
-
-                ListView {
-                    id: appsListView
-                    width: parent.width
-                    height: 280
-                    clip: true
-                    spacing: 2
-                    model: detailRoot.sortedApps
-
-                    section.property: "category"
-                    section.criteria: ViewSection.FullString
-                    section.delegate: Item {
-                        width: appsListView.width
-                        height: 28
-
-                        StyledText {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: detailRoot.categoryLabels[section] ?? section
-                            font.pixelSize: Theme.fontSizeMedium
-                            font.weight: Font.Bold
-                            color: Theme.surfaceVariantText
-                        }
-                    }
-
-                    delegate: Item {
-                        width: appsListView.width
-                        height: 34
-
-                        Row {
-                            anchors.fill: parent
-                            spacing: Theme.spacingS
-
-                            StyledText {
-                                text: modelData.name
-                                font.pixelSize: Theme.fontSizeMedium
-                                color: Theme.surfaceText
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 40
-                            }
-
-                            DankIcon {
-                                name: modelData.enabled ? "toggle_on" : "toggle_off"
-                                size: 24
-                                color: modelData.enabled ? Theme.primary : Theme.surfaceVariantText
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        const newValue = !modelData.enabled;
-                                        detailRoot.apps = detailRoot.apps.map(a =>
-                                            a.name === modelData.name ? Object.assign({}, a, { enabled: newValue }) : a
-                                        );
-                                        setAppProc.command = ["vayume-config", "apps", "set", modelData.name, newValue ? "true" : "false"];
-                                        setAppProc.running = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                StyledText {
-                    visible: detailRoot.appsLoading
-                    text: I18n.tr("Loading applications...")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
-
-                Row {
-                    width: parent.width
-                    spacing: Theme.spacingS
-
-                    StyledRect {
-                        width: 140
-                        height: 36
-                        radius: Theme.cornerRadius
-                        color: detailRoot.rebuildBusy ? Theme.surfaceContainerLow : Theme.primary
-
-                        StyledText {
-                            anchors.centerIn: parent
-                            text: detailRoot.rebuildBusy ? I18n.tr("Rebuilding...") : I18n.tr("Rebuild Now")
-                            color: detailRoot.rebuildBusy ? Theme.surfaceVariantText : Theme.onPrimary
-                            font.pixelSize: Theme.fontSizeSmall
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            enabled: !detailRoot.rebuildBusy
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: rebuildProc.running = true
-                        }
-                    }
-
-                    StyledText {
-                        text: detailRoot.rebuildStatus
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceVariantText
-                        anchors.verticalCenter: parent.verticalCenter
-                        elide: Text.ElideRight
-                        width: parent.width - 160
-                    }
-                }
-            }
-
-            Process {
-                id: setAppProc
-                running: false
-                onExited: exitCode => {
-                    if (exitCode !== 0) {
-                        detailRoot.rebuildStatus = I18n.tr("Change failed - reloading current state.");
-                    } else {
-                        detailRoot.rebuildStatus = I18n.tr("Saved - rebuild to apply.");
-                    }
-                    detailRoot.refreshApps();
-                    repoProc.running = true;
+    Process {
+        id: appsListProc
+        command: ["vayume-config", "apps", "list"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.appsLoading = false;
+                try {
+                    root.apps = JSON.parse(text);
+                } catch (e) {
+                    root.apps = [];
                 }
             }
         }
+    }
+
+    Process {
+        id: developmentListProc
+        command: ["vayume-config", "development", "list"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.developmentLoading = false;
+                try {
+                    root.development = JSON.parse(text);
+                } catch (e) {
+                    root.development = { languages: [], editors: [], tools: [] };
+                }
+            }
+        }
+    }
+
+    Process {
+        id: themeGetProc
+        command: ["vayume-config", "theme", "get"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.themeLoading = false;
+                try {
+                    root.theme = JSON.parse(text);
+                } catch (e) {
+                    // keep the previous value on a parse failure
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: themeWriteDebounce
+        property string field: ""
+        property string value: ""
+        interval: 400
+        onTriggered: {
+            themeSetProc.command = ["vayume-config", "theme", "set", field, value];
+            themeSetProc.running = true;
+        }
+    }
+
+    Process {
+        id: themeSetProc
+        running: false
+        onExited: exitCode => {
+            root.themeError = exitCode !== 0;
+            root.themeStatus = exitCode === 0
+                ? I18n.tr("Applied - rebuild to take effect.")
+                : I18n.tr("Couldn't update that setting - see a terminal for the real error.");
+            // Success: the optimistic value shown is already correct, no
+            // need to pay for another full theme fetch. Failure: the
+            // optimistic guess was wrong - refetch to show the real,
+            // unchanged value instead of the rejected one.
+            if (exitCode !== 0) root.refreshTheme();
+            root.refreshRepo();
+        }
+    }
+
+    Process {
+        id: setAppProc
+        running: false
+        onExited: exitCode => {
+            root.rebuildStatus = exitCode === 0
+                ? I18n.tr("Saved - rebuild to apply.")
+                : I18n.tr("Change failed - reloading current state.");
+            // Same reasoning as themeSetProc: the toggle already flipped
+            // optimistically, so a success needs no refetch (that's what
+            // was showing a spurious "Loading applications..." flash after
+            // every toggle, with no rebuild involved). Only re-derive the
+            // real state on failure, to undo a toggle the backend rejected.
+            if (exitCode !== 0) {
+                root.refreshApps();
+                root.refreshDevelopment();
+            }
+            root.refreshRepo();
+        }
+    }
+
+    Process {
+        id: usersListProc
+        command: ["vayume-config", "users", "list"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.usersLoading = false;
+                try {
+                    const parsed = JSON.parse(text);
+                    root.users = parsed.users;
+                    root.groupOptions = parsed.groupOptions;
+                } catch (e) {
+                    root.users = {};
+                    root.groupOptions = [];
+                }
+            }
+        }
+    }
+
+    Process {
+        id: usersSetProc
+        running: false
+        onExited: exitCode => {
+            root.usersError = exitCode !== 0;
+            root.usersStatus = exitCode === 0
+                ? I18n.tr("Applied - rebuild to take effect.")
+                : I18n.tr("Couldn't update that setting - see a terminal for the real error.");
+            // Same optimistic-update reasoning as setAppProc/themeSetProc -
+            // only refetch (and so overwrite the optimistic value) on
+            // failure.
+            if (exitCode !== 0) root.refreshUsers();
+            root.refreshRepo();
+        }
+    }
+
+    // stdinEnabled + write() rather than a command-line argument, so the
+    // new password is never visible via /proc to any other process on
+    // the machine the way an argv value would be - see
+    // cmd_users_set_password in VayumeConfig.nix for the same reasoning
+    // on the backend side. `pendingWrite` is cleared the instant it's
+    // been handed to the process, so the plaintext doesn't linger in a
+    // QML property.
+    Process {
+        id: usersPasswordProc
+        running: false
+        stdinEnabled: true
+        property string pendingWrite: ""
+        onStarted: {
+            write(pendingWrite + "\n");
+            pendingWrite = "";
+        }
+        onExited: exitCode => {
+            root.usersError = exitCode !== 0;
+            root.usersStatus = exitCode === 0
+                ? I18n.tr("Password updated - rebuild to take effect.")
+                : I18n.tr("Couldn't update the password - see a terminal for the real error.");
+            root.refreshUsers();
+            root.refreshRepo();
+        }
+    }
+
+    Process {
+        id: rebuildProc
+        command: ["vayume-rebuild"]
+        running: false
+        stdout: SplitParser { onRead: line => root.appendRebuildLog(line) }
+        stderr: SplitParser { onRead: line => root.appendRebuildLog(line) }
+        onStarted: {
+            root.rebuildBusy = true;
+            root.rebuildStatus = I18n.tr("Rebuilding - this can take a minute...");
+        }
+        onExited: exitCode => {
+            root.rebuildBusy = false;
+            root.rebuildStatus = exitCode === 0
+                ? I18n.tr("Rebuild succeeded.")
+                : I18n.tr("Rebuild failed (exit %1) - check a terminal for details.").arg(exitCode);
+            root.refreshApps();
+            root.refreshRepo();
+        }
+    }
+
+    ccDetailContent: Component {
+        Rectangle {
+            implicitHeight: 40
+            radius: Theme.cornerRadius
+            color: Theme.surfaceContainerHigh
+
+            StyledText {
+                anchors.centerIn: parent
+                text: I18n.tr("Opens in its own window - click again if it didn't come to front.")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.surfaceVariantText
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: settingsWindow.openWindow()
+            }
+        }
+    }
+
+    SettingsWindow {
+        id: settingsWindow
+        vm: root
     }
 }

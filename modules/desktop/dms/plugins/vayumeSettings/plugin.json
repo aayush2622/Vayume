@@ -1,7 +1,7 @@
 {
     "id": "vayumeSettings",
     "name": "Vayume Settings",
-    "description": "Toggle Vayume apps and trigger rebuilds from the control center - reads and writes the real Host.nix in your Vayume repo",
+    "description": "Manage Vayume apps, appearance, and development tools, and trigger rebuilds - reads and writes the real _config.nix in your Vayume repo",
     "version": "1.0.0",
     "author": "vayume",
     "icon": "settings_suggest",
