@@ -11,7 +11,6 @@ DankFloatingWindow {
     implicitWidth: 820
     implicitHeight: 620
     minimumSize: Qt.size(600, 440)
-    visible: false
 
     property string activeCategory: "appearance"
     property bool logCollapsed: false
@@ -34,19 +33,6 @@ DankFloatingWindow {
         function onRebuildBusyChanged() {
             if (root.vm.rebuildBusy) root.logCollapsed = false;
         }
-    }
-
-    function openWindow() {
-        root.vm.refreshAll();
-        // Closing a floating window via the compositor can leave the QML
-        // `visible` property true while the actual Wayland window is gone,
-        // so a plain `visible = true` re-open is a silent no-op. Reset
-        // first, then re-show - the same resurrection pattern DMS's own
-        // SettingsModal.show() uses.
-        if (visible && !backingWindowVisible) visible = false;
-        visible = true;
-        raise();
-        requestActivate();
     }
 
     Column {

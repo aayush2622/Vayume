@@ -161,7 +161,7 @@ PluginComponent {
     ccWidgetIsActive: root.repoKnown && root.repo.rebuildPending
     ccDetailHeight: 56
 
-    onCcWidgetExpanded: settingsWindow.openWindow()
+    onCcWidgetExpanded: root.openSettingsWindow()
 
     Component.onCompleted: refreshAll()
 
@@ -381,13 +381,40 @@ PluginComponent {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: settingsWindow.openWindow()
+                onClicked: root.openSettingsWindow()
             }
         }
     }
 
-    SettingsWindow {
-        id: settingsWindow
-        vm: root
+    // A closed-then-reopened DankFloatingWindow/FloatingWindow never comes
+    // back: once the compositor destroys its Wayland toplevel, setting
+    // `visible = true` on the same QML object again is a silent no-op -
+    // verified directly with a Quickshell IPC test harness against a live
+    // Hyprland session (close via the same dispatcher this repo's own "Q"
+    // keybind uses, then call the reopen path: `visible` reports `true`
+    // but no window ever reappears). A Loader sidesteps that by fully
+    // destroying and recreating the window instead of trying to resurrect
+    // one - `active: false` on close, then `active: true` builds a
+    // genuinely new FloatingWindow with its own fresh Wayland surface.
+    Loader {
+        id: settingsWindowLoader
+        active: false
+        sourceComponent: SettingsWindow {
+            vm: root
+            visible: true
+            onVisibleChanged: if (!visible) settingsWindowLoader.active = false
+            Component.onCompleted: { raise(); requestActivate(); }
+        }
+    }
+
+    function openSettingsWindow() {
+        root.refreshAll();
+        if (settingsWindowLoader.active && settingsWindowLoader.item) {
+            settingsWindowLoader.item.visible = true;
+            settingsWindowLoader.item.raise();
+            settingsWindowLoader.item.requestActivate();
+        } else {
+            settingsWindowLoader.active = true;
+        }
     }
 }
