@@ -52,6 +52,37 @@
           ];
           home.sessionVariables.QS_ICON_THEME = "MaterialOS";
 
+          # Quickshell's icon lookup (AppIconRenderer -> Quickshell.iconPath,
+          # not IconThemeService) never resolves anything through a
+          # fallback/inherited theme literally named "hicolor" - verified
+          # directly against a live session with a minimal reproduction:
+          # even an isolated, non-Hidden "hicolor" theme containing just one
+          # icon still comes back empty, while the identical file under any
+          # other theme name resolves fine. So every app whose only icon
+          # lives in hicolor (most third-party ones MaterialOS doesn't
+          # itself cover - Zen, Vesktop, Lutris, Zed, ...) rendered as a
+          # blank letter fallback in the launcher despite the icon file
+          # genuinely being on disk. Mirror the real, already-merged hicolor
+          # tree straight into a user-local "MaterialOS" theme dir instead of
+          # depending on that broken fallback chase: MaterialOS's own
+          # curated icons are copied in first so they still win by filename
+          # for the apps it explicitly covers (Spotify, Android Studio,
+          # ...), then hicolor's far more complete index.theme (every
+          # standard size up to 512, @2x variants, scalable) overwrites
+          # MaterialOS's own narrower one (16-128px only) so nothing copied
+          # from hicolor ends up sitting in an undeclared, ignored bucket.
+          # --no-preserve=mode because both sources are read-only Nix store
+          # paths and the second copy needs to write into what the first
+          # one created.
+          home.activation.materialOSIconFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            iconDir="$HOME/.local/share/icons/MaterialOS"
+            run rm -rf "$iconDir"
+            run mkdir -p "$iconDir"
+            run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode ${materialOSIcons}/share/icons/MaterialOS/. "$iconDir/"
+            run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode "$HOME/.nix-profile/share/icons/hicolor/." "$iconDir/" 2>/dev/null || true
+            run ${pkgs.gnused}/bin/sed -i -e "/^Hidden=true/d" -e "s/^Name=.*/Name=MaterialOS/" "$iconDir/index.theme" 2>/dev/null || true
+          '';
+
           services.dankSession = {
             enable = true;
             package = inputs.danksession.packages.${pkgs.system}.default;
