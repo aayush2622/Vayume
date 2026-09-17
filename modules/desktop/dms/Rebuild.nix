@@ -32,12 +32,18 @@
 
       vayumeRebuildCommand = pkgs.writeShellApplication {
         name = "vayume-rebuild";
-        text = ''exec sudo -n ${vayumeRebuildScript} "$@"'';
+        text = ''
+          [ "$#" -eq 0 ] || { echo "usage: vayume-rebuild (takes no arguments - runs a real nixos-rebuild switch)" >&2; exit 2; }
+          exec sudo -n ${vayumeRebuildScript}
+        '';
       };
 
       vayumeGcCommand = pkgs.writeShellApplication {
         name = "vayume-gc";
-        text = ''exec sudo -n ${vayumeGcScript} "$@"'';
+        text = ''
+          [ "$#" -eq 0 ] || { echo "usage: vayume-gc (takes no arguments - runs nix-collect-garbage -d)" >&2; exit 2; }
+          exec sudo -n ${vayumeGcScript}
+        '';
       };
     in
     {
