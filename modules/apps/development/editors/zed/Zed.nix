@@ -1,4 +1,6 @@
 { self, ... }: {
+  flake.appDescriptions.Zed = "Zed editor, with extensions/tasks/settings pulled in per enabled language.";
+
   flake.homeModules.apps.Zed = { pkgs, lib, config, vayumeTheme, vayumeApps, vayumeSecrets, ... }:
   let
     hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";

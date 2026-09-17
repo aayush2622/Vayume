@@ -1,4 +1,6 @@
 {
+  flake.appDescriptions.Distrobox = "Ubuntu Distrobox container, with host app/icon integration for AppImages.";
+
   flake.homeModules.apps.Distrobox =
     {
       pkgs,
@@ -261,7 +263,6 @@
               2>/dev/null || true
           '';
 
-          # Enter the container.
           box = pkgs.writeShellScriptBin "vayume-box${cmdSuffix}" ''
             set -eu
 

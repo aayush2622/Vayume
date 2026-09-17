@@ -1,4 +1,6 @@
 {
+  flake.appDescriptions.Thunar = "Thunar file manager with archive, media-tags, and volume-management plugins.";
+
   flake.homeModules.apps.Thunar =
     { pkgs, lib, config, ... }:
     let

@@ -35,6 +35,8 @@ in {
     mods = zenModsSpec;
   };
 
+  flake.appDescriptions.ZenBrowser = "Zen Browser with a curated set of extensions preinstalled.";
+
   flake.homeModules.apps.ZenBrowser = { pkgs, lib, config, vayumeTheme, ... }:
   let
     theme = vayumeTheme;

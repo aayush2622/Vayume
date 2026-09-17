@@ -22,6 +22,8 @@
     };
   };
 
+  flake.appDescriptions.Qt = "Qt/QML development tools and editor integrations.";
+
   flake.homeModules.apps.Qt = { pkgs, ... }: {
     home.packages = with pkgs; [ kdePackages.qtdeclarative ];
   };

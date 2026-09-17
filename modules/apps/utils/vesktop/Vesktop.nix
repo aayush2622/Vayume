@@ -1,4 +1,6 @@
 {
+  flake.appDescriptions.Vesktop = "Vesktop (Discord client) with Vencord mods and a matching theme.";
+
   flake.homeModules.apps.Vesktop = { self, pkgs, lib, config, vayumeTheme, ... }:
   let
     discordTemplate =

@@ -1,4 +1,6 @@
 { inputs, ... }: {
+  flake.appDescriptions.Spicetify = "Spicetify: themes/mods for the official Spotify client.";
+
   flake.homeModules.apps.Spicetify = { pkgs, vayumeTheme, ... }:
   let
     spicePkgs =
