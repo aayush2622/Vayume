@@ -1,5 +1,5 @@
 {
-  flake.appDescriptions.Gaming = "Game launchers, Proton/GPU tuning, and shader-cache management.";
+  flake.appDescriptions.Gaming = "Game launchers (Lutris, Heroic, Hytale), Proton/GPU tuning, and shader-cache management.";
 
   flake.homeModules.apps.Gaming = { config, ... }:
   let
@@ -9,6 +9,7 @@
   {
     imports = [
       ./_launchers.nix
+      ./_hytale.nix
       ./_proton.nix
       ./_performance.nix
     ];

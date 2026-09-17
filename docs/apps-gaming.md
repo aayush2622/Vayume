@@ -2,34 +2,54 @@
 
 ---
 
-Steam, Lutris, Heroic, and Proton - one toggle, split across a few files so no single one grows unmanageable.
+Steam, Lutris, Heroic, Hytale, and Proton - one toggle, split across a few files so no single one grows unmanageable.
 
 ## `modules/apps/gaming/Gaming.nix`
 
-One `vayume.apps` toggle (`Gaming`), split across four files so it doesn't
-turn into a wall of text - Lutris + Heroic as the launchers, Steam
-alongside them, plus everything shared between them:
+One `vayume.apps` toggle (`Gaming`), split across five files so it doesn't
+turn into a wall of text - Lutris + Heroic + Hytale as the launchers,
+Steam alongside them, plus everything shared between them:
 
 - **`Gaming.nix`** is the real `flake.homeModules.apps.Gaming` entry. It
-  works out `gamesDir`/`shaderCacheDir` and imports the three fragments
+  works out `gamesDir`/`shaderCacheDir` and imports the four fragments
   below, handing them those two paths via `_module.args` (a plain
   function argument can't reach an imported module, this is how the
   module system does it - `self` doesn't need this treatment, it's
   already available everywhere).
 - **`_launchers.nix`**: Lutris/Heroic/AdwSteamGtk packages, the `~/Games`
   folder + GTK bookmark, and the Heroic/Steam themes.
+- **`_hytale.nix`**: the Hytale launcher, packaged by hand (see below).
 - **`_proton.nix`**: the Proton/Wine stack (umu-launcher, wine,
   winetricks, protontricks, protonup-qt), `$WINEPREFIX`, the Wine theme,
   and Lutris's default runner.
 - **`_performance.nix`**: gamescope + its two wrapper scripts, MangoHud,
   the NVIDIA shader-cache path.
 
-  Those three all start with an underscore on purpose - same reason as
+  Those four all start with an underscore on purpose - same reason as
   [\_hardware.nix](core-hardware.md): import-tree
   ignores anything with `/_` in the path, so these fragments (which
   aren't valid flake-parts modules on their own - they use `home.packages`,
   not flake-parts options) stay invisible to it. `Gaming.nix` is the only
   thing that actually imports them.
+
+**Hytale has no nixpkgs package, no Steam listing, and isn't on
+Flathub** - the only official distribution is a self-updating native
+binary served from `launcher.hytale.com`. `_hytale.nix` fetches it with
+`pkgs.fetchurl` and wraps it with `autoPatchelfHook` against the
+webkit2gtk/gtk3 stack it needs (it's a Tauri-style app, not an AppImage).
+The fetched URL is upstream's permanent "latest" pointer, not a
+versioned release, so the derivation pins the exact bytes fetched at
+packaging time with a `hash`; picking up a newer launcher means
+re-fetching and bumping both the recorded upstream version and the hash
+by hand - a mismatch just fails the build loudly rather than silently
+serving a stale copy. The launcher's own self-updater will try to
+overwrite its binary in place and fail, because the Nix store it lives
+in is read-only; harmless, but expect it to report that it couldn't
+update itself. `Games/Hytale/` is pre-created as the folder to pick
+during the launcher's first-run setup so the actual multi-gigabyte game
+download - which the launcher fetches at runtime, outside Nix entirely -
+lands next to every other game under `~/Games` instead of the
+launcher's own default location.
 
 **Steam is enabled in `Host.nix`, not here.** `programs.steam.enable`
 needs system-level stuff (32-bit libs, firewall rules, controller udev

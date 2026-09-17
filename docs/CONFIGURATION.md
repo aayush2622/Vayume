@@ -147,10 +147,10 @@ every editor reads to figure out what extensions it needs. See
 
 `apps/gaming/` is one app (`Gaming`) spread across a few files just so no
 single file gets huge: `Gaming.nix` is the real
-`flake.homeModules.apps.Gaming` entry, and `_launchers.nix`/`_proton.nix`/
-`_performance.nix` are plain fragments it pulls in by relative path. The
-underscore keeps import-tree from trying to treat them as modules of
-their own - same trick as `_hardware.nix`.
+`flake.homeModules.apps.Gaming` entry, and `_launchers.nix`/`_hytale.nix`/
+`_proton.nix`/`_performance.nix` are plain fragments it pulls in by
+relative path. The underscore keeps import-tree from trying to treat
+them as modules of their own - same trick as `_hardware.nix`.
 
 ---
 
