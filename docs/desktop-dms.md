@@ -565,6 +565,26 @@ the root instance as `vm` and only ever call its functions
 `Process` of their own, so there is still exactly one place that
 understands the backend's shape.
 
+**The settings window is behind a `Loader`, not instantiated directly,
+because a closed `FloatingWindow` never comes back.** Once the
+compositor destroys a `DankFloatingWindow`'s Wayland toplevel (closing
+it the normal way - the `Q`/`Alt+F4` keybinds in
+[Hyprland.nix](desktop-hyprland.md)/[Niri.nix](desktop-niri.md), or any
+other client-initiated close), setting its `visible` property back to
+`true` is a silent no-op - the object still reports `visible: true` but
+no window ever reappears. Confirmed directly against a live session
+with a Quickshell IPC test harness (a throwaway `qs -p` shell exposing
+an `IpcHandler`, closed via `hyprctl dispatch 'hl.dsp.window.close()'` -
+the same dispatcher those keybinds use - then reopened via the IPC
+call): `visible` alone can't resurrect a destroyed platform window, no
+matter what resurrection logic runs first. `VayumeSettingsWidget.qml`
+works around this by wrapping `SettingsWindow` in a `Loader`
+(`active: false` initially) instead: `onVisibleChanged` deactivates the
+Loader the moment the window closes, tearing the whole object down, and
+`openSettingsWindow()` either shows the still-live instance (already
+open, just needs raising) or flips `active` back to `true` to build a
+genuinely new `FloatingWindow` with its own fresh Wayland surface.
+
 The cursor picker is a real `DankDropdown` (the same component DMS's
 own settings dropdowns use under `qs.Widgets`) fed by `theme
 get`'s live `cursorOptions` - not a hardcoded list, and not a
