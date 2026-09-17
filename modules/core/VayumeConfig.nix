@@ -87,6 +87,58 @@
         }
       '';
 
+      # Same "before/inside/after" discipline as appsAwk, but for a flat
+      # `<block> = { field = value; };` shape (no dotted `.enable`
+      # suffix) that may not exist in the file at all yet - buffers every
+      # line so a missing block can still be appended before the file's
+      # own final closing brace, decided only once the whole file (and
+      # whether the block was ever found) is known.
+      themeAwk = pkgs.writeText "vayume-config-theme.awk" ''
+        BEGIN { state = 0; depth = 0; found = 0; n = 0 }
+        { n++; buf[n] = $0 }
+        END {
+          for (i = 1; i <= n; i++) {
+            line = buf[i]
+            if (state == 0 && line ~ /vayume\.theme[ \t]*=[ \t]*\{/) {
+              state = 1
+              match(line, /^[ \t]*/)
+              indent = substr(line, 1, RLENGTH) "  "
+              depth += gsub(/\{/, "{", line)
+              depth -= gsub(/\}/, "}", line)
+              buf[i] = line
+              continue
+            }
+            if (state == 1) {
+              depth += gsub(/\{/, "{", line)
+              depth -= gsub(/\}/, "}", line)
+              if (depth <= 0) {
+                if (!found) {
+                  insertBefore[i] = indent field " = " value ";"
+                  found = 1
+                }
+                state = 2
+                continue
+              }
+              if (!found && line ~ ("^[ \t]*" field "[ \t]*=")) {
+                buf[i] = indent field " = " value ";"
+                found = 1
+                continue
+              }
+            }
+          }
+
+          if (!found) {
+            insertBeforeFinal = "  vayume.theme = {\n    " field " = " value ";\n  };"
+          }
+
+          for (i = 1; i <= n; i++) {
+            if (i in insertBefore) print insertBefore[i]
+            if (i == n && insertBeforeFinal != "") print insertBeforeFinal
+            print buf[i]
+          }
+        }
+      '';
+
       vayumeConfigScript = pkgs.writeShellApplication {
         name = "vayume-config";
         runtimeInputs = with pkgs; [ gnugrep gawk jq git nix coreutils ];
@@ -100,6 +152,9 @@
             apps list                     every vayume.apps.* module and its state (JSON)
             apps set <Name> <true|false> [--if-unmodified-since <epoch>]
                                            toggle one app in _config.nix, validated + atomic
+            theme get                     current font/fontSize/cursorTheme/iconTheme (JSON)
+            theme set <fontSize|cursorTheme> <value> [--if-unmodified-since <epoch>]
+                                           edit one theme field, validated + atomic
             validate                      re-evaluate _config.nix, report pass/fail
           EOF
             exit 2
@@ -126,8 +181,39 @@
 
           validate_config_file() {
             nix eval --impure --json --expr \
-              "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.apps" \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.fontSize theme.cursorTheme ]" \
               >/dev/null
+          }
+
+          check_since() {
+            local since mtime
+            since=$1
+            [ -n "$since" ] || return 0
+            mtime=$(stat -c %Y "$config_file")
+            if [ "$since" != "$mtime" ]; then
+              echo "vayume-config: $config_file changed since it was last read (reload before editing)" >&2
+              exit 3
+            fi
+          }
+
+          # Applies a temp file (already-edited content) atomically, then
+          # validates the result for real and rolls back on failure -
+          # shared by every "set" command so there's one place that
+          # understands "safe write", not one copy per field kind.
+          apply_edit() {
+            local tmp
+            tmp=$1
+            cp -p "$config_file" "$config_file.bak"
+            mv "$tmp" "$config_file"
+
+            if validate_config_file; then
+              rm -f "$config_file.bak"
+              return 0
+            else
+              mv "$config_file.bak" "$config_file"
+              echo "vayume-config: new configuration failed to evaluate - reverted $config_file" >&2
+              return 1
+            fi
           }
 
           cmd_repo() {
@@ -175,7 +261,7 @@
           }
 
           cmd_apps_set() {
-            local name value since mtime tmp
+            local name value since tmp
             name=''${1:?app name required}
             value=''${2:?true or false required}
             since=""
@@ -183,12 +269,7 @@
               since=''${4:?epoch required after --if-unmodified-since}
             fi
             case "$value" in true|false) ;; *) echo "vayume-config: value must be true or false" >&2; exit 2;; esac
-
-            mtime=$(stat -c %Y "$config_file")
-            if [ -n "$since" ] && [ "$since" != "$mtime" ]; then
-              echo "vayume-config: $config_file changed since it was last read (reload before editing)" >&2
-              exit 3
-            fi
+            check_since "$since"
 
             tmp="$config_file.vayume-config.tmp"
             if ! awk -v mode=set -v target="$name" -v value="$value" -f ${appsAwk} "$config_file" > "$tmp"; then
@@ -196,16 +277,63 @@
               exit 1
             fi
 
-            cp -p "$config_file" "$config_file.bak"
-            mv "$tmp" "$config_file"
-
-            if validate_config_file; then
-              rm -f "$config_file.bak"
+            if apply_edit "$tmp"; then
               jq -n --arg name "$name" --arg value "$value" \
                 '{ok: true, name: $name, enabled: ($value == "true")}'
             else
-              mv "$config_file.bak" "$config_file"
-              echo "vayume-config: new configuration failed to evaluate - reverted $config_file" >&2
+              exit 1
+            fi
+          }
+
+          cmd_theme_get() {
+            nix eval --impure --json --expr \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme; { inherit font fontSize cursorTheme iconTheme; }"
+          }
+
+          # cursorTheme's valid values genuinely depend on which names the
+          # *current* cursorPackage ships - queried live rather than
+          # hardcoded, so this never drifts from whatever Theme.nix's
+          # default (or a host's own override) actually is.
+          cmd_theme_set() {
+            local field value since tmp cursorPackage validNames
+            field=''${1:?field required}
+            value=''${2:?value required}
+            since=""
+            if [ "''${3:-}" = "--if-unmodified-since" ]; then
+              since=''${4:?epoch required after --if-unmodified-since}
+            fi
+            check_since "$since"
+
+            case "$field" in
+              fontSize)
+                case "$value" in
+                  *[!0-9]* | "") echo "vayume-config: fontSize must be a positive integer" >&2; exit 2;;
+                esac
+                [ "$value" -gt 0 ] || { echo "vayume-config: fontSize must be a positive integer" >&2; exit 2; }
+                ;;
+              cursorTheme)
+                cursorPackage=$(nix eval --impure --raw --expr \
+                  "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.cursorPackage")
+                validNames=$(find "$cursorPackage/share/icons" -maxdepth 1 -mindepth 1 -printf "%f\n" 2>/dev/null)
+                if ! grep -qxF "$value" <<<"$validNames"; then
+                  echo "vayume-config: '$value' isn't a cursor theme the current cursorPackage ships. Options:" >&2
+                  while IFS= read -r n; do echo "  $n" >&2; done <<<"$validNames"
+                  exit 2
+                fi
+                value="\"$value\""
+                ;;
+              *)
+                echo "vayume-config: unsupported theme field '$field' (fontSize, cursorTheme)" >&2
+                exit 2
+                ;;
+            esac
+
+            tmp="$config_file.vayume-config.tmp"
+            awk -v field="$field" -v value="$value" -f ${themeAwk} "$config_file" > "$tmp"
+
+            if apply_edit "$tmp"; then
+              jq -n --arg field "$field" --arg value "$value" '{ok: true, field: $field, value: $value}'
+            else
               exit 1
             fi
           }
@@ -227,6 +355,14 @@
               case "''${1:-}" in
                 list) cmd_apps_list;;
                 set) shift; cmd_apps_set "$@";;
+                *) usage;;
+              esac
+              ;;
+            theme)
+              shift
+              case "''${1:-}" in
+                get) cmd_theme_get;;
+                set) shift; cmd_theme_set "$@";;
                 *) usage;;
               esac
               ;;
