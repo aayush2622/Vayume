@@ -19,11 +19,18 @@ would from a terminal.
 ### Commands
 
 ```
-vayume-config repo                          # {path, branch, dirty, configFile}
-vayume-config apps list                      # every vayume.apps.* + state + category
+vayume-config repo                          # {path, branch, dirty, configFile, hostName, rebuildPending}
+vayume-config apps list                      # every vayume.apps.* + state + category + description
 vayume-config apps set <Name> <true|false> [--if-unmodified-since <epoch>]
-vayume-config theme get                      # {font, fontSize, cursorTheme, iconTheme}
-vayume-config theme set <fontSize|cursorTheme> <value> [--if-unmodified-since <epoch>]
+vayume-config development list               # dev languages/editors/tools + descriptions + editor integrations
+vayume-config theme get                      # {font, fontSize, cursorTheme, iconTheme, cursorOptions, fontOptions}
+vayume-config theme set <fontSize|cursorTheme|font> <value> [--if-unmodified-since <epoch>]
+vayume-config users list                     # every vayume.users.* + groupOptions (JSON)
+vayume-config users set-name <user> <fullName> [--if-unmodified-since <epoch>]
+vayume-config users set-secret <user> <WAKATIME_API_KEY|RBW_EMAIL> <value> [--if-unmodified-since <epoch>]
+vayume-config users set-group <user> <group> <true|false> [--if-unmodified-since <epoch>]
+vayume-config users set-password <user> [--if-unmodified-since <epoch>]
+                                              # reads the new plaintext password from stdin, never argv
 vayume-config validate                       # re-evaluate _config.nix, pass/fail
 ```
 
@@ -82,6 +89,16 @@ consulted by `apps set`. It's what lets the DMS plugin group the list
 into Development/Gaming/Applications sections instead of one flat list
 of 23 names.
 
+`apps list` and `development list` both also merge in `description`,
+read from `flake.appDescriptions.<Name>` - a `lazyAttrsOf str` registered
+in [`Registry.nix`](../modules/core/Registry.nix) next to `homeModules`,
+so it merges automatically across every app's own file the same way
+`homeModules.apps` and `devLanguages` already do. Each app declares its
+own one-line `flake.appDescriptions.<Name>` right next to its
+`flake.homeModules.apps.<Name>` - one file owns both, so a description
+never drifts out of sync with the module it describes. Missing entries
+fall back to `""`, never an invented placeholder.
+
 Toggling an app that's already listed rewrites its one line in place,
 preserving every other line byte-for-byte. Toggling one that was never
 listed (a module added since `_config.nix` was last touched) inserts a new
@@ -89,7 +106,37 @@ line just before the block's closing `};`, at the same indentation as
 its siblings, rather than guessing at a category comment to attach it
 to.
 
-### Theme fields: why only two of the eight are editable
+### `development list`: real editor integrations, not invented ones
+
+Splits the same `modules/apps/development/*` tree three ways -
+`languages`, `editors`, `devTools`/`ccSwitch` (as `tools`) - by which
+subdirectory each app's file actually lives in, the same directory-scan
+technique `apps list`'s `category` field already uses. `available`
+(`homeModules.apps`' own attribute names) filters out anything that
+isn't a real app - without it, a vendored file like
+`languages/flutter/_vendor/wpewebkit/package.nix` would show up as a
+fake language named "package".
+
+Each language's `integrations` field is the *real* intersection of
+[`flake.devLanguages.<lang>`](core-devlanguages.md)'s own editor keys
+(which editors that language contributes extensions/tasks to - already
+produced by each language module, e.g. `Rust.nix`) with whichever
+editor apps are actually enabled right now. There is no per-language
+"pick one editor" setting anywhere in Vayume - a language can integrate
+with several enabled editors simultaneously - so the UI shows this as
+read-only informational text ("Integrates with: VS Code, Zed"), not a
+dropdown pretending a single-editor choice exists.
+
+### `repo`'s `rebuildPending`: cheap, restart-safe, no extra eval
+
+`/run/current-system`'s own mtime moves forward on every successful
+`nixos-rebuild switch`, even one that produces an identical generation
+(it's re-symlinked regardless) - comparing it against `_config.nix`'s
+mtime is a free way to answer "has the config changed since the last
+rebuild" without an extra `nix eval`, and it still gives the right
+answer after a DMS restart (nothing about it is session-local state).
+
+### Theme fields: why only three of the eight are editable
 
 `vayume.theme` ([core/Theme.nix](core-theme.md)) has eight fields, but
 three of them - `fontPackage`, `cursorPackage`, `iconPackage` - are
@@ -100,27 +147,105 @@ name/package pair (e.g. a `cursorTheme` string the current
 `cursorPackage` doesn't actually ship) would silently fail to resolve a
 cursor at runtime, not error at build time.
 
-Only `fontSize` (a plain int, no coupling to anything) and `cursorTheme`
-are exposed. `cursorTheme` looks safe to edit freely - it's a string -
-but isn't really: it's only meaningful together with whatever
-`cursorPackage` currently is. Rather than accept arbitrary text, `theme
-set cursorTheme` queries the *actual* `cursorPackage` at call time
-(`nix eval ...cursorPackage`, then lists `share/icons/*` in that real
-store path) and rejects anything not in that live list. Correct even if
-a host ever changes `cursorPackage` away from the default
-`bibata-cursors` - the valid-name list is never hardcoded twice.
+`fontSize` (a plain int, no coupling to anything), `cursorTheme`, and
+`font` are exposed. The latter two look safe to edit freely - they're
+strings - but aren't really: each is only meaningful together with
+whatever `cursorPackage`/`fontPackage` currently is. Rather than accept
+arbitrary text, `theme set cursorTheme`/`theme set font` query the
+*actual* package at call time (`cursorPackage`'s `share/icons/*`
+directory names; `fontPackage`'s font files' own family names, read via
+`fc-scan`, since one package can ship several real families - the
+nerd-fonts default ships six, with/without ligatures and three spacing
+variants) and reject anything not in that live list. Correct even if a
+host ever changes either package away from its default - the valid-name
+lists are never hardcoded twice. `theme get` returns both live lists as
+`cursorOptions`/`fontOptions`, so the Vayume Settings UI's dropdowns walk
+the *real* current set of names too, rather than keeping their own
+guess (an earlier version of the cursor picker did exactly that, as a
+fixed six-name array - it silently excluded the six `-Right` variants,
+and would have gone entirely stale the moment `cursorPackage` ever
+changed).
 
-`font` and `iconTheme` stay Nix-only for the same reason, minus a safe
-per-field validation strategy: there's no small, generic way to ask "is
-this font name real" the way there is for a cursor package's shipped
-directory names. Extending this needs `fontPackage`/`iconPackage` made
-editable too, not just their string half - a genuinely bigger design
-than this file's job is meant to be. `modules/core/VayumeConfig.nix`'s
+`iconTheme` stays Nix-only for the same reason, minus a safe per-field
+validation strategy of its own yet - GTK icon themes don't have as
+simple a "real name" signal as a font file's family or an icon theme
+directory's own name (`iconTheme` *is* actually just a directory name
+under `iconPackage/share/icons/`, so the same `cursor_options`-style
+`find` would work - it just hasn't been done). `modules/core/VayumeConfig.nix`'s
 `themeAwk` (a second, small state machine alongside `appsAwk` - same
 before/inside/after discipline, but for a flat `field = value;` shape
-that may not exist in the file at all yet) is written generically
-enough that adding a third safe field later is a few lines, not a
-rewrite.
+that may not exist in the file at all yet) and the `cursor_options`/
+`font_options` pattern are both written generically enough that adding
+`iconTheme` later is a few lines, not a rewrite.
+
+### `users set-*`: the one editable surface that's genuinely security-sensitive
+
+`vayume.users` ([core/Users.nix](core-users.md)) is different from
+`apps`/`theme`: `extraGroups` can grant sudo (`wheel`) and
+`hashedPassword` controls login, so every design choice here is more
+conservative than the rest of this CLI.
+
+- **`fullName`/each secret value** are arbitrary text, not picked from
+  a live enum the way `cursorTheme`/`font` are - `nix_escape()`
+  neutralizes backslash, double-quote, and dollar before the value is
+  embedded in a Nix double-quoted string literal. Skipping this would
+  let an unescaped `${...}` in a display name or password turn into an
+  arbitrary evaluated Nix expression the next time this file is read -
+  verified directly (a `fullName` of
+  `` pwned${builtins.trace "INJECTED" 1} `` round-trips as a literal
+  string, never evaluated).
+- **`extraGroups`** is never free text. `users set-group` validates
+  against a curated, *live* group list (`group_options`): a short
+  hardcoded shortlist (`wheel`, `networkmanager`, `video`, `input`,
+  `audio`, `docker`, `adbusers`, `podman`) unioned with whatever any
+  user's `extraGroups` already contains right now, intersected against
+  `config.users.groups`' own real attribute names - so a typo'd or
+  nonexistent group is rejected before it ever reaches `_config.nix`,
+  and an unusual group already in use never silently disappears from
+  the option list. The full new list (not just the one changed group)
+  is written back each time, computed from the *current, resolved*
+  `extraGroups` - `extraGroups`'s own `mkOption` default
+  (`networkmanager`/`video`/`input`) only applies when the option is
+  never set at all in `_config.nix`; writing anything there replaces it
+  outright, so toggling one group in text-surgery isolation could
+  silently drop the others a user never explicitly listed.
+- **`users set-password`** reads the new plaintext from stdin, never a
+  command-line argument - argv is visible to every other process on
+  the machine via `/proc` (`ps`, etc.), stdin isn't. It hashes with
+  `mkpasswd -m sha-512 -s` before the value ever touches `_config.nix`
+  or a JSON response; the plaintext is `unset` immediately after
+  hashing and never appears in this CLI's own output.
+- `avatar`, `shell`, and `extraPackages` are absent from every
+  `users set-*` command for the same reason `fontPackage`/`iconTheme`'s
+  packages are absent from `theme set` - `avatar` is a Nix path literal
+  and `shell`/`extraPackages` are packages, neither of which can be
+  safely produced from a text field.
+- `validate_config_file` (the same one `apply_edit` already ran for
+  every `apps`/`theme` write) was extended to force-evaluate
+  `fullName`/`hashedPassword`/`extraGroups`/every secret value for
+  every user - Nix is lazy, so a validation expression that never
+  mentions `users` at all would let a broken `users` edit sail through
+  as "valid" and only surface at the next real rebuild. Deliberately
+  skips `shell`/`extraPackages`/`avatar` (package/path-typed, never
+  written by this CLI) so an ordinary `apps`/`theme` toggle doesn't pay
+  for evaluating every user's shell package too.
+
+`extraGroups`/`secrets` are always replaced as one whole new value
+(read the current, already-resolved value via `nix eval`, edit it,
+write the complete result back), never text-surgered element by
+element - `modules/core/VayumeConfig.nix`'s `usersAwk` only ever
+replaces one field wholesale inside one named user's block. Its `value`
+arrives via the `USERS_AWK_VALUE` environment variable, read through
+`ENVIRON[]`, not an awk `-v` assignment - awk's `-v` runs the same
+backslash-escape processing as a string literal in the program source,
+which would silently undo `nix_escape()`'s own escaping (`\"`
+collapsing back to `"`, `\$` warning and collapsing to `$`) before the
+script ever saw it. Since the old value being replaced may itself have
+been multi-line (a hand-edited `extraGroups`/`secrets` block commonly
+is), the awk script also consumes exactly as many further lines as the
+old value's own brackets/braces still have open, so no orphaned
+continuation lines are left behind as garbage after a single-line
+replacement.
 
 ### Atomic writes, validated before they're trusted
 

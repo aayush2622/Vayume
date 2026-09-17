@@ -139,22 +139,130 @@
         }
       '';
 
+      # Replaces one scalar field (fullName/hashedPassword/extraGroups/
+      # secrets - always a whole-value replace, computed by the caller
+      # from the live, already-resolved value rather than text-surgering
+      # a list/attrset in place) inside one named user's own block under
+      # `vayume.users`. `value` arrives via $USERS_AWK_VALUE, an
+      # environment variable, not a `-v` assignment - awk's `-v` runs the
+      # same backslash-escape processing as a string literal in the
+      # program source, which would silently undo the caller's own Nix
+      # escaping (`\"` collapsing back to `"`, `\$` warning and
+      # collapsing to `$`) before this script ever saw it. Streams line
+      # by line like appsAwk (no need to buffer - the target user's block
+      # is already known to exist, from the same `users list` read that
+      # produced the value being written), but the field being replaced
+      # may itself have been multi-line (`extraGroups`/`secrets` commonly
+      # are in a hand-edited `_config.nix`) - `phase 6` consumes exactly
+      # as many further lines as the old value's own brackets/braces
+      # still have open, so no orphaned continuation lines are left
+      # behind as garbage after the single-line replacement is printed.
+      usersAwk = pkgs.writeText "vayume-config-users.awk" ''
+        BEGIN {
+          value = ENVIRON["USERS_AWK_VALUE"]
+          phase = 0; depthUsers = 0; depthUser = 0
+          foundUserOpen = 0; foundField = 0
+          userIndent = ""
+          userRe = "^[ \t]*" user "[ \t]*=[ \t]*\\{"
+          fieldRe = "^[ \t]*" fieldName "[ \t]*="
+        }
+        function braceDelta(l) { return gsub(/\{/, "{", l) - gsub(/\}/, "}", l) }
+        function bracketDelta(l) { return gsub(/\[/, "[", l) - gsub(/\]/, "]", l) }
+        {
+          line = $0
+
+          if (phase == 0) {
+            if (line ~ /vayume\.users[ \t]*=[ \t]*\{/) {
+              phase = 1
+              depthUsers += braceDelta(line)
+            }
+            print line
+            next
+          }
+
+          if (phase == 1) {
+            if (depthUsers == 1 && !foundUserOpen && line ~ userRe) {
+              foundUserOpen = 1
+              phase = 2
+              match(line, /^[ \t]*/); userIndent = substr(line, 1, RLENGTH) "  "
+              depthUsers += braceDelta(line)
+              depthUser = 1
+              print line
+              next
+            }
+            depthUsers += braceDelta(line)
+            print line
+            next
+          }
+
+          if (phase == 2) {
+            delta = braceDelta(line)
+
+            if (!foundField && depthUser == 1 && line ~ fieldRe) {
+              print userIndent fieldName " = " value ";"
+              foundField = 1
+              bdelta = bracketDelta(line)
+              if (delta > 0 || bdelta > 0) {
+                phase = 6
+                skipBrace = delta
+                skipBracket = bdelta
+              } else {
+                depthUser += delta
+              }
+              next
+            }
+
+            depthUser += delta
+            if (depthUser <= 0) {
+              if (!foundField) print userIndent fieldName " = " value ";"
+              phase = 3
+            }
+            print line
+            next
+          }
+
+          if (phase == 6) {
+            skipBrace += braceDelta(line)
+            skipBracket += bracketDelta(line)
+            if (skipBrace <= 0 && skipBracket <= 0) phase = 2
+            next
+          }
+
+          print line
+        }
+        END {
+          if (!foundUserOpen) {
+            print "vayume-config: user " user " not found in vayume.users block" > "/dev/stderr"
+            exit 1
+          }
+        }
+      '';
+
       vayumeConfigScript = pkgs.writeShellApplication {
         name = "vayume-config";
-        runtimeInputs = with pkgs; [ gnugrep gawk jq git nix coreutils ];
+        runtimeInputs = with pkgs; [ gnugrep gawk jq git nix coreutils fontconfig mkpasswd ];
         text = ''
           usage() {
             cat >&2 <<'EOF'
           usage: vayume-config <command> [args]
 
           commands:
-            repo                          repo path, git branch, dirty state (JSON)
+            repo                          repo path, branch, dirty/rebuild-pending state (JSON)
             apps list                     every vayume.apps.* module and its state (JSON)
             apps set <Name> <true|false> [--if-unmodified-since <epoch>]
                                            toggle one app in _config.nix, validated + atomic
+            development list              dev languages/editors/tools + editor integrations (JSON)
             theme get                     current font/fontSize/cursorTheme/iconTheme (JSON)
-            theme set <fontSize|cursorTheme> <value> [--if-unmodified-since <epoch>]
+            theme set <fontSize|cursorTheme|font> <value> [--if-unmodified-since <epoch>]
                                            edit one theme field, validated + atomic
+            users list                    every vayume.users.* profile + groupOptions (JSON)
+            users set-name <user> <fullName> [--if-unmodified-since <epoch>]
+            users set-secret <user> <WAKATIME_API_KEY|RBW_EMAIL> <value> [--if-unmodified-since <epoch>]
+            users set-group <user> <group> <true|false> [--if-unmodified-since <epoch>]
+                                           <group> must already exist on this system
+            users set-password <user> [--if-unmodified-since <epoch>]
+                                           reads the new plaintext password from stdin,
+                                           hashes it (mkpasswd -m sha-512), never touches argv
             validate                      re-evaluate _config.nix, report pass/fail
           EOF
             exit 2
@@ -179,9 +287,19 @@
             exit 1
           }
 
+          # Deliberately forces every field this CLI can actually write,
+          # not just `apps`/`theme` - a broken `users` edit (bad string
+          # escaping, a stray brace) would otherwise sail through this
+          # check unevaluated (Nix is lazy; nothing here touches `users`
+          # unless something asks for it) and only surface at the next
+          # real rebuild. Skips `shell`/`extraPackages`/`avatar`
+          # deliberately - those are package/path-typed, not something
+          # this CLI ever writes, and forcing them would mean evaluating
+          # every user's shell package on every single apps/theme toggle
+          # too, not just on a users edit.
           validate_config_file() {
             nix eval --impure --json --expr \
-              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.fontSize theme.cursorTheme ]" \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) ]) users)" \
               >/dev/null
           }
 
@@ -194,6 +312,38 @@
               echo "vayume-config: $config_file changed since it was last read (reload before editing)" >&2
               exit 3
             fi
+          }
+
+          # Every value this CLI writes into `_config.nix` ends up inside
+          # a Nix double-quoted string literal it builds itself - has to
+          # neutralize backslash, double-quote, and dollar (Nix
+          # interpolates a dollar immediately followed by an open brace
+          # in double-quoted strings; an unescaped dollar ahead of
+          # user-typed text could turn a display name or password hash
+          # into an arbitrary evaluated expression) before that happens.
+          # Unlike cursorTheme/font, `fullName`/secrets/password values
+          # are genuinely arbitrary text, not picked from a
+          # live-validated enum, so this can't be skipped the way it was
+          # for those.
+          nix_escape() {
+            local s=$1
+            s=''${s//\\/\\\\}
+            s=''${s//\"/\\\"}
+            s=''${s//\$/\\$}
+            printf '%s' "$s"
+          }
+
+          # Usernames flow into an awk ERE (vayume-config-users.awk's
+          # `userRe`) and, for a couple of set commands, straight into a
+          # `nix eval --expr` string too - real Linux usernames are
+          # already restricted to this charset, so this both blocks awk
+          # metacharacter/nix-string injection and gives a clear error
+          # for a typo'd name instead of a silent no-match.
+          validate_username() {
+            case "$1" in
+              [a-z_][a-z0-9_-]*) ;;
+              *) echo "vayume-config: invalid username '$1'" >&2; exit 2 ;;
+            esac
           }
 
           # Applies a temp file (already-edited content) atomically, then
@@ -217,7 +367,7 @@
           }
 
           cmd_repo() {
-            local branch dirty
+            local branch dirty rebuildPending genMtime cfgMtime
             branch=$(git -C "$flake_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "(no git)")
             if git -C "$flake_dir" rev-parse --git-dir >/dev/null 2>&1 \
               && [ -n "$(git -C "$flake_dir" status --porcelain 2>/dev/null)" ]; then
@@ -225,15 +375,28 @@
             else
               dirty=false
             fi
+
+            # /run/current-system's own mtime moves forward on every successful
+            # switch (it's re-symlinked even when the target is unchanged) - a
+            # cheap, restart-safe stand-in for "has _config.nix changed since
+            # the last rebuild", no extra nix eval needed.
+            cfgMtime=$(stat -c %Y "$config_file")
+            genMtime=$(stat -L -c %Y /run/current-system 2>/dev/null || echo 0)
+            [ "$cfgMtime" -gt "$genMtime" ] && rebuildPending=true || rebuildPending=false
+
             jq -n --arg path "$flake_dir" --arg branch "$branch" --argjson dirty "$dirty" \
-              --arg configFile "$config_file" \
-              '{path: $path, branch: $branch, dirty: $dirty, configFile: $configFile}'
+              --arg configFile "$config_file" --arg hostName "${hostName}" \
+              --argjson rebuildPending "$rebuildPending" \
+              '{path: $path, branch: $branch, dirty: $dirty, configFile: $configFile,
+                hostName: $hostName, rebuildPending: $rebuildPending}'
           }
 
           cmd_apps_list() {
-            local available configured categories cat dir name
-            available=$(nix eval --impure --json --expr \
-              "builtins.attrNames (builtins.getFlake \"path:$flake_dir\").homeModules.apps")
+            local data available descriptions configured categories cat dir name
+            data=$(nix eval --impure --json --expr \
+              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; descriptions = self.appDescriptions; }")
+            available=$(jq '.available' <<<"$data")
+            descriptions=$(jq '.descriptions' <<<"$data")
             configured=$(awk -v mode=list -f ${appsAwk} "$config_file" \
               | jq -R -s '
                   split("\n") | map(select(length > 0) | split(" ")) |
@@ -250,14 +413,71 @@
               done < <(find "$dir" -name "*.nix" -printf "%f\n" | sed -E 's/\.nix$//')
             done
 
-            jq -n --argjson available "$available" --argjson configured "$configured" --argjson categories "$categories" '
+            jq -n --argjson available "$available" --argjson configured "$configured" \
+              --argjson categories "$categories" --argjson descriptions "$descriptions" '
               $available | map(. as $n | {
                 name: $n,
                 enabled: ($configured[$n] // false),
                 configured: ($configured | has($n)),
-                category: ($categories[$n] // "utils")
+                category: ($categories[$n] // "utils"),
+                description: ($descriptions[$n] // "")
               })
             '
+          }
+
+          # Languages/editors/tools are already three separate directories
+          # (modules/apps/development/{languages,editors,devTools,ccSwitch}) -
+          # this just reads that existing structure rather than repeating a
+          # kind label per app. `integrations` is the intersection of
+          # `flake.devLanguages.<lang>`'s own editor keys (which editors that
+          # language contributes extensions/plugins to) with whichever
+          # editors are actually enabled right now - real data already
+          # produced by DevLanguages.nix, not something invented for the UI.
+          cmd_development_list() {
+            local configured available descriptions data languages editors tools integrations
+            configured=$(awk -v mode=list -f ${appsAwk} "$config_file" \
+              | jq -R -s '
+                  split("\n") | map(select(length > 0) | split(" ")) |
+                  map({(.[0]): (.[1] == "true")}) | add // {}
+                ')
+
+            # devLanguages.<lang>'s own keys are the editor's lowercase-first
+            # form (vscode, androidStudio - matching AndroidStudio.nix/etc.'s
+            # own contribution, not the capitalized app name), so `available`
+            # doubles as both the vendor-file filter below and the
+            # lowercase-key -> real-app-name map for `integrations`.
+            data=$(nix eval --impure --json --expr \
+              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; integrations = builtins.mapAttrs (_: v: builtins.attrNames v) self.devLanguages; descriptions = self.appDescriptions; }")
+            available=$(jq '.available' <<<"$data")
+            integrations=$(jq '.integrations' <<<"$data")
+            descriptions=$(jq '.descriptions' <<<"$data")
+
+            languages=$(find "$flake_dir/modules/apps/development/languages" -name "*.nix" -printf "%f\n" 2>/dev/null | sed -E 's/\.nix$//' | sort)
+            editors=$(find "$flake_dir/modules/apps/development/editors" -name "*.nix" -printf "%f\n" 2>/dev/null | sed -E 's/\.nix$//' | sort)
+            tools=$(find "$flake_dir/modules/apps/development/devTools" "$flake_dir/modules/apps/development/ccSwitch" \
+              -name "*.nix" -printf "%f\n" 2>/dev/null | sed -E 's/\.nix$//' | sort)
+
+            jq -n \
+              --argjson available "$available" \
+              --argjson languages "$(printf '%s' "$languages" | jq -R -s 'split("\n") | map(select(length > 0))')" \
+              --argjson editors "$(printf '%s' "$editors" | jq -R -s 'split("\n") | map(select(length > 0))')" \
+              --argjson tools "$(printf '%s' "$tools" | jq -R -s 'split("\n") | map(select(length > 0))')" \
+              --argjson configured "$configured" --argjson integrations "$integrations" --argjson descriptions "$descriptions" '
+                def realAppsOnly: map(select(. as $n | $available | index($n) != null));
+                def entry: { name: ., enabled: ($configured[.] // false), description: ($descriptions[.] // "") };
+                ($languages | realAppsOnly) as $languages |
+                ($editors | realAppsOnly) as $editors |
+                ($tools | realAppsOnly) as $tools |
+                ($editors | map(select($configured[.] == true))) as $enabledEditors |
+                {
+                  languages: ($languages | map(. as $lang | entry + {
+                    integrations: (($integrations[$lang] // []) | map(ascii_downcase) as $keys |
+                      $enabledEditors | map(select(. as $e | $keys | index($e | ascii_downcase) != null)))
+                  })),
+                  editors: ($editors | map(entry)),
+                  tools: ($tools | map(entry))
+                }
+              '
           }
 
           cmd_apps_set() {
@@ -285,17 +505,45 @@
             fi
           }
 
-          cmd_theme_get() {
-            nix eval --impure --json --expr \
-              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme; { inherit font fontSize cursorTheme iconTheme; }"
-          }
-
           # cursorTheme's valid values genuinely depend on which names the
           # *current* cursorPackage ships - queried live rather than
           # hardcoded, so this never drifts from whatever Theme.nix's
-          # default (or a host's own override) actually is.
+          # default (or a host's own override) actually is. Shared by
+          # `theme get` (so a UI never has to hardcode its own copy of
+          # this list either) and `theme set`'s validation.
+          cursor_options() {
+            local cursorPackage
+            cursorPackage=$(nix eval --impure --raw --expr \
+              "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.cursorPackage")
+            find "$cursorPackage/share/icons" -maxdepth 1 -mindepth 1 -printf "%f\n" 2>/dev/null | sort
+          }
+
+          # Same live-package-contents trick as cursor_options - a font
+          # family name is only meaningful together with whatever
+          # fontPackage currently is, and one package can ship several real
+          # families (nerd-fonts variants: with/without ligatures, mono vs
+          # proportional spacing) - fc-scan reads what's actually in each
+          # font file rather than guessing from the package name.
+          font_options() {
+            local fontPackage
+            fontPackage=$(nix eval --impure --raw --expr \
+              "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.fontPackage")
+            find "$fontPackage" \( -iname "*.ttf" -o -iname "*.otf" \) -print0 2>/dev/null \
+              | xargs -r -0 -I{} fc-scan --format '%{family[0]}\n' {} 2>/dev/null | sort -u
+          }
+
+          cmd_theme_get() {
+            local base
+            base=$(nix eval --impure --json --expr \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme; { inherit font fontSize cursorTheme iconTheme; }")
+            jq -n --argjson base "$base" \
+              --argjson cursorOptions "$(cursor_options | jq -R -s 'split("\n") | map(select(length > 0))')" \
+              --argjson fontOptions "$(font_options | jq -R -s 'split("\n") | map(select(length > 0))')" \
+              '$base + {cursorOptions: $cursorOptions, fontOptions: $fontOptions}'
+          }
+
           cmd_theme_set() {
-            local field value since tmp cursorPackage validNames
+            local field value since tmp validNames
             field=''${1:?field required}
             value=''${2:?value required}
             since=""
@@ -312,9 +560,7 @@
                 [ "$value" -gt 0 ] || { echo "vayume-config: fontSize must be a positive integer" >&2; exit 2; }
                 ;;
               cursorTheme)
-                cursorPackage=$(nix eval --impure --raw --expr \
-                  "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.cursorPackage")
-                validNames=$(find "$cursorPackage/share/icons" -maxdepth 1 -mindepth 1 -printf "%f\n" 2>/dev/null)
+                validNames=$(cursor_options)
                 if ! grep -qxF "$value" <<<"$validNames"; then
                   echo "vayume-config: '$value' isn't a cursor theme the current cursorPackage ships. Options:" >&2
                   while IFS= read -r n; do echo "  $n" >&2; done <<<"$validNames"
@@ -322,8 +568,17 @@
                 fi
                 value="\"$value\""
                 ;;
+              font)
+                validNames=$(font_options)
+                if ! grep -qxF "$value" <<<"$validNames"; then
+                  echo "vayume-config: '$value' isn't a family the current fontPackage ships. Options:" >&2
+                  while IFS= read -r n; do echo "  $n" >&2; done <<<"$validNames"
+                  exit 2
+                fi
+                value="\"$value\""
+                ;;
               *)
-                echo "vayume-config: unsupported theme field '$field' (fontSize, cursorTheme)" >&2
+                echo "vayume-config: unsupported theme field '$field' (fontSize, cursorTheme, font)" >&2
                 exit 2
                 ;;
             esac
@@ -333,6 +588,205 @@
 
             if apply_edit "$tmp"; then
               jq -n --arg field "$field" --arg value "$value" '{ok: true, field: $field, value: $value}'
+            else
+              exit 1
+            fi
+          }
+
+          # Curated on purpose, not the full `config.users.groups`
+          # attrset - that includes every group anything on the system
+          # ever defines (systemd services, dbus, ...), most of which
+          # are meaningless to toggle per-user here. Anything already in
+          # use by some user's real `extraGroups` right now is included
+          # too, so an unusual-but-already-applied group never
+          # disappears from the option list just because it isn't on
+          # the hardcoded shortlist. `defined`/`current` are both real,
+          # live data from the two callers below - never guessed.
+          group_options() {
+            local defined current
+            defined=$1
+            current=$2
+            jq -n --argjson defined "$defined" --argjson current "$current" '
+              (["wheel","networkmanager","video","input","audio","docker","adbusers","podman"] + $current) | unique
+              | map(select(. as $g | $defined | index($g) != null)) | sort
+            '
+          }
+
+          cmd_users_list() {
+            local data base defined currentGroups groupOptions
+            data=$(nix eval --impure --json --expr \
+              "let c = (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config; in {
+                 users = builtins.mapAttrs (_: u: {
+                   inherit (u) fullName extraGroups secrets;
+                   hasPassword = u.hashedPassword != null;
+                   avatar = if u.avatar == null then null else toString u.avatar;
+                 }) c.vayume.users;
+                 definedGroups = builtins.attrNames c.users.groups;
+               }")
+            base=$(jq '.users' <<<"$data")
+            defined=$(jq '.definedGroups' <<<"$data")
+            currentGroups=$(jq -c '[.[].extraGroups[]] | unique' <<<"$base")
+            groupOptions=$(group_options "$defined" "$currentGroups")
+            jq -n --argjson users "$base" --argjson groupOptions "$groupOptions" '{users: $users, groupOptions: $groupOptions}'
+          }
+
+          # `extraGroups`/`secrets` are always replaced as one whole new
+          # value, never text-surgered element-by-element - each setter
+          # below reads the current, already-resolved value straight
+          # from `nix eval`, edits it in jq, then hands
+          # vayume-config-users.awk one complete Nix literal to drop in.
+          # Simpler and safer than in-place list/attrset surgery, and it
+          # can't silently drop a default the way writing just the one
+          # changed element could (extraGroups's own mkOption default -
+          # networkmanager/video/input - only applies when the option is
+          # never set in _config.nix at all; writing a partial list
+          # there replaces it outright, same as any Nix module option).
+          cmd_users_set_name() {
+            local user value since nixValue tmp
+            user=''${1:?user required}
+            value=''${2:?value required}
+            since=""
+            if [ "''${3:-}" = "--if-unmodified-since" ]; then
+              since=''${4:?epoch required after --if-unmodified-since}
+            fi
+            validate_username "$user"
+            case "$value" in *$'\n'*) echo "vayume-config: fullName can't contain a newline" >&2; exit 2;; esac
+            check_since "$since"
+
+            nixValue="\"$(nix_escape "$value")\""
+            tmp="$config_file.vayume-config.tmp"
+            if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=fullName -f ${usersAwk} "$config_file" > "$tmp"; then
+              rm -f "$tmp"
+              exit 1
+            fi
+
+            if apply_edit "$tmp"; then
+              jq -n --arg user "$user" --arg value "$value" '{ok: true, user: $user, fullName: $value}'
+            else
+              exit 1
+            fi
+          }
+
+          cmd_users_set_secret() {
+            local user key value since current merged nixValue tmp
+            user=''${1:?user required}
+            key=''${2:?secret key required}
+            value=''${3:?value required}
+            since=""
+            if [ "''${4:-}" = "--if-unmodified-since" ]; then
+              since=''${5:?epoch required after --if-unmodified-since}
+            fi
+            validate_username "$user"
+            case "$key" in
+              WAKATIME_API_KEY|RBW_EMAIL) ;;
+              *) echo "vayume-config: unsupported secret key '$key' (WAKATIME_API_KEY, RBW_EMAIL)" >&2; exit 2;;
+            esac
+            case "$value" in *$'\n'*) echo "vayume-config: secret value can't contain a newline" >&2; exit 2;; esac
+            check_since "$since"
+
+            current=$(nix eval --impure --json --expr \
+              "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.users.\"$(nix_escape "$user")\".secrets")
+            merged=$(jq --arg k "$key" --arg v "$value" '. + {($k): $v}' <<<"$current")
+
+            nixValue="{ "
+            while IFS=$'\t' read -r k v; do
+              nixValue+="\"$(nix_escape "$k")\" = \"$(nix_escape "$v")\"; "
+            done < <(jq -r 'to_entries[] | "\(.key)\t\(.value)"' <<<"$merged")
+            nixValue+="}"
+
+            tmp="$config_file.vayume-config.tmp"
+            if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=secrets -f ${usersAwk} "$config_file" > "$tmp"; then
+              rm -f "$tmp"
+              exit 1
+            fi
+
+            if apply_edit "$tmp"; then
+              jq -n --arg user "$user" --arg key "$key" '{ok: true, user: $user, key: $key}'
+            else
+              exit 1
+            fi
+          }
+
+          cmd_users_set_group() {
+            local user group enabled since data defined current validGroups newList nixValue tmp
+            user=''${1:?user required}
+            group=''${2:?group required}
+            enabled=''${3:?true or false required}
+            since=""
+            if [ "''${4:-}" = "--if-unmodified-since" ]; then
+              since=''${5:?epoch required after --if-unmodified-since}
+            fi
+            validate_username "$user"
+            case "$enabled" in true|false) ;; *) echo "vayume-config: value must be true or false" >&2; exit 2;; esac
+            check_since "$since"
+
+            data=$(nix eval --impure --json --expr \
+              "let c = (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config; in {
+                 definedGroups = builtins.attrNames c.users.groups;
+                 currentGroups = c.vayume.users.\"$(nix_escape "$user")\".extraGroups;
+               }")
+            defined=$(jq '.definedGroups' <<<"$data")
+            current=$(jq '.currentGroups' <<<"$data")
+
+            validGroups=$(group_options "$defined" "$current")
+            if ! jq -e --arg g "$group" 'index($g) != null' <<<"$validGroups" >/dev/null; then
+              echo "vayume-config: '$group' isn't a known/available group. Options:" >&2
+              jq -r '.[]' <<<"$validGroups" | while IFS= read -r n; do echo "  $n" >&2; done
+              exit 2
+            fi
+
+            if [ "$enabled" = "true" ]; then
+              newList=$(jq --arg g "$group" '. + [$g] | unique' <<<"$current")
+            else
+              newList=$(jq --arg g "$group" 'map(select(. != $g))' <<<"$current")
+            fi
+            nixValue="[ $(jq -r 'map("\"" + . + "\"") | join(" ")' <<<"$newList") ]"
+
+            tmp="$config_file.vayume-config.tmp"
+            if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=extraGroups -f ${usersAwk} "$config_file" > "$tmp"; then
+              rm -f "$tmp"
+              exit 1
+            fi
+
+            if apply_edit "$tmp"; then
+              jq -n --arg user "$user" --arg group "$group" --argjson enabled "$enabled" \
+                '{ok: true, user: $user, group: $group, enabled: $enabled}'
+            else
+              exit 1
+            fi
+          }
+
+          # Reads the new password from stdin, never argv - argv is
+          # visible to every other process on the machine via /proc
+          # (ps, etc.), stdin isn't. The DMS plugin writes it over a
+          # Quickshell Process's own stdin pipe the same way; a person
+          # at a terminal just pipes or types it in.
+          cmd_users_set_password() {
+            local user since newPassword hash nixValue tmp
+            user=''${1:?user required}
+            since=""
+            if [ "''${2:-}" = "--if-unmodified-since" ]; then
+              since=''${3:?epoch required after --if-unmodified-since}
+            fi
+            validate_username "$user"
+            check_since "$since"
+
+            IFS= read -r newPassword || { echo "vayume-config: no password read from stdin" >&2; exit 2; }
+            [ -n "$newPassword" ] || { echo "vayume-config: password can't be empty" >&2; exit 2; }
+
+            hash=$(printf '%s' "$newPassword" | mkpasswd -m sha-512 -s)
+            unset newPassword
+            nixValue="\"$(nix_escape "$hash")\""
+            unset hash
+
+            tmp="$config_file.vayume-config.tmp"
+            if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=hashedPassword -f ${usersAwk} "$config_file" > "$tmp"; then
+              rm -f "$tmp"
+              exit 1
+            fi
+
+            if apply_edit "$tmp"; then
+              jq -n --arg user "$user" '{ok: true, user: $user}'
             else
               exit 1
             fi
@@ -358,11 +812,29 @@
                 *) usage;;
               esac
               ;;
+            development)
+              shift
+              case "''${1:-}" in
+                list) cmd_development_list;;
+                *) usage;;
+              esac
+              ;;
             theme)
               shift
               case "''${1:-}" in
                 get) cmd_theme_get;;
                 set) shift; cmd_theme_set "$@";;
+                *) usage;;
+              esac
+              ;;
+            users)
+              shift
+              case "''${1:-}" in
+                list) cmd_users_list;;
+                set-name) shift; cmd_users_set_name "$@";;
+                set-secret) shift; cmd_users_set_secret "$@";;
+                set-group) shift; cmd_users_set_group "$@";;
+                set-password) shift; cmd_users_set_password "$@";;
                 *) usage;;
               esac
               ;;
