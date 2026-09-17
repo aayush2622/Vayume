@@ -26,6 +26,10 @@ vayume-config development list               # dev languages/editors/tools + des
 vayume-config theme get                      # {font, fontSize, cursorTheme, iconTheme, cursorOptions, fontOptions}
 vayume-config theme set <fontSize|cursorTheme|font> <value> [--if-unmodified-since <epoch>]
 vayume-config users list                     # every vayume.users.* + groupOptions (JSON)
+vayume-config users add <user> [fullName] [--if-unmodified-since <epoch>]
+vayume-config users remove <user> [--if-unmodified-since <epoch>]
+                                              # edits _config.nix only - the account itself is
+                                              # only actually deleted on the next rebuild
 vayume-config users set-name <user> <fullName> [--if-unmodified-since <epoch>]
 vayume-config users set-secret <user> <WAKATIME_API_KEY|RBW_EMAIL> <value> [--if-unmodified-since <epoch>]
 vayume-config users set-group <user> <group> <true|false> [--if-unmodified-since <epoch>]
@@ -255,6 +259,51 @@ is), the awk script also consumes exactly as many further lines as the
 old value's own brackets/braces still have open, so no orphaned
 continuation lines are left behind as garbage after a single-line
 replacement.
+
+### `users add`/`users remove`: whole-block insert and delete
+
+Structurally different from every `users set-*` command above, which
+all assume the named user's block already exists - `add`/`remove`
+manage the block itself, so they get their own two awk scripts rather
+than reusing `usersAwk`.
+
+- **`users add`** checks `builtins.hasAttr` on the live, resolved
+  `vayume.users` first (a duplicate name is rejected before anything is
+  written, same "validate against real state, not a guess" discipline
+  as `users set-group`'s group-list check) and writes only `fullName` -
+  `extraGroups`/`hashedPassword` are left unset so
+  [core/VayumeUsers.nix](core-users.md)'s own `mkOption` defaults apply
+  (`networkmanager`/`video`/`input`, "changeme" initial password), same
+  as `_config.nix.example`'s `random` entry. `usersAddAwk` inserts the
+  new `<user> = { ... };` stanza just before `vayume.users`'s own
+  closing brace - the same buffered "find the block's end, insert
+  before it" approach `themeAwk` uses for a missing field, except
+  `vayume.users` never needs the "block doesn't exist yet" fallback
+  `themeAwk` has (`Host.nix` refuses to evaluate without a real
+  `_config.nix`, and every real one has this block). The inserted value
+  is deliberately multi-line (`fullName` on its own line, matching
+  every hand-written entry), not a single-line
+  `{ fullName = "..."; }` - a one-liner opens and closes its own braces
+  on the one line `usersRemoveAwk` expects to find just the user's
+  *opening* line on, throwing off its brace-depth tracking and eating
+  the next real line (`vayume.users`'s own closing brace) along with it
+  on a later removal. Caught directly during testing: an isolated copy
+  of a real `_config.nix`, added a one-line user, removed it, and
+  `apply_edit`'s own validation correctly rejected the corrupted result
+  and rolled back - proof the safety net works, but the awk script
+  itself still needed fixing rather than relying on that net in normal
+  operation.
+- **`users remove`** deletes the named user's whole block outright -
+  every line from its opening brace through the matching close,
+  inclusive - via the same phase/brace-depth tracking `usersAwk` uses
+  to locate a field, just suppressing lines instead of rewriting one.
+  It only ever touches `_config.nix`; NixOS's own declarative user
+  management (`users.mutableUsers = false`) is what actually deletes
+  the Linux account, and only on the next rebuild - this command alone
+  never removes a home directory or logs anyone out.
+
+Both still go through `apply_edit`, so a mistake here fails exactly
+like a bad `apps`/`theme`/`users set-*` write: reverted, not applied.
 
 ### Atomic writes, validated before they're trusted
 

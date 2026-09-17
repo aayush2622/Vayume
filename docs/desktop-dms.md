@@ -585,6 +585,38 @@ Loader the moment the window closes, tearing the whole object down, and
 open, just needs raising) or flips `active` back to `true` to build a
 genuinely new `FloatingWindow` with its own fresh Wayland surface.
 
+**`DankTextField`'s eye button never actually reveals a password field
+on its own - checked its source directly.** `showPasswordToggle`'s eye
+icon only flips the field's own `passwordVisible` property; nothing in
+the component wires that back to `echoMode` (confirmed by reading the
+whole 314-line file: no binding, no `onPasswordVisibleChanged`, nothing
+- clicking the eye changes the glyph and nothing else). A hardcoded
+`echoMode: TextInput.Password`, the pattern DMS's own native
+`UsersTab.qml` uses too, means the eye button is decorative everywhere
+it appears with that exact pattern. Every password-style field in
+`UsersPage.qml` (both API-key secrets and the new-password pair)
+instead binds `echoMode` to the field's own `passwordVisible` -
+`echoMode: secretField.passwordVisible ? TextInput.Normal : TextInput.Password`
+- the wiring the component's own design clearly expects the caller to
+provide.
+
+**Users can be added and removed from this page, not just edited.**
+"Add User" writes just a username (and optional display name) via
+`vayume-config users add` - everything else falls back to
+[core/VayumeUsers.nix](core-users.md)'s own defaults, same as
+`_config.nix.example`'s `random` entry. "Remove" is a two-step
+click-to-arm button (`vayume-config users remove`) rather than a single
+click, with a line making clear the account is only actually deleted on
+the *next rebuild*, not immediately - removing a user is materially
+more destructive than any other edit on this page (a NixOS account
+deletion, not a config toggle), so it gets the one confirmation step
+nothing else here has. Both go through a separate `usersAddRemoveProc`
+that always refetches the user list on exit, unlike the optimistic
+per-field setters (`setUserFullName`, `setUserGroup`, ...) that only
+refetch on failure - a fresh user arrives with server-computed defaults
+this widget has no client-side copy of, so there's no value to
+optimistically show ahead of the real one.
+
 The cursor picker is a real `DankDropdown` (the same component DMS's
 own settings dropdowns use under `qs.Widgets`) fed by `theme
 get`'s live `cursorOptions` - not a hardcoded list, and not a

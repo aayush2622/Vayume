@@ -41,6 +41,88 @@ Column {
         color: Theme.surfaceVariantText
     }
 
+    SettingsCard {
+        title: I18n.tr("Add User")
+        icon: "person_add"
+        width: parent.width
+
+        Column {
+            width: parent.width
+            spacing: Theme.spacingS
+
+            StyledText {
+                text: I18n.tr("Starts with no password (falls back to \"changeme\") and the default groups (networkmanager, video, input) - set those below once added.")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.surfaceVariantText
+                wrapMode: Text.WordWrap
+                width: parent.width
+            }
+
+            Row {
+                width: parent.width
+                spacing: Theme.spacingS
+
+                DankTextField {
+                    id: newUserNameField
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - newUserFullNameField.width - addUserButton.width - Theme.spacingS * 2
+                    placeholderText: I18n.tr("username")
+                }
+
+                DankTextField {
+                    id: newUserFullNameField
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 180
+                    placeholderText: I18n.tr("Full name (optional)")
+                }
+
+                StyledRect {
+                    id: addUserButton
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 100
+                    height: 36
+                    readonly property bool validName: /^[a-z_][a-z0-9_-]*$/.test(newUserNameField.text)
+                    readonly property bool alreadyExists: newUserNameField.text in root.vm.users
+                    readonly property bool canSubmit: validName && !alreadyExists && !root.vm.usersSaving
+                    radius: Theme.cornerRadius
+                    color: canSubmit ? Theme.primary : Theme.surfaceContainerLow
+
+                    StyledText {
+                        anchors.centerIn: parent
+                        text: I18n.tr("Add User")
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: addUserButton.canSubmit ? Theme.onPrimary : Theme.surfaceVariantText
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: addUserButton.canSubmit
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.vm.addUser(newUserNameField.text, newUserFullNameField.text);
+                            newUserNameField.text = "";
+                            newUserFullNameField.text = "";
+                        }
+                    }
+                }
+            }
+
+            StyledText {
+                visible: newUserNameField.text.length > 0 && !addUserButton.validName
+                text: I18n.tr("Usernames start with a lowercase letter or underscore, then only lowercase letters/digits/-/_.")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.error
+            }
+
+            StyledText {
+                visible: addUserButton.alreadyExists
+                text: I18n.tr("A user with that name already exists.")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.error
+            }
+        }
+    }
+
     Repeater {
         model: root.vm.usersLoading ? [] : root.usersList
 
@@ -50,6 +132,59 @@ Column {
             title: modelData.fullName.length > 0 ? modelData.fullName : modelData.name
             icon: "person"
             width: parent.width
+
+            // --- remove ---
+            Row {
+                width: parent.width
+                Item { width: parent.width - removeButton.width; height: 1 }
+
+                StyledRect {
+                    id: removeButton
+                    property bool confirming: false
+                    width: confirming ? 150 : 90
+                    height: 30
+                    radius: Theme.cornerRadius
+                    color: confirming ? Theme.error : Theme.surfaceContainerHigh
+                    Behavior on width { NumberAnimation { duration: 100 } }
+
+                    StyledText {
+                        anchors.centerIn: parent
+                        text: removeButton.confirming ? I18n.tr("Confirm Remove") : I18n.tr("Remove")
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: removeButton.confirming ? "#FFFFFF" : Theme.error
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (removeButton.confirming) {
+                                root.vm.removeUser(userCard.modelData.name);
+                            } else {
+                                removeButton.confirming = true;
+                                removeConfirmTimer.restart();
+                            }
+                        }
+                    }
+
+                    Timer {
+                        id: removeConfirmTimer
+                        interval: 4000
+                        onTriggered: removeButton.confirming = false
+                    }
+                }
+            }
+
+            StyledText {
+                visible: removeButton.confirming
+                text: I18n.tr("Deletes this account from _config.nix - it's actually removed from the machine on the next rebuild, not before.")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.error
+                wrapMode: Text.WordWrap
+                width: parent.width
+            }
+
+            Rectangle { width: parent.width; height: 1; color: Theme.outline; opacity: 0.2 }
 
             // --- display name ---
             Row {
@@ -168,7 +303,16 @@ Column {
                             id: secretField
                             width: 240
                             anchors.verticalCenter: parent.verticalCenter
-                            echoMode: TextInput.Password
+                            // DankTextField's own eye button only flips its
+                            // `passwordVisible` property - it never touches
+                            // echoMode itself (checked its source directly:
+                            // no internal binding from one to the other, in
+                            // this dms pin), so a hardcoded
+                            // `echoMode: TextInput.Password` clicks the eye
+                            // but never reveals anything. Bind echoMode to
+                            // passwordVisible instead - the wiring the
+                            // component clearly expects the caller to do.
+                            echoMode: secretField.passwordVisible ? TextInput.Normal : TextInput.Password
                             showPasswordToggle: true
                             placeholderText: I18n.tr("Not set")
                             Component.onCompleted: text = userCard.modelData.secrets[secretRow.modelData.key] ?? ""
@@ -208,7 +352,7 @@ Column {
                     DankTextField {
                         id: newPasswordField
                         width: (parent.width - setPasswordButton.width - Theme.spacingS * 2) / 2
-                        echoMode: TextInput.Password
+                        echoMode: newPasswordField.passwordVisible ? TextInput.Normal : TextInput.Password
                         showPasswordToggle: true
                         placeholderText: I18n.tr("New password")
                     }
@@ -216,7 +360,7 @@ Column {
                     DankTextField {
                         id: confirmPasswordField
                         width: (parent.width - setPasswordButton.width - Theme.spacingS * 2) / 2
-                        echoMode: TextInput.Password
+                        echoMode: confirmPasswordField.passwordVisible ? TextInput.Normal : TextInput.Password
                         showPasswordToggle: true
                         placeholderText: I18n.tr("Confirm password")
                     }

@@ -31,7 +31,7 @@ PluginComponent {
     property bool usersLoading: true
     property string usersStatus: ""
     property bool usersError: false
-    readonly property bool usersSaving: usersSetProc.running || usersPasswordProc.running
+    readonly property bool usersSaving: usersSetProc.running || usersPasswordProc.running || usersAddRemoveProc.running
 
     property bool rebuildBusy: false
     property string rebuildStatus: ""
@@ -142,6 +142,23 @@ PluginComponent {
         usersPasswordProc.pendingWrite = password;
         usersPasswordProc.command = ["vayume-config", "users", "set-password", user];
         usersPasswordProc.running = true;
+    }
+
+    // Not optimistic like the field setters above - a fresh user arrives
+    // with extraGroups/hasPassword/secrets defaults this widget doesn't
+    // know ahead of time (userSubmodule's own, not duplicated here), and
+    // a removal just needs the list to reflect reality. usersAddRemoveProc
+    // always refetches on exit rather than only on failure.
+    function addUser(user, fullName) {
+        const args = ["vayume-config", "users", "add", user];
+        if (fullName.length > 0) args.push(fullName);
+        usersAddRemoveProc.command = args;
+        usersAddRemoveProc.running = true;
+    }
+
+    function removeUser(user) {
+        usersAddRemoveProc.command = ["vayume-config", "users", "remove", user];
+        usersAddRemoveProc.running = true;
     }
 
     function rebuild() {
@@ -340,6 +357,19 @@ PluginComponent {
             root.usersStatus = exitCode === 0
                 ? I18n.tr("Password updated - rebuild to take effect.")
                 : I18n.tr("Couldn't update the password - see a terminal for the real error.");
+            root.refreshUsers();
+            root.refreshRepo();
+        }
+    }
+
+    Process {
+        id: usersAddRemoveProc
+        running: false
+        onExited: exitCode => {
+            root.usersError = exitCode !== 0;
+            root.usersStatus = exitCode === 0
+                ? I18n.tr("Applied - rebuild to take effect.")
+                : I18n.tr("Couldn't update users - see a terminal for the real error.");
             root.refreshUsers();
             root.refreshRepo();
         }
