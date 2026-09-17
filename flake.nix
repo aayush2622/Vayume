@@ -45,6 +45,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    hytale-launcher.url = "github:JPyke3/hytale-launcher-nix";
+    hytale-launcher.inputs.nixpkgs.follows = "nixpkgs";
+
     zsh-autosuggestions = {
       url = "github:zsh-users/zsh-autosuggestions";
       flake = false;

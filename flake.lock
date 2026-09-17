@@ -206,6 +206,26 @@
         "type": "github"
       }
     },
+    "hytale-launcher": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789502615,
+        "narHash": "sha256-idLBkLW/UQygKEv+ptzPxs10J0Bylm08I1mUC72vNPc=",
+        "owner": "JPyke3",
+        "repo": "hytale-launcher-nix",
+        "rev": "c4c8f93005c53f361964b51c9379b286be0a67da",
+        "type": "github"
+      },
+      "original": {
+        "owner": "JPyke3",
+        "repo": "hytale-launcher-nix",
+        "type": "github"
+      }
+    },
     "import-tree": {
       "locked": {
         "lastModified": 1788467110,
@@ -318,6 +338,7 @@
         "elegant-grub2-themes": "elegant-grub2-themes",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
+        "hytale-launcher": "hytale-launcher",
         "import-tree": "import-tree",
         "nix-jetbrains-plugins": "nix-jetbrains-plugins",
         "nix-vscode-extensions": "nix-vscode-extensions",
