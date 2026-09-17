@@ -147,6 +147,9 @@
       ".config/matugen/templates/cava-colors.ini".text = self.matugenTemplates.cava;
     };
 
+    home.sessionVariables.NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.npm-global";
+    home.sessionPath = [ "${config.home.homeDirectory}/.npm-global/bin" ];
+
     programs.starship = {
       enable = true;
       enableZshIntegration = true;

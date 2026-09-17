@@ -35,3 +35,10 @@ modules/hosts/*/*
 .claude/
 .idea/
 *.swp
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+.ignore
+/.mcp.json
+/AGENTS.md
+/opencode.json
