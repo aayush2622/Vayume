@@ -119,42 +119,47 @@ detect_system() {
   printf '%s\n' "$s"
 }
 
-[[ -n $HOST   ]] || HOST=$(ask "Hostname" "$(detect_host)")
-[[ $HOST =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]] || die "invalid hostname: $HOST"
-[[ -n $SYSTEM ]] || SYSTEM=$(ask "System (Nix platform)" "$(detect_system)")
-[[ $SYSTEM == *-linux ]] || warn "system '$SYSTEM' doesn't look like a NixOS platform - continuing anyway"
+resolve_host_and_system() {
+  [[ -n $HOST   ]] || HOST=$(ask "Hostname" "$(detect_host)")
+  [[ $HOST =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]] || die "invalid hostname: $HOST"
+  [[ -n $SYSTEM ]] || SYSTEM=$(ask "System (Nix platform)" "$(detect_system)")
+  [[ $SYSTEM == *-linux ]] || warn "system '$SYSTEM' doesn't look like a NixOS platform - continuing anyway"
 
-HOSTDIR="modules/hosts/$HOST"
-say "Host ${bold}$HOST${rst}  ·  system ${bold}$SYSTEM${rst}  ·  $HOSTDIR"
+  HOSTDIR="modules/hosts/$HOST"
+  HW="$HOSTDIR/_hardware.nix"
+  CFG="$HOSTDIR/_config.nix"
+  say "Host ${bold}$HOST${rst}  ·  system ${bold}$SYSTEM${rst}  ·  $HOSTDIR"
+}
 
 # ---------------------------------------------------------------- host dir -----
-if [[ $HOST != Diablo && ! -d $HOSTDIR ]]; then
-  info "creating $HOSTDIR from the Diablo template"
-  run cp -r modules/hosts/Diablo "$HOSTDIR"
-  # drop the template's personal files; keep tracked scaffolding
-  run rm -f "$HOSTDIR/_hardware.nix" "$HOSTDIR/_config.nix" "$HOSTDIR/me.jpg"
-  # rename Diablo -> $HOST inside the tracked .nix / .example files
-  if (( DRY_RUN )); then
-    info "would rename Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
+setup_host_dir() {
+  if [[ $HOST != Diablo && ! -d $HOSTDIR ]]; then
+    info "creating $HOSTDIR from the Diablo template"
+    run cp -r modules/hosts/Diablo "$HOSTDIR"
+    # drop the template's personal files; keep tracked scaffolding
+    run rm -f "$HOSTDIR/_hardware.nix" "$HOSTDIR/_config.nix" "$HOSTDIR/me.jpg"
+    # rename Diablo -> $HOST inside the tracked .nix / .example files
+    if (( DRY_RUN )); then
+      info "would rename Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
+    else
+      while IFS= read -r -d '' f; do sed -i "s/Diablo/$HOST/g" "$f"; done \
+        < <(find "$HOSTDIR" -maxdepth 1 -type f \( -name '*.nix' -o -name '*.nix.example' \) -print0)
+      info "renamed Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
+    fi
+  elif [[ -d $HOSTDIR ]]; then
+    info "$HOSTDIR already exists - filling in what's missing, not touching Host.nix"
   else
-    while IFS= read -r -d '' f; do sed -i "s/Diablo/$HOST/g" "$f"; done \
-      < <(find "$HOSTDIR" -maxdepth 1 -type f \( -name '*.nix' -o -name '*.nix.example' \) -print0)
-    info "renamed Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
+    info "using the existing Diablo host dir in place"
   fi
-elif [[ -d $HOSTDIR ]]; then
-  info "$HOSTDIR already exists - filling in what's missing, not touching Host.nix"
-else
-  info "using the existing Diablo host dir in place"
-fi
-(( DRY_RUN )) || [[ -f $HOSTDIR/Host.nix ]] || die "$HOSTDIR/Host.nix missing - unexpected"
+  (( DRY_RUN )) || [[ -f $HOSTDIR/Host.nix ]] || die "$HOSTDIR/Host.nix missing - unexpected"
 
-# keep networking.hostName in sync with the chosen name
-if (( ! DRY_RUN )) && grep -q 'networking\.hostName' "$HOSTDIR/Host.nix"; then
-  sed -i "s/\(networking\.hostName *= *\"\)[^\"]*\"/\1$HOST\"/" "$HOSTDIR/Host.nix"
-fi
+  # keep networking.hostName in sync with the chosen name
+  if (( ! DRY_RUN )) && grep -q 'networking\.hostName' "$HOSTDIR/Host.nix"; then
+    sed -i "s/\(networking\.hostName *= *\"\)[^\"]*\"/\1$HOST\"/" "$HOSTDIR/Host.nix"
+  fi
+}
 
 # ---------------------------------------------------------------- _hardware.nix
-HW="$HOSTDIR/_hardware.nix"
 gen_hardware() {
   if [[ -n $HARDWARE_FILE ]]; then
     [[ -f $HARDWARE_FILE ]] || die "--hardware-file $HARDWARE_FILE not found"
@@ -169,26 +174,28 @@ gen_hardware() {
     die "nixos-generate-config not found - pass --hardware-file PATH or --skip-hardware"
   fi
 }
-if (( SKIP_HW )); then
-  info "skipping _hardware.nix (--skip-hardware)"
-elif [[ -f $HW ]] && ! confirm "$HW exists - regenerate it?" N; then
-  info "keeping existing $HW"
-else
-  hw_content=$(gen_hardware)
-  # pin the platform to the chosen system
-  hw_content=$(printf '%s\n' "$hw_content" | sed -E \
-    "s#(nixpkgs\.hostPlatform *= *(lib\.mkDefault +)?)\"[^\"]*\"#\1\"$SYSTEM\"#")
-  if ! grep -q 'nixpkgs\.hostPlatform' <<<"$hw_content"; then
+setup_hardware() {
+  local hw_content
+  if (( SKIP_HW )); then
+    info "skipping _hardware.nix (--skip-hardware)"
+  elif [[ -f $HW ]] && ! confirm "$HW exists - regenerate it?" N; then
+    info "keeping existing $HW"
+  else
+    hw_content=$(gen_hardware)
+    # pin the platform to the chosen system
     hw_content=$(printf '%s\n' "$hw_content" | sed -E \
-      "s#^\}[[:space:]]*\$#  nixpkgs.hostPlatform = lib.mkDefault \"$SYSTEM\";\n}#")
+      "s#(nixpkgs\.hostPlatform *= *(lib\.mkDefault +)?)\"[^\"]*\"#\1\"$SYSTEM\"#")
+    if ! grep -q 'nixpkgs\.hostPlatform' <<<"$hw_content"; then
+      hw_content=$(printf '%s\n' "$hw_content" | sed -E \
+        "s#^\}[[:space:]]*\$#  nixpkgs.hostPlatform = lib.mkDefault \"$SYSTEM\";\n}#")
+    fi
+    printf '%s\n' "$hw_content" | write_file "$HW"
+    grep -qE 'REPLACE|CHANGE|nodev' "$HW" 2>/dev/null && \
+      warn "check $HW - it may still have placeholders or need the dGPU block removed"
   fi
-  printf '%s\n' "$hw_content" | write_file "$HW"
-  grep -qE 'REPLACE|CHANGE|nodev' "$HW" 2>/dev/null && \
-    warn "check $HW - it may still have placeholders or need the dGPU block removed"
-fi
+}
 
 # ---------------------------------------------------------------- _config.nix --
-CFG="$HOSTDIR/_config.nix"
 build_user_block() {
   local uname fullname groups extra_groups g hash pw pw2
   local -a group_list pkg_list
@@ -256,9 +263,14 @@ build_user_block() {
   printf '    };\n'
 }
 
-if [[ -f $CFG ]] && ! confirm "$CFG exists - rebuild it?" N; then
-  info "keeping existing $CFG"
-else
+setup_config() {
+  local users_nix block app_names apps_nix name
+
+  if [[ -f $CFG ]] && ! confirm "$CFG exists - rebuild it?" N; then
+    info "keeping existing $CFG"
+    return
+  fi
+
   say "Users for $HOST - add at least one."
   users_nix=""
   while :; do
@@ -281,24 +293,34 @@ else
     printf '  vayume.apps = {\n%s  };\n}\n' "$apps_nix"
   } | write_file "$CFG"
   info "every app starts disabled - flip the ones you want in $CFG, or from DMS's Vayume Settings after first boot"
-fi
+}
 
 # ---------------------------------------------------------------- wrap up ------
-if (( IS_GIT && ! DRY_RUN )) && [[ -d $HOSTDIR && $HOST != Diablo ]]; then
-  git -C "$REPO" add "$HOSTDIR/Host.nix" "$HOSTDIR/Vm.nix" "$HOSTDIR"/*.nix.example 2>/dev/null || true
-  info "staged the tracked files in $HOSTDIR (_hardware.nix / _config.nix stay gitignored)"
-fi
+finalize() {
+  local f
 
-echo
-say "Done. ${bold}$HOSTDIR${rst} now has:"
-for f in Host.nix _hardware.nix _config.nix; do
-  if [[ -f $HOSTDIR/$f ]]; then info "${grn}✓${rst} $f"; else info "${ylw}–${rst} $f (skipped)"; fi
-done
-echo
-REBUILD_CMD=(sudo nixos-rebuild switch --flake "path:.#$HOST")
-info "review the files, then:  ${bold}${REBUILD_CMD[*]}${rst}"
-info "${dim}(path:.# is required - a bare .# hides the gitignored files)${rst}"
+  if (( IS_GIT && ! DRY_RUN )) && [[ -d $HOSTDIR && $HOST != Diablo ]]; then
+    git -C "$REPO" add "$HOSTDIR/Host.nix" "$HOSTDIR/Vm.nix" "$HOSTDIR"/*.nix.example 2>/dev/null || true
+    info "staged the tracked files in $HOSTDIR (_hardware.nix / _config.nix stay gitignored)"
+  fi
 
-if (( DO_REBUILD == 1 )) || { (( DO_REBUILD == -1 )) && ! (( DRY_RUN )) && confirm $'\n'"Run it now?" N; }; then
-  exec "${REBUILD_CMD[@]}"
-fi
+  echo
+  say "Done. ${bold}$HOSTDIR${rst} now has:"
+  for f in Host.nix _hardware.nix _config.nix; do
+    if [[ -f $HOSTDIR/$f ]]; then info "${grn}✓${rst} $f"; else info "${ylw}–${rst} $f (skipped)"; fi
+  done
+  echo
+  REBUILD_CMD=(sudo nixos-rebuild switch --flake "path:.#$HOST")
+  info "review the files, then:  ${bold}${REBUILD_CMD[*]}${rst}"
+  info "${dim}(path:.# is required - a bare .# hides the gitignored files)${rst}"
+
+  if (( DO_REBUILD == 1 )) || { (( DO_REBUILD == -1 )) && ! (( DRY_RUN )) && confirm $'\n'"Run it now?" N; }; then
+    exec "${REBUILD_CMD[@]}"
+  fi
+}
+
+resolve_host_and_system
+setup_host_dir
+setup_hardware
+setup_config
+finalize
