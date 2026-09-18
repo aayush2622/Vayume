@@ -642,7 +642,7 @@ provide.
 **Users can be added and removed from this page, not just edited.**
 "Add User" writes just a username (and optional display name) via
 `vayume-config users add` - everything else falls back to
-[core/VayumeUsers.nix](core-users.md)'s own defaults, same as
+[vayume/VayumeUsers.nix](core-users.md)'s own defaults, same as
 `_config.nix.example`'s `random` entry. "Remove" is a two-step
 click-to-arm button (`vayume-config users remove`) rather than a single
 click, with a line making clear the account is only actually deleted on

@@ -17,7 +17,7 @@ are always available, picked per-login, not toggled by a single option.
 
 **The actual app launch commands (terminal, file manager, editor,
 browser, its reload script, the system monitor, the color picker) live
-in one place**, [`modules/lib/DesktopActions.nix`](../modules/lib/DesktopActions.nix)'s
+in one place**, [`modules/lib/VayumeLib.nix`](../modules/lib/VayumeLib.nix)'s
 `flake.vayumeLib.desktopActions` - both this file and
 [Niri.nix](desktop-niri.md) read the same attrset instead of each
 hardcoding its own copy of `"kitty"`/`"thunar"`/etc. Niri's `spawn`

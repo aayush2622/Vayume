@@ -4,7 +4,7 @@
 
 One option, read everywhere - the shared schema behind `vayume.theme`, so a single font/cursor/icon choice reaches fontconfig, GTK, kitty, DMS, and SDDM without saying it more than once.
 
-## `modules/core/Theme.nix`
+## `modules/vayume/Theme.nix`
 
 `options.vayume.theme` lives here as `flake.nixosModules.Theme`, the same
 shared-module pattern as `vayume.users`/`vayume.apps` - a host imports

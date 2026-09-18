@@ -15,7 +15,7 @@ makes sure the app itself is there.
 app's own login - it's what the Bitwarden launcher plugin in DMS actually
 talks to behind the scenes. Its account email now comes from
 `vayumeSecrets.RBW_EMAIL` (see
-[core/VayumeUsers.nix](core-users.md)) rather than a manual
+[vayume/VayumeUsers.nix](core-users.md)) rather than a manual
 `rbw config set email`, merged into `~/.config/rbw/config.json` every
 rebuild via `jq`, leaving everything else already in that file
 untouched - not through `programs.rbw.settings` directly, since that

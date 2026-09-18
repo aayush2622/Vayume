@@ -7,7 +7,7 @@ Every machine starts here. `Host.nix` is the one file that says what this partic
 ## `modules/hosts/<name>/Host.nix`
 
 **`vayume.theme`** is a submodule declared in
-[core/Theme.nix](core-theme.md), the same shared-module pattern as
+[vayume/Theme.nix](core-theme.md), the same shared-module pattern as
 `vayume.users`/`vayume.apps` - every host imports `self.nixosModules.Theme`
 and gets the option, then sets whichever fields it wants under its own
 `config.vayume.theme` here. Comes with sane defaults (JetBrainsMono Nerd
@@ -161,7 +161,7 @@ file) a person had to know about just to turn an app on or off, on top
 of `_user.nix` for their own account. Both now come from one file,
 [`_config.nix`](core-users.md) - a gitignored sibling of `_hardware.nix`,
 never committed, required (the build refuses to evaluate without it).
-Full story, and the exact schema, in [core/VayumeUsers.nix](core-users.md)
+Full story, and the exact schema, in [vayume/VayumeUsers.nix](core-users.md)
 below.
 
 **`programs.steam.enable`** lives here, not in

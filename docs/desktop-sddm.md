@@ -46,4 +46,4 @@ The login screen - the one piece of this desktop that has to look right before a
 
 ---
 
-[← Matugen.nix](desktop-matugen.md) · [Index](CONFIGURATION.md) · [DevTooling.nix →](system-devtooling.md)
+[← Matugen.nix](desktop-matugen.md) · [Index](CONFIGURATION.md) · [Misc.nix →](system-misc.md)
