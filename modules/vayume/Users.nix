@@ -1,5 +1,5 @@
 { self, inputs, ... }: {
-  flake.nixosModules.VayumeUsers = { config, lib, pkgs, ... }:
+  flake.nixosModules.Users = { config, lib, pkgs, ... }:
   let
     defaultUserSecrets = {
       WAKATIME_API_KEY = "REPLACE_ME";
@@ -163,7 +163,7 @@
         _module.args.vayumeSecrets = lib.recursiveUpdate defaultUserSecrets u.secrets;
 
         imports = [
-          self.homeModules.Baseline
+          self.homeModules.Theming
           self.homeModules.Hyprland
         ] ++ (map (app: self.homeModules.apps.${app}) enabledAppNames);
 

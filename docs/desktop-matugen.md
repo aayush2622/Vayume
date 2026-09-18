@@ -54,4 +54,4 @@ from the old template.
 
 ---
 
-[← Baseline.nix](desktop-baseline.md) · [Index](CONFIGURATION.md) · [SddmTheme.nix →](desktop-sddm.md)
+[← Theming.nix](desktop-theming.md) · [Index](CONFIGURATION.md) · [SddmTheme.nix →](desktop-sddm.md)

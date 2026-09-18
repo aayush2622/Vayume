@@ -1,5 +1,5 @@
 {
-  flake.homeModules.Baseline =
+  flake.homeModules.Theming =
     {
       self,
       pkgs,

@@ -25,9 +25,9 @@ dive.
 1. [hosts/\<name\>/Host.nix](core-host.md)
 2. [hosts/\<name\>/\_hardware.nix](core-hardware.md)
 3. [hosts/\<name\>/Vm.nix](core-vm.md)
-4. [vayume/VayumeUsers.nix](core-users.md)
+4. [vayume/Users.nix](core-users.md)
 5. [vayume/Theme.nix](core-theme.md)
-6. [vayume/VayumeConfig.nix](core-vayume-config.md)
+6. [vayume/Config.nix](core-vayume-config.md)
 7. [core/DevLanguages.nix](core-devlanguages.md)
 8. [core/PluginUpdateCheck.nix](core-pluginupdatecheck.md)
 
@@ -36,7 +36,7 @@ dive.
 10. [desktop/Niri.nix](desktop-niri.md)
 11. [desktop/Hyprland.nix](desktop-hyprland.md)
 12. [desktop/Fonts.nix / Portals.nix](desktop-portals-fonts.md)
-13. [desktop/Baseline.nix](desktop-baseline.md)
+13. [desktop/Theming.nix](desktop-theming.md)
 14. [desktop/Matugen.nix](desktop-matugen.md)
 15. [desktop/sddm/SddmTheme.nix](desktop-sddm.md)
 
@@ -89,8 +89,8 @@ Three option namespaces get filled in across all these files:
 
 | Namespace | Set by | Read by |
 | --- | --- | --- |
-| `flake.nixosModules.*` | `hosts/`, `desktop/`, `system/`, `vayume/VayumeUsers.nix` | `Host.nix`'s `modules` list |
-| `flake.homeModules.apps.*` | `modules/apps/**/*.nix` (any depth) | `vayume/VayumeUsers.nix`, via `vayume.apps` |
+| `flake.nixosModules.*` | `hosts/`, `desktop/`, `system/`, `vayume/Users.nix` | `Host.nix`'s `modules` list |
+| `flake.homeModules.apps.*` | `modules/apps/**/*.nix` (any depth) | `vayume/Users.nix`, via `vayume.apps` |
 | `flake.devLanguages.*` | `modules/apps/development/languages/*/*.nix` | `Vscode.nix`/`AndroidStudio.nix`, filtered by `vayume.apps` |
 
 None of this cares about file paths, only attribute names - `Host.nix`

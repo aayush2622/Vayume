@@ -26,7 +26,7 @@ specific settings of its own to begin with.
 - **The WakaTime API key isn't declared in this file's own settings** -
   it's spliced in separately, after Zed's own settings merge has run, by
   a small `jq` patch that sets it from the `vayumeSecrets.WAKATIME_API_KEY`
-  argument (see [vayume/VayumeUsers.nix](core-users.md) - the same
+  argument (see [vayume/Users.nix](core-users.md) - the same
   secret VS Code/Android Studio's own WakaTime setup reads too), so it
   lands after
   `zedSettingsActivation`'s own merge onto the real settings file rather

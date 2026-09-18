@@ -102,4 +102,4 @@ separately.
 
 ---
 
-[← Hyprland.nix](desktop-hyprland.md) · [Index](CONFIGURATION.md) · [Baseline.nix →](desktop-baseline.md)
+[← Hyprland.nix](desktop-hyprland.md) · [Index](CONFIGURATION.md) · [Theming.nix →](desktop-theming.md)

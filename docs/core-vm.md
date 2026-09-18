@@ -43,7 +43,7 @@ a real login and a working shell this way, and that's how a real,
 previously-unknown bug got caught here too - `config.system.build.vm`
 flat out failed to evaluate before this session's fixes, over an
 unrelated `gfxmodeBios` conflict between
-[GrubTheme.nix](system-grubtheme.md) and this module's
+[Misc.nix](system-misc.md) and this module's
 own upstream `qemu-vm.nix` machinery. Static config generation checks
 don't catch that kind of thing - only an actual build (or boot) does.
 
