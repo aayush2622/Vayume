@@ -8,8 +8,7 @@
     '';
   in {
     home.packages = [
-      (self.vayumeLib.loadOrBuild { inherit self pkgs; } "spotifast"
-        inputs.spotifast.packages.${pkgs.stdenv.hostPlatform.system}.spotifast)
+      inputs.spotifast.packages.${pkgs.stdenv.hostPlatform.system}.spotifast
     ];
 
     xdg.mimeApps = {
