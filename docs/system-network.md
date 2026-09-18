@@ -155,8 +155,8 @@ which are all different things.
 relying on `PATH` - is defined here in `Network.nix` rather than beside
 the widget, since it's a networking concern first. The widget's own DMS
 plugin registration lives separately, at
-`modules/desktop/dms/plugins/Tor.nix`, alongside the rest of DMS's
-plugins.
+`modules/desktop/dms/plugins/_tor.nix`, `import`ed by
+[Dms.nix](desktop-dms.md) alongside the rest of its plugins.
 
 DMS's control center takes plugin widgets: `WidgetModel.qml` builds their
 ids as `"plugin_" + plugin.id`, and `getPluginWidgets()` filters on the

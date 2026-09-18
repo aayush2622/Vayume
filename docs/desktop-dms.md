@@ -139,19 +139,41 @@ own are used directly:
 **`Dms.nix` only carries plugins with nothing custom behind them.**
 `dankAsusControlCenter`, `cavaVisualizer`, and `tor` each have real custom
 Nix - a patch, or a locally-authored QML widget - and get their own file
-under `modules/desktop/dms/plugins/`; the module system merges their
+under `modules/desktop/dms/plugins/`, `import`ed by `Dms.nix` itself
+rather than declared as their own top-level `flake.nixosModules.*`
+entry - the module system merges their
 `programs.dank-material-shell.plugins.<name>` definitions into the same
 option `Dms.nix` sets for everything else. Every plugin declared directly
 in `Dms.nix` is a plain `enable`/`settings` passthrough with nothing to
 split out. The dms-shell package itself is patched too, in
-`ShellPatch.nix` - split out of `Dms.nix` for the same reason: it's a
+`_shellPatch.nix` - split out of `Dms.nix` for the same reason: it's a
 self-contained block, not something every other option in `Dms.nix`
 needs to read. The actual patch machinery behind all of this -
 `registryPlugins`, the `assertPatched`/`assertPatchedLine`/
 `mkPatchedPlugin` helpers, and the `audioIsPlayingScript` shared by both
-the `cavaVisualizer` plugin's own watchdog patch and `ShellPatch.nix`'s
+the `cavaVisualizer` plugin's own watchdog patch and `_shellPatch.nix`'s
 dms-shell watchdog patch (below) - lives in `modules/lib/DmsPlugins.nix`,
 so none of the plugin files need to re-derive any of it themselves.
+
+**These plugin/patch files are `imports`, not independent flake modules -
+on purpose.** They used to each declare their own
+`flake.nixosModules.DmsPlugin<Name>`, which meant `Host.nix` needed one
+import line per file (seven, for `Dms.nix` plus its six pieces) even
+though every one of them only ever gets used together, always in the
+same combination. Now each file is a plain NixOS module value (no
+`flake.nixosModules.*` wrapper) with an underscore-prefixed name -
+`_shellPatch.nix`, `plugins/_tor.nix`, `plugins/_vayumeSettings.nix`,
+`plugins/_cavaVisualizer.nix`, `plugins/dankAsusControlCenter/_dankAsusControlCenter.nix`
+- so import-tree's own auto-discovery skips them (same convention as
+`_hardware.nix`/`_config.nix`), and `Dms.nix`'s own `flake.nixosModules.Dms`
+pulls them in via a plain `imports = [ ./_shellPatch.nix ./plugins/_tor.nix ... ];`
+list instead. `Host.nix` now imports just `self.nixosModules.Dms`. The
+underlying NixOS module-merging behavior is identical either way - every
+file still separately sets its own slice of `home-manager.users.<name>.*`,
+and the module system still merges them all together the same way it
+always has; only how they're *discovered* changed, from "seven names in
+a flat, global namespace" to "one name, with an explicit `imports` list
+describing what it's made of."
 
 **Third-party plugins** come from a community registry that auto-generates
 an option per plugin, off by default, opt-in one at a time. A widget-type
@@ -225,14 +247,14 @@ enabling it alone isn't enough.
   machine runs btrfs and has none to show.
 - The ASUS widget hides its own battery icon, since a separate battery
   widget already covers that.
-**Rebuild/GC integration lives in its own file, `modules/desktop/dms/Rebuild.nix`**
-(`flake.nixosModules.DmsRebuild`) - the sudoers `NOPASSWD` rule, the two
-underlying scripts, and the stable `vayume-rebuild`/`vayume-gc` bare
-commands, all pulled out of `Dms.nix` proper since none of it is really
-DMS-specific (it's what any GUI, or a person's own terminal, needs to
-trigger a rebuild without a password prompt) - see
-[core-vayume-config.md](core-vayume-config.md) for the stable-wrapper
-rationale.
+**Rebuild/GC integration lives in its own file, `modules/desktop/dms/_rebuild.nix`**,
+`import`ed by `Dms.nix` the same way the plugin files are - the sudoers
+`NOPASSWD` rule, the two underlying scripts, and the stable
+`vayume-rebuild`/`vayume-gc` bare commands, all pulled out of `Dms.nix`
+proper since none of it is really DMS-specific (it's what any GUI, or a
+person's own terminal, needs to trigger a rebuild without a password
+prompt) - see [core-vayume-config.md](core-vayume-config.md) for the
+stable-wrapper rationale.
 
 - **Nix monitor's rebuild/GC buttons read their commands from their own
   separate config file**, not the plugin-settings mechanism everything

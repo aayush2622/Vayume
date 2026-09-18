@@ -27,6 +27,15 @@
       };
     in
     {
+      imports = [
+        ./_rebuild.nix
+        ./_shellPatch.nix
+        ./plugins/_tor.nix
+        ./plugins/_vayumeSettings.nix
+        ./plugins/dankAsusControlCenter/_dankAsusControlCenter.nix
+        ./plugins/_cavaVisualizer.nix
+      ];
+
       services.accounts-daemon.enable = true;
 
       home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (
