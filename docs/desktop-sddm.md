@@ -26,7 +26,7 @@ The login screen - the one piece of this desktop that has to look right before a
   them at JetBrainsMono Nerd Font makes the layout look wrong rather
   than consistent. Left alone on purpose.
 - **`themeMode=light` is the theme's own setting**, unrelated to the
-  GTK/Qt light-dark story in [Baseline.nix](desktop-baseline.md).
+  GTK/Qt light-dark story in [Theming.nix](desktop-theming.md).
   Matugen never touches the greeter at all - it can't, since the greeter
   runs before any user session exists and therefore before there's a
   wallpaper to derive colors from. The login screen is the one surface

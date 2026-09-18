@@ -4,7 +4,7 @@
 
 Every GTK and Qt app on this machine, themed - and the single most fought-over file in this whole repo, rewritten more times than anything else chasing one question: why won't the colors update on a window that's already open?
 
-## `modules/desktop/Baseline.nix`
+## `modules/desktop/Theming.nix`
 
 Applied to every user regardless of which apps they've opted into - GTK/Qt
 theming is the one part of this whole rice nobody gets to skip. Lives
@@ -135,7 +135,7 @@ opt-in pick, it's just part of what this desktop *is*.
     a real *value change* to `gtk-theme` - not a same-name toggle - is
     the one channel GTK3 has always watched live, the same mechanism
     manual GNOME theme switching has used since before Wayland existed.
-    `gtkLiveReloadScript` in `Baseline.nix` builds a fresh, timestamped
+    `gtkLiveReloadScript` in `Theming.nix` builds a fresh, timestamped
     theme directory every matugen run - a name
     `gtk_css_provider_get_named()` has never seen, guaranteeing a cache
     miss - whose `gtk.css`/`gtk-dark.css` `@import` real `adw-gtk3`

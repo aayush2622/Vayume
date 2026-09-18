@@ -1,5 +1,5 @@
 { self, ... }: {
-  flake.nixosModules.VayumeConfig =
+  flake.nixosModules.Config =
     { pkgs, lib, config, ... }:
     let
       repoDiscovery = self.vayumeLib.repoDiscovery;

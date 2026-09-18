@@ -14,7 +14,7 @@ container is the honest answer; this module just stops it from being a
 pile of remembered shell commands.
 
 **Backend is rootless podman, not the Docker that's already enabled.**
-[DevTooling.nix](system-devtooling.md) gains
+[Misc.nix](system-misc.md) gains
 `virtualisation.podman` alongside the existing Docker, with
 `dockerCompat = false` so nothing fights over the `docker` binary.
 Distrobox prefers podman when both exist, and rootless podman is what

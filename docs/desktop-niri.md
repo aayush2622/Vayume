@@ -54,7 +54,7 @@ change the built output at all.
 out niri as needing this set at the compositor level, not left to
 generic session-variable propagation. Worth explaining why that's true
 rather than redundant: home-manager's own `qt.platformTheme.name =
-"qtct"` ([Baseline.nix](desktop-baseline.md)) only ever sets
+"qtct"` ([Theming.nix](desktop-theming.md)) only ever sets
 `QT_QPA_PLATFORMTHEME` - checked the actual module source, there's no
 `QT_QPA_PLATFORMTHEME_QT6` handling in it at all, for any platform theme
 choice. Without it, Qt6 apps have nothing telling them to load the qt6ct

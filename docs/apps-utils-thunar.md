@@ -34,7 +34,7 @@ The default file manager on this host - and the one that quietly proves how much
   Thunar-specific template anywhere in this repo and there shouldn't be:
   it links `libgtk-3.so.0`, so it picks up the rotating
   `vayume-dank-*` named theme out of
-  [Baseline.nix](desktop-baseline.md) like every other GTK3 app,
+  [Theming.nix](desktop-theming.md) like every other GTK3 app,
   live-reload included. The one setting that matters for this is
   `misc-use-csd = true` - with client-side decorations on, the window's
   titlebar is drawn by GTK and follows the wallpaper's colors; with it
@@ -74,7 +74,7 @@ The default file manager on this host - and the one that quietly proves how much
 - **Downloads/Documents/etc. show up in the sidebar two different ways,
   and this module relies on both.** Thunar auto-lists the XDG special
   directories under "Places" once they exist on disk - which they do,
-  since [Baseline.nix](desktop-baseline.md) turns on
+  since [Theming.nix](desktop-theming.md) turns on
   `xdg.userDirs.createDirectories` for every user - but it separately
   reads GTK3's own bookmark file, `~/.config/gtk-3.0/bookmarks` (not the
   legacy `~/.gtk-bookmarks` - still readable by some apps, but Thunar and

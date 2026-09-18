@@ -23,9 +23,9 @@ in
     modules = [
       inputs.home-manager.nixosModules.home-manager
 
-      self.nixosModules.VayumeUsers
+      self.nixosModules.Users
       self.nixosModules.Theme
-      self.nixosModules.VayumeConfig
+      self.nixosModules.Config
       self.nixosModules.Niri
       self.nixosModules.Hyprland
       self.nixosModules.Dms

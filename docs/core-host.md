@@ -121,7 +121,7 @@ owns `org.gnome.desktop.interface` and every other GNOME-namespaced
 schema. Without it, `gsettings get/set` against those keys fails
 outright, silently if the caller doesn't check (DMS's own portal-based
 dark/light sync, and this repo's own GTK matugen reload hook in
-[Baseline.nix](desktop-baseline.md), both call
+[Theming.nix](desktop-theming.md), both call
 `gsettings` this way). A plain `nix flake check`/`nix build` never
 catches this - schema lookup is a pure runtime thing, invisible to
 evaluation. Only booting the real VM and running `gsettings get` by hand
@@ -161,7 +161,7 @@ file) a person had to know about just to turn an app on or off, on top
 of `_user.nix` for their own account. Both now come from one file,
 [`_config.nix`](core-users.md) - a gitignored sibling of `_hardware.nix`,
 never committed, required (the build refuses to evaluate without it).
-Full story, and the exact schema, in [vayume/VayumeUsers.nix](core-users.md)
+Full story, and the exact schema, in [vayume/Users.nix](core-users.md)
 below.
 
 **`programs.steam.enable`** lives here, not in
