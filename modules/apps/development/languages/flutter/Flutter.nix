@@ -82,8 +82,8 @@
         libunwind
         libarchive
         libpulseaudio
-        xorg.libXScrnSaver
-        xorg.libXv
+        libXScrnSaver
+        libXv
       ];
 
       allDeps = wpeDeps ++ otherPluginDeps;
