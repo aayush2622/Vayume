@@ -144,6 +144,21 @@ It gets reused and re-synced on every rebuild.
   UI font as a fallback, Zen just made it most visible). The
   `font.name-list.emoji` pref here is harmless and slightly more
   explicit than Firefox's own default, but wasn't what fixed it.
+- **Separator/bullet characters on ordinary pages rendered as random
+  icon-like glyphs - not real emoji, but easy to mistake for them.**
+  A separate bug from the one above: `font.name.*.x-western` are the
+  *fallback* fonts a page gets for text it never assigns its own
+  font-family to (see the `use_document_fonts` note further up - these
+  are deliberately not a page-wide override). They used to be pinned to
+  `theme.font`, which is a Nerd Font - and Nerd Fonts patch their icon
+  glyphs into Private Use Area codepoints, the same range plenty of
+  sites use for plain separator characters (a bullet between a rating,
+  runtime, and language, say) without bothering to declare a font for
+  them. Falling back to the Nerd Font for that undeclared text meant
+  those separators rendered as whatever random icon the Nerd Font
+  happens to map there instead. Now `"Inter"` - no PUA collisions - for
+  actual fallback text, while the browser's own chrome keeps the Nerd
+  Font via `theme.custom_uifont.custom` below, unchanged.
 - **Zen's settings page (and any other isolated `about:` content
   document) showed a jarring green that didn't match the rest of the
   desktop at all.** Correctly diagnosed as a theme bug, not the
