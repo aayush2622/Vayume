@@ -78,6 +78,20 @@ U+2764 (heart, commonly used with an emoji-presentation selector)
 correctly resolved to Noto Color Emoji with the rule in place, DejaVu
 Sans/Sans Mono without it.
 
+**cc-switch's whole UI rendered as a badly-spaced monospace mess.**
+cc-switch (Tauri) renders its UI as CSS `sans-serif` inside a separate
+`WebKitWebProcess` subprocess, which resolves fonts under its own
+`prgname` - not `cc-switch`, the name of the process that spawns it.
+A fontconfig rule scoped to `<test name="prgname"><string>cc-switch</string></test>`
+therefore never matched, confirmed directly with `FC_DEBUG=4`: every
+font-resolution trace in that subprocess showed `prgname:
+"WebKitWebProcess"`. Nothing else on this system embeds webkitgtk, so
+scoping the rule to `WebKitWebProcess` unconditionally is safe -
+`fonts.fontconfig.localConf` reassigns that process's `sans-serif` to
+`theme.font` instead of whatever its own bare fallback chain picked,
+without touching the system-wide `sansSerif` default any other app
+still uses.
+
 **One font setting drives everything declarative**: system font, GTK app
 text, terminal, and DMS's own UI all read the same shared font option.
 Two things it doesn't reach: the SDDM login screen's clock/labels use a
