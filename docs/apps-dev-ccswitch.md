@@ -23,7 +23,7 @@ files to point at `localhost:8082`. cc-switch does the same underlying job
 actively-maintained, already-packaged desktop app instead, so none of that
 service/patching machinery lives in this repo any more. The `PROVIDERS`
 secrets bag that only ever existed to feed FCC's provider API keys is gone
-too - see [core/VayumeUsers.nix](core-users.md); add a provider straight through
+too - see [vayume/VayumeUsers.nix](core-users.md); add a provider straight through
 cc-switch's own UI instead.
 
 **Its UI rendered as badly-spaced monospace text** until a fontconfig

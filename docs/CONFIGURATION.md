@@ -25,9 +25,9 @@ dive.
 1. [hosts/\<name\>/Host.nix](core-host.md)
 2. [hosts/\<name\>/\_hardware.nix](core-hardware.md)
 3. [hosts/\<name\>/Vm.nix](core-vm.md)
-4. [core/VayumeUsers.nix](core-users.md)
-5. [core/Theme.nix](core-theme.md)
-6. [core/VayumeConfig.nix](core-vayume-config.md)
+4. [vayume/VayumeUsers.nix](core-users.md)
+5. [vayume/Theme.nix](core-theme.md)
+6. [vayume/VayumeConfig.nix](core-vayume-config.md)
 7. [core/DevLanguages.nix](core-devlanguages.md)
 8. [core/PluginUpdateCheck.nix](core-pluginupdatecheck.md)
 
@@ -41,34 +41,32 @@ dive.
 15. [desktop/sddm/SddmTheme.nix](desktop-sddm.md)
 
 **System** - infrastructure that doesn't care what desktop you're running
-16. [system/DevTooling.nix](system-devtooling.md)
-17. [system/Zram.nix](system-zram.md)
-18. [system/GrubTheme.nix](system-grubtheme.md)
-19. [system/Network.nix](system-network.md)
-20. [system/waydroid/Waydroid.nix](system-waydroid.md)
+16. [system/Misc.nix](system-misc.md) (Zram, DevTooling, GrubTheme)
+17. [system/Network.nix](system-network.md)
+18. [system/waydroid/Waydroid.nix](system-waydroid.md)
 
 **Apps - development**
-21. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
-22. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
-23. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
-24. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt, Python)
-25. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
-26. [apps/development/ccSwitch/CcSwitch.nix](apps-dev-ccswitch.md)
+19. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
+20. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
+21. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
+22. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt, Python)
+23. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
+24. [apps/development/ccSwitch/CcSwitch.nix](apps-dev-ccswitch.md)
 
 **Apps - gaming**
-27. [apps/gaming/Gaming.nix](apps-gaming.md)
+25. [apps/gaming/Gaming.nix](apps-gaming.md)
 
 **Apps - utils**
-28. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
-29. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
-30. [apps/utils/fastpotify/Fastpotify.nix](apps-utils-fastpotify.md)
-31. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
-32. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
-33. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
-34. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
-35. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
-36. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
-37. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
+26. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
+27. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
+28. [apps/utils/fastpotify/Fastpotify.nix](apps-utils-fastpotify.md)
+29. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
+30. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
+31. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
+32. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
+33. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
+34. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
+35. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
 
 ---
 
@@ -91,8 +89,8 @@ Three option namespaces get filled in across all these files:
 
 | Namespace | Set by | Read by |
 | --- | --- | --- |
-| `flake.nixosModules.*` | `hosts/`, `desktop/`, `system/`, `core/VayumeUsers.nix` | `Host.nix`'s `modules` list |
-| `flake.homeModules.apps.*` | `modules/apps/**/*.nix` (any depth) | `core/VayumeUsers.nix`, via `vayume.apps` |
+| `flake.nixosModules.*` | `hosts/`, `desktop/`, `system/`, `vayume/VayumeUsers.nix` | `Host.nix`'s `modules` list |
+| `flake.homeModules.apps.*` | `modules/apps/**/*.nix` (any depth) | `vayume/VayumeUsers.nix`, via `vayume.apps` |
 | `flake.devLanguages.*` | `modules/apps/development/languages/*/*.nix` | `Vscode.nix`/`AndroidStudio.nix`, filtered by `vayume.apps` |
 
 None of this cares about file paths, only attribute names - `Host.nix`
@@ -103,7 +101,10 @@ want; nothing breaks unless you also rename the attribute.
 
 ```
 modules/
-  core/        flake-parts wiring + the shared user/app framework
+  vayume/      the settings schema itself - theme, users, apps, and the
+               CLI/GUI backend that edits them. Nothing else lives here.
+  core/        flake-parts wiring + the shared app-registry framework
+  lib/         shared helper values/functions other modules read
   hosts/<name>/  one machine: Host.nix + _hardware.nix, nothing else
   desktop/     the DE stack — compositor, shell, login theme, fonts,
                portals, and the GTK/Qt baseline every user gets
@@ -112,15 +113,28 @@ modules/
   assets/      static, non-code files (wallpapers)
 ```
 
-The `core`/`desktop`/`system` split, quickly: **core** is pure plumbing -
-nothing in it is itself a setting, just the framework that lets settings
-exist (`Parts.nix`, `Registry.nix`, the `vayume.users`/`vayume.apps`
-definitions). **desktop** is everything that makes this rice look and
-feel the way it does - swap the compositor or shell and this whole
-category changes. **system** is infra that doesn't care what desktop
-you're running - Docker, GRUB theming. The dividing line is "does this
-need niri/DMS to exist" - GRUB theming doesn't, so it lives in `system`
-even though it's still, technically, theming.
+`vayume`/`core`/`lib` used to be tangled together in one `core/`
+directory - the actual settings schema (`vayume.theme`, `vayume.users`,
+`vayume.apps`) sitting next to pure framework plumbing (`Registry.nix`'s
+option namespaces, flake-parts' own `systems` list) just because both
+happened to be "not an app and not a desktop file." Split apart now:
+**`vayume/`** is every file whose entire job is the settings schema
+itself - if you're looking for "where do I change what a setting does,"
+this is the only place to check. **`core`** and **`lib`** are pure
+plumbing - nothing in either is itself a setting, just the mechanism
+that lets settings and apps exist and register themselves (`Registry.nix`'s
+`flake.homeModules`/`flake.appDescriptions`/`flake.pluginPins`
+namespaces, `lib/VayumeLib.nix`'s shared helper values, `lib/LoadOrBuild.nix`'s
+build-or-unzip escape hatch). Neither has ever needed more than a
+handful of commits since being written - unlike `vayume/`, which grows
+every time a new setting is added.
+
+The `desktop`/`system` split, quickly: **desktop** is everything that
+makes this rice look and feel the way it does - swap the compositor or
+shell and this whole category changes. **system** is infra that doesn't
+care what desktop you're running - Docker, GRUB theming. The dividing
+line is "does this need niri/DMS to exist" - GRUB theming doesn't, so it
+lives in `system` even though it's still, technically, theming.
 
 `apps/` splits into three categories - `development/`, `gaming/`,
 `utils/` - and every app gets a folder (`apps/<category>/<name>/<name>.nix`)

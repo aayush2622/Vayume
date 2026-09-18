@@ -197,4 +197,4 @@ browsing through it.
 
 ---
 
-[← GrubTheme.nix](system-grubtheme.md) · [Index](CONFIGURATION.md) · [Waydroid.nix →](system-waydroid.md)
+[← Misc.nix](system-misc.md) · [Index](CONFIGURATION.md) · [Waydroid.nix →](system-waydroid.md)

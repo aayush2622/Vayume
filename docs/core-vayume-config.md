@@ -4,7 +4,7 @@
 
 How a DMS toggle turns into a line changed in the real `_config.nix` - the backend both the `vayumeSettings` DMS plugin and a terminal share, so there is exactly one place that understands the file's shape.
 
-## `modules/core/VayumeConfig.nix`
+## `modules/vayume/VayumeConfig.nix`
 
 **The problem this solves**: DMS plugins are Wayland-session state, not
 the repo. If "Vayume Settings" kept its own JSON database of which apps
@@ -58,7 +58,7 @@ Both `vayume-rebuild` and `vayume-config` need to answer "where is this
 flake checked out?" without a hardcoded `/home/<someone>/vayume`, since
 that breaks for every user but the repo's own author. The candidate
 list - `~/vayume`, `~/dotfiles`, `~/.dotfiles`, `/etc/nixos` - lives in
-exactly one place, [`modules/lib/RepoDiscovery.nix`](../modules/lib/RepoDiscovery.nix)'s
+exactly one place, [`modules/lib/VayumeLib.nix`](../modules/lib/VayumeLib.nix)'s
 `flake.vayumeLib.repoDiscovery`, and both scripts interpolate that same
 Nix-level list into their own shell loop at build time. Change the list
 once, both tools pick it up. `vayume-config` doesn't need
@@ -151,7 +151,7 @@ answer after a DMS restart (nothing about it is session-local state).
 
 ### Theme fields: why only three of the eight are editable
 
-`vayume.theme` ([core/Theme.nix](core-theme.md)) has eight fields, but
+`vayume.theme` ([vayume/Theme.nix](core-theme.md)) has eight fields, but
 three of them - `fontPackage`, `cursorPackage`, `iconPackage` - are
 *packages*, not plain values. A package can't be safely produced from a
 DMS text field: there's no safe way to turn an arbitrary typed string
@@ -193,7 +193,7 @@ validation strategy of its own yet - GTK icon themes don't have as
 simple a "real name" signal as a font file's family or an icon theme
 directory's own name (`iconTheme` *is* actually just a directory name
 under `iconPackage/share/icons/`, so the same `cursor_options`-style
-`find` would work - it just hasn't been done). `modules/core/VayumeConfig.nix`'s
+`find` would work - it just hasn't been done). `modules/vayume/VayumeConfig.nix`'s
 `themeAwk` (a second, small state machine alongside `appsAwk` - same
 before/inside/after discipline, but for a flat `field = value;` shape
 that may not exist in the file at all yet; it buffers the whole file
@@ -204,7 +204,7 @@ whether the block was ever found - is known) and the `cursor_options`/
 
 ### `users set-*`: the one editable surface that's genuinely security-sensitive
 
-`vayume.users` ([core/VayumeUsers.nix](core-users.md)) is different from
+`vayume.users` ([vayume/VayumeUsers.nix](core-users.md)) is different from
 `apps`/`theme`: `extraGroups` can grant sudo (`wheel`) and
 `hashedPassword` controls login, so every design choice here is more
 conservative than the rest of this CLI.
@@ -274,7 +274,7 @@ conservative than the rest of this CLI.
 `extraGroups`/`secrets` are always replaced as one whole new value
 (read the current, already-resolved value via `nix eval`, edit it,
 write the complete result back), never text-surgered element by
-element - `modules/core/VayumeConfig.nix`'s `usersAwk` only ever
+element - `modules/vayume/VayumeConfig.nix`'s `usersAwk` only ever
 replaces one field wholesale inside one named user's block. Unlike
 `themeAwk`/`usersAddAwk`, it streams the file line by line rather than
 buffering the whole thing - the target user's block is already known to
@@ -304,7 +304,7 @@ than reusing `usersAwk`.
   written, same "validate against real state, not a guess" discipline
   as `users set-group`'s group-list check) and writes only `fullName` -
   `extraGroups`/`hashedPassword` are left unset so
-  [core/VayumeUsers.nix](core-users.md)'s own `mkOption` defaults apply
+  [vayume/VayumeUsers.nix](core-users.md)'s own `mkOption` defaults apply
   (`networkmanager`/`video`/`input`, "changeme" initial password), same
   as `_config.nix.example`'s `random` entry. `usersAddAwk` inserts the
   new `<user> = { ... };` stanza just before `vayume.users`'s own
@@ -339,7 +339,7 @@ like a bad `apps`/`theme`/`users set-*` write: reverted, not applied.
 
 ### `packages search` / `users set-package`: named, toggleable, per-user packages
 
-[core/VayumeUsers.nix](core-users.md) already had `extraPackages` (a
+[vayume/VayumeUsers.nix](core-users.md) already had `extraPackages` (a
 plain `listOf package` - `[ pkgs.gparted ]`, arbitrary Nix, exactly the
 kind of value this CLI has always refused to touch: "can't be safely
 produced from a text field"). `packages` is a second, deliberately
@@ -383,7 +383,7 @@ never actually applies here.
   same generic "replace one field wholesale" mechanism `secrets`/
   `extraGroups` already use - `packages` needed no new awk script).
   Turning a package off sets its value to `false` rather than deleting
-  the key, so [core/VayumeUsers.nix](core-users.md)'s own
+  the key, so [vayume/VayumeUsers.nix](core-users.md)'s own
   `home.packages` resolution (`filterAttrs (_: enabled: enabled)`,
   then `attrByPath` on the dotted key to reach the real package) simply
   excludes it - the entry, and the UI's toggle for it, stays put rather
