@@ -121,9 +121,9 @@ Splits the same `modules/apps/development/*` tree three ways -
 subdirectory each app's file actually lives in, the same directory-scan
 technique `apps list`'s `category` field already uses. `available`
 (`homeModules.apps`' own attribute names) filters out anything that
-isn't a real app - without it, a vendored file like
-`languages/flutter/_vendor/wpewebkit/package.nix` would show up as a
-fake language named "package".
+isn't a real app - without it, a non-app helper file dropped anywhere
+under `languages/` (a vendored package definition, say) would show up
+as a fake language named after whatever attribute it happens to define.
 
 Each language's `integrations` field is the *real* intersection of
 [`flake.devLanguages.<lang>`](core-devlanguages.md)'s own editor keys
