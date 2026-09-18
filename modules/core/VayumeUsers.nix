@@ -76,8 +76,34 @@
           default = [ ];
           description = "Any one-off packages just for this user, e.g. `[ pkgs.blender ]`.";
         };
+
+        packages = lib.mkOption {
+          type = lib.types.attrsOf lib.types.bool;
+          default = { };
+          description = ''
+            Extra packages by nixpkgs attribute path (e.g. "blender",
+            "nodePackages.pnpm"), each individually toggleable - what
+            Vayume Settings' package search reads and writes, see
+            docs/core-vayume-config.md. Different from extraPackages
+            (a plain package list, Nix-only, for anything a name-based
+            search can't express - an override, a wrapped derivation):
+            every entry here is a plain string key, so turning one off
+            keeps it listed instead of forgetting it outright the way
+            removing it from extraPackages would. A key that doesn't
+            resolve to a real nixpkgs package fails the same way any
+            other bad value in _config.nix does - at evaluation, not
+            silently.
+          '';
+        };
       };
     });
+
+    # `path` arrives as plain text from _config.nix ("blender",
+    # "nodePackages.pnpm") - splitting on "." and walking pkgs with it
+    # is what lets a single flat string key reach a nested package the
+    # same way writing `pkgs.nodePackages.pnpm` by hand would.
+    resolvePackagePath = path: lib.attrByPath (lib.splitString "." path)
+      (throw "vayume: unknown package \"${path}\" in vayume.users.*.packages") pkgs;
   in {
     options.vayume.users = lib.mkOption {
       type = lib.types.attrsOf userSubmodule;
@@ -146,7 +172,10 @@
         ] ++ (map (app: self.homeModules.apps.${app}) enabledAppNames);
 
         home.stateVersion = config.system.stateVersion;
-        home.packages = u.extraPackages;
+        home.packages = u.extraPackages ++ (
+          lib.mapAttrsToList (path: _: resolvePackagePath path)
+            (lib.filterAttrs (_: enabled: enabled) u.packages)
+        );
         home.file = lib.mkIf (u.avatar != null) {
           ".face".source = u.avatar;
         };

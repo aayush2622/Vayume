@@ -33,8 +33,12 @@ vayume-config users remove <user> [--if-unmodified-since <epoch>]
 vayume-config users set-name <user> <fullName> [--if-unmodified-since <epoch>]
 vayume-config users set-secret <user> <WAKATIME_API_KEY|RBW_EMAIL> <value> [--if-unmodified-since <epoch>]
 vayume-config users set-group <user> <group> <true|false> [--if-unmodified-since <epoch>]
+vayume-config users set-package <user> <attrPath> <true|false> [--if-unmodified-since <epoch>]
+                                              # <attrPath> (e.g. "blender", "python3Packages.numpy")
+                                              # must resolve to a real package in this flake's nixpkgs
 vayume-config users set-password <user> [--if-unmodified-since <epoch>]
                                               # reads the new plaintext password from stdin, never argv
+vayume-config packages search <query>        # matching nixpkgs packages: [{path, pname, version, description}]
 vayume-config validate                       # re-evaluate _config.nix, pass/fail
 ```
 
@@ -304,6 +308,58 @@ than reusing `usersAwk`.
 
 Both still go through `apply_edit`, so a mistake here fails exactly
 like a bad `apps`/`theme`/`users set-*` write: reverted, not applied.
+
+### `packages search` / `users set-package`: named, toggleable, per-user packages
+
+[core/VayumeUsers.nix](core-users.md) already had `extraPackages` (a
+plain `listOf package` - `[ pkgs.gparted ]`, arbitrary Nix, exactly the
+kind of value this CLI has always refused to touch: "can't be safely
+produced from a text field"). `packages` is a second, deliberately
+narrower option that *can* be: `attrsOf bool`, keyed by a plain nixpkgs
+attribute path string ("blender", "python3Packages.numpy") instead of
+an actual package value. The Settings UI's package search only ever
+writes a name it already found searching the real, pinned nixpkgs -
+never arbitrary text - so the "arbitrary text becomes an arbitrary Nix
+expression" risk the original `extraPackages` decision was avoiding
+never actually applies here.
+
+- **`packages search`** runs `nix search` against
+  `(builtins.getFlake ...).inputs.nixpkgs.outPath` - this flake's own,
+  already-fetched nixpkgs input, not a system channel or the `nixpkgs`
+  flake registry entry, which could easily be a different revision.
+  Every result is therefore guaranteed addable: nothing `search` can
+  return could fail `set-package`'s own existence check right after.
+  `nix search` builds and caches a name/description index the first
+  time it runs against a given nixpkgs revision - verified directly,
+  a cold-cache search took over a minute; the same query again took
+  about 5 seconds. The DMS plugin searches on Enter/click, never per
+  keystroke, for exactly this reason.
+- **`users set-package`** validates the attribute path twice before
+  writing anything: `validate_package_path` first rejects anything
+  outside a plain dotted-identifier charset (letters, digits, `.`,
+  `_`, `-`) - the same "nothing in the accepted charset can misuse a
+  `pkgs.$path` interpolation" reasoning `validate_username` already
+  uses for usernames - then a live `nix eval` confirms `pkgs.$path`
+  both exists *and* evaluates to an actual derivation, against this
+  flake's own pinned nixpkgs (`pkgs.stdenv.hostPlatform.system`,
+  substituted at Nix build time into the script itself, not resolved
+  at CLI runtime). An attribute that exists but throws when forced -
+  confirmed directly: `nodePackages` was removed from this nixpkgs
+  revision, and evaluating anything under it raises "nodePackages has
+  been removed", not a plain missing-attribute error - is correctly
+  treated as unavailable too, since the validation eval's own failure
+  (for any reason) becomes `false`, not a false "exists".
+- **Toggling reuses `set-group`'s exact merge shape**: read the
+  user's current `packages` attrset live, merge in `{path: enabled}`,
+  write the whole result back through `usersAwk` (`fieldName=packages`,
+  same generic "replace one field wholesale" mechanism `secrets`/
+  `extraGroups` already use - `packages` needed no new awk script).
+  Turning a package off sets its value to `false` rather than deleting
+  the key, so [core/VayumeUsers.nix](core-users.md)'s own
+  `home.packages` resolution (`filterAttrs (_: enabled: enabled)`,
+  then `attrByPath` on the dotted key to reach the real package) simply
+  excludes it - the entry, and the UI's toggle for it, stays put rather
+  than disappearing the way removing it outright would.
 
 ### Atomic writes, validated before they're trusted
 
