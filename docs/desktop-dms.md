@@ -636,6 +636,18 @@ still Nix-only) - see [core-vayume-config.md](core-vayume-config.md)
 for why the split exists and what makes a search-driven field safe to
 expose here at all when a free-text one wouldn't be.
 
+**Each user's card can be collapsed** - `SettingsCard.qml` grew an
+opt-in `collapsible`/`collapsed` pair (both default `false`, so
+`AppearancePage`/`DevelopmentPage`/`ApplicationsPage`/`SystemPage`'s
+existing cards render exactly as before without touching either one).
+`UsersPage.qml` is the only caller that turns it on, one bool per user
+card via the Repeater delegate's own instance - clicking anywhere in
+the title bar (a chevron shows which way) toggles that one card only.
+Needed once removal/packages/groups/secrets/password all landed on the
+same card - with two or more users each showing every section at once,
+the page got long enough that collapsing the ones you're not currently
+editing genuinely helps.
+
 The cursor picker is a real `DankDropdown` (the same component DMS's
 own settings dropdowns use under `qs.Widgets`) fed by `theme
 get`'s live `cursorOptions` - not a hardcoded list, and not a
