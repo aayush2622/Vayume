@@ -94,9 +94,6 @@ in
             networking.hostName = "Diablo";
             networking.networkmanager.enable = true;
 
-            # DNS resolver, the Tor toggle behind the control-center
-            # widget, and the network-stack hardening sysctls. See
-            # docs/system-network.md.
             vayume.network = {
               dns = {
                 provider = "cloudflare";
@@ -111,8 +108,6 @@ in
 
               hardening.enable = true;
 
-              # Breaks MAC-authenticated networks and captive portals that
-              # remember you - off unless you actually want that trade.
               randomizeMac = false;
             };
 

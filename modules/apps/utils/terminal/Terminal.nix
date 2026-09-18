@@ -191,8 +191,6 @@
         # Fastfetch
         # ─────────────────────────────────────────────
 
-        # Image list is computed once at build time (see fastfetchImagePaths) -
-        # no filesystem walk on every new shell, just an array pick.
         FASTFETCH_IMAGES=(${lib.concatStringsSep " " (map (p: "'${p}'") fastfetchImagePaths)})
         FASTFETCH_IMAGE=""
         if [ ''${#FASTFETCH_IMAGES[@]} -gt 0 ]; then

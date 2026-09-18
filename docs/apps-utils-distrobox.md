@@ -46,7 +46,54 @@ host's, so an exported app would never reach the launcher. Both
 `vayume-box-export` and `vayume-box-sync` therefore copy new entries and
 icons back out to `~/.local/share/{applications,icons}` and refresh the
 desktop database, so launcher integration still works exactly as it
-would with a shared home.
+would with a shared home. Every box's exported launchers/icons land in
+those same two shared host directories rather than per-box ones, so
+everything shows up in one launcher regardless of which container it
+came from - the only downside is a genuine name collision between two
+boxes' exported apps, which is last-export-wins if it ever happens.
+
+**Two dependency lists get installed into the box lazily, on demand
+rather than at creation.** `appImageDeps` covers the system libraries an
+AppImage runtime (and the Electron app usually inside it) links against
+but never bundles itself - `ensureAppImageDeps` checks each one with
+`dpkg -s` and only runs `apt-get install` for whatever's still missing,
+so adding a package to the list later is picked up on the very next run
+rather than requiring a rebuild of the box. `clipboardDeps`
+(`wl-clipboard`, `xclip`, `xsel`) is a separate case: `DISPLAY`/
+`WAYLAND_DISPLAY` inside the box are the host's own sockets (distrobox
+mounts both in by default, confirmed live - same X server and compositor
+as everything else, no bridging needed), so a GUI app's native clipboard
+already works. What doesn't is anything that shells out to sync it - a
+terminal copy/paste, a script calling `wl-copy`/`xclip` directly - since
+neither tool exists in a bare Ubuntu image. `ensureClipboardDeps` runs
+the same idempotent check from `ensureBox` itself, not just the AppImage
+paths, since clipboard sync matters for every box.
+
+**`--unshare-*` flags have to go on the command line directly, not
+through `--additional-flags`.** They're distrobox's own flags, not the
+underlying container manager's, and podman rejects them if smuggled in
+through `--additional-flags` with `unknown flag: --unshare-ipc`.
+
+**`ensureDbus` starts a system bus inside the box by hand.** Chromium-
+based apps log a stream of errors and misbehave with no system bus
+available, and the box has no init process to start one on its own, so
+this checks for the socket and forks `dbus-daemon --system` if it's
+missing.
+
+**AppImages need `ensureBinfmt` because of a mismatch between the host's
+binfmt registration and the container's mount namespace.** An AppImage
+has to be started by its own runtime - many refuse to launch when their
+parent process is a shell or a sandbox wrapper like `bwrap`. Normally the
+kernel's `binfmt_misc` handles that transparently, but the box inherits
+the host's binfmt registrations, and the host's interpreter path
+(`/run/binfmt/...`) doesn't exist inside the container's mount namespace,
+so `exec` fails with `ENOENT`. Mounting a private, empty `binfmt_misc`
+inside the box makes the kernel exec the AppImage directly with its own
+runtime as the parent, without touching the host's registration.
+`vayume-box-run` resolves and rewrites the target path on the host side
+for the same reason - so the command it finally execs is the AppImage's
+own runtime rather than a shell wrapper, keeping that parent chain
+intact.
 
 **Flags only apply at creation time.** An existing box does not
 retroactively gain an isolated home or new namespaces - `vayume-box-reset`
@@ -60,11 +107,12 @@ network operation, and activation runs before login (see
 [Users.nix](core-users.md) on why that ordering is the
 whole reason boot used to stall). Nothing here can delay a boot.
 
-Six commands, all idempotent:
+Seven commands, all idempotent:
 
 | Command | Does |
 | --- | --- |
 | `vayume-box` | Enter the box; with arguments, run them inside it |
+| `vayume-box-run <cmd\|file.AppImage>` | Run something inside the box - a bare filename resolves against the box's own `~/Applications` |
 | `vayume-box-install <x.deb\|apt-pkg>...` | Install local `.deb` files (apt resolves their dependencies) or plain apt packages |
 | `vayume-box-apps` | List desktop entries the box now provides |
 | `vayume-box-export <app>...` | Export an entry to the host launcher, so it shows up in DMS's spotlight like any native app |
@@ -74,6 +122,23 @@ Six commands, all idempotent:
 So the CodeTantra path is `vayume-box-install ~/Downloads/codetantra.deb`,
 then `vayume-box-apps` to see what it registered, then
 `vayume-box-export <name>`.
+
+**`vayume-box-run`'s path resolution runs on the host, before anything
+crosses into the box.** An unquoted `~` is expanded by the host shell
+before the script ever sees it, so `vayume-box-run ~/x.AppImage` already
+points at the *host's* home by the time it arrives - only a quoted
+`"~/x.AppImage"` reaches the script's own `~/` handling, which resolves
+against the box's home instead. A bare filename with no path separator
+is checked against the box's `~/Applications` directory (the same HOST
+path `vayume-box-install` populates, just under the isolated home rather
+than the real one) so `vayume-box-run foo.AppImage` just works after an
+install; anything else - `ls`, `apt`, an explicit path - falls through
+untouched. `vayume-box-run` also runs `ensureAppImageDeps` on every
+`*.AppImage` target, not only right after install, because a box that
+never ran an install (or an AppImage copied in some other way) fails
+with `No suitable fusermount binary found` otherwise - the check is
+idempotent and cheap once the dependencies are already there, so it's
+simpler to just always run it than to rely on install having gone first.
 
 **`vayume.ubuntuBox` makes the result reproducible** once you know the
 names: `aptPackages` and `exportApps` are re-applied by
@@ -85,10 +150,11 @@ default to `ubuntu`/`ubuntu:24.04` and exist for when something needs a
 different base.
 
 **`vayume.ubuntuBox.count` turns one box into N independent ones.** The
-default, 1, is exactly the six commands above, unnumbered, entering
-`name`. Set it higher - say 3 - and those six become eighteen instead:
-`vayume-box1` .. `vayume-box3` (and each one's `-install`/`-apps`/
-`-export`/`-sync`/`-reset`), one real container per number. Every other
+default, 1, is exactly the seven commands above, unnumbered, entering
+`name`. Set it higher - say 3 - and those seven become twenty-one
+instead: `vayume-box1` .. `vayume-box3` (and each one's `-run`/
+`-install`/`-apps`/`-export`/`-sync`/`-reset`), one real container per
+number. Every other
 option - `image`, `unshare`, `fuse`, `shmSize`, `aptPackages`,
 `exportApps` - is shared across all of them; there's no per-box override
 for those, just per-box identity and storage.

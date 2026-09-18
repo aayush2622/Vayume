@@ -1,9 +1,3 @@
-# Shared helpers for patching third-party DankMaterialShell plugins fetched
-# from dms-plugin-registry, split out so modules/desktop/dms/plugins/*.nix
-# can each patch their own plugin without re-deriving registryPlugins or the
-# patch-verification helpers per file. See modules/desktop/dms/Dms.nix for
-# the plugins that don't need any of this (no patch, straight from the
-# registry or fully built-in).
 { inputs, lib, ... }: {
   options.flake.vayumeLib.dmsPluginHelpers = lib.mkOption {
     type = lib.types.unspecified;
@@ -32,10 +26,6 @@
       in {
         registryPlugins = pkgs.callPackage "${inputs.dms-plugin-registry}/nix/default.nix" { };
 
-        # Used by both CavaVisualizer's own watchdog patch and Dms.nix's
-        # dmsShellPatched (the bundled cava widget) - checks whether
-        # anything is actually playing audio, so cava's watchdog can pause
-        # the analyzer during silence instead of visualizing noise floor.
         audioIsPlayingScript = pkgs.writeShellScript "vayume-audio-is-playing" ''
           set -euo pipefail
           ${pkgs.pipewire}/bin/pw-dump | ${pkgs.jq}/bin/jq -e --arg cava cava '

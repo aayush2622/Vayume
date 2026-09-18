@@ -2,16 +2,6 @@
   flake.nixosModules.Waydroid =
     { pkgs, lib, config, ... }:
     let
-      # casualsnek/waydroid_script patches the *mutable* Waydroid system
-      # image under /var/lib/waydroid/images. Nothing about the image is
-      # Nix-managed, so this only ships the tool + a wrapper - the patch is
-      # applied once, by hand, after `waydroid init`.
-      #
-      #   hack nodataperm : swap in a services.jar carrying the signature-
-      #                     spoofing patch (android.permission.FAKE_PACKAGE_
-      #                     SIGNATURE) plus blanket Android/data permissions
-      #   install microg  : add the microG GmsCore / GsfProxy / FakeStore stack
-      #   certified       : print the device ID for Play-Store registration
       waydroidScriptPython = pkgs.python3.withPackages (ps: with ps; [ tqdm requests inquirerpy ]);
 
       waydroid-script = pkgs.stdenvNoCC.mkDerivation {
@@ -57,9 +47,6 @@
         };
       };
 
-      # Privileged half - always runs as root (via the sudo rule below), so no
-      # id check. -a 13 matches the current LineageOS (lineage-20) images;
-      # WAYDROID_ANDROID_VERSION=11 selects the older channel.
       sigspoofPriv = pkgs.writeShellScript "vayume-waydroid-sigspoof-priv" ''
         set -eu
 
@@ -96,11 +83,6 @@
         EOF
       '';
 
-      # User-facing half - hops to root through the NOPASSWD rule, matching the
-      # vayume-tor / vayume-rebuild pattern (the rule keys on this exact store
-      # path, so it must be called by path, which `sudo -n` here does).
-      #   vayume-waydroid-sigspoof            # signature spoofing only
-      #   vayume-waydroid-sigspoof microg     # + microG
       sigspoof = pkgs.writeShellScriptBin "vayume-waydroid-sigspoof" ''
         exec sudo -n --preserve-env=WAYDROID_ANDROID_VERSION ${sigspoofPriv} "$@"
       '';
@@ -111,7 +93,7 @@
       environment.systemPackages = [
         waydroid-script
         sigspoof
-        pkgs.waydroid-helper # GTK front-end for the same extension jobs
+        pkgs.waydroid-helper
       ];
 
       security.sudo.extraRules = lib.mkIf (config ? vayume && config.vayume ? users) (
@@ -121,7 +103,7 @@
             {
               command = "${sigspoofPriv}";
               options = [
-                "SETENV" # lets WAYDROID_ANDROID_VERSION through
+                "SETENV"
                 "NOPASSWD"
               ];
             }

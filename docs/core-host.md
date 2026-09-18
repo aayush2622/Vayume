@@ -144,6 +144,14 @@ gets pointed at it directly via `environment.sessionVariables` instead.
 Verified live: `gsettings get org.gnome.desktop.interface gtk-theme`
 failed before this, returned the real `adw-gtk3` value after.
 
+**`vayume.network`** is also set here, same pattern as `vayume.theme` -
+the DNS resolver, the Tor toggle behind the control-center widget, and
+the network-stack hardening sysctls. Full field-by-field rationale
+lives in [Network.nix](system-network.md); the one choice worth calling
+out from here is `randomizeMac = false` - randomizing breaks
+MAC-authenticated networks and captive portals that remember you, so
+it's left off unless you actually want that trade.
+
 **Apps (`vayume.apps`) and users (`vayume.users`) are not set here at
 all.** Both used to be: `vayume.apps` as a plain block right in this
 file, `vayume.users` before that too. Two problems with that - a real
