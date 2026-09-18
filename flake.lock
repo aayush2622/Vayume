@@ -283,6 +283,26 @@
         "type": "github"
       }
     },
+    "nix-wpe-webkit-bin": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789755444,
+        "narHash": "sha256-KpZ4tKeIW0iuQXiGN2zKedZuTPOLShUf2Q8KQbfw8e4=",
+        "owner": "aayush2622",
+        "repo": "nix-wpe-webkit-bin",
+        "rev": "3c822fdbbd8be0358638df891acfb32afde50892",
+        "type": "github"
+      },
+      "original": {
+        "owner": "aayush2622",
+        "repo": "nix-wpe-webkit-bin",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1789149629,
@@ -342,6 +362,7 @@
         "import-tree": "import-tree",
         "nix-jetbrains-plugins": "nix-jetbrains-plugins",
         "nix-vscode-extensions": "nix-vscode-extensions",
+        "nix-wpe-webkit-bin": "nix-wpe-webkit-bin",
         "nixpkgs": "nixpkgs",
         "spicetify-nix": "spicetify-nix",
         "spotifast": "spotifast",

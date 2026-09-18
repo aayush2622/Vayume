@@ -48,6 +48,9 @@
     hytale-launcher.url = "github:JPyke3/hytale-launcher-nix";
     hytale-launcher.inputs.nixpkgs.follows = "nixpkgs";
 
+    nix-wpe-webkit-bin.url = "github:aayush2622/nix-wpe-webkit-bin";
+    nix-wpe-webkit-bin.inputs.nixpkgs.follows = "nixpkgs";
+
     zsh-autosuggestions = {
       url = "github:zsh-users/zsh-autosuggestions";
       flake = false;

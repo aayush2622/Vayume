@@ -1,14 +1,14 @@
-# Some packages (WPE WebKit) take hours to build from source with no
-# public binary cache to fall back on. loadOrBuild lets a module offer
-# a manual escape hatch: drop a zip of an already-built output at
-# bin/<name>.zip in the repo root (gitignored, machine-specific, never
-# committed - see .gitignore), and every future build just unzips it
-# (seconds) instead of rebuilding from source. No zip present, no
+# Some packages take a long time to build from source with no public
+# binary cache to fall back on (spotifast, currently). loadOrBuild lets
+# a module offer a manual escape hatch: drop a zip of an already-built
+# output at bin/<name>.zip in the repo root (gitignored, machine-specific,
+# never committed - see .gitignore), and every future build just unzips
+# it (seconds) instead of rebuilding from source. No zip present, no
 # change in behavior - falls straight through to the real derivation.
 #
 # The zip is expected to be a plain zip of a built output's file tree,
 # e.g.:
-#   cd /nix/store/<hash>-wpewebkit-2.52.3 && zip -r name.zip .
+#   cd /nix/store/<hash>-spotifast-1.2.3 && zip -r name.zip .
 # For a multi-output derivation, merge every output's tree into one
 # zip (they don't overlap) - the unzipped result is used as a single
 # combined output on the loaded-from-zip path, which is fine for

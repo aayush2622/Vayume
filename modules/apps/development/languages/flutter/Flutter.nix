@@ -50,11 +50,10 @@
 
   flake.appDescriptions.Flutter = "Flutter/Dart SDK and editor integrations.";
 
-  flake.homeModules.apps.Flutter = { self, pkgs, lib, ... }:
+  flake.homeModules.apps.Flutter = { inputs, self, pkgs, lib, ... }:
     let
-    
-      wpewebkit = self.vayumeLib.loadOrBuild { inherit self pkgs; } "wpewebkit"
-        (pkgs.callPackage ./_vendor/wpewebkit/package.nix { });
+
+      wpewebkit = inputs.nix-wpe-webkit-bin.packages.${pkgs.system}.default;
 
    
       wpeDeps = with pkgs; [
