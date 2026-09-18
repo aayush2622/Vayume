@@ -123,6 +123,136 @@ Column {
         }
     }
 
+    SettingsCard {
+        title: I18n.tr("Add a Package")
+        icon: "search"
+        width: parent.width
+
+        Column {
+            width: parent.width
+            spacing: Theme.spacingS
+
+            StyledText {
+                text: I18n.tr("Searches this flake's own pinned nixpkgs, not a system channel - a result here is guaranteed addable. The first search after a nixpkgs update can take a while to build its index; every one after is fast.")
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.surfaceVariantText
+                wrapMode: Text.WordWrap
+                width: parent.width
+            }
+
+            Row {
+                width: parent.width
+                spacing: Theme.spacingS
+
+                DankTextField {
+                    id: packageSearchField
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - packageUserPicker.width - searchButton.width - Theme.spacingS * 2
+                    placeholderText: I18n.tr("package name")
+                    onEditingFinished: root.vm.searchPackages(text)
+                }
+
+                DankDropdown {
+                    id: packageUserPicker
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 160
+                    popupWidth: 160
+                    currentValue: root.usersList.length > 0 ? root.usersList[0].name : ""
+                    options: root.usersList.map(u => u.name)
+                    emptyText: I18n.tr("No users")
+                }
+
+                StyledRect {
+                    id: searchButton
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 90
+                    height: 36
+                    radius: Theme.cornerRadius
+                    color: root.vm.packageSearching ? Theme.surfaceContainerLow : Theme.primary
+
+                    StyledText {
+                        anchors.centerIn: parent
+                        text: root.vm.packageSearching ? I18n.tr("Searching...") : I18n.tr("Search")
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: root.vm.packageSearching ? Theme.surfaceVariantText : Theme.onPrimary
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: !root.vm.packageSearching && packageSearchField.text.length > 0
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.vm.searchPackages(packageSearchField.text)
+                    }
+                }
+            }
+
+            StyledText {
+                visible: root.vm.packageSearchError.length > 0
+                text: root.vm.packageSearchError
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.error
+            }
+
+            Repeater {
+                model: root.vm.packageSearchResults
+
+                Row {
+                    id: resultRow
+                    required property var modelData
+                    width: parent.width
+                    spacing: Theme.spacingS
+
+                    Column {
+                        width: parent.width - addResultButton.width - Theme.spacingS
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        StyledText {
+                            text: resultRow.modelData.path + (resultRow.modelData.version.length > 0 ? " (" + resultRow.modelData.version + ")" : "")
+                            font.pixelSize: Theme.fontSizeMedium
+                            color: Theme.surfaceText
+                        }
+                        StyledText {
+                            visible: resultRow.modelData.description.length > 0
+                            text: resultRow.modelData.description
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
+                            wrapMode: Text.WordWrap
+                            width: parent.width
+                        }
+                    }
+
+                    StyledRect {
+                        id: addResultButton
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 70
+                        height: 30
+                        readonly property var targetUser: root.vm.users[packageUserPicker.currentValue]
+                        readonly property bool alreadyAdded: targetUser !== undefined
+                            && resultRow.modelData.path in (targetUser.packages ?? {})
+                        readonly property bool canAdd: packageUserPicker.currentValue.length > 0 && !alreadyAdded
+                        radius: Theme.cornerRadius
+                        color: canAdd ? Theme.primary : Theme.surfaceContainerLow
+
+                        StyledText {
+                            anchors.centerIn: parent
+                            text: addResultButton.alreadyAdded ? I18n.tr("Added") : I18n.tr("Add")
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: addResultButton.canAdd ? Theme.onPrimary : Theme.surfaceVariantText
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: addResultButton.canAdd
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.vm.setUserPackage(packageUserPicker.currentValue, resultRow.modelData.path, true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Repeater {
         model: root.vm.usersLoading ? [] : root.usersList
 
@@ -255,6 +385,48 @@ Column {
                             checked: userCard.modelData.extraGroups.includes(modelData)
                             onToggled: isChecked => root.vm.setUserGroup(userCard.modelData.name, groupToggle.modelData, isChecked)
                         }
+                    }
+                }
+            }
+
+            Rectangle { width: parent.width; height: 1; color: Theme.outline; opacity: 0.2 }
+
+            // --- packages ---
+            Column {
+                width: parent.width
+                spacing: Theme.spacingXS
+
+                StyledText {
+                    text: I18n.tr("Extra Packages")
+                    font.pixelSize: Theme.fontSizeMedium
+                    color: Theme.surfaceText
+                }
+                StyledText {
+                    text: I18n.tr("Added via the search above - toggling one off disables it without losing track of it, so it's a click to bring back rather than a re-search. Takes effect on the next rebuild.")
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                    wrapMode: Text.WordWrap
+                    width: parent.width
+                }
+
+                StyledText {
+                    visible: Object.keys(userCard.modelData.packages).length === 0
+                    text: I18n.tr("None yet.")
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                }
+
+                Repeater {
+                    model: Object.keys(userCard.modelData.packages).sort()
+
+                    DankToggle {
+                        id: packageToggle
+                        required property string modelData
+                        width: parent.width
+                        hideText: false
+                        text: packageToggle.modelData
+                        checked: userCard.modelData.packages[packageToggle.modelData]
+                        onToggled: isChecked => root.vm.setUserPackage(userCard.modelData.name, packageToggle.modelData, isChecked)
                     }
                 }
             }

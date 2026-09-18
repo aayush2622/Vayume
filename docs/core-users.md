@@ -69,11 +69,13 @@ to "where do I configure Vayume for myself":
   is gitignored and only ever readable by whoever already has read
   access to this checkout - see below for the one real trade-off this
   makes.
-- **DMS's "Vayume Settings" plugin edits the `vayume.apps` half of this
-  same file** through `vayume-config` - see
-  [core-vayume-config.md](core-vayume-config.md). It never touches
-  `vayume.users` (nothing in the DMS UI exposes accounts/secrets); a
-  person still edits those fields directly.
+- **DMS's "Vayume Settings" plugin edits both halves of this file**
+  through `vayume-config` - see
+  [core-vayume-config.md](core-vayume-config.md). Accounts themselves
+  (add/remove), display name, groups, password, `secrets`, and
+  `packages` are all editable from its Users page now; `avatar`,
+  `shell`, and `extraPackages` stay hand-edit-only - package/path-typed
+  values a text field or a search box can't safely produce.
 
 Field meanings:
 
@@ -81,6 +83,20 @@ Field meanings:
   (`null`) in `_config.nix` and you get `changeme` as a fallback initial
   password instead.
 - `extraGroups`: `"wheel"` for sudo, `"adbusers"` for Android debugging.
+- `packages`: `attrsOf bool`, keyed by a plain nixpkgs attribute path
+  string (`"blender"`, `"python3Packages.numpy"`) - what Vayume
+  Settings' package search adds to, each entry individually
+  toggleable. Deliberately narrower than `extraPackages` below (a
+  string key instead of an actual package value) precisely so it *can*
+  be driven by a search box - see
+  [core-vayume-config.md](core-vayume-config.md) for why that
+  distinction is what makes it safe to expose there at all. `false`
+  disables an entry without forgetting it, unlike removing it from a
+  plain list would.
+- `extraPackages`: a plain `listOf package` (`[ pkgs.gparted ]`) for
+  anything a name-based search can't express - a package with build
+  overrides, `pkgs.python3.withPackages (...)`, and the like. Nix-only,
+  same reasoning as `avatar`/`shell` for staying out of the CLI/UI.
 - The list of valid app names auto-discovers from every `.nix` file under
   `modules/apps/`, at any depth - add an app by dropping a folder in,
   nothing here needs to change.

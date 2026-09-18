@@ -360,9 +360,13 @@
             users set-secret <user> <WAKATIME_API_KEY|RBW_EMAIL> <value> [--if-unmodified-since <epoch>]
             users set-group <user> <group> <true|false> [--if-unmodified-since <epoch>]
                                            <group> must already exist on this system
+            users set-package <user> <attrPath> <true|false> [--if-unmodified-since <epoch>]
+                                           <attrPath> (e.g. "blender", "nodePackages.pnpm")
+                                           must resolve to a real package in this flake's nixpkgs
             users set-password <user> [--if-unmodified-since <epoch>]
                                            reads the new plaintext password from stdin,
                                            hashes it (mkpasswd -m sha-512), never touches argv
+            packages search <query>       matching nixpkgs packages: [{path, pname, version, description}]
             validate                      re-evaluate _config.nix, report pass/fail
           EOF
             exit 2
@@ -396,10 +400,14 @@
           # deliberately - those are package/path-typed, not something
           # this CLI ever writes, and forcing them would mean evaluating
           # every user's shell package on every single apps/theme toggle
-          # too, not just on a users edit.
+          # too, not just on a users edit. `packages`'s own bool values
+          # get the same cheap force `secrets`' string values do - real
+          # package resolution (attrByPath into nixpkgs) only happens
+          # once something actually asks for `home.packages`, same
+          # "don't force what nothing needs yet" reasoning.
           validate_config_file() {
             nix eval --impure --json --expr \
-              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) ]) users)" \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users)" \
               >/dev/null
           }
 
@@ -727,7 +735,7 @@
             data=$(nix eval --impure --json --expr \
               "let c = (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config; in {
                  users = builtins.mapAttrs (_: u: {
-                   inherit (u) fullName extraGroups secrets;
+                   inherit (u) fullName extraGroups secrets packages;
                    hasPassword = u.hashedPassword != null;
                    avatar = if u.avatar == null then null else toString u.avatar;
                  }) c.vayume.users;
@@ -864,6 +872,106 @@
             else
               exit 1
             fi
+          }
+
+          # Every path search returns, and every path this accepts, is a
+          # dotted chain of plain identifiers (attr.paths.like.this) -
+          # rejecting anything else before it ever reaches a `pkgs.$path`
+          # interpolation below is what makes that interpolation safe
+          # without its own escaping: there's nothing in the accepted
+          # charset an attribute-selector expression can misuse.
+          validate_package_path() {
+            case "$1" in
+              [a-zA-Z_]*)
+                case "$1" in
+                  *[!a-zA-Z0-9_.-]*) return 1 ;;
+                  *) return 0 ;;
+                esac
+                ;;
+              *) return 1 ;;
+            esac
+          }
+
+          # Same live-validation-before-write discipline as
+          # cmd_users_set_group's group list, against the exact nixpkgs
+          # this flake is pinned to (not whatever channel/registry the
+          # machine happens to have) - a typo'd or nonexistent path is
+          # rejected here, never silently written and left to fail at the
+          # next rebuild instead.
+          cmd_users_set_package() {
+            local user path enabled since exists current merged nixValue tmp
+            user=''${1:?user required}
+            path=''${2:?package attribute path required}
+            enabled=''${3:?true or false required}
+            since=""
+            if [ "''${4:-}" = "--if-unmodified-since" ]; then
+              since=''${5:?epoch required after --if-unmodified-since}
+            fi
+            validate_username "$user"
+            case "$enabled" in true|false) ;; *) echo "vayume-config: value must be true or false" >&2; exit 2;; esac
+            check_since "$since"
+
+            if ! validate_package_path "$path"; then
+              echo "vayume-config: invalid package attribute path '$path'" >&2
+              exit 2
+            fi
+
+            exists=$(nix eval --impure --raw --expr \
+              "let pkgs = (builtins.getFlake \"path:$flake_dir\").inputs.nixpkgs.legacyPackages.\"${pkgs.stdenv.hostPlatform.system}\"; v = pkgs.$path or null; in if v != null && (v.type or \"\") == \"derivation\" then \"true\" else \"false\"" 2>/dev/null || echo false)
+            if [ "$exists" != "true" ]; then
+              echo "vayume-config: '$path' isn't a package in this flake's nixpkgs" >&2
+              exit 2
+            fi
+
+            current=$(nix eval --impure --json --expr \
+              "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.users.\"$(nix_escape "$user")\".packages")
+            merged=$(jq --arg k "$path" --argjson v "$enabled" '. + {($k): $v}' <<<"$current")
+
+            nixValue="{ "
+            while IFS=$'\t' read -r k v; do
+              nixValue+="\"$(nix_escape "$k")\" = $v; "
+            done < <(jq -r 'to_entries[] | "\(.key)\t\(.value)"' <<<"$merged")
+            nixValue+="}"
+
+            tmp="$config_file.vayume-config.tmp"
+            if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=packages -f ${usersAwk} "$config_file" > "$tmp"; then
+              rm -f "$tmp"
+              exit 1
+            fi
+
+            if apply_edit "$tmp"; then
+              jq -n --arg user "$user" --arg path "$path" --argjson enabled "$enabled" \
+                '{ok: true, user: $user, path: $path, enabled: $enabled}'
+            else
+              exit 1
+            fi
+          }
+
+          # Searches the exact nixpkgs this flake is pinned to (its
+          # already-fetched store path, not a separately-resolved
+          # `nixpkgs` flake registry entry that could be a different
+          # revision) so a result this returns is guaranteed to be
+          # addable - nothing found here could fail
+          # cmd_users_set_package's own existence check right after.
+          # `nix search` builds and caches a name/description index the
+          # first time it runs against a given nixpkgs revision - that
+          # first search can take a while over the whole of nixpkgs,
+          # every one after is fast.
+          cmd_packages_search() {
+            local query nixpkgsPath results
+            query=''${1:?search query required}
+            nixpkgsPath=$(nix eval --impure --raw --expr \
+              "(builtins.getFlake \"path:$flake_dir\").inputs.nixpkgs.outPath")
+            results=$(nix search --json "path:$nixpkgsPath" "$query" 2>/dev/null || echo '{}')
+            jq '[
+              to_entries[]
+              | {
+                  path: (.key | sub("^legacyPackages\\.[^.]+\\."; "")),
+                  pname: .value.pname,
+                  version: .value.version,
+                  description: (.value.description // "")
+                }
+            ] | sort_by(.path) | .[0:50]' <<<"$results"
           }
 
           # Reads the new password from stdin, never argv - argv is
@@ -1018,7 +1126,15 @@
                 set-name) shift; cmd_users_set_name "$@";;
                 set-secret) shift; cmd_users_set_secret "$@";;
                 set-group) shift; cmd_users_set_group "$@";;
+                set-package) shift; cmd_users_set_package "$@";;
                 set-password) shift; cmd_users_set_password "$@";;
+                *) usage;;
+              esac
+              ;;
+            packages)
+              shift
+              case "''${1:-}" in
+                search) shift; cmd_packages_search "$@";;
                 *) usage;;
               esac
               ;;

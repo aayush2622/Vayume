@@ -617,6 +617,25 @@ refetch on failure - a fresh user arrives with server-computed defaults
 this widget has no client-side copy of, so there's no value to
 optimistically show ahead of the real one.
 
+**Extra packages, per user, found by searching rather than typed in.**
+"Add a Package" (its own top-level card, not nested per-user - one
+search box, a `DankDropdown` to pick which user gets the result) runs
+`vayume-config packages search` against this flake's own pinned
+nixpkgs. Searching is explicit (Enter or the Search button), never
+per-keystroke - `nix search` takes several seconds even warm, up to a
+minute stone-cold, so searching on every keystroke would queue up
+several-second subprocess calls behind each other rather than firing
+one. Clicking "Add" on a result calls `users set-package`; each user's
+own card then shows every package they've ever added as a `DankToggle`
+row (`checked` = currently enabled) - turning one off disables it
+without forgetting it, so getting it back is a click, not a re-search.
+This is the one part of the page that reads from a *different* backend
+option than it looks like at first: `packages` (`attrsOf bool`, keyed
+by attribute-path string), not `extraPackages` (a plain package list,
+still Nix-only) - see [core-vayume-config.md](core-vayume-config.md)
+for why the split exists and what makes a search-driven field safe to
+expose here at all when a free-text one wouldn't be.
+
 The cursor picker is a real `DankDropdown` (the same component DMS's
 own settings dropdowns use under `qs.Widgets`) fed by `theme
 get`'s live `cursorOptions` - not a hardcoded list, and not a

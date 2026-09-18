@@ -33,6 +33,10 @@ PluginComponent {
     property bool usersError: false
     readonly property bool usersSaving: usersSetProc.running || usersPasswordProc.running || usersAddRemoveProc.running
 
+    property var packageSearchResults: []
+    readonly property bool packageSearching: packageSearchProc.running
+    property string packageSearchError: ""
+
     property bool rebuildBusy: false
     property string rebuildStatus: ""
     property var rebuildLog: []
@@ -159,6 +163,31 @@ PluginComponent {
     function removeUser(user) {
         usersAddRemoveProc.command = ["vayume-config", "users", "remove", user];
         usersAddRemoveProc.running = true;
+    }
+
+    // Explicit trigger, not per-keystroke - a search against the whole
+    // of nixpkgs takes several seconds even with `nix search`'s own
+    // cache warm (and up to a minute stone-cold, the first time it
+    // builds that cache), so searching on every keystroke would mean
+    // piling up several-second subprocess calls behind each other
+    // instead of one on Enter/click.
+    function searchPackages(query) {
+        root.packageSearchError = "";
+        packageSearchProc.command = ["vayume-config", "packages", "search", query];
+        packageSearchProc.running = true;
+    }
+
+    // Same optimistic-update convention as setUserGroup - flips the one
+    // key immediately, only refetches (undoing the optimistic guess) if
+    // the backend rejects it, e.g. a package that stopped existing in
+    // nixpkgs since the last `nix flake update`.
+    function setUserPackage(user, path, enabled) {
+        const current = root.users[user];
+        root.users = Object.assign({}, root.users, {
+            [user]: Object.assign({}, current, { packages: Object.assign({}, current.packages, { [path]: enabled }) })
+        });
+        usersSetProc.command = ["vayume-config", "users", "set-package", user, path, enabled ? "true" : "false"];
+        usersSetProc.running = true;
     }
 
     function rebuild() {
@@ -372,6 +401,21 @@ PluginComponent {
                 : I18n.tr("Couldn't update users - see a terminal for the real error.");
             root.refreshUsers();
             root.refreshRepo();
+        }
+    }
+
+    Process {
+        id: packageSearchProc
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.packageSearchResults = JSON.parse(text);
+                } catch (e) {
+                    root.packageSearchResults = [];
+                    root.packageSearchError = I18n.tr("Search failed - see a terminal for the real error.");
+                }
+            }
         }
     }
 
