@@ -262,6 +262,8 @@ Column {
             title: modelData.fullName.length > 0 ? modelData.fullName : modelData.name
             icon: "person"
             width: parent.width
+            collapsible: true
+            collapsed: false
 
             // --- remove ---
             Row {

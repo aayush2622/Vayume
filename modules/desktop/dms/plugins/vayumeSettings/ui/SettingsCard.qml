@@ -7,6 +7,14 @@ Rectangle {
 
     property string title: ""
     property string icon: ""
+    // Opt-in - every existing page using this card leaves both at their
+    // defaults and renders exactly as before. Only a card that sets
+    // collapsible: true gets a clickable title bar and a chevron; collapsed
+    // itself is left to the caller to own (per-instance, e.g. one bool per
+    // Repeater delegate) rather than reset here, so a page with several of
+    // these cards controls each one's default/remembered state itself.
+    property bool collapsible: false
+    property bool collapsed: false
     default property alias content: contentColumn.data
 
     width: parent ? parent.width : 400
@@ -14,6 +22,8 @@ Rectangle {
     height: implicitHeight
     radius: Theme.cornerRadius
     color: Theme.surfaceContainer
+
+    Behavior on implicitHeight { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
     Column {
         id: outerColumn
@@ -23,34 +33,57 @@ Rectangle {
         anchors.margins: Theme.spacingM
         spacing: Theme.spacingM
 
-        Row {
+        Item {
+            id: titleBar
             visible: root.title.length > 0
             width: parent.width
-            spacing: Theme.spacingS
+            height: Math.max(iconChip.height, titleText.height, chevronIcon.height)
 
-            Rectangle {
-                id: iconChip
-                visible: root.icon.length > 0
-                width: 30
-                height: 30
-                radius: Theme.cornerRadius
-                color: Theme.primaryHoverLight
+            Row {
+                anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
+                spacing: Theme.spacingS
 
-                DankIcon {
-                    anchors.centerIn: parent
-                    name: root.icon
-                    size: 18
-                    color: Theme.primary
+                Rectangle {
+                    id: iconChip
+                    visible: root.icon.length > 0
+                    width: 30
+                    height: 30
+                    radius: Theme.cornerRadius
+                    color: Theme.primaryHoverLight
+
+                    DankIcon {
+                        anchors.centerIn: parent
+                        name: root.icon
+                        size: 18
+                        color: Theme.primary
+                    }
+                }
+
+                StyledText {
+                    id: titleText
+                    text: root.title
+                    font.pixelSize: Theme.fontSizeMedium
+                    font.weight: Font.Medium
+                    color: Theme.surfaceText
                 }
             }
 
-            StyledText {
-                text: root.title
-                font.pixelSize: Theme.fontSizeMedium
-                font.weight: Font.Medium
-                color: Theme.surfaceText
+            DankIcon {
+                id: chevronIcon
+                visible: root.collapsible
+                anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
+                name: root.collapsed ? "chevron_right" : "expand_more"
+                size: 20
+                color: Theme.surfaceVariantText
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                enabled: root.collapsible
+                cursorShape: root.collapsible ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: root.collapsed = !root.collapsed
             }
         }
 
@@ -58,6 +91,7 @@ Rectangle {
             id: contentColumn
             width: parent.width
             spacing: Theme.spacingM
+            visible: !root.collapsed
         }
     }
 }
