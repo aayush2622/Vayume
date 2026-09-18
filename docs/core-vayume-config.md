@@ -388,6 +388,26 @@ unlike wallpaper or some DMS-native appearance settings (DMS's own state,
 never routed through this repo at all), installing or removing a
 package is never something that happens without one.
 
+**`theme set cursorTheme` is the one field with a real exception.**
+Reported directly: changing the cursor through Vayume Settings didn't
+change what was on screen. True of every field until now, and still
+true of `font`/`fontSize`/every `apps`/`users` field - but a cursor
+theme is unusual in that the running desktop *can* be told to switch
+live, without a rebuild, so `cmd_theme_set` does exactly that right
+after a successful write: `hyprctl setcursor <theme> <size>` (verified
+directly against a live session - a plain top-level hyprctl verb,
+unrelated to the Lua-based `hyprctl dispatch` rebind
+[Hyprland.nix](desktop-hyprland.md) uses for keybinds) plus `gsettings
+set org.gnome.desktop.interface cursor-theme/-size` for GTK apps that
+read dconf instead of asking the compositor. Both are best-effort and
+never touch `_config.nix` or this command's own success/failure -
+`command -v` guards each, `|| true` on the calls themselves - so a
+session with neither available (a TTY, niri, which has no equivalent
+runtime call at all) just skips the step silently. The persisted value
+in `_config.nix` is unaffected either way; this only changes what an
+*already-running* session looks like before the next rebuild catches
+up for real.
+
 ---
 
 [← Theme.nix](core-theme.md) · [Index](CONFIGURATION.md) · [DevLanguages.nix →](core-devlanguages.md)
