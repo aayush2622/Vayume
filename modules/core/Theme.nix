@@ -7,12 +7,12 @@
         options = {
           font = lib.mkOption {
             type = lib.types.str;
-            default = "JetBrainsMono Nerd Font";
+            default = "JetBrains Mono NL";
             description = "UI/monospace font family, used by fontconfig, GTK, kitty, and DMS.";
           };
           fontPackage = lib.mkOption {
             type = lib.types.package;
-            default = pkgs.nerd-fonts.jetbrains-mono;
+            default = pkgs.jetbrains-mono;
             description = "Package providing `font`.";
           };
           fontSize = lib.mkOption {
