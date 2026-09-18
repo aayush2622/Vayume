@@ -660,10 +660,39 @@
               '$base | del(.cursorPath, .fontPath) | . + {cursorOptions: $cursorOptions, fontOptions: $fontOptions}'
           }
 
+          # Best-effort, not persisted state - the value written to
+          # _config.nix by cmd_theme_set is what survives a rebuild or a
+          # fresh login; this just makes an already-running session look
+          # right immediately, same idea as the matugen GTK color-scheme
+          # post_hook in Baseline.nix. `hyprctl setcursor` (a plain
+          # top-level hyprctl verb, not `hyprctl dispatch` - the Lua-based
+          # dispatch rebind this repo's Hyprland config uses for keybinds
+          # has no bearing on it, confirmed directly) live-updates every
+          # Wayland client using the cursor-shape protocol; `gsettings`
+          # covers GTK apps that read their cursor theme from dconf
+          # instead. Neither reaches XWayland or an already-running
+          # process that cached XCURSOR_THEME at its own startup, and
+          # niri has no equivalent runtime call at all right now - this
+          # is Hyprland-only in practice, silently a no-op elsewhere.
+          apply_cursor_live() {
+            local theme size
+            theme=$1
+            size=$(nix eval --impure --raw --expr \
+              "toString (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.cursorSize" 2>/dev/null) || return 0
+            if command -v hyprctl >/dev/null 2>&1; then
+              hyprctl setcursor "$theme" "$size" >/dev/null 2>&1 || true
+            fi
+            if command -v gsettings >/dev/null 2>&1; then
+              gsettings set org.gnome.desktop.interface cursor-theme "$theme" >/dev/null 2>&1 || true
+              gsettings set org.gnome.desktop.interface cursor-size "$size" >/dev/null 2>&1 || true
+            fi
+          }
+
           cmd_theme_set() {
-            local field value since tmp validNames
+            local field value since tmp validNames rawValue
             field=''${1:?field required}
             value=''${2:?value required}
+            rawValue=$value
             since=""
             if [ "''${3:-}" = "--if-unmodified-since" ]; then
               since=''${4:?epoch required after --if-unmodified-since}
@@ -705,6 +734,9 @@
             awk -v field="$field" -v value="$value" -f ${themeAwk} "$config_file" > "$tmp"
 
             if apply_edit "$tmp"; then
+              if [ "$field" = "cursorTheme" ]; then
+                apply_cursor_live "$rawValue"
+              fi
               jq -n --arg field "$field" --arg value "$value" '{ok: true, field: $field, value: $value}'
             else
               exit 1

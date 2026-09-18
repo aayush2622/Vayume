@@ -652,10 +652,29 @@ The cursor picker is a real `DankDropdown` (the same component DMS's
 own settings dropdowns use under `qs.Widgets`) fed by `theme
 get`'s live `cursorOptions` - not a hardcoded list, and not a
 click-to-cycle button. Every setting shown is `_config.nix`, which only
-ever takes effect on the next rebuild - there is no live-apply tier in
-this plugin, and the sidebar's status badge always reads "Rebuild
-required" once something has changed, never something that implies a
-change already took effect.
+ever *persists* through the next rebuild - the sidebar's status badge
+always reads "Rebuild required" once something has changed, never
+something that implies the write alone was the whole story.
+
+**`cursorTheme` is the one exception with an actual live-apply step,
+added directly in `vayume-config theme set` (not the DMS plugin) so a
+terminal `vayume-config theme set cursorTheme ...` gets it too.**
+Reported as "changing it doesn't update live" - correct as filed, this
+plugin genuinely had no live-apply tier for anything before. Verified
+directly against a running Hyprland session: `hyprctl setcursor <theme>
+<size>` is a plain top-level hyprctl verb, not `hyprctl dispatch` (the
+Lua-based dispatch rebind [Hyprland.nix](desktop-hyprland.md) uses for
+its own keybinds has no bearing on it - confirmed by running it
+directly, no Lua-dispatch error), and switching themes with it and back
+worked cleanly. `gsettings set org.gnome.desktop.interface cursor-
+theme/-size` covers GTK apps that read their cursor from dconf instead
+of the compositor's own renderer. Neither reaches XWayland or a process
+that already cached `XCURSOR_THEME` at its own startup, and niri has no
+equivalent runtime call at all (checked `niri msg --help`'s full
+subcommand list directly) - Hyprland-only in practice, a silent no-op
+everywhere else (`command -v` guards each call, `|| true` on the calls
+themselves - a session with no compositor IPC up yet, or one that isn't
+Hyprland, just skips this step exactly as if it were never called).
 
 Every app/language/editor/tool toggle also shows the one-line
 `description` `vayume-config` reads from `flake.appDescriptions` (see
