@@ -106,20 +106,11 @@
   in {
     home.packages = [ stateBackupScript ];
 
-    # Runs *before* Home Manager links its own files: a stale symlink left by a
-    # previous project name (…/<oldname>/session/<p>) would otherwise make HM's
-    # linkGeneration die with `mkdir: File exists` / `ln: No such file or
-    # directory`. This entry repairs those links first, and if the project was
-    # renamed it moves the whole old session dir across in one shot - recovered
-    # from the links themselves, so there's no list of old names to maintain.
     home.activation.linkSessionState =
       lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
         SESSION_DIR="$HOME/.config/vayume/session"
         PATHS=(${pathsBashArray})
 
-        # One-shot migration after a rename: the managed links still point into
-        # the old session dir. Derive it from a link's target and move it over,
-        # but only while we have no state of our own yet.
         if [ ! -d "$SESSION_DIR" ] || [ -z "$(ls -A "$SESSION_DIR" 2>/dev/null || true)" ]; then
           for p in "''${PATHS[@]}"; do
             link="$HOME/$p"
@@ -144,7 +135,6 @@
           TARGET="$HOME/$p"
           LINK_DEST="$SESSION_DIR/$p"
 
-          # Already pointing where it should - nothing to do.
           if [ "$(readlink "$TARGET" 2>/dev/null || true)" = "$LINK_DEST" ]; then
             continue
           fi
@@ -152,9 +142,6 @@
           run mkdir -p "$(dirname "$LINK_DEST")" "$(dirname "$TARGET")"
 
           if [ -L "$TARGET" ]; then
-            # Wrong or dangling link (typically a leftover from a previous name).
-            # Pull real data along if the link still resolves outside SESSION_DIR
-            # and we don't already hold state for this app; otherwise start fresh.
             resolved="$(readlink -f "$TARGET" 2>/dev/null || true)"
             case "$resolved" in
               "$SESSION_DIR"|"$SESSION_DIR"/*) resolved="" ;;

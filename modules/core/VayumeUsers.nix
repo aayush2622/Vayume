@@ -98,10 +98,6 @@
       };
     });
 
-    # `path` arrives as plain text from _config.nix ("blender",
-    # "nodePackages.pnpm") - splitting on "." and walking pkgs with it
-    # is what lets a single flat string key reach a nested package the
-    # same way writing `pkgs.nodePackages.pnpm` by hand would.
     resolvePackagePath = path: lib.attrByPath (lib.splitString "." path)
       (throw "vayume: unknown package \"${path}\" in vayume.users.*.packages") pkgs;
   in {

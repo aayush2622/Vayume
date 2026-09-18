@@ -7,9 +7,6 @@
       ipt = "${pkgs.iptables}/bin/iptables";
       ipt6 = "${pkgs.iptables}/bin/ip6tables";
 
-      # Every resolver here is quoted with its DoT hostname, because
-      # systemd-resolved needs one to validate the certificate - without
-      # it, dnsovertls silently degrades to an unauthenticated tunnel.
       dnsProviders = {
         cloudflare = {
           hostname = "one.one.one.one";
@@ -42,9 +39,6 @@
       withHost = addrs: map (a: "${a}#${chosen.hostname}") addrs;
       resolvers = withHost (chosen.v4 ++ lib.optionals cfg.dns.ipv6 chosen.v6);
 
-      # Traffic that must never be redirected into Tor: loopback (where
-      # resolved and Tor's own ports live) and every private range, so
-      # the LAN and container bridges keep working.
       directNets = [
         "127.0.0.0/8"
         "10.0.0.0/8"
@@ -58,9 +52,6 @@
           (net: "${ipt} -t ${table} -A ${chain} -d ${net} -j RETURN")
           directNets;
 
-      # Container subnets, whose traffic is forwarded rather than locally
-      # generated - so it never passes through OUTPUT and needs its own
-      # PREROUTING redirect to be covered at all.
       containerNets = [ "172.16.0.0/12" "10.88.0.0/16" ];
 
       containerRedirect =
@@ -79,9 +70,6 @@
       torUp = pkgs.writeShellScript "vayume-tor-rules-up" ''
         set -eu
 
-        # Locally generated traffic: all TCP into Tor's TransPort, all
-        # DNS into its DNSPort. Tor's own uid is exempt or it redirects
-        # into itself.
         ${ipt} -t nat -N VAYUME_TOR
         ${ipt} -t nat -A VAYUME_TOR -m owner --uid-owner tor -j RETURN
         ${returnDirect "nat" "VAYUME_TOR"}
@@ -89,9 +77,6 @@
         ${ipt} -t nat -A VAYUME_TOR -p tcp -j REDIRECT --to-ports 9040
         ${ipt} -t nat -I OUTPUT 1 -j VAYUME_TOR
 
-        # TCP and DNS are handled above; everything else leaving this box
-        # (QUIC, WireGuard, NTP, ICMP) is rejected rather than allowed
-        # out in the clear, because Tor cannot carry it.
         ${ipt} -N VAYUME_TORLEAK
         ${ipt} -A VAYUME_TORLEAK -m owner --uid-owner tor -j RETURN
         ${ipt} -A VAYUME_TORLEAK -o lo -j RETURN
@@ -101,16 +86,12 @@
         ${ipt} -A VAYUME_TORLEAK -j REJECT --reject-with icmp-port-unreachable
         ${ipt} -I OUTPUT 1 -j VAYUME_TORLEAK
 
-        # Container traffic is forwarded, not locally generated, so the
-        # OUTPUT chains above never see it.
         ${ipt} -t nat -N VAYUME_TOR_PRE
         ${ipt} -N VAYUME_TOR_FWD
         ${containerRedirect}
         ${ipt} -t nat -I PREROUTING 1 -j VAYUME_TOR_PRE
         ${ipt} -I FORWARD 1 -j VAYUME_TOR_FWD
 
-        # The TransPort is v4-only, so v6 has to be closed or it becomes
-        # the leak path around all of the above.
         ${ipt6} -N VAYUME_TOR6
         ${ipt6} -A VAYUME_TOR6 -o lo -j RETURN
         ${ipt6} -A VAYUME_TOR6 -j REJECT --reject-with icmp6-port-unreachable
@@ -118,9 +99,6 @@
       '';
 
       torDown = pkgs.writeShellScript "vayume-tor-rules-down" ''
-        # Deliberately no `set -e`: teardown must run to completion even
-        # when a chain is already gone, or a half-removed ruleset strands
-        # the machine with no working network.
         ${ipt} -t nat -D OUTPUT -j VAYUME_TOR 2>/dev/null || true
         ${ipt} -t nat -F VAYUME_TOR 2>/dev/null || true
         ${ipt} -t nat -X VAYUME_TOR 2>/dev/null || true
@@ -151,9 +129,6 @@
             ${torDown}
             ${pkgs.systemd}/bin/systemctl start tor.service || exit 1
 
-            # Only redirect once Tor is actually listening - applying the
-            # rules against a dead TransPort takes the machine offline
-            # instead of routing it.
             for _ in $(seq 1 30); do
               if ${pkgs.iproute2}/bin/ss -ltn 'sport = :9040' | grep -q 9040; then
                 exec ${torUp}
@@ -166,15 +141,10 @@
             exit 1
             ;;
           stop)
-            # Rules first: a failed stop must not leave traffic pinned to
-            # a service that is going away.
             ${torDown}
             exec ${pkgs.systemd}/bin/systemctl stop tor.service
             ;;
           newnym)
-            # Fresh circuits. The control socket is root-owned, which is
-            # why this arm lives on the privileged side rather than in
-            # the user-facing wrapper.
             printf 'AUTHENTICATE\r\nSIGNAL NEWNYM\r\nQUIT\r\n' \
               | ${pkgs.socat}/bin/socat - UNIX-CONNECT:/run/tor/control \
               | ${pkgs.gnugrep}/bin/grep -q "^250" || {
@@ -275,9 +245,6 @@
         {
           networking.nameservers = resolvers;
 
-          # These live under settings.Resolve now - the flat
-          # dnssec/dnsovertls/fallbackDns options still work but are
-          # renamed, and warn on every evaluation.
           services.resolved = {
             enable = true;
             settings.Resolve = {
@@ -310,9 +277,6 @@
             "net.ipv4.icmp_echo_ignore_broadcasts" = 1;
             "net.ipv4.tcp_syncookies" = 1;
 
-            # Loose rather than strict reverse-path filtering: strict
-            # drops the asymmetric routing that container bridges and
-            # VPN split-tunnels rely on.
             "net.ipv4.conf.all.rp_filter" = 2;
             "net.ipv4.conf.default.rp_filter" = 2;
 
@@ -330,22 +294,11 @@
               transparentProxy.enable = true;
               dns.enable = true;
             };
-            # Not `settings.ControlSocket` - a bare ControlSocket makes Tor
-            # refuse to start because systemd's RuntimeDirectory gives /run/tor
-            # mode 0710 (group `tor`), which Tor rejects as "too permissive".
-            # This option emits `ControlPort unix:/run/tor/control GroupWritable
-            # RelaxDirModeCheck`, which is the same socket without the check.
             controlSocket.enable = true;
           };
 
-          # Installed but never started at boot - the widget owns when
-          # it runs.
           systemd.services.tor.wantedBy = lib.mkForce [ ];
 
-          # A firewall restart flushes every chain, including Tor's, and
-          # would silently drop traffic back to direct while the daemon
-          # is still up. Re-apply on each firewall (re)start if Tor is
-          # running.
           networking.firewall.extraCommands = ''
             if ${pkgs.systemd}/bin/systemctl is-active --quiet tor.service; then
               ${torUp} || true
@@ -362,11 +315,6 @@
             ];
           }) (builtins.attrNames config.vayume.users);
 
-          # `vayume-tor` (the CLI the widget shells out to by bare name,
-          # relying on PATH) lives here since it's a networking concern -
-          # the widget's own DMS plugin registration is
-          # modules/desktop/dms/plugins/Tor.nix now, alongside the rest of
-          # DMS's plugins.
           home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {
             home.packages = [ torToggle ];
           });

@@ -76,14 +76,40 @@ The default file manager on this host - and the one that quietly proves how much
   directories under "Places" once they exist on disk - which they do,
   since [Baseline.nix](desktop-baseline.md) turns on
   `xdg.userDirs.createDirectories` for every user - but it separately
-  reads the classic `~/.gtk-bookmarks` for its own pinnable "Bookmarks"
-  section, which starts out empty. `gtkBookmarks` seeds that file with
-  the same six folders (pulled from `config.xdg.userDirs.*`, not
-  hardcoded paths) so they show up immediately rather than depending on
+  reads GTK3's own bookmark file, `~/.config/gtk-3.0/bookmarks` (not the
+  legacy `~/.gtk-bookmarks` - still readable by some apps, but Thunar and
+  GTK3 don't write or read it anymore), for its own pinnable "Bookmarks"
+  section, which starts out empty. `standardBookmarkDirs` seeds that file
+  with five folders (pulled from `config.xdg.userDirs.*`, not hardcoded
+  paths - Desktop is deliberately left out since GTK's places sidebar
+  already pins it on its own and listing it here would just duplicate the
+  row) so they show up immediately rather than depending on
   activation-order timing between folder creation and Thunar's own
   directory scan - same seed-once pattern as `thunar.xml`, since Thunar
   rewrites this file too whenever a bookmark is added or removed by
-  hand.
+  hand. The activation script also does a one-time cleanup pass: an
+  earlier version of this seed added a bare, unlabelled Desktop bookmark,
+  and a `sed` removes exactly that one line (never a user's own labelled
+  bookmark) now that Desktop is excluded going forward.
+- **"Copy Path" is a custom action, not xfconf.** Thunar's custom actions
+  (right-click menu items beyond the built-ins) live in their own plain
+  `uca.xml`, which Thunar just re-reads with no `xfconfd` restart needed -
+  unlike everything else in this file. The action shells out to a
+  dedicated `copyPathScript` (`wl-copy -- "$1"`) rather than an inline
+  `bash -c '...' -- %f`, because Thunar substitutes `%f` with a single
+  shell-quoted argument and parses the whole command line itself before
+  spawning it - handing it a plain executable plus one argument avoids
+  stacking this module's own quoting on top of Thunar's.
+- **The `.ts`/`.tsx` defaults look wrong until you check what they
+  actually resolve to.** The mimetypes in `defaultApplications` are what
+  extensions on this machine's shared-mime-info database actually resolve
+  to right now, checked with `xdg-mime query filetype` rather than
+  guessed - notably `.ts` is `text/vnd.trolltech.linguist` and `.tsx` is
+  `application/x-tiled-tsx` here, both Qt/Tiled leftovers with nothing
+  TypeScript about the name. Doesn't affect double-click behaviour
+  either way - Thunar dispatches on the resolved mimetype, so `.ts`/
+  `.tsx` still open in VS Code - it's just easy to get confused re-reading
+  this list later and think it's misconfigured.
 
 ---
 

@@ -65,6 +65,20 @@ A second Spotify client, next to Spicetify - not a replacement for it, a complet
   on #171 point toward a redesigned, currently-undecided theme format
   for whatever ships officially. Worth knowing before leaning on this
   further, and worth re-checking after any `--update-input fastpotify`.
+- **A custom theme still needs one manual selection, seeded settings or
+  not.** Spotifast only actually picks up a theme once it's chosen under
+  Settings > Appearance > Theme - there's no env var or CLI flag for it,
+  just the `custom_theme` field in `settings.json` (still under the old
+  `fastpotify` config dir; upstream kept that path on purpose when
+  renaming the project). `seedSpotifastSettings` writes that field ahead
+  of time, but only once, the same seed-once pattern as `thunar.xml` in
+  [Thunar.nix](apps-utils-thunar.md) - the app owns this file completely
+  once it exists (bitrate, sidebar order, sign-in state, ...), so either
+  a symlink or an unconditional overwrite would fail every write or blow
+  away real settings on the next rebuild. This only helps a fresh install
+  that's never been launched before; an existing `settings.json` still
+  needs that one manual theme selection, matching upstream's own
+  documented flow exactly.
 
 ---
 

@@ -136,6 +136,23 @@ own are used directly:
   app's own real config directory, not wherever a symlink's target
   happens to sit.
 
+**`Dms.nix` only carries plugins with nothing custom behind them.**
+`dankAsusControlCenter`, `cavaVisualizer`, and `tor` each have real custom
+Nix - a patch, or a locally-authored QML widget - and get their own file
+under `modules/desktop/dms/plugins/`; the module system merges their
+`programs.dank-material-shell.plugins.<name>` definitions into the same
+option `Dms.nix` sets for everything else. Every plugin declared directly
+in `Dms.nix` is a plain `enable`/`settings` passthrough with nothing to
+split out. The dms-shell package itself is patched too, in
+`ShellPatch.nix` - split out of `Dms.nix` for the same reason: it's a
+self-contained block, not something every other option in `Dms.nix`
+needs to read. The actual patch machinery behind all of this -
+`registryPlugins`, the `assertPatched`/`assertPatchedLine`/
+`mkPatchedPlugin` helpers, and the `audioIsPlayingScript` shared by both
+the `cavaVisualizer` plugin's own watchdog patch and `ShellPatch.nix`'s
+dms-shell watchdog patch (below) - lives in `modules/lib/DmsPlugins.nix`,
+so none of the plugin files need to re-derive any of it themselves.
+
 **Third-party plugins** come from a community registry that auto-generates
 an option per plugin, off by default, opt-in one at a time. A widget-type
 plugin still needs manually adding to a bar section to actually show up -
@@ -148,7 +165,19 @@ enabling it alone isn't enough.
   caveat: this has never actually touched real ASUS hardware, since
   there's none available to test against here - if the popout can't
   reach the daemons, check `supergfxctl -g`/`asusctl -v` work from a
-  plain terminal first.
+  plain terminal first. Upstream (`shazzaam7/DankAsusControl`) only
+  implements the DankBar widget interface (`horizontalBarPill`/
+  `popoutContent`) - no `capabilities` field in its `plugin.json` at all,
+  and nothing for the control center. DMS's control center instead looks
+  for a separate `ccWidget*`/`ccDetailContent` interface (see
+  DankMaterialShell's own `PLUGINS/ControlCenterDetailExample`), so the
+  patch inserts a `CcWidget.qml` block - a second copy of
+  `popoutContent`'s body against that interface, since QML Components
+  aren't values the two could share - right before the file's final
+  closing brace, and declares the `capabilities` DMS's own example
+  plugin uses for it fresh, since upstream's `plugin.json` has none to
+  merge into. Tapping the pill cycles the power profile, the same
+  one-tap-cycle convention DMS's own built-in toggle pills use.
 - **System monitor plugins**: several are enabled but deliberately not
   placed on the bar. CPU/RAM ones are skipped because DMS's own built-in
   widgets already show the exact same numbers - no point doubling up.
@@ -246,9 +275,17 @@ rationale.
   [core.md](core-hardware.md)) actually resolve
   instead of looking "missing" through git's tracked-files-only view of
   the repo.
-- **`controlCenterWidgets`' `plugin_tor` entry** refers to the plugin
-  [Network.nix](system-network.md) installs - DMS prefixes plugin widget
-  ids with `plugin_`.
+- **`controlCenterWidgets`' `plugin_tor` and `plugin_dankAsusControlCenter`
+  entries** refer to the plugins [Network.nix](system-network.md) and
+  this file's own `dankAsusControlCenter` (above) install - DMS looks
+  these up by `id.replace("plugin_", "")` in its own `DragDropGrid.qml`,
+  hence the bare plugin id with the `plugin_` prefix stripped. DMS only
+  actually loads a plugin whose id has `enabled: true` in
+  `plugin_settings.json` (generated solely from
+  `programs.dank-material-shell.plugins`) - dropping a plugin's files on
+  disk alone leaves it installed but never loaded. See
+  [Network.nix](system-network.md) for why Tor's actual service, iptables
+  rules, and CLI live outside DMS entirely.
 - **DankSession** (window-session restore - remembers open windows,
   workspaces, and Hyprland scrolling-layout geometry across logout/
   login) was fully wired in Nix from early in this repo's history -
@@ -497,7 +534,9 @@ rationale.
   standard size up to 512px, `@2x` variants, and `scalable/`; MaterialOS's
   own only goes up to 128px) - a size hicolor ships but MaterialOS's
   index doesn't declare is a real file sitting in a bucket the theme
-  spec says to ignore. Re-derived fresh on every activation (`rm -rf`
+  spec says to ignore. Both copies use `--no-preserve=mode`, since both
+  source trees are read-only Nix store paths and the second copy needs
+  to write into what the first one created. Re-derived fresh on every activation (`rm -rf`
   first) rather than merged incrementally, since the whole tree is a
   couple megabytes - cheap enough that "always correct after packages
   change" beats "slightly faster but can go stale."

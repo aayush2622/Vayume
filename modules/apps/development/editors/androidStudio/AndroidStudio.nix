@@ -48,12 +48,9 @@ in {
     matugenTemplatePath = "${matugenDir}/templates/android-studio-colors.icls";
     matugenOutputPath = "${config.home.homeDirectory}/${colorsDir}/${matugenSchemeName}.icls";
 
-    # Locally-authored theme plugin, live matugen palette for the whole
-    # IDE chrome - see docs/apps-dev-androidstudio.md.
     themePluginDirName = "dankmatugen-theme";
     themePluginId = "ca4bf1b3-6851-4971-ad38-4fd29645d0e5";
     matugenThemeTemplatePath = "${matugenDir}/templates/android-studio-theme.theme.json";
-    # classes/, not the plugin root - see docs/apps-dev-androidstudio.md.
     matugenThemeOutputPath = "${config.home.homeDirectory}/${pluginsDir}/${themePluginDirName}/classes/dankmatugen.theme.json";
 
     fetchJbPlugin = { id, version, hash, isJar ? false }:
@@ -73,7 +70,6 @@ in {
     androidStudioBuild = pkgs.androidStudioPackages.stable.version;
     jbAutoPluginsAtBuild = inputs.nix-jetbrains-plugins.plugins.${pkgs.stdenv.hostPlatform.system}."android-studio".${androidStudioBuild};
 
-    # Swaps in a JCEF-enabled jbr - see docs/apps-dev-androidstudio.md.
     androidStudioUnwrapped = pkgs.androidStudioPackages.stable.unwrapped;
     androidStudioJcef = androidStudioUnwrapped.overrideAttrs (old: {
       postFixup = (old.postFixup or "") + ''

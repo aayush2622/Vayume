@@ -1,7 +1,3 @@
-# The dms-shell package itself, patched - split out of Dms.nix for the
-# same reason the plugin patches each got their own file: this one's a
-# self-contained block, not something every other option in Dms.nix
-# needs to read.
 { inputs, ... }: {
   flake.nixosModules.DmsShellPatch = { self, pkgs, lib, config, ... }:
     let

@@ -16,8 +16,6 @@
 
       hostIcons = "${config.home.homeDirectory}/.local/share/icons";
 
-      # AppImage runtimes and the Electron apps inside them link
-      # against system libraries that the bundle does NOT ship.
       appImageDeps = [
         "fuse3"
         "libfuse2t64"
@@ -64,35 +62,12 @@
         "xdg-utils"
       ];
 
-      # DISPLAY/WAYLAND_DISPLAY are the host's own (distrobox mounts both
-      # sockets in by default, confirmed live: same X server and
-      # compositor as everything else, no bridging needed), so a GUI
-      # app's native clipboard already works - what doesn't is anything
-      # that shells out to sync it (a terminal copy/paste, a script
-      # calling wl-copy/xclip directly), since neither tool exists in a
-      # bare Ubuntu image.
       clipboardDeps = [
         "wl-clipboard"
         "xclip"
         "xsel"
       ];
 
-      # count = 1 (the default) is a single, unnumbered box - boxName
-      # and homeDir come straight from cfg, cmdSuffix is empty, so the
-      # commands below are exactly vayume-box, vayume-box-run, etc.,
-      # unchanged from before this option existed. count > 1 turns
-      # that into N independent containers instead, addressed as
-      # vayume-box1..vayume-boxN (and vayume-box1-run, vayume-box1-
-      # install, ... per box) - image, unshare, fuse, shmSize,
-      # aptPackages and exportApps stay shared across all of them.
-      #
-      # box1's underlying container/home is always plain "${cfg.name}"/
-      # cfg.homeDir, at any count - NOT "${cfg.name}1" - specifically so
-      # that raising count from 1 never orphans a box you already have:
-      # it was addressed as vayume-box before, it's addressed as
-      # vayume-box1 now, but it's still the exact same container and
-      # home directory underneath, zero migration needed. Only box2..N
-      # get a numbered name and an auto-derived home.
       boxSpecs = map (i: {
         boxName = if i == 1 then cfg.name else "${cfg.name}${toString i}";
         homeDir =
@@ -103,9 +78,6 @@
         cmdSuffix = if cfg.count <= 1 then "" else toString i;
       }) (lib.range 1 cfg.count);
 
-      # Everything below used to be built once against a single
-      # implicit "the box" - now a function of one boxSpec from above,
-      # mapped over all of them. Returns the list of per-box commands.
       mkBox =
         {
           boxName,
@@ -113,7 +85,6 @@
           cmdSuffix,
         }:
         let
-          # This is the host directory that becomes $HOME inside the box.
           boxHome = if cfg.isolateHome then homeDir else config.home.homeDirectory;
 
           createFlags = lib.concatStringsSep " " (
@@ -130,9 +101,6 @@
               homeDir
             ]
 
-            # These are distrobox's OWN flags, not the container
-            # manager's, so they must not go through --additional-flags
-            # (podman rejects them: "unknown flag: --unshare-ipc").
             ++ lib.map (u: "--unshare-${u}") cfg.unshare
 
             ++ lib.optionals cfg.fuse [
@@ -148,8 +116,6 @@
 
           boxEnter = ''${pkgs.distrobox}/bin/distrobox enter "${boxName}" --'';
 
-          # Installs whatever is still missing, so adding a package to
-          # appImageDeps later is picked up on the next run.
           ensureAppImageDeps = ''
             ${boxEnter} sh -c '
               missing=""
@@ -165,9 +131,6 @@
             ' || true
           '';
 
-          # Same idempotent shape as ensureAppImageDeps, but run from
-          # ensureBox itself (below) rather than only the AppImage paths -
-          # clipboard sync matters for every box, not just AppImages.
           ensureClipboardDeps = ''
             ${boxEnter} sh -c '
               missing=""
@@ -183,8 +146,6 @@
             ' || true
           '';
 
-          # Chromium-based apps log a stream of errors and misbehave when
-          # there is no system bus. The box has no init, so start one.
           ensureDbus = ''
             ${boxEnter} sudo sh -c '
               mkdir -p /run/dbus
@@ -193,17 +154,6 @@
             ' >/dev/null 2>&1 || true
           '';
 
-          # An AppImage has to be started by its OWN runtime: apps often
-          # refuse to run when their parent process is a shell or a
-          # sandbox wrapper such as bwrap.
-          #
-          # binfmt_misc registrations are inherited from the host, and the
-          # host's interpreter path (/run/binfmt/...) does not exist in
-          # the container's mount namespace, so exec fails with ENOENT.
-          #
-          # Mounting a private, empty binfmt_misc inside the box makes the
-          # kernel exec the AppImage directly, with its own runtime as the
-          # parent. The host's registration is left untouched.
           ensureBinfmt = ''
             ${boxEnter} sh -c '
               if [ -e /proc/sys/fs/binfmt_misc/appimage_type_2 ] ||
@@ -233,12 +183,6 @@
             ${ensureClipboardDeps}
           '';
 
-          # Every box's exported launchers/icons land in the SAME host
-          # directories (hostApps/hostIcons are shared, not per-box) -
-          # everything shows up in one launcher regardless of which
-          # container it came from. Only a real name collision between
-          # two boxes' exported apps would matter, and it's last-export-
-          # wins if it ever happens.
           syncLaunchers = ''
             ${pkgs.coreutils}/bin/mkdir -p \
               ${lib.escapeShellArg hostApps} \
@@ -275,15 +219,6 @@
             exec ${boxEnter} "$@"
           '';
 
-          # Run a command INSIDE the container.
-          #
-          # Example:
-          #   vayume-box${cmdSuffix}-run some-app.AppImage
-          #
-          # A bare filename is resolved against the box's Applications
-          # directory. Note that an unquoted ~ is expanded by the host
-          # shell before this script runs, so "~/x.AppImage" points at the
-          # host's home, not the box's.
           boxRun = pkgs.writeShellScriptBin "vayume-box${cmdSuffix}-run" ''
             set -eu
 
@@ -299,19 +234,14 @@
 
             case "$target" in
               "~/"*)
-                # Only reachable when quoted; the host shell expands a
-                # bare ~ before we ever see it.
+                # only reachable when quoted; the host shell expands a bare ~ first
                 target=${lib.escapeShellArg boxHome}/''${target#\~/}
                 ;;
 
               */*)
-                # An explicit path: use exactly what was given.
                 ;;
 
               *)
-                # A bare name resolves against the box's Applications
-                # dir, so "vayume-box${cmdSuffix}-run foo.AppImage" just works.
-                # Anything else (ls, apt, ...) falls through untouched.
                 if [ -e ${lib.escapeShellArg "${boxHome}/Applications"}/"$target" ]; then
                   target=${lib.escapeShellArg "${boxHome}/Applications"}/"$target"
                 fi
@@ -320,22 +250,10 @@
 
             case "$target" in
               *.AppImage|*.appimage)
-                # A box only gets these on the first vayume-box${cmdSuffix}-install
-                # of an AppImage - a fresh box (or one dropped in some
-                # other way, e.g. copied from another box's
-                # Applications dir) has never run that and fails with
-                # "No suitable fusermount binary found". Idempotent
-                # and cheap once already installed, so just always
-                # check here too rather than depending on install
-                # having been the very first thing run against it.
                 ${ensureAppImageDeps}
                 ;;
             esac
 
-            # Run the resolved command directly rather than via a shell
-            # wrapper, so an AppImage's parent process is its own
-            # runtime instead of sh. The rewriting above happens on the
-            # HOST, which keeps that parent chain intact.
             exec ${boxEnter} "$target" "$@"
           '';
 
@@ -370,9 +288,6 @@
 
                   ${ensureAppImageDeps}
 
-                  # IMPORTANT:
-                  # This is the HOST path corresponding to
-                  # ~/Applications inside the isolated container.
                   ${pkgs.coreutils}/bin/mkdir -p \
                     ${lib.escapeShellArg "${boxHome}/Applications"}
 
@@ -621,8 +536,6 @@
             ]
           );
 
-          # Network is intentionally NOT isolated because this
-          # container is intended for a browser.
           default = [
             "ipc"
             "process"

@@ -129,7 +129,12 @@ Each language's `integrations` field is the *real* intersection of
 [`flake.devLanguages.<lang>`](core-devlanguages.md)'s own editor keys
 (which editors that language contributes extensions/tasks to - already
 produced by each language module, e.g. `Rust.nix`) with whichever
-editor apps are actually enabled right now. There is no per-language
+editor apps are actually enabled right now. Each editor key is spelled
+in the same lowercase-first form the contributing language module
+writes it in (`vscode`, `androidStudio` - matching `AndroidStudio.nix`'s
+own key, not the capitalized app name), so the same `available` list
+that filters out non-real apps above doubles as the lowercase-key-to-
+real-app-name lookup `integrations` needs too. There is no per-language
 "pick one editor" setting anywhere in Vayume - a language can integrate
 with several enabled editors simultaneously - so the UI shows this as
 read-only informational text ("Integrates with: VS Code, Zed"), not a
@@ -191,7 +196,9 @@ under `iconPackage/share/icons/`, so the same `cursor_options`-style
 `find` would work - it just hasn't been done). `modules/core/VayumeConfig.nix`'s
 `themeAwk` (a second, small state machine alongside `appsAwk` - same
 before/inside/after discipline, but for a flat `field = value;` shape
-that may not exist in the file at all yet) and the `cursor_options`/
+that may not exist in the file at all yet; it buffers the whole file
+and only decides where to insert a missing field once every line - and
+whether the block was ever found - is known) and the `cursor_options`/
 `font_options` pattern are both written generically enough that adding
 `iconTheme` later is a few lines, not a rewrite.
 
@@ -216,7 +223,10 @@ conservative than the rest of this CLI.
   hardcoded shortlist (`wheel`, `networkmanager`, `video`, `input`,
   `audio`, `docker`, `adbusers`, `podman`) unioned with whatever any
   user's `extraGroups` already contains right now, intersected against
-  `config.users.groups`' own real attribute names - so a typo'd or
+  `config.users.groups`' own real attribute names (that full set covers
+  every group anything on the system defines - systemd services, dbus,
+  and the rest - most of which are meaningless to toggle per-user here,
+  which is why the shortlist exists at all) - so a typo'd or
   nonexistent group is rejected before it ever reaches `_config.nix`,
   and an unusual group already in use never silently disappears from
   the option list. The full new list (not just the one changed group)
@@ -226,12 +236,22 @@ conservative than the rest of this CLI.
   never set at all in `_config.nix`; writing anything there replaces it
   outright, so toggling one group in text-surgery isolation could
   silently drop the others a user never explicitly listed.
+- **Every username handed to any `users set-*`/`add`/`remove` command
+  is checked by `validate_username`** against the same charset real
+  Linux usernames are already restricted to. The username flows both
+  into an awk ERE (`usersAwk`'s own `userRe`) and, for a couple of `set`
+  commands, straight into a `nix eval --expr` string - restricting it
+  up front blocks both awk-metacharacter and Nix-string injection in
+  one place, and turns a typo'd name into a clear error instead of a
+  silent no-match.
 - **`users set-password`** reads the new plaintext from stdin, never a
   command-line argument - argv is visible to every other process on
   the machine via `/proc` (`ps`, etc.), stdin isn't. It hashes with
   `mkpasswd -m sha-512 -s` before the value ever touches `_config.nix`
   or a JSON response; the plaintext is `unset` immediately after
-  hashing and never appears in this CLI's own output.
+  hashing and never appears in this CLI's own output. The DMS plugin
+  writes the new password over a Quickshell `Process`'s own stdin pipe
+  the same way; a person at a terminal just pipes or types it in.
 - `avatar`, `shell`, and `extraPackages` are absent from every
   `users set-*` command for the same reason `fontPackage`/`iconTheme`'s
   packages are absent from `theme set` - `avatar` is a Nix path literal
@@ -245,14 +265,22 @@ conservative than the rest of this CLI.
   as "valid" and only surface at the next real rebuild. Deliberately
   skips `shell`/`extraPackages`/`avatar` (package/path-typed, never
   written by this CLI) so an ordinary `apps`/`theme` toggle doesn't pay
-  for evaluating every user's shell package too.
+  for evaluating every user's shell package too. `packages`'s own bool
+  values get the same cheap force `secrets`' string values do - the
+  real package resolution (`attrByPath` into nixpkgs) only happens once
+  something actually asks for `home.packages`, so this check still
+  never forces a package derivation itself.
 
 `extraGroups`/`secrets` are always replaced as one whole new value
 (read the current, already-resolved value via `nix eval`, edit it,
 write the complete result back), never text-surgered element by
 element - `modules/core/VayumeConfig.nix`'s `usersAwk` only ever
-replaces one field wholesale inside one named user's block. Its `value`
-arrives via the `USERS_AWK_VALUE` environment variable, read through
+replaces one field wholesale inside one named user's block. Unlike
+`themeAwk`/`usersAddAwk`, it streams the file line by line rather than
+buffering the whole thing - the target user's block is already known to
+exist, read live from the same `users list` call that produced the
+value being written, so there's no "block might not exist yet" case to
+plan for. Its `value` arrives via the `USERS_AWK_VALUE` environment variable, read through
 `ENVIRON[]`, not an awk `-v` assignment - awk's `-v` runs the same
 backslash-escape processing as a string literal in the program source,
 which would silently undo `nix_escape()`'s own escaping (`\"`
@@ -399,11 +427,16 @@ directly against a live session - a plain top-level hyprctl verb,
 unrelated to the Lua-based `hyprctl dispatch` rebind
 [Hyprland.nix](desktop-hyprland.md) uses for keybinds) plus `gsettings
 set org.gnome.desktop.interface cursor-theme/-size` for GTK apps that
-read dconf instead of asking the compositor. Both are best-effort and
-never touch `_config.nix` or this command's own success/failure -
-`command -v` guards each, `|| true` on the calls themselves - so a
-session with neither available (a TTY, niri, which has no equivalent
-runtime call at all) just skips the step silently. The persisted value
+read dconf instead of asking the compositor - the same best-effort,
+not-persisted-state idea as the matugen GTK color-scheme post_hook in
+[Baseline.nix](desktop-baseline.md). Neither call reaches XWayland or a
+process that already cached `XCURSOR_THEME` at its own startup, and
+niri has no equivalent runtime call at all right now, so in practice
+this live-update only actually works under Hyprland - silently a no-op
+everywhere else. Both calls never touch `_config.nix` or this command's
+own success/failure - `command -v` guards each, `|| true` on the calls
+themselves - so a session with neither available (a TTY, niri) just
+skips the step silently. The persisted value
 in `_config.nix` is unaffected either way; this only changes what an
 *already-running* session looks like before the next rebuild catches
 up for real.

@@ -62,6 +62,14 @@ The control-center widget starts and stops `tor.service`. Tor is
 installed with `wantedBy = []`, so it never starts at boot - the toggle
 genuinely owns whether it runs.
 
+**The control socket goes through `controlSocket.enable`, not
+`settings.ControlSocket` directly.** A bare `ControlSocket` line makes
+Tor refuse to start: systemd's `RuntimeDirectory` gives `/run/tor` mode
+`0710` (group `tor`), which Tor itself rejects as "too permissive".
+`controlSocket.enable` emits `ControlPort
+unix:/run/tor/control GroupWritable RelaxDirModeCheck` instead - the
+same socket, minus the check that trips on it.
+
 While it's on, three sets of rules are in place:
 
 | Chain | Table | Does |
@@ -75,8 +83,16 @@ Ports 9040 and 9053 aren't chosen here - they come from NixOS's own
 `services.tor.client.transparentProxy.enable` and `client.dns.enable`,
 and the rules are written to match what that module actually configures.
 
-Four things that are easy to get wrong, and why each rule exists:
+Five things that are easy to get wrong, and why each rule exists:
 
+- **Loopback and every private range are excluded from the redirect
+  outright.** `VAYUME_TOR`/`VAYUME_TORLEAK` `RETURN` early for
+  `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` and
+  `169.254.0.0/16` before anything else runs. Loopback is where resolved
+  and Tor's own ports actually live; the private ranges are what keep
+  the LAN and container bridges working instead of the host's own local
+  traffic (a printer, a NAS, a router at `192.168.1.1`) getting shoved
+  into Tor too.
 - **Tor's own uid is exempt.** Without `-m owner --uid-owner tor -j
   RETURN`, Tor's outbound connections get redirected into Tor's own
   TransPort, and it deadlocks against itself.
@@ -134,6 +150,13 @@ That lives on the privileged side because the socket is root-owned.
 `tor/` is a small DMS plugin, because nothing in the plugin
 registry does Tor - the closest are ProtonVPN, Tailscale and mihomo,
 which are all different things.
+
+`vayume-tor` itself - the CLI the widget shells out to by bare name,
+relying on `PATH` - is defined here in `Network.nix` rather than beside
+the widget, since it's a networking concern first. The widget's own DMS
+plugin registration lives separately, at
+`modules/desktop/dms/plugins/Tor.nix`, alongside the rest of DMS's
+plugins.
 
 DMS's control center takes plugin widgets: `WidgetModel.qml` builds their
 ids as `"plugin_" + plugin.id`, and `getPluginWidgets()` filters on the

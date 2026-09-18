@@ -4,12 +4,6 @@
   home.packages = [ inputs.hytale-launcher.packages.${pkgs.stdenv.hostPlatform.system}.default ];
   home.file."Games/Hytale/.keep".text = "";
 
-  # The launcher hardcodes ~/.local/share/Hytale (no setting to
-  # redirect it) for its self-updated binary, update-hash file, and by
-  # default the game itself - symlink that into gamesDir instead of
-  # patching the launcher, so everything it ever writes lands under
-  # ~/Games. Idempotent: a real directory from a prior run gets moved
-  # in once, then every later activation just sees the symlink.
   home.activation.hytaleGamesFolder = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     DATA_DIR="$HOME/.local/share/Hytale"
     GAMES_HYTALE_DIR=${lib.escapeShellArg "${gamesDir}/Hytale"}

@@ -17,12 +17,28 @@ it's the same folder whether the repo lives at `~/vayume`, got cloned
 somewhere else entirely, or isn't even on disk right now (restoring a
 backup doesn't need the repo present at all).
 
-**`home.activation.linkSessionState`** runs on every rebuild. For each
-path in the list above, it symlinks the app's real config location into
-`~/.config/vayume/session/<same path>` instead of leaving it where the
-app would normally put it - so that one folder becomes the single thing
-that ever needs to move for a fresh install to come back already logged
-into everything.
+**`home.activation.linkSessionState`** runs on every rebuild, and
+deliberately runs *before* Home Manager links its own files
+(`lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ]`). A
+stale symlink left over from a previous project name (pointing at
+`…/<oldname>/session/<p>`) would otherwise make HM's own `linkGeneration`
+die with `mkdir: File exists` / `ln: No such file or directory` -
+running this entry first repairs those links before HM ever gets to
+them. For each path in the list above, it symlinks the app's real config
+location into `~/.config/vayume/session/<same path>` instead of leaving
+it where the app would normally put it - so that one folder becomes the
+single thing that ever needs to move for a fresh install to come back
+already logged into everything.
+
+If the project itself was renamed, the same activation entry does a
+one-shot migration: it derives the *old* session directory from a
+managed link's own target (no list of old names to maintain) and moves
+the whole thing across in one shot, but only while there's no session
+state of its own yet. Per-path, a link that's merely wrong or dangling -
+typically a leftover from that previous name - gets its real data pulled
+along into `session/` if the link still resolves to something outside
+`SESSION_DIR` and nothing is already held for that app; otherwise it
+just starts fresh.
 
 - **Self-healing, not "run once and hope."** A path that's already a
   symlink is left alone - a cheap, near-zero-cost no-op on every

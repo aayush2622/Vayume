@@ -31,12 +31,15 @@ Android apps in a container - and an honest admission that not everything on a N
   that matters - microG is useless without it, since it has to convince
   apps it's Google Play Services.
 - **Split into a privileged half and a user half**, same pattern as
-  `vayume-tor` over in [Network.nix](system-network.md). `vayume-waydroid-sigspoof`
+  `vayume-tor` over in [Network.nix](system-network.md) and the
+  rebuild/GC scripts in [Dms.nix](desktop-dms.md). `vayume-waydroid-sigspoof`
   is what you run; it `sudo -n`s to a root-only script through a NOPASSWD
   rule. The rule keys on that script's exact store path, which means it
   has to be invoked *by path* - and it means the rule stops applying by
   itself the moment the script's contents change, rather than silently
-  granting root to whatever replaced it.
+  granting root to whatever replaced it. The privileged half does no
+  `id`/caller check of its own - it only ever runs as root, since the
+  sudo rule is the only way to reach it.
 - **`SETENV` is in the sudo rule on purpose.** The image channel is
   picked with `WAYDROID_ANDROID_VERSION` - it defaults to 13, matching
   the current LineageOS (lineage-20) images, and `=11` selects the older

@@ -12,12 +12,6 @@
         map (d: "~/${d}") repoDiscovery.relativeDirs
         ++ repoDiscovery.absoluteDirs;
 
-      # state machine over the *whole file*, not just a running brace
-      # count - state 0 (before the block), 1 (inside it), 2 (after it,
-      # for good) - so a later unrelated `foo.enable = true;` (there are
-      # several, e.g. hardware.bluetooth, pipewire.alsa) is never
-      # mistaken for one of vayume.apps's entries once the block has
-      # closed. state only ever moves forward.
       appsAwk = pkgs.writeText "vayume-config-apps.awk" ''
         BEGIN {
           state = 0; depth = 0; found = 0;
@@ -87,12 +81,6 @@
         }
       '';
 
-      # Same "before/inside/after" discipline as appsAwk, but for a flat
-      # `<block> = { field = value; };` shape (no dotted `.enable`
-      # suffix) that may not exist in the file at all yet - buffers every
-      # line so a missing block can still be appended before the file's
-      # own final closing brace, decided only once the whole file (and
-      # whether the block was ever found) is known.
       themeAwk = pkgs.writeText "vayume-config-theme.awk" ''
         BEGIN { state = 0; depth = 0; found = 0; n = 0 }
         { n++; buf[n] = $0 }
@@ -139,24 +127,6 @@
         }
       '';
 
-      # Replaces one scalar field (fullName/hashedPassword/extraGroups/
-      # secrets - always a whole-value replace, computed by the caller
-      # from the live, already-resolved value rather than text-surgering
-      # a list/attrset in place) inside one named user's own block under
-      # `vayume.users`. `value` arrives via $USERS_AWK_VALUE, an
-      # environment variable, not a `-v` assignment - awk's `-v` runs the
-      # same backslash-escape processing as a string literal in the
-      # program source, which would silently undo the caller's own Nix
-      # escaping (`\"` collapsing back to `"`, `\$` warning and
-      # collapsing to `$`) before this script ever saw it. Streams line
-      # by line like appsAwk (no need to buffer - the target user's block
-      # is already known to exist, from the same `users list` read that
-      # produced the value being written), but the field being replaced
-      # may itself have been multi-line (`extraGroups`/`secrets` commonly
-      # are in a hand-edited `_config.nix`) - `phase 6` consumes exactly
-      # as many further lines as the old value's own brackets/braces
-      # still have open, so no orphaned continuation lines are left
-      # behind as garbage after the single-line replacement is printed.
       usersAwk = pkgs.writeText "vayume-config-users.awk" ''
         BEGIN {
           value = ENVIRON["USERS_AWK_VALUE"]
@@ -238,13 +208,6 @@
         }
       '';
 
-      # Inserts one whole new `<user> = <value>;` entry just before
-      # `vayume.users`'s own closing brace - same buffered
-      # find-the-block's-end approach as themeAwk, but there's no
-      # "block doesn't exist yet" fallback: unlike `vayume.theme` (always
-      # optional), `vayume.users` is required by every real _config.nix
-      # (Host.nix refuses to evaluate without one), so it's always
-      # already there to insert into.
       usersAddAwk = pkgs.writeText "vayume-config-users-add.awk" ''
         BEGIN {
           value = ENVIRON["USERS_AWK_VALUE"]
@@ -282,10 +245,6 @@
         }
       '';
 
-      # Deletes one user's whole `<user> = { ... };` entry outright -
-      # every line from its opening brace through the matching close,
-      # inclusive. Same phase/depth tracking as usersAwk's field lookup,
-      # just suppressing lines instead of rewriting one.
       usersRemoveAwk = pkgs.writeText "vayume-config-users-remove.awk" ''
         BEGIN {
           phase = 0; depthUsers = 0; depthUser = 0
@@ -391,20 +350,6 @@
             exit 1
           }
 
-          # Deliberately forces every field this CLI can actually write,
-          # not just `apps`/`theme` - a broken `users` edit (bad string
-          # escaping, a stray brace) would otherwise sail through this
-          # check unevaluated (Nix is lazy; nothing here touches `users`
-          # unless something asks for it) and only surface at the next
-          # real rebuild. Skips `shell`/`extraPackages`/`avatar`
-          # deliberately - those are package/path-typed, not something
-          # this CLI ever writes, and forcing them would mean evaluating
-          # every user's shell package on every single apps/theme toggle
-          # too, not just on a users edit. `packages`'s own bool values
-          # get the same cheap force `secrets`' string values do - real
-          # package resolution (attrByPath into nixpkgs) only happens
-          # once something actually asks for `home.packages`, same
-          # "don't force what nothing needs yet" reasoning.
           validate_config_file() {
             nix eval --impure --json --expr \
               "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users)" \
@@ -422,17 +367,6 @@
             fi
           }
 
-          # Every value this CLI writes into `_config.nix` ends up inside
-          # a Nix double-quoted string literal it builds itself - has to
-          # neutralize backslash, double-quote, and dollar (Nix
-          # interpolates a dollar immediately followed by an open brace
-          # in double-quoted strings; an unescaped dollar ahead of
-          # user-typed text could turn a display name or password hash
-          # into an arbitrary evaluated expression) before that happens.
-          # Unlike cursorTheme/font, `fullName`/secrets/password values
-          # are genuinely arbitrary text, not picked from a
-          # live-validated enum, so this can't be skipped the way it was
-          # for those.
           nix_escape() {
             local s=$1
             s=''${s//\\/\\\\}
@@ -441,12 +375,6 @@
             printf '%s' "$s"
           }
 
-          # Usernames flow into an awk ERE (vayume-config-users.awk's
-          # `userRe`) and, for a couple of set commands, straight into a
-          # `nix eval --expr` string too - real Linux usernames are
-          # already restricted to this charset, so this both blocks awk
-          # metacharacter/nix-string injection and gives a clear error
-          # for a typo'd name instead of a silent no-match.
           validate_username() {
             case "$1" in
               [a-z_][a-z0-9_-]*) ;;
@@ -454,10 +382,6 @@
             esac
           }
 
-          # Applies a temp file (already-edited content) atomically, then
-          # validates the result for real and rolls back on failure -
-          # shared by every "set" command so there's one place that
-          # understands "safe write", not one copy per field kind.
           apply_edit() {
             local tmp
             tmp=$1
@@ -484,10 +408,6 @@
               dirty=false
             fi
 
-            # /run/current-system's own mtime moves forward on every successful
-            # switch (it's re-symlinked even when the target is unchanged) - a
-            # cheap, restart-safe stand-in for "has _config.nix changed since
-            # the last rebuild", no extra nix eval needed.
             cfgMtime=$(stat -c %Y "$config_file")
             genMtime=$(stat -L -c %Y /run/current-system 2>/dev/null || echo 0)
             [ "$cfgMtime" -gt "$genMtime" ] && rebuildPending=true || rebuildPending=false
@@ -533,14 +453,6 @@
             '
           }
 
-          # Languages/editors/tools are already three separate directories
-          # (modules/apps/development/{languages,editors,devTools,ccSwitch}) -
-          # this just reads that existing structure rather than repeating a
-          # kind label per app. `integrations` is the intersection of
-          # `flake.devLanguages.<lang>`'s own editor keys (which editors that
-          # language contributes extensions/plugins to) with whichever
-          # editors are actually enabled right now - real data already
-          # produced by DevLanguages.nix, not something invented for the UI.
           cmd_development_list() {
             local configured available descriptions data languages editors tools integrations
             configured=$(awk -v mode=list -f ${appsAwk} "$config_file" \
@@ -549,11 +461,6 @@
                   map({(.[0]): (.[1] == "true")}) | add // {}
                 ')
 
-            # devLanguages.<lang>'s own keys are the editor's lowercase-first
-            # form (vscode, androidStudio - matching AndroidStudio.nix/etc.'s
-            # own contribution, not the capitalized app name), so `available`
-            # doubles as both the vendor-file filter below and the
-            # lowercase-key -> real-app-name map for `integrations`.
             data=$(nix eval --impure --json --expr \
               "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; integrations = builtins.mapAttrs (_: v: builtins.attrNames v) self.devLanguages; descriptions = self.appDescriptions; }")
             available=$(jq '.available' <<<"$data")
@@ -613,12 +520,6 @@
             fi
           }
 
-          # cursorTheme's valid values genuinely depend on which names the
-          # *current* cursorPackage ships - queried live rather than
-          # hardcoded, so this never drifts from whatever Theme.nix's
-          # default (or a host's own override) actually is. Shared by
-          # `theme get` (so a UI never has to hardcode its own copy of
-          # this list either) and `theme set`'s validation.
           cursor_options() {
             local cursorPackage
             if [ "$#" -gt 0 ]; then
@@ -630,12 +531,6 @@
             find "$cursorPackage/share/icons" -maxdepth 1 -mindepth 1 -printf "%f\n" 2>/dev/null | sort
           }
 
-          # Same live-package-contents trick as cursor_options - a font
-          # family name is only meaningful together with whatever
-          # fontPackage currently is, and one package can ship several real
-          # families (nerd-fonts variants: with/without ligatures, mono vs
-          # proportional spacing) - fc-scan reads what's actually in each
-          # font file rather than guessing from the package name.
           font_options() {
             local fontPackage
             if [ "$#" -gt 0 ]; then
@@ -660,20 +555,6 @@
               '$base | del(.cursorPath, .fontPath) | . + {cursorOptions: $cursorOptions, fontOptions: $fontOptions}'
           }
 
-          # Best-effort, not persisted state - the value written to
-          # _config.nix by cmd_theme_set is what survives a rebuild or a
-          # fresh login; this just makes an already-running session look
-          # right immediately, same idea as the matugen GTK color-scheme
-          # post_hook in Baseline.nix. `hyprctl setcursor` (a plain
-          # top-level hyprctl verb, not `hyprctl dispatch` - the Lua-based
-          # dispatch rebind this repo's Hyprland config uses for keybinds
-          # has no bearing on it, confirmed directly) live-updates every
-          # Wayland client using the cursor-shape protocol; `gsettings`
-          # covers GTK apps that read their cursor theme from dconf
-          # instead. Neither reaches XWayland or an already-running
-          # process that cached XCURSOR_THEME at its own startup, and
-          # niri has no equivalent runtime call at all right now - this
-          # is Hyprland-only in practice, silently a no-op elsewhere.
           apply_cursor_live() {
             local theme size
             theme=$1
@@ -743,15 +624,6 @@
             fi
           }
 
-          # Curated on purpose, not the full `config.users.groups`
-          # attrset - that includes every group anything on the system
-          # ever defines (systemd services, dbus, ...), most of which
-          # are meaningless to toggle per-user here. Anything already in
-          # use by some user's real `extraGroups` right now is included
-          # too, so an unusual-but-already-applied group never
-          # disappears from the option list just because it isn't on
-          # the hardcoded shortlist. `defined`/`current` are both real,
-          # live data from the two callers below - never guessed.
           group_options() {
             local defined current
             defined=$1
@@ -780,17 +652,6 @@
             jq -n --argjson users "$base" --argjson groupOptions "$groupOptions" '{users: $users, groupOptions: $groupOptions}'
           }
 
-          # `extraGroups`/`secrets` are always replaced as one whole new
-          # value, never text-surgered element-by-element - each setter
-          # below reads the current, already-resolved value straight
-          # from `nix eval`, edits it in jq, then hands
-          # vayume-config-users.awk one complete Nix literal to drop in.
-          # Simpler and safer than in-place list/attrset surgery, and it
-          # can't silently drop a default the way writing just the one
-          # changed element could (extraGroups's own mkOption default -
-          # networkmanager/video/input - only applies when the option is
-          # never set in _config.nix at all; writing a partial list
-          # there replaces it outright, same as any Nix module option).
           cmd_users_set_name() {
             local user value since nixValue tmp
             user=''${1:?user required}
@@ -906,12 +767,6 @@
             fi
           }
 
-          # Every path search returns, and every path this accepts, is a
-          # dotted chain of plain identifiers (attr.paths.like.this) -
-          # rejecting anything else before it ever reaches a `pkgs.$path`
-          # interpolation below is what makes that interpolation safe
-          # without its own escaping: there's nothing in the accepted
-          # charset an attribute-selector expression can misuse.
           validate_package_path() {
             case "$1" in
               [a-zA-Z_]*)
@@ -924,12 +779,6 @@
             esac
           }
 
-          # Same live-validation-before-write discipline as
-          # cmd_users_set_group's group list, against the exact nixpkgs
-          # this flake is pinned to (not whatever channel/registry the
-          # machine happens to have) - a typo'd or nonexistent path is
-          # rejected here, never silently written and left to fail at the
-          # next rebuild instead.
           cmd_users_set_package() {
             local user path enabled since exists current merged nixValue tmp
             user=''${1:?user required}
@@ -979,16 +828,6 @@
             fi
           }
 
-          # Searches the exact nixpkgs this flake is pinned to (its
-          # already-fetched store path, not a separately-resolved
-          # `nixpkgs` flake registry entry that could be a different
-          # revision) so a result this returns is guaranteed to be
-          # addable - nothing found here could fail
-          # cmd_users_set_package's own existence check right after.
-          # `nix search` builds and caches a name/description index the
-          # first time it runs against a given nixpkgs revision - that
-          # first search can take a while over the whole of nixpkgs,
-          # every one after is fast.
           cmd_packages_search() {
             local query nixpkgsPath results
             query=''${1:?search query required}
@@ -1006,11 +845,6 @@
             ] | sort_by(.path) | .[0:50]' <<<"$results"
           }
 
-          # Reads the new password from stdin, never argv - argv is
-          # visible to every other process on the machine via /proc
-          # (ps, etc.), stdin isn't. The DMS plugin writes it over a
-          # Quickshell Process's own stdin pipe the same way; a person
-          # at a terminal just pipes or types it in.
           cmd_users_set_password() {
             local user since newPassword hash nixValue tmp
             user=''${1:?user required}
@@ -1042,10 +876,6 @@
             fi
           }
 
-          # New user gets nothing but fullName - extraGroups/hashedPassword
-          # are left unset so userSubmodule's own defaults apply
-          # (networkmanager/video/input, "changeme" initial password),
-          # same as _config.nix.example's "random" entry.
           cmd_users_add() {
             local user fullName since exists nixValue tmp
             user=''${1:?user required}
@@ -1064,13 +894,6 @@
               exit 2
             fi
 
-            # Multi-line on purpose, matching every hand-written entry in
-            # _config.nix.example - a one-line `{ fullName = "..."; }`
-            # here would open and close its own braces on the single line
-            # usersRemoveAwk expects to find just the user's opening line
-            # on, throwing off its brace-depth tracking and eating the
-            # next real line (vayume.users's own closing brace) along
-            # with it on a later removal.
             printf -v nixValue '{\n      fullName = "%s";\n    }' "$(nix_escape "''${fullName:-$user}")"
 
             tmp="$config_file.vayume-config.tmp"
@@ -1086,11 +909,6 @@
             fi
           }
 
-          # Only edits _config.nix - doesn't touch the running system.
-          # NixOS's own declarative user management (mutableUsers = false)
-          # is what actually deletes the Linux account, and only on the
-          # next rebuild; this command alone never removes a home
-          # directory or logs anyone out.
           cmd_users_remove() {
             local user since tmp
             user=''${1:?user required}
