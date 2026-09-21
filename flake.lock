@@ -290,16 +290,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1789755444,
-        "narHash": "sha256-KpZ4tKeIW0iuQXiGN2zKedZuTPOLShUf2Q8KQbfw8e4=",
+        "lastModified": 1789788481,
+        "narHash": "sha256-KAddig6W6JykZOTEiYwkC992iteZEeKr5r1hsuFLw1c=",
         "owner": "aayush2622",
         "repo": "nix-wpe-webkit-bin",
-        "rev": "3c822fdbbd8be0358638df891acfb32afde50892",
+        "rev": "dfcf2acea1d5d21069c7c50b0f534ed297144eeb",
         "type": "github"
       },
       "original": {
         "owner": "aayush2622",
         "repo": "nix-wpe-webkit-bin",
+        "rev": "dfcf2acea1d5d21069c7c50b0f534ed297144eeb",
         "type": "github"
       }
     },
