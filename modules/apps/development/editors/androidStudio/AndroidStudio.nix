@@ -37,7 +37,7 @@ in {
       ++ lib.optional hasWakatime wakatimeManualPlugin
       ++ (lib.concatMap (v: v.manualPlugins or [ ]) languageAndroidStudio);
 
-    configDataDir = "AndroidStudio2026.1.3";
+    configDataDir = "AndroidStudio${lib.concatStringsSep "." (lib.take 3 (lib.splitString "." pkgs.androidStudioPackages.stable.version))}";
     pluginsDir = ".local/share/Google/${configDataDir}";
     optionsDir = ".config/Google/${configDataDir}/options";
     colorsDir = ".config/Google/${configDataDir}/colors";
