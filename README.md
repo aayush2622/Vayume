@@ -1,166 +1,211 @@
 # Vayume
 
 <p>
+  <a href="https://github.com/aayush2622/Vayume/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/aayush2622/Vayume?style=flat&color=yellow">
+  </a>
   <img alt="Built with Nix" src="https://img.shields.io/badge/built%20with-Nix-5277C3?logo=nixos&logoColor=white">
   <img alt="Compositor" src="https://img.shields.io/badge/compositor-niri%20%2B%20Hyprland-blue">
   <img alt="Shell" src="https://img.shields.io/badge/shell-DankMaterialShell-purple">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
-  <a href="https://github.com/aayush2622/Vayume/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/aayush2622/Vayume-Rice?style=flat&color=yellow"></a>
 </p>
 
-My NixOS setup. [niri](https://github.com/YaLTeR/niri) and
-[Hyprland](https://hypr.land) side by side - same keybinds, picked at the
-login screen - both driving
-[DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell), with a
-wallpaper-matching color theme that's gone a little too far: editors, login
-screen, GRUB, Discord, Wine dialogs, all of it.
+A NixOS flake configuration built around **niri** and **Hyprland** side-by-side — same keybinds, picked at the login screen — both driving [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell), with a wallpaper-matching color theme that extends to editors, the login screen, GRUB, Discord, Wine dialogs, and everything else.
 
-Written with [flake-parts](https://flake.parts/) +
-[import-tree](https://github.com/vic/import-tree), so every `.nix` file under
-`modules/` gets picked up automatically - no import list to maintain.
+Written with [flake-parts](https://flake.parts/) + [import-tree](https://github.com/vic/import-tree), so every `.nix` file under `modules/` is picked up automatically — no import list to maintain.
 
 > [!WARNING]
-> This is my actual laptop's config, not a template you run as-is. Real
-> disk UUIDs and login info live in two gitignored files that don't exist
-> until you make them - the build refuses to evaluate without them, on
-> purpose. Takes two minutes:
-> **[Getting started](docs/getting-started.md)**.
+> This is my actual laptop's config, not a template you run as-is. Real disk UUIDs and login info live in two gitignored files that don't exist until you make them — the build refuses to evaluate without them, on purpose. Takes two minutes: **[Getting started](docs/getting-started.md)**.
 
 If this saves you an evening, a star costs nothing. ⭐
 
-<p>
-  <img src="screenshots/desktop.png" width="49%">
-  <img src="screenshots/dev.png" width="49%">
+<p align="center">
+  <img src="screenshots/desktop.png" width="49%" alt="Desktop">
+  <img src="screenshots/dev.png" width="49%" alt="Development">
 </p>
 <p align="center">
-  <img src="screenshots/media.png" width="60%">
+  <img src="screenshots/media.png" width="60%" alt="Media">
 </p>
 
 ---
 
-## What's in it
+## Table of Contents
 
-**Desktop** — niri and Hyprland, both always available and swappable at the
-greeter, with matching binds so muscle memory carries over. DMS handles the
-bar, launcher, notifications and lock screen. Themed SDDM greeter and GRUB,
-kitty + zsh with fastfetch. A "Vayume Settings" control-center widget lets
-you flip `vayume.apps.*` toggles from DMS itself — it edits the real
-`_config.nix` through a small CLI ([docs/core-vayume-config.md](docs/core-vayume-config.md)),
-not a separate database, so the repo stays the one source of truth.
-
-**Dev** — VS Code, Android Studio and Zed, pre-configured. Seven language
-toggles that install the toolchain *and* tell all three editors what to load
-for it. [cc-switch](https://github.com/farion1231/cc-switch) for switching
-Claude Code between API providers without hand-editing its config.
-
-**Gaming** — Steam, Lutris, Heroic, GE-Proton, MangoHud. Color-matched too,
-down to the Wine dialogs.
-
-**Network** — Cloudflare DNS over TLS by default, network-stack hardening
-sysctls, and a Tor transparent proxy behind a DMS control-center toggle that
-routes the whole machine rather than just a browser.
-
-**Everything else** — Zen Browser (chrome-scripted so its theme reloads
-live), Nautilus and Thunar, Spicetify and Fastpotify, Bitwarden, Vesktop, an ASUS control
-widget, Waydroid for Android apps (signature spoofing and microG included),
-native AppImage support, and an isolated Distrobox escape hatch for the
-Ubuntu-only tail.
-
-Everything under `modules/apps/` is one boolean in `_config.nix`:
-
-```nix
-vayume.apps = {
-  Vscode.enable = true;
-  Gaming.enable = true;
-  Rust.enable = false;
-};
-```
+- [What's Included](#whats-included)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Keybinds](#keybinds)
+- [Project Layout](#project-layout)
+- [Documentation](#documentation)
+- [Credits](#credits)
+- [License](#license)
+- [Known Caveats](#known-caveats)
 
 ---
 
-## Secrets
+## What's Included
 
-API keys live in `_config.nix` (gitignored), under
-`vayume.users.<name>.secrets` — `<name>` is whichever key you picked for
-yourself in `vayume.users` above it. `ash` is just this repo author's
-username, not a reserved word:
+### Desktop
+- **niri** and **Hyprland** — both always available, swappable at the greeter, with identical keybinds so muscle memory carries over
+- **DankMaterialShell** — bar, launcher, notifications, lock screen, and a themed control center
+- **Themed SDDM greeter** + **GRUB** — matches the active color scheme
+- **kitty + zsh** with fastfetch, starship, and a curated plugin set
 
-```nix
-vayume.users.<yourname>.secrets = {
-  # VS Code, Android Studio, Zed - installs WakaTime, writes ~/.wakatime.cfg
-  WAKATIME_API_KEY = "waka_...";
+### Development
+- **Editors:** VS Code, Android Studio, Zed — pre-configured with language-aware extension sets
+- **Languages (one toggle each):** C++, Rust, Kotlin, Flutter/Dart, Nix, Qt, Python — each installs the toolchain *and* tells all enabled editors what to load
+- **cc-switch** — switch Claude Code between API providers without hand-editing config
+- **Dev tools:** ripgrep, fd, fzf, btop, nil, nixfmt, and more
 
-  # Bitwarden's rbw client, to pre-fill the email prompt
-  RBW_EMAIL = "you@example.com";
-};
-```
+### Gaming
+- Steam, Lutris, Heroic Games Launcher, GE-Proton, MangoHud, gamemode
+- Color-matched Wine dialogs and Proton prefixes
 
-Leave a key out — or the whole block — and whatever needed it simply
-doesn't get installed, rather than being configured with a key that would
-only fail. Full shape in [docs/core-users.md](docs/core-users.md).
+### Network
+- **Cloudflare DNS over TLS** by default (opportunistic DoT)
+- Network-stack hardening sysctls
+- **Tor transparent proxy** behind a DMS control-center toggle — routes the whole machine, not just a browser
 
-Browser profiles, editor logins and the rbw session live in one portable
-folder, `~/.config/vayume/session`, with its own encrypted backup CLI:
+### Everything Else
+- **Zen Browser** — chrome-scripted so its theme reloads live with matugen
+- **File managers:** Nautilus + Thunar
+- **Music:** Spicetify (Spotify) + Fastpotify (Spotifast)
+- **Password management:** Bitwarden (desktop + rbw CLI)
+- **Discord:** Vesktop + Vencord
+- **ASUS hardware control:** DankAsusControlCenter widget
+- **Waydroid** — Android apps with signature spoofing and microG
+- **AppImage** support (binfmt + `appimaged`)
+- **Distrobox** — isolated Ubuntu escape hatch for the one-off proprietary tool
+- **State backup CLI:** `vayume-app-state backup|restore` — encrypted, portable `~/.config/vayume/session`
+
+---
+
+## Quick Start
+
+### Prerequisites
+- NixOS with **flakes** enabled
+- UEFI boot
+- `mkpasswd` (from `whois` package) for generating password hashes: `nix run nixpkgs#mkpasswd`
+
+### Try on the Existing Host (Diablo)
 
 ```bash
-vayume-app-state backup ~/vayume-session.enc
+git clone https://github.com/aayush2622/Vayume.git vayume
+cd vayume
+cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
+cp modules/hosts/Diablo/_config.nix.example modules/hosts/Diablo/_config.nix
+$EDITOR modules/hosts/Diablo/_config.nix   # at minimum, pick a username
+sudo nixos-rebuild switch --flake path:.#Diablo
 ```
+
+> **Why `path:.#Diablo`?** A bare flake ref resolves through git's *tracked files* view, making the gitignored `_hardware.nix` and `_config.nix` appear missing. `path:` reads the real directory as-is.
+
+Any user without a `hashedPassword` gets `changeme` as an initial password — run `passwd` after first login.
+
+### Make It Your Own Host
+
+```bash
+# Interactive (recommended)
+./install.sh
+
+# Or manual:
+cp -r modules/hosts/Diablo modules/hosts/<yourhostname>
+sudo nixos-generate-config --show-hardware-config > modules/hosts/<yourhostname>/_hardware.nix
+# Edit Host.nix: hostname, timezone, locale, bootloader
+cp modules/hosts/<yourhostname>/_config.nix.example modules/hosts/<yourhostname>/_config.nix
+# Fill in _config.nix: username, password hash (mkpasswd -m sha-512), enable apps
+sudo nixos-rebuild switch --flake path:.#<yourhostname>
+```
+
+`./install.sh --help` shows all flags; `--dry-run` previews without writing anything.
+
+---
+
+## Configuration
+
+Everything you configure day-to-day lives in **one file**: `modules/hosts/<host>/_config.nix` (gitignored, required).
+
+```nix
+# modules/hosts/<host>/_config.nix
+{ pkgs, ... }:
+{
+  vayume.users = {
+    yourname = {
+      fullName = "Your Name";
+      extraGroups = [ "networkmanager" "wheel" "video" "input" ];  # "wheel" = sudo
+      hashedPassword = "$6$...";  # mkpasswd -m sha-512
+      secrets = {
+        WAKATIME_API_KEY = "waka_...";
+        RBW_EMAIL = "you@example.com";
+      };
+    };
+  };
+
+  vayume.apps = {
+    Vscode.enable = true;
+    Gaming.enable = true;
+    Rust.enable = false;
+    # ... one line per module under modules/apps/
+  };
+}
+```
+
+- **Type `vayume.apps.`** in an editor with Nix LSP — every available app appears by name. A typo is a real evaluation error, not a silently ignored entry.
+- **Leave an app `false`** rather than deleting it — keeps it visible as "exists but off".
+- **DMS Control Center → Vayume Settings** edits this exact same file through a CLI (`vayume-config`), not a separate database. The repo stays the single source of truth.
+- **Secrets** live here too (`vayume.users.<name>.secrets`). Missing keys (or the whole block) fall back to `"REPLACE_ME"` placeholders — the consumer simply disables that feature instead of configuring it with a useless value. Full schema: [docs/core-users.md](docs/core-users.md).
 
 ---
 
 ## Keybinds
 
-Same on both compositors. `Mod` is Super.
+Same on both compositors. `Mod` = Super.
 
-| Key | | Key | |
-| --- | --- | --- | --- |
-| `Mod+Return` | terminal | `Mod+Q` / `Alt+F4` | close window |
-| `Mod+E` | files | `Mod+W` | float |
-| `Mod+C` | code | `Mod+F` / `Shift+F11` | fullscreen |
-| `Mod+B` | browser | `Mod+←↑↓→` | focus |
-| `Mod+A` | launcher | `Mod+Shift+←↑↓→` | move window |
-| `Mod+V` | clipboard | `Mod+1`–`0` | workspace |
-| `Mod+Comma` | settings | `Mod+Shift+1`–`0` | send to workspace |
-| `Mod+L` | lock | `Mod+Shift+P` | color picker |
-| `Mod+Shift+W` | wallpapers | `Print` / `Shift+Print` | screenshot |
+| Key | Action | Key | Action |
+|-----|--------|-----|--------|
+| `Mod+Return` | Terminal | `Mod+Q` / `Alt+F4` | Close window |
+| `Mod+E` | Files | `Mod+W` | Float |
+| `Mod+C` | Code editor | `Mod+F` / `Shift+F11` | Fullscreen |
+| `Mod+B` | Browser | `Mod+←↑↓→` | Focus |
+| `Mod+A` | Launcher | `Mod+Shift+←↑↓→` | Move window |
+| `Mod+V` | Clipboard | `Mod+1–0` | Workspace |
+| `Mod+Comma` | Settings | `Mod+Shift+1–0` | Send to workspace |
+| `Mod+L` | Lock | `Mod+Shift+P` | Color picker |
+| `Mod+Shift+W` | Wallpapers | `Print` / `Shift+Print` | Screenshot |
 
-Hyprland adds mouse-drag move/resize (`Mod`+left/right click), a scratchpad
-on `Mod+S`, and silent workspace moves on `Mod+Alt+1`–`0`.
+**Hyprland extras:** mouse-drag move/resize (`Mod`+left/right click), scratchpad on `Mod+S`, silent workspace moves on `Mod+Alt+1–0`.
 
-Full lists: [Niri.nix](modules/desktop/Niri.nix) ·
-[Hyprland.nix](modules/desktop/Hyprland.nix)
+Full lists: [Niri.nix](modules/desktop/Niri.nix) · [Hyprland.nix](modules/desktop/Hyprland.nix)
 
 ---
 
-## Layout
+## Project Layout
 
-```text
-flake.nix          inputs + import-tree ./modules
+```
+flake.nix           inputs + import-tree ./modules
 modules/
-  core/               flake-parts wiring, the shared user/app framework
-  hosts/<name>/       Host.nix (machine facts) + _hardware.nix + _config.nix (you)
-  desktop/            niri, Hyprland, DMS, fonts/portals, GTK/Qt, matugen
-  system/             docker/podman, zram, GRUB theme
-  apps/               opt-in per-user modules, toggled in _config.nix
-    development/        editors, languages, dev-tools, cc-switch
-    gaming/             launchers, proton, performance tweaks
-    utils/              terminal, browser, everything else
-  assets/wallpapers/  default wallpaper set
+  vayume/           the settings schema itself — theme, users, apps, CLI/GUI backend
+  core/             flake-parts wiring + shared app-registry framework
+  lib/              shared helper values/functions
+  hosts/<name>/     one machine: Host.nix + _hardware.nix (gitignored) + _config.nix (gitignored)
+  desktop/          DE stack — compositor, shell, login theme, fonts, portals, GTK/Qt baseline
+  system/           system-level infra unrelated to the desktop (Docker, GRUB, zram, network, Waydroid)
+  apps/             per-user opt-in modules (vayume.apps), one folder each
+    development/      editors, languages, dev-tools, cc-switch
+    gaming/           launchers, proton, performance tweaks
+    utils/            terminal, browser, everything else
+  assets/wallpapers/ default wallpaper set
 ```
 
-**Add a person**: an entry in `_config.nix`. **Add an app**: a folder under
-`modules/apps/*/` setting `flake.homeModules.apps.<Name>` — picked up
-automatically, then flip it on in `_config.nix`. **Add a host**: copy
-`modules/hosts/Diablo/`.
+**Add a person:** an entry in `_config.nix`.
+**Add an app:** a folder under `modules/apps/*/` setting `flake.homeModules.apps.<Name>` — picked up automatically, then flip it on in `_config.nix`.
+**Add a host:** copy `modules/hosts/Diablo/`.
 
 ---
 
 ## Documentation
 
-[**docs/CONFIGURATION.md**](docs/CONFIGURATION.md) is the index — one page
-per module, in the order you'd meet them, each linking to the next so it
-reads straight through. Start with
-[Getting started](docs/getting-started.md).
+[**docs/CONFIGURATION.md**](docs/CONFIGURATION.md) is the index — one page per module, in the order you'd meet them, each linking to the next so it reads straight through. Start with **[Getting Started](docs/getting-started.md)**.
 
 The `.nix` files stay comment-free; all the "why" lives in those pages.
 
@@ -169,23 +214,27 @@ The `.nix` files stay comment-free; all the "why" lives in those pages.
 ## Credits
 
 | Project | For |
-| --- | --- |
-| [niri](https://github.com/YaLTeR/niri) · [Hyprland](https://hypr.land) | the compositors |
-| [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) | bar, launcher, lock, theming |
-| [matugen](https://github.com/InioX/matugen) | the color engine behind all of it |
-| [home-manager](https://github.com/nix-community/home-manager) · [flake-parts](https://flake.parts/) · [import-tree](https://github.com/vic/import-tree) | the Nix plumbing |
-| [Bibata](https://github.com/ful1e5/Bibata_Cursor) · [Catppuccin](https://github.com/catppuccin) | cursor/editor theme |
-| [cc-switch](https://github.com/farion1231/cc-switch) · [WakaTime](https://wakatime.com/) | the dev-editor integrations |
+|---------|-----|
+| [niri](https://github.com/YaLTeR/niri) · [Hyprland](https://hypr.land) | The compositors |
+| [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) | Bar, launcher, lock, theming |
+| [matugen](https://github.com/InioX/matugen) | The color engine behind all of it |
+| [home-manager](https://github.com/nix-community/home-manager) · [flake-parts](https://flake.parts/) · [import-tree](https://github.com/vic/import-tree) | The Nix plumbing |
+| [Bibata](https://github.com/ful1e5/Bibata_Cursor) · [Catppuccin](https://github.com/catppuccin) | Cursor/editor theme |
+| [cc-switch](https://github.com/farion1231/cc-switch) · [WakaTime](https://wakatime.com/) | Dev editor integrations |
 | [Vencord](https://github.com/Vendicated/Vencord) · [DankAsusControl](https://github.com/shazzaam7/DankAsusControl) | Discord mods, ASUS widget |
 
-Full pinned list: `flake.nix`.
+Full pinned list: `flake.nix` inputs.
+
+---
 
 ## License
 
 [MIT](LICENSE). Use it, fork it, take what you want.
 
-## Known caveats
+---
 
-`dankAsusControlCenter` builds fine but hasn't met real ASUS hardware in
-testing yet — see [docs/desktop-dms.md](docs/desktop-dms.md) if
-`asusctl`/`supergfxctl` won't cooperate.
+## Known Caveats
+
+- **`dankAsusControlCenter`** builds fine but hasn't met real ASUS hardware in testing — see [docs/desktop-dms.md](docs/desktop-dms.md) if `asusctl`/`supergfxctl` won't cooperate.
+- This config assumes a single-user laptop workflow. Multi-user setups work but haven't been exercised heavily.
+- Waydroid's first boot takes a while (image download + signature spoofing patch).
