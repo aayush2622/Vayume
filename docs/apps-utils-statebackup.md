@@ -17,6 +17,27 @@ it's the same folder whether the repo lives at `~/vayume`, got cloned
 somewhere else entirely, or isn't even on disk right now (restoring a
 backup doesn't need the repo present at all).
 
+What's in it (`statePaths`):
+
+| Path | Why |
+| --- | --- |
+| `.zen/default`, `.config/vesktop`, `.config/Code`, `.config/zed`, `.config/JetBrains`, `.local/share/Google` | browser / Discord / editor profiles |
+| `.local/share/keyrings` | the GNOME keyring - where VS Code, Zed and other libsecret apps actually keep their sign-in tokens, so without it the editor profiles come back logged out |
+| `.ssh`, `.gnupg` | keys |
+| `.config/gh`, `.android` | GitHub CLI auth, adb's authorized key |
+| `.config/rbw`, `.cache/rbw`, `.config/Bitwarden` | password manager sessions |
+| `.config/spotify`, `.local/share/spotifast` | Spotify (Spicetify) login, Spotifast app state |
+| `.config/heroic`, `.config/lutris` | Epic/GOG logins and launcher config (not the games themselves) |
+| `.cc-switch` | Claude Code provider configs |
+| `.local/state/DankMaterialShell` | DMS session state - wallpaper and the like |
+
+Deliberately left out: anything that's a cache or re-downloadable
+(`~/.gradle`, Zed's downloaded toolchains, Lutris runners), and
+Waydroid's Android data - big, and `vayume-waydroid-android11` wipes it
+with `rm -rf`, which on a symlink would only remove the link. `.ssh`,
+`.gnupg` and `keyrings` (`privatePaths`) are forced to `0700` after
+linking, the permission ssh and gpg expect.
+
 **`home.activation.linkSessionState`** runs on every rebuild, and
 deliberately runs *before* Home Manager links its own files
 (`lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ]`). A

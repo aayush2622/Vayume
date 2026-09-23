@@ -14,9 +14,24 @@
       ".cache/rbw"
       ".config/Bitwarden"
       ".cc-switch"
+      ".local/share/keyrings"
+      ".config/gh"
+      ".android"
+      ".config/spotify"
+      ".local/share/spotifast"
+      ".config/heroic"
+      ".config/lutris"
+      ".local/state/DankMaterialShell"
+    ] ++ privatePaths;
+
+    privatePaths = [
+      ".ssh"
+      ".gnupg"
+      ".local/share/keyrings"
     ];
 
-    pathsBashArray = builtins.concatStringsSep " " (map (p: "\"${p}\"") statePaths);
+    toBashArray = paths: builtins.concatStringsSep " " (map (p: "\"${p}\"") paths);
+    pathsBashArray = toBashArray (lib.unique statePaths);
 
     stateBackupScript = pkgs.writeShellScriptBin "vayume-app-state" ''
       set -euo pipefail
@@ -28,8 +43,8 @@
         echo "       vayume-app-state restore <input-file>" >&2
         echo "" >&2
         echo "Every app's real login/session state (Zen Browser profile, Vesktop," >&2
-        echo "VS Code/Zed accounts, rbw session, Bitwarden desktop, cc-switch's" >&2
-        echo "provider configs, ...) lives at" >&2
+        echo "VS Code/Zed accounts, the GNOME keyring, ssh/gpg keys, gh, rbw," >&2
+        echo "Bitwarden, Spotify, Heroic/Lutris, cc-switch, ...) lives at" >&2
         echo "~/.config/vayume/session - always that same fixed path, regardless" >&2
         echo "of where this flake is checked out." >&2
         echo "Apps are symlinked there automatically (see linkSessionState), so" >&2
@@ -168,6 +183,10 @@
           fi
 
           run ln -sfn "$LINK_DEST" "$TARGET"
+        done
+
+        for p in ${toBashArray privatePaths}; do
+          if [ -d "$SESSION_DIR/$p" ]; then run chmod 700 "$SESSION_DIR/$p"; fi
         done
       '';
   };
