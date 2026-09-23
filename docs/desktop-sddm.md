@@ -17,7 +17,7 @@ The login screen - the one piece of this desktop that has to look right before a
   `pkgs.writeText` and installed over the top, so `cursorTheme` and
   `cursorSize` come from `vayume.theme` instead of being a second place
   you'd have to remember to update. Change
-  `vayume.theme.cursorSize` in [Host.nix](core-host.md) and the greeter's
+  `vayume.theme.cursorSize` in `_config.nix` ([Theme.nix](core-theme.md)) and the greeter's
   cursor changes with everything else's.
 - **`font=Itim` deliberately does *not* come from `vayume.theme`.**
   This is one of the two documented gaps in
