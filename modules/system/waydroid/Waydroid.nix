@@ -2,6 +2,7 @@
   flake.nixosModules.Waydroid =
     { pkgs, lib, config, ... }:
     let
+      waydroidPackage = pkgs.waydroid-nftables;
       waydroidScriptPython = pkgs.python3.withPackages (ps: with ps; [ tqdm requests inquirerpy ]);
 
       waydroid-script = pkgs.stdenvNoCC.mkDerivation {
@@ -26,7 +27,7 @@
             --add-flags "$out/share/waydroid-script/main.py" \
             --prefix PATH : ${
               lib.makeBinPath [
-                pkgs.waydroid
+                waydroidPackage
                 pkgs.e2fsprogs
                 pkgs.util-linux
                 pkgs.gnutar
@@ -58,7 +59,7 @@
         ver="''${WAYDROID_ANDROID_VERSION:-13}"
 
         echo ":: stopping Waydroid"
-        ${lib.getExe pkgs.waydroid} session stop 2>/dev/null || true
+        ${lib.getExe waydroidPackage} session stop 2>/dev/null || true
         ${pkgs.systemd}/bin/systemctl stop waydroid-container.service 2>/dev/null || true
 
         echo ":: applying signature-spoofing + data-permission patch (android $ver)"
@@ -80,19 +81,50 @@
           - start Waydroid, open its Settings / microG Self-Check
           - grant "Spoof package signature" to the app that needs it
           - stop + start the session once so the new services.jar is picked up
+
+        The patch ships a services.jar built for an older image. If Android
+        hangs on the boot animation afterwards, run: vayume-waydroid-unpatch
         EOF
       '';
 
       sigspoof = pkgs.writeShellScriptBin "vayume-waydroid-sigspoof" ''
         exec sudo -n --preserve-env=WAYDROID_ANDROID_VERSION ${sigspoofPriv} "$@"
       '';
+
+      unpatchPriv = pkgs.writeShellScript "vayume-waydroid-unpatch-priv" ''
+        set -eu
+
+        overlay=/var/lib/waydroid/overlay/system
+
+        ${lib.getExe waydroidPackage} session stop 2>/dev/null || true
+        ${pkgs.systemd}/bin/systemctl stop waydroid-container.service 2>/dev/null || true
+
+        ${pkgs.coreutils}/bin/rm -f \
+          "$overlay/framework/services.jar" \
+          "$overlay/framework/services.jar.prof" \
+          "$overlay/framework/services.jar.bprof" \
+          "$overlay/etc/nodataperm.sh" \
+          "$overlay/etc/init/nodataperm.rc"
+
+        ${pkgs.systemd}/bin/systemctl start waydroid-container.service
+
+        echo "Patch removed. Start Waydroid again."
+      '';
+
+      unpatch = pkgs.writeShellScriptBin "vayume-waydroid-unpatch" ''
+        exec sudo -n ${unpatchPriv}
+      '';
     in
     {
-      virtualisation.waydroid.enable = true;
+      virtualisation.waydroid = {
+        enable = true;
+        package = pkgs.waydroid-nftables;
+      };
 
       environment.systemPackages = [
         waydroid-script
         sigspoof
+        unpatch
         pkgs.waydroid-helper
       ];
 
@@ -106,6 +138,10 @@
                 "SETENV"
                 "NOPASSWD"
               ];
+            }
+            {
+              command = "${unpatchPriv}";
+              options = [ "NOPASSWD" ];
             }
           ];
         }) (builtins.attrNames config.vayume.users)
