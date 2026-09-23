@@ -63,7 +63,10 @@ and does nothing.
 
 **Steam is enabled in `Host.nix`, not here.** `programs.steam.enable`
 needs system-level stuff (32-bit libs, firewall rules, controller udev
-rules) that a per-user module can't touch. `umu-launcher` stays in this
+rules) that a per-user module can't touch. It's set to
+`config.vayume.apps.Gaming.enable` there (so is `programs.gamemode`),
+so this one toggle still decides whether Steam is installed - it used
+to be hardcoded `true`, and turning Gaming off left Steam behind. `umu-launcher` stays in this
 file regardless - it's Lutris's own Proton runner and doesn't care
 whether Steam exists.
 

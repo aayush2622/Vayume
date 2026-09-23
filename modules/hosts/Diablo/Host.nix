@@ -140,8 +140,8 @@ in
 
             services.printing.enable = true;
 
-            programs.gamemode.enable = true;
-            programs.steam.enable = true;
+            programs.gamemode.enable = config.vayume.apps.Gaming.enable;
+            programs.steam.enable = config.vayume.apps.Gaming.enable;
             programs.nix-ld.enable = true;
 
             programs.appimage = {
