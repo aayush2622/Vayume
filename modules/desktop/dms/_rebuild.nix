@@ -19,10 +19,11 @@ let
       [ -f "$d/flake.nix" ] && flakeDir="$d" && break
     done
     if [ -z "$flakeDir" ]; then
-      echo "vayume flake not found (checked $homeDir/{${lib.concatStringsSep "," repoDiscovery.relativeDirs}}, ${lib.concatStringsSep ", " repoDiscovery.absoluteDirs}) - edit rebuildCommand in _rebuild.nix if it lives elsewhere"
+      echo "vayume flake not found (checked $homeDir/{${lib.concatStringsSep "," repoDiscovery.relativeDirs}}, ${lib.concatStringsSep ", " repoDiscovery.absoluteDirs}) - add its location to repoDiscovery in modules/lib/VayumeLib.nix" >&2
       exit 1
     fi
-    ${pkgs.git}/bin/git config --global --add safe.directory "$flakeDir"
+    ${pkgs.git}/bin/git config --global --get-all safe.directory 2>/dev/null | ${pkgs.gnugrep}/bin/grep -qxF "$flakeDir" \
+      || ${pkgs.git}/bin/git config --global --add safe.directory "$flakeDir"
     exec nixos-rebuild switch --flake "path:$flakeDir#${config.networking.hostName}"
   '';
 
