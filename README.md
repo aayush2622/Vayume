@@ -10,7 +10,7 @@
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
-A NixOS flake configuration built around **niri** and **Hyprland** side-by-side — same keybinds, picked at the login screen — both driving [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell), with a wallpaper-matching color theme that extends to editors, the login screen, GRUB, Discord, Wine dialogs, and everything else.
+A NixOS flake configuration built around **niri** and **Hyprland** side-by-side — same keybinds, picked at the login screen — both driving [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell), with a wallpaper-matching color theme that extends to editors, the browser, Discord, Spotify, Steam, Wine dialogs, GTK and Qt apps.
 
 Written with [flake-parts](https://flake.parts/) + [import-tree](https://github.com/vic/import-tree), so every `.nix` file under `modules/` is picked up automatically — no import list to maintain.
 
@@ -48,7 +48,7 @@ If this saves you an evening, a star costs nothing. ⭐
 ### Desktop
 - **niri** and **Hyprland** — both always available, swappable at the greeter, with identical keybinds so muscle memory carries over
 - **DankMaterialShell** — bar, launcher, notifications, lock screen, and a themed control center
-- **Themed SDDM greeter** + **GRUB** — matches the active color scheme
+- **Themed SDDM greeter** + **GRUB** — fixed themes (they run before any wallpaper colors exist); the greeter follows your `vayume.theme` cursor
 - **kitty + zsh** with fastfetch, starship, and a curated plugin set
 
 ### Development
