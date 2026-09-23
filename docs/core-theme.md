@@ -10,8 +10,34 @@ One option, read everywhere - the shared schema behind `vayume.theme`, so a sing
 shared-module pattern as `vayume.users`/`vayume.apps` - a host imports
 `self.nixosModules.Theme` in its `Host.nix` `modules` list, then sets
 whichever fields it wants under its own `config.vayume.theme`. Ships
-with sane defaults (JetBrainsMono Nerd Font, Bibata-Modern-Ice, Adwaita),
-so a host only needs to override the fields it actually cares about.
+with sane defaults (JetBrains Mono NL, Bibata-Modern-Ice, Adwaita), so a
+host only needs to override the fields it actually cares about - from
+`_config.nix` like everything else user-facing.
+
+| Field | Default | Read by |
+| --- | --- | --- |
+| `font` | `"JetBrains Mono NL"` | fontconfig, GTK, kitty, DMS, VS Code, Zed, Android Studio, Zen, Vesktop, Spicetify, Wine |
+| `fontPackage` | `pkgs.jetbrains-mono` | Fonts.nix (installs it), Spicetify, `vayume-config`'s font list |
+| `fontSize` | `11` | GTK, kitty |
+| `cursorTheme` | `"Bibata-Modern-Ice"` | GTK, `XCURSOR_THEME`, SDDM, the VM greeter |
+| `cursorPackage` | `pkgs.bibata-cursors` | GTK, system packages, `XCURSOR_PATH`, `vayume-config`'s cursor list |
+| `cursorSize` | `24` | GTK, `XCURSOR_SIZE`, SDDM |
+| `iconTheme` | `"Adwaita"` | GTK, qt5ct/qt6ct |
+| `iconPackage` | `pkgs.adwaita-icon-theme` | GTK |
+
+Each `*Theme`/`font` name has to be something its matching `*Package`
+actually ships - change the package and the name together. Nothing
+checks this at evaluation time (it would mean reading inside the
+package), which is why Vayume Settings' font and cursor pickers only
+ever offer names read out of the current package.
+
+```nix
+vayume.theme = {
+  font = "Fira Code";
+  fontPackage = pkgs.fira-code;   # needs `{ pkgs, ... }:` at the top of _config.nix
+  fontSize = 12;
+};
+```
 
 Used to live declared directly inside `Host.nix` itself, back when there
 was only one host - moved out once "one place to set theme" stopped
