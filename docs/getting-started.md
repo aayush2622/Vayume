@@ -36,6 +36,7 @@ git clone https://github.com/aayush2622/Vayume.git vayume
 cd vayume
 cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
 cp modules/hosts/Diablo/_config.nix.example modules/hosts/Diablo/_config.nix
+chmod 600 modules/hosts/Diablo/_config.nix  # it will hold password hashes
 $EDITOR modules/hosts/Diablo/_config.nix   # at least pick a username
 sudo nixos-rebuild switch --flake path:.#Diablo
 ```
@@ -55,7 +56,7 @@ locking you out with it.
 2. `sudo nixos-generate-config --show-hardware-config > modules/hosts/<yourhostname>/_hardware.nix`
    (drop the Nvidia/Optimus block unless you're also on one)
 3. `cp .../<yourhostname>/_config.nix.example .../<yourhostname>/_config.nix`
-   and fill it in - `mkpasswd -m sha-512` for the hash, then flip the
+   and `chmod 600` it, then fill it in - `mkpasswd -m sha-512` for the hash, then flip the
    apps you want on
 4. Edit `Host.nix` - replace every `Diablo` with your host name
    (`nixosConfigurations.<name>` and `networking.hostName` must match),

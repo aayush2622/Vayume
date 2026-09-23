@@ -80,7 +80,7 @@ ln -s "$work" "$vc_home/vayume"
 cfg="$work/modules/hosts/Diablo/_config.nix"
 cfg_before=$(mktemp)
 cp "$cfg" "$cfg_before"
-chmod 600 "$cfg"
+chmod 644 "$cfg"
 vc_() { HOME="$vc_home" "$vc" "$@"; }
 expect_fail() { if vc_ "$@" 2>/dev/null; then echo "vayume-config $* should have failed" >&2; exit 1; fi; }
 vc_ repo | jq -e '.hostName == "Diablo"' >/dev/null

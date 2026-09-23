@@ -368,6 +368,7 @@
             echo "vayume-config: $config_file missing - copy _config.nix.example and fill it in (see docs/getting-started.md)" >&2
             exit 1
           }
+          [ -z "$(find "$config_file" -perm /077)" ] || chmod go-rwx "$config_file"
 
           tmp_file=""
           trap 'rm -f "$tmp_file"' EXIT

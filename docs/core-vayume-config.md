@@ -430,6 +430,11 @@ having loaded the file at some point) refuse to write over a file that
 changed since it was last read, rather than silently clobbering a
 manual edit made while a toggle was in flight.
 
+`_config.nix` holds password hashes, so every `vayume-config` run also
+drops any group/other permission bits it finds on it (`chmod go-rwx`) -
+a file created with plain `cp` from the example starts out `0644`, and
+this closes that the first time Vayume Settings opens.
+
 The temp file comes from `mktemp` next to `_config.nix` (so concurrent
 edits never share one path), takes the original's permissions before
 the rename (so a `chmod 600` on a file holding password hashes
