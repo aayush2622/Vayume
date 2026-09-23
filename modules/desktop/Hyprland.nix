@@ -15,7 +15,7 @@
   flake.homeModules.Hyprland =
     { lib, pkgs, self, ... }:
     let
-      actions = lib.mapAttrs (_: lib.concatStringsSep " ") self.vayumeLib.desktopActions;
+      actions = lib.mapAttrs (_: lib.concatStringsSep " ") (self.vayumeLib.mkDesktopActions pkgs);
       lua = lib.generators.mkLuaInline;
 
     
