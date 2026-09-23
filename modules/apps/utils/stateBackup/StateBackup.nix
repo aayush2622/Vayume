@@ -61,6 +61,7 @@
             echo "passwords didn't match" >&2
             exit 1
           fi
+          [ -n "$PASSWORD" ] || { echo "refusing an empty backup password" >&2; exit 1; }
 
           ${pkgs.gnutar}/bin/tar -C "$(dirname "$SESSION_DIR")" -cf - "$(basename "$SESSION_DIR")" \
             | ${pkgs.openssl}/bin/openssl enc -aes-256-cbc -pbkdf2 -md sha256 -salt \
@@ -74,7 +75,8 @@
 
           read -rs -p "Backup password: " PASSWORD; echo
 
-          TMP_EXTRACT="$(mktemp -d)"
+          mkdir -p "$(dirname "$SESSION_DIR")"
+          TMP_EXTRACT="$(mktemp -d "$(dirname "$SESSION_DIR")/.session-restore.XXXXXX")"
           trap 'rm -rf "$TMP_EXTRACT"' EXIT
 
           if ! ${pkgs.openssl}/bin/openssl enc -d -aes-256-cbc -pbkdf2 -md sha256 \
@@ -88,8 +90,6 @@
             echo "restore failed - archive didn't contain a session folder" >&2
             exit 1
           fi
-
-          mkdir -p "$(dirname "$SESSION_DIR")"
 
           if [ -d "$SESSION_DIR" ]; then
             BACKUP_OF_OLD="$SESSION_DIR.bak.$(date +%s)"
