@@ -136,7 +136,7 @@ setup_host_dir() {
   if [[ $HOST != Diablo && ! -d $HOSTDIR ]]; then
     info "creating $HOSTDIR from the Diablo template"
     if (( DRY_RUN )); then
-      info "would rename Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
+      info "would rename Diablo -> $HOST in $HOSTDIR/{Host.nix,*.example}"
     else
       # Build the new host dir at a temp sibling and only `mv` it into place
       # once fully prepared - a script kill/crash mid-copy or mid-rename then
@@ -144,12 +144,12 @@ setup_host_dir() {
       # real host dir that a later run or rebuild could silently pick up.
       local tmp_hostdir="$HOSTDIR.new"
       rm -rf "$tmp_hostdir"
-      cp -r modules/hosts/Diablo "$tmp_hostdir"
-      rm -f "$tmp_hostdir/_hardware.nix" "$tmp_hostdir/_config.nix" "$tmp_hostdir/me.jpg"
+      mkdir -p "$tmp_hostdir"
+      cp modules/hosts/Diablo/Host.nix modules/hosts/Diablo/*.nix.example "$tmp_hostdir/"
       while IFS= read -r -d '' f; do sed -i "s/Diablo/$HOST/g" "$f"; done \
         < <(find "$tmp_hostdir" -maxdepth 1 -type f \( -name '*.nix' -o -name '*.nix.example' \) -print0)
       mv "$tmp_hostdir" "$HOSTDIR"
-      info "renamed Diablo -> $HOST in $HOSTDIR/{Host.nix,Vm.nix,*.example}"
+      info "renamed Diablo -> $HOST in $HOSTDIR/{Host.nix,*.example}"
     fi
   elif [[ -d $HOSTDIR ]]; then
     info "$HOSTDIR already exists - filling in what's missing, not touching Host.nix"
@@ -157,6 +157,8 @@ setup_host_dir() {
     info "using the existing Diablo host dir in place"
   fi
   (( DRY_RUN )) || [[ -f $HOSTDIR/Host.nix ]] || die "$HOSTDIR/Host.nix missing - unexpected"
+  [[ $HOST == Diablo || ! -f $HOSTDIR/Vm.nix ]] || \
+    warn "$HOSTDIR/Vm.nix is left over from an older install.sh - delete it (the VM module is shared now, modules/system/Vm.nix); two copies break every host's VM build"
 
   # keep networking.hostName in sync with the chosen name
   if (( ! DRY_RUN )) && grep -q 'networking\.hostName' "$HOSTDIR/Host.nix"; then
@@ -305,7 +307,7 @@ finalize() {
   local f
 
   if (( IS_GIT && ! DRY_RUN )) && [[ -d $HOSTDIR && $HOST != Diablo ]]; then
-    git -C "$REPO" add "$HOSTDIR/Host.nix" "$HOSTDIR/Vm.nix" "$HOSTDIR"/*.nix.example 2>/dev/null || true
+    git -C "$REPO" add "$HOSTDIR/Host.nix" "$HOSTDIR"/*.nix.example 2>/dev/null || true
     info "staged the tracked files in $HOSTDIR (_hardware.nix / _config.nix stay gitignored)"
   fi
 

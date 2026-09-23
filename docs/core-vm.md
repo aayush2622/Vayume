@@ -4,7 +4,37 @@
 
 A second, disposable copy of the whole machine that boots in a window - how every change in this repo got tested before it touched real hardware.
 
-## `modules/hosts/<name>/Vm.nix`
+## `modules/system/Vm.nix`
+
+### Running it
+
+```bash
+nix run path:.#vm              # Diablo
+nix run path:.#vm-<host>       # any host under modules/hosts/
+nix run path:.#vm -- --fresh   # throw the disk image away first
+```
+
+The disk image lives at `~/.cache/vayume/<host>.qcow2` (override with
+`VAYUME_VM_IMAGE=/some/path.qcow2`). It persists between runs, so state
+you create inside the VM survives a reboot of it; `--fresh` (or `-f`)
+deletes it for a clean first boot. If `virtualisation.diskSize` grows
+past the existing image's size, the runner recreates the image instead
+of booting a disk that's too small - it never resizes one in place.
+Root has no password inside the VM (see item 4 below), so a console
+login always works even if your own user's password doesn't.
+
+**One shared module, not one per host.** `flake.nixosModules.VmTesting`
+used to live in `modules/hosts/Diablo/Vm.nix`, and `install.sh` copied
+it into every new host. Two copies of the same module both set
+`virtualisation.qemu.package` (a unique option), so the moment a second
+host existed, *every* host's VM failed to evaluate - and the list-typed
+QEMU flags were doubled. Nothing in it was ever Diablo-specific, so it
+lives in `system/` now and generates a `vm-<host>` app for each entry
+in `nixosConfigurations`; `vm` stays as an alias for Diablo. A host
+created by an older `install.sh` still has its own `Vm.nix` - delete it
+(`install.sh` warns about it on a re-run).
+
+### Why each override exists
 
 Everything the VM build (`nixos-rebuild build-vm`) needs that the real
 machine doesn't lives here, in one file, instead of scattered wherever
@@ -23,12 +53,14 @@ the real deployed system never sees any of this:
 3. Past the greeter, niri itself still couldn't find a GPU allocator with
    a plain virtual display device - needed a GL-enabled virtio display
    backed by the *host's* real GPU instead. The wrinkle: the dev machine
-   this was built on isn't NixOS, so the Nix-built QEMU couldn't find
-   that host's mesa drivers in the paths it expected. Fixed with a
-   wrapper that points QEMU at this specific host's actual driver paths -
-   which means it's genuinely tied to this one dev machine's distro
-   layout, and would need swapping back to plain `qemu_kvm` on an actual
-   NixOS host, where the problem doesn't exist in the first place.
+   this was first built on wasn't NixOS, so the Nix-built QEMU couldn't
+   find that host's mesa drivers in the paths it expected. The QEMU
+   wrapper points it at `/usr/lib/{dri,gbm}` and the glvnd vendor dir -
+   but only at run time, and only when the machine running the VM has
+   no `/run/opengl-driver` and does have `/usr/lib/dri` (a non-NixOS
+   distro). On a NixOS host those paths don't exist, and forcing them
+   would hide the real drivers from QEMU, so the wrapper does nothing
+   there.
 4. **`users.users.root.hashedPassword = lib.mkForce ""` - passwordless
    root, VM-only.** Added while actually using this VM to verify a
    different fix (a portal misconfiguration) for real instead of trusting

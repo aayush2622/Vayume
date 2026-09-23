@@ -109,9 +109,10 @@ Any user without a `hashedPassword` gets `changeme` as a password. Users are imm
 ./install.sh
 
 # Or manual:
-cp -r modules/hosts/Diablo modules/hosts/<yourhostname>
+mkdir modules/hosts/<yourhostname>
+cp modules/hosts/Diablo/{Host.nix,*.example} modules/hosts/<yourhostname>/
 sudo nixos-generate-config --show-hardware-config > modules/hosts/<yourhostname>/_hardware.nix
-# Edit Host.nix: hostname, timezone, locale, bootloader
+# Edit Host.nix: replace "Diablo" with <yourhostname>, fix timezone, locale, bootloader
 cp modules/hosts/<yourhostname>/_config.nix.example modules/hosts/<yourhostname>/_config.nix
 # Fill in _config.nix: username, password hash (mkpasswd -m sha-512), enable apps
 sudo nixos-rebuild switch --flake path:.#<yourhostname>
@@ -199,7 +200,7 @@ modules/
 
 **Add a person:** an entry in `_config.nix`.
 **Add an app:** a folder under `modules/apps/*/` setting `flake.homeModules.apps.<Name>` — picked up automatically, then flip it on in `_config.nix`.
-**Add a host:** copy `modules/hosts/Diablo/`.
+**Add a host:** `./install.sh`, or copy `Host.nix` + the `*.example` files from `modules/hosts/Diablo/`.
 
 ---
 

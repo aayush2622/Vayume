@@ -46,13 +46,16 @@ locking you out with it.
 
 ### Making it your own host
 
-1. `cp -r modules/hosts/Diablo modules/hosts/<yourhostname>`
+1. `mkdir modules/hosts/<yourhostname> && cp modules/hosts/Diablo/{Host.nix,*.example} modules/hosts/<yourhostname>/`
+   (just the tracked template files - not Diablo's own gitignored ones)
 2. `sudo nixos-generate-config --show-hardware-config > modules/hosts/<yourhostname>/_hardware.nix`
    (drop the Nvidia/Optimus block unless you're also on one)
 3. `cp .../<yourhostname>/_config.nix.example .../<yourhostname>/_config.nix`
    and fill it in - `mkpasswd -m sha-512` for the hash, then flip the
    apps you want on
-4. Edit `Host.nix` - rename the host, fix timezone/locale/bootloader
+4. Edit `Host.nix` - replace every `Diablo` with your host name
+   (`nixosConfigurations.<name>` and `networking.hostName` must match),
+   fix timezone/locale/bootloader
 5. `sudo nixos-rebuild switch --flake path:.#<yourhostname>`
 
 Or run `./install.sh` instead of steps 1-3 - it does the same thing
