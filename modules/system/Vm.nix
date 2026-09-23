@@ -55,6 +55,7 @@
         in
         {
           type = "app";
+          meta.description = "Boot ${hostName} in a throwaway QEMU VM (--fresh for a clean disk)";
           program = lib.getExe (pkgs.writeShellScriptBin "vayume-vm-${hostName}" ''
             set -eu
 
