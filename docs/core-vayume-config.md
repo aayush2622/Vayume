@@ -421,6 +421,19 @@ braces. Without that, the example file's commented-out
 new field landed outside any attrset, and every `theme set` on a fresh
 config failed validation and was reverted.
 
+### Errors reach the panel, not a terminal
+
+Every command reports *why* it refused on stderr - a `vayume-config:`
+line for its own validation ("isn't a family the current fontPackage
+ships"), or Nix's own `error: ...` line when the edited file failed to
+evaluate and was reverted. The Vayume Settings widget reads that stream
+from each `vayume-config` process and shows the most specific line it
+saw as the status text (`pickError` in `VayumeSettingsWidget.qml`),
+preferring the Nix error over the generic "failed to evaluate -
+reverted" that always follows it. It used to say "see a terminal for
+the real error" - but the panel is started by the shell, so there was
+never a terminal to look at.
+
 ### What "live" actually means here
 
 Writing to `_config.nix` is instant and always safe (validated before it's

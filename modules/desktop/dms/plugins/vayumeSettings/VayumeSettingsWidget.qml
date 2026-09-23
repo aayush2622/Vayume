@@ -50,6 +50,15 @@ PluginComponent {
     }
     function clearRebuildLog() { root.rebuildLog = []; }
 
+    function pickError(current, line) {
+        const t = line.trim();
+        if (t.startsWith("vayume-config:") && !t.includes("failed to evaluate"))
+            return t.slice("vayume-config:".length).trim();
+        if (/^error: \S/.test(t))
+            return t.slice("error:".length).trim();
+        return current;
+    }
+
     readonly property bool saving: root.themePending || setAppProc.running || root.usersSaving
     readonly property bool lastError: root.themeError || root.usersError
 
@@ -296,11 +305,14 @@ PluginComponent {
     Process {
         id: themeSetProc
         running: false
+        property string errorText: ""
+        onStarted: errorText = ""
+        stderr: SplitParser { onRead: line => themeSetProc.errorText = root.pickError(themeSetProc.errorText, line) }
         onExited: exitCode => {
             root.themeError = exitCode !== 0;
             root.themeStatus = exitCode === 0
                 ? I18n.tr("Applied - rebuild to take effect.")
-                : I18n.tr("Couldn't update that setting - see a terminal for the real error.");
+                : (themeSetProc.errorText || I18n.tr("Couldn't update that setting."));
             // Success: the optimistic value shown is already correct, no
             // need to pay for another full theme fetch. Failure: the
             // optimistic guess was wrong - refetch to show the real,
@@ -313,10 +325,13 @@ PluginComponent {
     Process {
         id: setAppProc
         running: false
+        property string errorText: ""
+        onStarted: errorText = ""
+        stderr: SplitParser { onRead: line => setAppProc.errorText = root.pickError(setAppProc.errorText, line) }
         onExited: exitCode => {
             root.rebuildStatus = exitCode === 0
                 ? I18n.tr("Saved - rebuild to apply.")
-                : I18n.tr("Change failed - reloading current state.");
+                : (setAppProc.errorText || I18n.tr("Change failed")) + " - " + I18n.tr("reloading current state.");
             // Same reasoning as themeSetProc: the toggle already flipped
             // optimistically, so a success needs no refetch (that's what
             // was showing a spurious "Loading applications..." flash after
@@ -352,11 +367,14 @@ PluginComponent {
     Process {
         id: usersSetProc
         running: false
+        property string errorText: ""
+        onStarted: errorText = ""
+        stderr: SplitParser { onRead: line => usersSetProc.errorText = root.pickError(usersSetProc.errorText, line) }
         onExited: exitCode => {
             root.usersError = exitCode !== 0;
             root.usersStatus = exitCode === 0
                 ? I18n.tr("Applied - rebuild to take effect.")
-                : I18n.tr("Couldn't update that setting - see a terminal for the real error.");
+                : (usersSetProc.errorText || I18n.tr("Couldn't update that setting."));
             // Same optimistic-update reasoning as setAppProc/themeSetProc -
             // only refetch (and so overwrite the optimistic value) on
             // failure.
@@ -377,7 +395,10 @@ PluginComponent {
         running: false
         stdinEnabled: true
         property string pendingWrite: ""
+        property string errorText: ""
+        stderr: SplitParser { onRead: line => usersPasswordProc.errorText = root.pickError(usersPasswordProc.errorText, line) }
         onStarted: {
+            errorText = "";
             write(pendingWrite + "\n");
             pendingWrite = "";
         }
@@ -385,7 +406,7 @@ PluginComponent {
             root.usersError = exitCode !== 0;
             root.usersStatus = exitCode === 0
                 ? I18n.tr("Password updated - rebuild to take effect.")
-                : I18n.tr("Couldn't update the password - see a terminal for the real error.");
+                : (usersPasswordProc.errorText || I18n.tr("Couldn't update the password."));
             root.refreshUsers();
             root.refreshRepo();
         }
@@ -394,11 +415,14 @@ PluginComponent {
     Process {
         id: usersAddRemoveProc
         running: false
+        property string errorText: ""
+        onStarted: errorText = ""
+        stderr: SplitParser { onRead: line => usersAddRemoveProc.errorText = root.pickError(usersAddRemoveProc.errorText, line) }
         onExited: exitCode => {
             root.usersError = exitCode !== 0;
             root.usersStatus = exitCode === 0
                 ? I18n.tr("Applied - rebuild to take effect.")
-                : I18n.tr("Couldn't update users - see a terminal for the real error.");
+                : (usersAddRemoveProc.errorText || I18n.tr("Couldn't update users."));
             root.refreshUsers();
             root.refreshRepo();
         }
@@ -407,13 +431,16 @@ PluginComponent {
     Process {
         id: packageSearchProc
         running: false
+        property string errorText: ""
+        onStarted: errorText = ""
+        stderr: SplitParser { onRead: line => packageSearchProc.errorText = root.pickError(packageSearchProc.errorText, line) }
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
                     root.packageSearchResults = JSON.parse(text);
                 } catch (e) {
                     root.packageSearchResults = [];
-                    root.packageSearchError = I18n.tr("Search failed - see a terminal for the real error.");
+                    root.packageSearchError = packageSearchProc.errorText || I18n.tr("Search failed.");
                 }
             }
         }
@@ -433,7 +460,7 @@ PluginComponent {
             root.rebuildBusy = false;
             root.rebuildStatus = exitCode === 0
                 ? I18n.tr("Rebuild succeeded.")
-                : I18n.tr("Rebuild failed (exit %1) - check a terminal for details.").arg(exitCode);
+                : I18n.tr("Rebuild failed (exit %1) - the log below has the details.").arg(exitCode);
             root.refreshApps();
             root.refreshRepo();
         }
