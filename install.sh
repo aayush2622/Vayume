@@ -318,7 +318,15 @@ finalize() {
   done
   echo
   REBUILD_CMD=(sudo nixos-rebuild switch --flake "path:.#$HOST")
-  info "review the files, then:  ${bold}${REBUILD_CMD[*]}${rst}"
+  REBUILD_SHOWN="${REBUILD_CMD[*]}"
+  if ! { nix --extra-experimental-features nix-command config show experimental-features 2>/dev/null \
+           || nix --extra-experimental-features nix-command show-config 2>/dev/null | sed -n 's/^experimental-features = //p'; } \
+       | grep -qw flakes; then
+    REBUILD_CMD=(sudo env "NIX_CONFIG=experimental-features = nix-command flakes" nixos-rebuild switch --flake "path:.#$HOST")
+    REBUILD_SHOWN="sudo env NIX_CONFIG='experimental-features = nix-command flakes' nixos-rebuild switch --flake path:.#$HOST"
+    info "flakes aren't enabled on this system yet - the first rebuild turns them on for this one command"
+  fi
+  info "review the files, then:  ${bold}${REBUILD_SHOWN}${rst}"
   info "${dim}(path:.# is required - a bare .# hides the gitignored files)${rst}"
 
   if (( DO_REBUILD == 1 )) || { (( DO_REBUILD == -1 )) && ! (( DRY_RUN )) && confirm $'\n'"Run it now?" N; }; then
