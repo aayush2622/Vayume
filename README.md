@@ -83,7 +83,7 @@ If this saves you an evening, a star costs nothing. ⭐
 ## Quick Start
 
 ### Prerequisites
-- NixOS with **flakes** enabled
+- NixOS (flakes don't need to be enabled yet - this config turns them on; for the very first rebuild, `install.sh` prints the right command, or prefix it yourself with `sudo env NIX_CONFIG='experimental-features = nix-command flakes'`)
 - UEFI boot
 - `mkpasswd` (from `whois` package) for generating password hashes: `nix run nixpkgs#mkpasswd`
 

@@ -2,7 +2,11 @@
 
 ---
 
-Everything here assumes NixOS with flakes enabled and UEFI boot. You'll
+Everything here assumes NixOS and UEFI boot. Flakes get enabled by this
+config itself, so on a stock install only the *first* rebuild needs
+them switched on by hand - `install.sh` detects that and prints the
+command with `NIX_CONFIG='experimental-features = nix-command flakes'`
+already in it. You'll
 need `mkpasswd` once for a password hash - `nix run nixpkgs#mkpasswd`.
 
 ## Getting started
