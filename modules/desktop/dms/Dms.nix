@@ -69,7 +69,7 @@
 
           services.dankSession = {
             enable = true;
-            package = inputs.danksession.packages.${pkgs.system}.default;
+            package = inputs.danksession.packages.${pkgs.stdenv.hostPlatform.system}.default;
             autoStart = true;
           };
 
