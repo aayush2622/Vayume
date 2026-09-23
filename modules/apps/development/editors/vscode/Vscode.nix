@@ -94,6 +94,8 @@ in {
         "*.qrc" = "qt-core.qrcEditor";
       };
 
+      "qt-core.showWelcomePageOnActivation" = false;
+
       "explorer.compactFolders" = false;
       "explorer.confirmDelete" = false;
       "explorer.confirmDragAndDrop" = false;
