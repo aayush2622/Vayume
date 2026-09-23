@@ -340,6 +340,22 @@ than reusing `usersAwk`.
 Both still go through `apply_edit`, so a mistake here fails exactly
 like a bad `apps`/`theme`/`users set-*` write: reverted, not applied.
 
+### Lockout guards
+
+`users.mutableUsers = false` means `_config.nix` *is* the account
+database: whatever it says after the next rebuild is exactly who exists
+and who can sudo. So two edits are refused outright instead of being
+left for the rebuild to act on:
+
+- `users remove` of the account running `vayume-config` (`id -un`) -
+  the rebuild would delete the account you're logged in with.
+- `users remove`, or `users set-group <user> wheel false`, that would
+  leave no user in `wheel` - nobody could sudo, including to run the
+  rebuild that would put it back.
+
+Both check the *evaluated* config (one `nix eval`), not the text, so a
+`wheel` granted any way `_config.nix` can express counts.
+
 ### `packages search` / `users set-package`: named, toggleable, per-user packages
 
 [vayume/Users.nix](core-users.md) already had `extraPackages` (a

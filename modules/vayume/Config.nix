@@ -779,6 +779,10 @@
               exit 2
             fi
 
+            if [ "$group" = wheel ] && [ "$enabled" = false ]; then
+              refuse_last_admin "$user"
+            fi
+
             if [ "$enabled" = "true" ]; then
               newList=$(jq --arg g "$group" '. + [$g] | unique' <<<"$current")
             else
@@ -942,6 +946,17 @@
             fi
           }
 
+          refuse_last_admin() {
+            local user admins
+            user=$1
+            admins=$(nix eval --impure --json --expr \
+              "let u = (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.users; in builtins.filter (n: builtins.elem \"wheel\" u.\''${n}.extraGroups) (builtins.attrNames u)")
+            if [ "$(jq --arg u "$user" 'map(select(. != $u)) | length' <<<"$admins")" -eq 0 ]; then
+              echo "vayume-config: '$user' is the only user in wheel - after a rebuild nobody could use sudo, and with immutable users that can't be undone without one. Give another user wheel first." >&2
+              exit 2
+            fi
+          }
+
           cmd_users_remove() {
             local user since tmp
             user=''${1:?user required}
@@ -951,6 +966,11 @@
             fi
             validate_username "$user"
             check_since "$since"
+            if [ "$user" = "$(id -un)" ]; then
+              echo "vayume-config: refusing to remove '$user' - that's the account running this, and the next rebuild would delete it" >&2
+              exit 2
+            fi
+            refuse_last_admin "$user"
 
             new_tmp; tmp=$tmp_file
             if ! awk -v user="$user" -f ${usersRemoveAwk} "$config_file" > "$tmp"; then
