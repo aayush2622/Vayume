@@ -9,13 +9,13 @@
 
   perSystem = { pkgs, lib, ... }:
   let
-    actions = self.vayumeLib.desktopActions;
+    actions = self.vayumeLib.mkDesktopActions pkgs;
     titled = title: content: _: { props.hotkey-overlay-title = title; inherit content; };
 
     niriBinds = {
       "Mod+Return" = titled "Open Terminal" { spawn = actions.terminal; };
       "Mod+E" = titled "Open File Manager" { spawn = actions.fileManager; };
-      "Mod+C" = titled "Open VS Code" { spawn = actions.editor; };
+      "Mod+C" = titled "Open Editor" { spawn = actions.editor; };
       "Mod+B" = titled "Open Browser" { spawn = actions.browser; };
       "Mod+Shift+B" = titled "Reload Zen (apply new theme)" { spawn = actions.browserReload; };
       "Control+Shift+Escape" = titled "Open System Monitor" { spawn = actions.systemMonitor; };
