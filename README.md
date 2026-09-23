@@ -74,7 +74,7 @@ If this saves you an evening, a star costs nothing. ⭐
 - **Discord:** Vesktop + Vencord
 - **ASUS hardware control:** DankAsusControlCenter widget
 - **Waydroid** — Android apps with signature spoofing and microG
-- **AppImage** support (binfmt + `appimaged`)
+- **AppImage** support (`programs.appimage` with binfmt, so `.AppImage` files run directly)
 - **Distrobox** — isolated Ubuntu escape hatch for the one-off proprietary tool
 - **State backup CLI:** `vayume-app-state backup|restore` — encrypted, portable `~/.config/vayume/session`
 
