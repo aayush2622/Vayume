@@ -301,6 +301,7 @@
 
           networking.firewall.extraCommands = ''
             if ${pkgs.systemd}/bin/systemctl is-active --quiet tor.service; then
+              ${torDown}
               ${torUp} || true
             fi
           '';
