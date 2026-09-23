@@ -132,7 +132,7 @@
     {
       virtualisation.waydroid = {
         enable = true;
-        package = pkgs.waydroid-nftables;
+        package = waydroidPackage;
       };
 
       environment.etc."waydroid-extra/images".source = android11Images;
@@ -157,7 +157,8 @@
               options = [ "NOPASSWD" ];
             }
           ];
-        }) (builtins.attrNames config.vayume.users)
+        }) (builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups)
+          (builtins.attrNames config.vayume.users))
       );
     };
 }
