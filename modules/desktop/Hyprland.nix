@@ -185,6 +185,8 @@
 
             dwindle.preserve_split = true;
 
+            cursor.no_warps = true;
+
             misc = {
               disable_hyprland_logo = true;
               disable_splash_rendering = true;
