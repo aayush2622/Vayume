@@ -1,4 +1,14 @@
-{ ... }: {
+{ ... }:
+let
+  flakeExpr = ''(builtins.getFlake ("path:" + builtins.toString ./.))'';
+
+  hostExpr = ''
+    (let
+      hosts = ${flakeExpr}.nixosConfigurations;
+      name = builtins.replaceStrings [ "\n" ] [ "" ] (builtins.readFile /etc/hostname);
+    in hosts.''${name} or (builtins.head (builtins.attrValues hosts)))'';
+in
+{
   flake.devLanguages.Nix = {
     vscode = {
       nixpkgsExtensions = [
@@ -15,10 +25,10 @@
         "nix.formatterPath" = "nixfmt";
         "nix.serverSettings".nixd = {
           formatting.command = [ "nixfmt" ];
-          nixpkgs.expr = ''import (builtins.getFlake ("path:" + builtins.toString ./.)).inputs.nixpkgs { }'';
+          nixpkgs.expr = "import ${flakeExpr}.inputs.nixpkgs { }";
           options = {
-            nixos.expr = ''(builtins.getFlake ("path:" + builtins.toString ./.)).nixosConfigurations.Diablo.options'';
-            home-manager.expr = ''(builtins.getFlake ("path:" + builtins.toString ./.)).nixosConfigurations.Diablo.options.home-manager.users.type.getSubOptions [ ]'';
+            nixos.expr = "${hostExpr}.options";
+            home-manager.expr = "${hostExpr}.options.home-manager.users.type.getSubOptions [ ]";
           };
         };
         "[nix]" = {

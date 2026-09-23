@@ -29,8 +29,9 @@ them back on rebuilt clean again.
 - **VS Code uses `nixd` for Nix, pointed at this flake, with `nil` kept for
   the other editors.** `nixd` can complete real option names because it
   evaluates them: the settings give it this repo's pinned nixpkgs, the
-  `Diablo` NixOS options, and the home-manager options
-  (`options.home-manager.users.type.getSubOptions [ ]`). The flake is
+  NixOS options of the host named in `/etc/hostname` (the first host in the
+  flake if none matches, so nothing is hard-coded), and the home-manager
+  options (`options.home-manager.users.type.getSubOptions [ ]`). The flake is
   loaded as `path:` rather than a plain path on purpose - a plain path
   goes through git and drops the gitignored `_hardware.nix`, which makes the
   evaluation fail. The expressions are relative to the workspace, so the
