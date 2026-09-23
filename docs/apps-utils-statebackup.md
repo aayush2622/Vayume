@@ -79,6 +79,14 @@ the clear.
   and if `~/.config/vayume/session` already exists, it gets moved aside
   with a timestamp suffix instead of being deleted, so a restore never
   destroys data by mistake.
+- **That temporary directory sits next to the session folder**
+  (`~/.config/vayume/.session-restore.*`), not in `/tmp`. `/tmp` is
+  tmpfs - RAM - and a browser profile can run to gigabytes; it's also a
+  different filesystem, so the final `mv` used to be a slow copy that
+  could die halfway and leave a half-restored session. On the same
+  filesystem it's a single atomic rename.
+- **An empty backup password is refused**, since it would produce an
+  "encrypted" archive anyone can open.
 
 ---
 
