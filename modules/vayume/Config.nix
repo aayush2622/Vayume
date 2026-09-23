@@ -573,7 +573,7 @@
                 "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.fontPackage")
             fi
             find "$fontPackage" \( -iname "*.ttf" -o -iname "*.otf" \) -print0 2>/dev/null \
-              | xargs -r -0 -I{} fc-scan --format '%{family[0]}\n' {} 2>/dev/null | sort -u
+              | xargs -r -0 fc-scan --format '%{family[0]}\n' 2>/dev/null | sort -u
           }
 
           cmd_theme_get() {
@@ -651,7 +651,7 @@
               if [ "$field" = "cursorTheme" ]; then
                 apply_cursor_live "$rawValue"
               fi
-              jq -n --arg field "$field" --arg value "$value" '{ok: true, field: $field, value: $value}'
+              jq -n --arg field "$field" --arg value "$rawValue" '{ok: true, field: $field, value: $value}'
             else
               exit 1
             fi
