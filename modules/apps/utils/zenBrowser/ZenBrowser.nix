@@ -431,18 +431,6 @@ in
         description = "Restart Zen Browser so it picks up the current wallpaper colors";
       };
 
-      # Just the browser-launching mimetypes - text/html and friends are
-      # already claimed for VS Code in Thunar.nix's dev-file-opens-in-editor
-      # list, which is a separate concern (a local .html source file vs. a
-      # web link) and shouldn't be clobbered here.
-      xdg.mimeApps = {
-        enable = true;
-        defaultApplications = {
-          "x-scheme-handler/http" = "zen.desktop";
-          "x-scheme-handler/https" = "zen.desktop";
-          "application/xhtml+xml" = "zen.desktop";
-        };
-      };
 
       home.activation.zenBrowserConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
               fetch_if_missing() {

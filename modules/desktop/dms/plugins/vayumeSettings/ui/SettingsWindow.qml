@@ -19,6 +19,7 @@ DankFloatingWindow {
         { id: "appearance", label: I18n.tr("Appearance"), icon: "palette" },
         { id: "development", label: I18n.tr("Development"), icon: "code" },
         { id: "applications", label: I18n.tr("Applications"), icon: "apps" },
+        { id: "defaults", label: I18n.tr("Default Apps"), icon: "open_in_new" },
         { id: "users", label: I18n.tr("Users"), icon: "person" },
         { id: "system", label: I18n.tr("System"), icon: "info" }
     ]
@@ -152,6 +153,7 @@ DankFloatingWindow {
                         case "appearance": return appearancePageComponent;
                         case "development": return developmentPageComponent;
                         case "applications": return applicationsPageComponent;
+                        case "defaults": return defaultAppsPageComponent;
                         case "users": return usersPageComponent;
                         case "system": return systemPageComponent;
                         default: return null;
@@ -303,6 +305,7 @@ DankFloatingWindow {
     Component { id: appearancePageComponent; AppearancePage { vm: root.vm } }
     Component { id: developmentPageComponent; DevelopmentPage { vm: root.vm } }
     Component { id: applicationsPageComponent; ApplicationsPage { vm: root.vm } }
+    Component { id: defaultAppsPageComponent; DefaultAppsPage { vm: root.vm } }
     Component { id: usersPageComponent; UsersPage { vm: root.vm } }
     Component { id: systemPageComponent; SystemPage { vm: root.vm } }
 }

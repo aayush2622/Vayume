@@ -114,40 +114,6 @@
         };
       };
 
-      xdg.mimeApps = {
-        enable = true;
-        defaultApplications = {
-          "inode/directory" = "thunar.desktop";
-          "x-directory/normal" = "thunar.desktop";
-
-          "text/plain" = "code.desktop";
-          "text/markdown" = "code.desktop";
-          "text/x-python" = "code.desktop";
-          "text/javascript" = "code.desktop";
-          "text/vnd.trolltech.linguist" = "code.desktop";
-          "application/x-tiled-tsx" = "code.desktop";
-          "application/json" = "code.desktop";
-          "application/yaml" = "code.desktop";
-          "application/toml" = "code.desktop";
-          "application/x-shellscript" = "code.desktop";
-          "text/x-csrc" = "code.desktop";
-          "text/x-chdr" = "code.desktop";
-          "text/x-c++src" = "code.desktop";
-          "text/x-c++hdr" = "code.desktop";
-          "text/rust" = "code.desktop";
-          "text/x-go" = "code.desktop";
-          "text/html" = "code.desktop";
-          "text/css" = "code.desktop";
-          "application/xml" = "code.desktop";
-          "text/x-log" = "code.desktop";
-          "text/x-lua" = "code.desktop";
-          "application/x-ruby" = "code.desktop";
-          "application/x-php" = "code.desktop";
-          "application/sql" = "code.desktop";
-        };
-      };
-
-      
       systemd.user.services.xfconfd = {
         Unit.Description = "Xfce configuration service";
         Service = {

@@ -25,6 +25,9 @@ vayume config apps set <Name> <true|false> [--if-unmodified-since <epoch>]
 vayume config development list               # dev languages/editors/tools + descriptions + editor integrations
 vayume config theme get                      # {font, fontSize, cursorTheme, iconTheme, cursorOptions, fontOptions}
 vayume config theme set <fontSize|cursorTheme|font> <value> [--if-unmodified-since <epoch>]
+vayume config defaults get                   # per role: chosen, automatic, effective, choices (see desktop-default-apps.md)
+vayume config defaults set <role> <id|auto> [--if-unmodified-since <epoch>]
+                                              # only enabled apps are accepted; auto = null in _config.nix
 vayume config users list                     # every vayume.users.* + groupOptions (JSON)
 vayume config users add <user> [fullName] [--if-unmodified-since <epoch>]
 vayume config users remove <user> [--if-unmodified-since <epoch>]

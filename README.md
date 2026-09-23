@@ -164,6 +164,7 @@ Everything you configure day-to-day lives in **one file**: `modules/hosts/<host>
 
 - **Type `vayume.apps.`** in an editor with Nix LSP — every available app appears by name. A typo is a real evaluation error, not a silently ignored entry.
 - **Leave an app `false`** rather than deleting it — keeps it visible as "exists but off".
+- **Default apps** (`vayume.defaultApps.editor = "zeditor";` etc.) pick which enabled app opens folders, links and code files, and which one the keybinds start — see [docs/desktop-default-apps.md](docs/desktop-default-apps.md).
 - **DMS Control Center → Vayume Settings** edits this exact same file through a CLI (`vayume config`), not a separate database. The repo stays the single source of truth.
 - **Secrets** live here too (`vayume.users.<name>.secrets`). Missing keys (or the whole block) fall back to `"REPLACE_ME"` placeholders — the consumer simply disables that feature instead of configuring it with a useless value. Full schema: [docs/core-users.md](docs/core-users.md).
 

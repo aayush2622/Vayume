@@ -16,19 +16,59 @@
 
   options.flake.vayumeLib.desktopActions = lib.mkOption {
     type = lib.types.attrsOf lib.types.anything;
-    default = {
-      terminal = { apps = [ "Terminal" ]; candidates = [ [ "kitty" ] ]; };
-      fileManager = { apps = [ "Thunar" "Nautilus" ]; candidates = [ [ "thunar" ] [ "nautilus" ] ]; };
-      editor = { apps = [ "Vscode" "Zed" "AndroidStudio" ]; candidates = [ [ "code" ] [ "zeditor" ] [ "android-studio" ] ]; };
-      browser = { apps = [ "ZenBrowser" ]; candidates = [ [ "zen" ] [ "firefox" ] [ "chromium" ] ]; };
-      browserReload = { apps = [ "ZenBrowser" ]; candidates = [ [ "vayume" "zen-reload" ] ]; };
-      systemMonitor = { apps = [ "Terminal" ]; candidates = [ [ "kitty" "-e" "btop" ] ]; };
-      colorPicker = { apps = [ ]; candidates = [ [ "hyprpicker" "-a" ] ]; };
-    };
+    default =
+      let
+        choice = id: label: app: desktop: argv: { inherit id label app desktop argv; };
+      in
+      {
+        terminal = {
+          label = "Terminal";
+          mimeTypes = [ ];
+          choices = [ (choice "kitty" "kitty" "Terminal" "kitty.desktop" [ "kitty" ]) ];
+        };
+        fileManager = {
+          label = "File manager";
+          mimeTypes = [ "inode/directory" "x-directory/normal" ];
+          choices = [
+            (choice "thunar" "Thunar" "Thunar" "thunar.desktop" [ "thunar" ])
+            (choice "nautilus" "Nautilus" "Nautilus" "org.gnome.Nautilus.desktop" [ "nautilus" ])
+          ];
+        };
+        editor = {
+          label = "Code editor";
+          mimeTypes = [
+            "text/plain" "text/markdown" "text/x-python" "text/javascript"
+            "text/vnd.trolltech.linguist" "application/x-tiled-tsx" "application/json"
+            "application/yaml" "application/toml" "application/x-shellscript"
+            "text/x-csrc" "text/x-chdr" "text/x-c++src" "text/x-c++hdr" "text/rust"
+            "text/x-go" "text/html" "text/css" "application/xml" "text/x-log"
+            "text/x-lua" "application/x-ruby" "application/x-php" "application/sql"
+          ];
+          choices = [
+            (choice "code" "VS Code" "Vscode" "code.desktop" [ "code" ])
+            (choice "zeditor" "Zed" "Zed" "dev.zed.Zed.desktop" [ "zeditor" ])
+            (choice "android-studio" "Android Studio" "AndroidStudio" "android-studio.desktop" [ "android-studio" ])
+          ];
+        };
+        browser = {
+          label = "Web browser";
+          mimeTypes = [ "x-scheme-handler/http" "x-scheme-handler/https" "application/xhtml+xml" ];
+          choices = [
+            (choice "zen" "Zen Browser" "ZenBrowser" "zen.desktop" [ "zen" ])
+            (choice "firefox" "Firefox" null null [ "firefox" ])
+            (choice "chromium" "Chromium" null null [ "chromium" ])
+          ];
+        };
+        browserReload.choices = [ (choice "zen-reload" "Zen reload" "ZenBrowser" null [ "vayume" "zen-reload" ]) ];
+        systemMonitor.choices = [ (choice "btop" "btop" "Terminal" null [ "kitty" "-e" "btop" ]) ];
+        colorPicker.choices = [ (choice "hyprpicker" "hyprpicker" null null [ "hyprpicker" "-a" ]) ];
+      };
     description = ''
-      Per action: the commands to try in order, and which vayume.apps
-      provide them - see docs/desktop-hyprland.md. Read through
-      mkDesktopActions, never directly.
+      Per action: the programs to try in order (`choices`), and for the
+      roles that have a `label`, the MIME types the chosen one becomes
+      the default for - see docs/desktop-default-apps.md. A choice with
+      an `app` can be picked in vayume.defaultApps; the others are only
+      fallbacks. Launched through mkDesktopActions, never directly.
     '';
   };
 
@@ -37,27 +77,43 @@
     readOnly = true;
     description = ''
       pkgs -> { <action> = [ "/nix/store/...-vayume-launch-<action>" ]; }
-      - one argv per desktopActions entry, running the first installed
-      candidate or explaining which app to enable.
+      - one argv per desktopActions entry: the choice named in
+      /etc/vayume/default-apps if it's installed, else the first
+      installed choice, else a notification naming the app to enable.
     '';
   };
 
   config.flake.vayumeLib.mkDesktopActions = pkgs:
-    lib.mapAttrs (name: action: [
+    lib.mapAttrs (name: action:
+      let
+        apps = lib.unique (builtins.filter (a: a != null) (map (c: c.app) action.choices));
+        installed = argv: "command -v ${lib.escapeShellArg (builtins.head argv)} >/dev/null 2>&1${
+          lib.optionalString (builtins.head argv == "vayume")
+            " && vayume --has ${lib.escapeShellArg (builtins.elemAt argv 1)}"
+        }";
+      in [
       (lib.getExe (pkgs.writeShellScriptBin "vayume-launch-${name}" ''
-        ${lib.concatMapStrings (argv: ''
-          if command -v ${lib.escapeShellArg (builtins.head argv)} >/dev/null 2>&1${
-            lib.optionalString (builtins.head argv == "vayume")
-              " && vayume --has ${lib.escapeShellArg (builtins.elemAt argv 1)}"
-          }; then
-            exec ${lib.escapeShellArgs argv} "$@"
-          fi
-        '') action.candidates}
+        preferred=""
+        if [ -r /etc/vayume/default-apps ]; then
+          while IFS='=' read -r role id; do
+            [ "$role" = ${lib.escapeShellArg name} ] && preferred=$id
+          done < /etc/vayume/default-apps
+        fi
+        case "$preferred" in
+        ${lib.concatMapStrings (c: ''
+          ${lib.escapeShellArg c.id})
+            if ${installed c.argv}; then exec ${lib.escapeShellArgs c.argv} "$@"; fi
+            ;;
+        '') action.choices}
+        esac
+        ${lib.concatMapStrings (c: ''
+          if ${installed c.argv}; then exec ${lib.escapeShellArgs c.argv} "$@"; fi
+        '') action.choices}
         exec ${pkgs.libnotify}/bin/notify-send -a Vayume "Nothing installed for ${name}" ${lib.escapeShellArg (
-          if action.apps == [ ] then
-            "None of: ${lib.concatMapStringsSep ", " builtins.head action.candidates}"
+          if apps == [ ] then
+            "None of: ${lib.concatMapStringsSep ", " (c: builtins.head c.argv) action.choices}"
           else
-            "Enable one of ${lib.concatMapStringsSep ", " (a: "vayume.apps.${a}") action.apps} in _config.nix, then rebuild."
+            "Enable one of ${lib.concatMapStringsSep ", " (a: "vayume.apps.${a}") apps} in _config.nix, then rebuild."
         )}
       ''))
     ]) config.flake.vayumeLib.desktopActions;

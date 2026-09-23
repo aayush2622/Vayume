@@ -111,4 +111,4 @@ separately.
 
 ---
 
-[← Hyprland.nix](desktop-hyprland.md) · [Index](CONFIGURATION.md) · [Theming.nix →](desktop-theming.md)
+[← DefaultApps.nix](desktop-default-apps.md) · [Index](CONFIGURATION.md) · [Theming.nix →](desktop-theming.md)

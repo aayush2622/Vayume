@@ -93,8 +93,6 @@ chmod 644 "$cfg"
 vc_() { HOME="$vc_home" "$vc" config "$@"; }
 expect_fail() { if vc_ "$@" 2>/dev/null; then echo "vayume-config $* should have failed" >&2; exit 1; fi; }
 vc_ repo | jq -e '.hostName == "Diablo"' >/dev/null
-vc_ apps set Zed true | jq -e '.ok' >/dev/null
-vc_ apps list | jq -e 'map(select(.name == "Zed"))[0].enabled' >/dev/null
 vc_ theme set fontSize 13 | jq -e '.ok' >/dev/null
 expect_fail theme set fontSize abc
 expect_fail apps set 'Foo.bar' true
@@ -104,6 +102,13 @@ vc_ users set-group bob wheel true | jq -e '.ok' >/dev/null
 expect_fail users remove random-but-missing
 vc_ users remove random | jq -e '.ok' >/dev/null
 echo hunter2 | vc_ users set-password bob | jq -e '.ok' >/dev/null
+expect_fail defaults set editor zeditor
+vc_ apps set Zed true | jq -e '.ok' >/dev/null
+vc_ apps list | jq -e 'map(select(.name == "Zed"))[0].enabled' >/dev/null
+vc_ defaults set editor zeditor | jq -e '.ok' >/dev/null
+vc_ defaults get | jq -e '.[] | select(.role == "editor") | .effective == "zeditor"' >/dev/null
+vc_ defaults set editor auto | jq -e '.ok' >/dev/null
+expect_fail defaults set shell kitty
 vc_ validate | jq -e '.ok' >/dev/null
 [ "$(stat -c %a "$cfg")" = 600 ] || { echo "vayume-config changed _config.nix's mode" >&2; exit 1; }
 [ -z "$(find "$(dirname "$cfg")" -name '_config.nix.*' ! -name '*.example')" ] || { echo "vayume-config left temp files" >&2; exit 1; }
