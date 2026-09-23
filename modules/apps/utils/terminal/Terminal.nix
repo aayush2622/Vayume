@@ -194,7 +194,7 @@
         FASTFETCH_IMAGES=(${lib.concatStringsSep " " (map (p: "'${p}'") fastfetchImagePaths)})
         FASTFETCH_IMAGE=""
         if [ ''${#FASTFETCH_IMAGES[@]} -gt 0 ]; then
-          FASTFETCH_IMAGE="''${FASTFETCH_IMAGES[$RANDOM % ''${#FASTFETCH_IMAGES[@]}]}"
+          FASTFETCH_IMAGE="''${FASTFETCH_IMAGES[$(( RANDOM % ''${#FASTFETCH_IMAGES[@]} + 1 ))]}"
         fi
         if [ -n "$FASTFETCH_IMAGE" ]; then
           fastfetch \
