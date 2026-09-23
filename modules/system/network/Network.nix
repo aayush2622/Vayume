@@ -162,6 +162,14 @@
       torToggle = pkgs.writeShellScriptBin "vayume-tor" ''
         set -u
         case "''${1:-status}" in
+          start|stop|newnym)
+            ${pkgs.coreutils}/bin/id -nG | ${pkgs.gnugrep}/bin/grep -qw wheel || {
+              echo "vayume-tor: switching Tor routes the whole machine, so it's limited to users in wheel" >&2
+              exit 1
+            }
+            ;;
+        esac
+        case "''${1:-status}" in
           status) ${pkgs.systemd}/bin/systemctl is-active tor.service 2>/dev/null || true ;;
           start)  exec sudo -n ${torCtl} start ;;
           stop)   exec sudo -n ${torCtl} stop ;;
@@ -314,7 +322,8 @@
                 options = [ "NOPASSWD" ];
               }
             ];
-          }) (builtins.attrNames config.vayume.users);
+          }) (builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups)
+            (builtins.attrNames config.vayume.users));
 
           home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {
             home.packages = [ torToggle ];
