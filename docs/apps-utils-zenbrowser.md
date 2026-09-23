@@ -150,7 +150,7 @@ It gets reused and re-synced on every rebuild.
   *fallback* fonts a page gets for text it never assigns its own
   font-family to (see the `use_document_fonts` note further up - these
   are deliberately not a page-wide override). They used to be pinned to
-  `theme.font`, which is a Nerd Font - and Nerd Fonts patch their icon
+  `theme.font`, which was a Nerd Font then - and Nerd Fonts patch their icon
   glyphs into Private Use Area codepoints, the same range plenty of
   sites use for plain separator characters (a bullet between a rating,
   runtime, and language, say) without bothering to declare a font for
