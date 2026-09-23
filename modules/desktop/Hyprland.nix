@@ -203,6 +203,11 @@
               float = true;
               pin = true;
             }
+            {
+              name = "waydroid-float";
+              match.class = "^waydroid\\..*$";
+              float = true;
+            }
           ];
 
           layer_rule = [
