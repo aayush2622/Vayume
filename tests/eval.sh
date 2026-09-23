@@ -77,6 +77,12 @@ cp "$work/modules/hosts/CiHost/_hardware.nix.example" "$work/modules/hosts/CiHos
 [ "$(stat -c %a "$work/modules/hosts/CiHost/_config.nix")" = 600 ] || { echo "_config.nix is not 0600" >&2; exit 1; }
 eval_drv "path:$work#nixosConfigurations.CiHost.config.system.build.toplevel.drvPath"
 
+step "nix flake check (every system, no builds)"
+if ! out=$(nix_ flake check --no-build --all-systems "path:$work" 2>&1); then
+  printf '%s\n' "$out" >&2
+  exit 1
+fi
+
 step "vm apps (every host)"
 nix_ eval --json "path:$work#apps.x86_64-linux" --apply 'builtins.mapAttrs (_: a: a.program)'
 echo
