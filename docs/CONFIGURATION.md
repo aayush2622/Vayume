@@ -105,7 +105,7 @@ modules/
                CLI/GUI backend that edits them. Nothing else lives here.
   core/        flake-parts wiring + the shared app-registry framework
   lib/         shared helper values/functions other modules read
-  hosts/<name>/  one machine: Host.nix + _hardware.nix, nothing else
+  hosts/<name>/  one machine: Host.nix + _hardware.nix + _config.nix
   desktop/     the DE stack — compositor, shell, login theme, fonts,
                portals, and the GTK/Qt baseline every user gets
   system/      system-level infra unrelated to the desktop

@@ -199,7 +199,7 @@ modules/
   lib/              shared helper values/functions
   hosts/<name>/     one machine: Host.nix + _hardware.nix (gitignored) + _config.nix (gitignored)
   desktop/          DE stack — compositor, shell, login theme, fonts, portals, GTK/Qt baseline
-  system/           system-level infra unrelated to the desktop (Docker, GRUB, zram, network, Waydroid)
+  system/           system-level infra unrelated to the desktop (Docker, GRUB, zram, network, Waydroid, VM harness)
   apps/             per-user opt-in modules (vayume.apps), one folder each
     development/      editors, languages, dev-tools, cc-switch
     gaming/           launchers, proton, performance tweaks
