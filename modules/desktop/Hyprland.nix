@@ -207,6 +207,8 @@
               name = "waydroid-float";
               match.class = "^waydroid\\..*$";
               float = true;
+              size = "900 1100";
+              center = true;
             }
           ];
 
