@@ -69,7 +69,7 @@ outdated so you can bump it by hand.
   ever has to do is run the normal rebuild command, and a slow or dead
   network adds at most 10 seconds, never more.
 - **The hook only ever *reports* in the foreground.** It runs
-  `vayume-check-plugin-updates --report-only` (cache read, or one round
+  `vayume check-plugin-updates --report-only` (cache read, or one round
   of parallel 4-second version queries once a day), then starts
   `--resolve-hashes` detached in the background. Resolving a hash means
   downloading the whole new artifact - 25-30 seconds for a large
@@ -78,7 +78,7 @@ outdated so you can bump it by hand.
   as such an update was pending, *every* `nix build`/`nix run`/rebuild
   paid the full 10 seconds, forever. The background run writes the hash
   into the cache and the next report shows it. Running
-  `vayume-check-plugin-updates` with no arguments still does everything
+  `vayume check-plugin-updates` with no arguments still does everything
   in one go and prints the hashes directly.
 
 ---

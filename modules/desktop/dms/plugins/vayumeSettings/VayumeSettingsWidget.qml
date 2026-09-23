@@ -112,7 +112,7 @@ PluginComponent {
             editors: root.development.editors.map(a => a.name === name ? Object.assign({}, a, { enabled }) : a),
             tools: root.development.tools.map(a => a.name === name ? Object.assign({}, a, { enabled }) : a)
         };
-        setAppProc.command = ["vayume-config", "apps", "set", name, enabled ? "true" : "false"];
+        setAppProc.command = ["vayume", "config", "apps", "set", name, enabled ? "true" : "false"];
         setAppProc.running = true;
     }
 
@@ -120,7 +120,7 @@ PluginComponent {
         root.users = Object.assign({}, root.users, {
             [user]: Object.assign({}, root.users[user], { fullName: value })
         });
-        usersSetProc.command = ["vayume-config", "users", "set-name", user, value];
+        usersSetProc.command = ["vayume", "config", "users", "set-name", user, value];
         usersSetProc.running = true;
     }
 
@@ -129,7 +129,7 @@ PluginComponent {
         root.users = Object.assign({}, root.users, {
             [user]: Object.assign({}, current, { secrets: Object.assign({}, current.secrets, { [key]: value }) })
         });
-        usersSetProc.command = ["vayume-config", "users", "set-secret", user, key, value];
+        usersSetProc.command = ["vayume", "config", "users", "set-secret", user, key, value];
         usersSetProc.running = true;
     }
 
@@ -141,7 +141,7 @@ PluginComponent {
         root.users = Object.assign({}, root.users, {
             [user]: Object.assign({}, current, { extraGroups: nextGroups })
         });
-        usersSetProc.command = ["vayume-config", "users", "set-group", user, group, enabled ? "true" : "false"];
+        usersSetProc.command = ["vayume", "config", "users", "set-group", user, group, enabled ? "true" : "false"];
         usersSetProc.running = true;
     }
 
@@ -153,7 +153,7 @@ PluginComponent {
     // stdin isn't" - see modules/vayume/Config.nix.
     function setUserPassword(user, password) {
         usersPasswordProc.pendingWrite = password;
-        usersPasswordProc.command = ["vayume-config", "users", "set-password", user];
+        usersPasswordProc.command = ["vayume", "config", "users", "set-password", user];
         usersPasswordProc.running = true;
     }
 
@@ -163,14 +163,14 @@ PluginComponent {
     // a removal just needs the list to reflect reality. usersAddRemoveProc
     // always refetches on exit rather than only on failure.
     function addUser(user, fullName) {
-        const args = ["vayume-config", "users", "add", user];
+        const args = ["vayume", "config", "users", "add", user];
         if (fullName.length > 0) args.push(fullName);
         usersAddRemoveProc.command = args;
         usersAddRemoveProc.running = true;
     }
 
     function removeUser(user) {
-        usersAddRemoveProc.command = ["vayume-config", "users", "remove", user];
+        usersAddRemoveProc.command = ["vayume", "config", "users", "remove", user];
         usersAddRemoveProc.running = true;
     }
 
@@ -182,7 +182,7 @@ PluginComponent {
     // instead of one on Enter/click.
     function searchPackages(query) {
         root.packageSearchError = "";
-        packageSearchProc.command = ["vayume-config", "packages", "search", query];
+        packageSearchProc.command = ["vayume", "config", "packages", "search", query];
         packageSearchProc.running = true;
     }
 
@@ -195,7 +195,7 @@ PluginComponent {
         root.users = Object.assign({}, root.users, {
             [user]: Object.assign({}, current, { packages: Object.assign({}, current.packages, { [path]: enabled }) })
         });
-        usersSetProc.command = ["vayume-config", "users", "set-package", user, path, enabled ? "true" : "false"];
+        usersSetProc.command = ["vayume", "config", "users", "set-package", user, path, enabled ? "true" : "false"];
         usersSetProc.running = true;
     }
 
@@ -222,7 +222,7 @@ PluginComponent {
 
     Process {
         id: repoProc
-        command: ["vayume-config", "repo"]
+        command: ["vayume", "config", "repo"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
@@ -245,7 +245,7 @@ PluginComponent {
 
     Process {
         id: appsListProc
-        command: ["vayume-config", "apps", "list"]
+        command: ["vayume", "config", "apps", "list"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
@@ -261,7 +261,7 @@ PluginComponent {
 
     Process {
         id: developmentListProc
-        command: ["vayume-config", "development", "list"]
+        command: ["vayume", "config", "development", "list"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
@@ -277,7 +277,7 @@ PluginComponent {
 
     Process {
         id: themeGetProc
-        command: ["vayume-config", "theme", "get"]
+        command: ["vayume", "config", "theme", "get"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
@@ -297,7 +297,7 @@ PluginComponent {
         property string value: ""
         interval: 400
         onTriggered: {
-            themeSetProc.command = ["vayume-config", "theme", "set", field, value];
+            themeSetProc.command = ["vayume", "config", "theme", "set", field, value];
             themeSetProc.running = true;
         }
     }
@@ -347,7 +347,7 @@ PluginComponent {
 
     Process {
         id: usersListProc
-        command: ["vayume-config", "users", "list"]
+        command: ["vayume", "config", "users", "list"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
@@ -448,7 +448,7 @@ PluginComponent {
 
     Process {
         id: rebuildProc
-        command: ["vayume-rebuild"]
+        command: ["vayume", "rebuild"]
         running: false
         stdout: SplitParser { onRead: line => root.appendRebuildLog(line) }
         stderr: SplitParser { onRead: line => root.appendRebuildLog(line) }

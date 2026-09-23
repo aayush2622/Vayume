@@ -17,10 +17,10 @@ host only needs to override the fields it actually cares about - from
 | Field | Default | Read by |
 | --- | --- | --- |
 | `font` | `"JetBrains Mono NL"` | fontconfig, GTK, kitty, DMS, VS Code, Zed, Android Studio, Zen, Vesktop, Spicetify, Wine |
-| `fontPackage` | `pkgs.jetbrains-mono` | Fonts.nix (installs it), Spicetify, `vayume-config`'s font list |
+| `fontPackage` | `pkgs.jetbrains-mono` | Fonts.nix (installs it), Spicetify, `vayume config`'s font list |
 | `fontSize` | `11` | GTK, kitty |
 | `cursorTheme` | `"Bibata-Modern-Ice"` | GTK, `XCURSOR_THEME`, SDDM, the VM greeter |
-| `cursorPackage` | `pkgs.bibata-cursors` | GTK, system packages, `XCURSOR_PATH`, `vayume-config`'s cursor list |
+| `cursorPackage` | `pkgs.bibata-cursors` | GTK, system packages, `XCURSOR_PATH`, `vayume config`'s cursor list |
 | `cursorSize` | `24` | GTK, `XCURSOR_SIZE`, SDDM |
 | `iconTheme` | `"Adwaita"` | GTK, qt5ct/qt6ct |
 | `iconPackage` | `pkgs.adwaita-icon-theme` | GTK |

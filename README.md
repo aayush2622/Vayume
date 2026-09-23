@@ -76,7 +76,7 @@ If this saves you an evening, a star costs nothing. ⭐
 - **Waydroid** — Android apps with signature spoofing and microG
 - **AppImage** support (`programs.appimage` with binfmt, so `.AppImage` files run directly)
 - **Distrobox** — isolated Ubuntu escape hatch for the one-off proprietary tool
-- **State backup CLI:** `vayume-app-state backup|restore` — encrypted, portable `~/.config/vayume/session`
+- **State backup CLI:** `vayume app-state backup|restore` — encrypted, portable `~/.config/vayume/session`
 
 ---
 
@@ -124,7 +124,8 @@ sudo nixos-rebuild switch --flake path:.#<yourhostname>
 ### Rebuild, roll back, test
 
 ```bash
-vayume-rebuild                          # after first boot: rebuild from wherever the repo lives, no password prompt (wheel users)
+vayume                                  # every Vayume helper, as a searchable menu (vayume help lists them)
+vayume rebuild                          # after first boot: rebuild from wherever the repo lives, no password prompt (wheel users)
 sudo nixos-rebuild switch --rollback    # back to the previous generation (older ones are in the GRUB menu)
 nix run path:.#vm                       # boot this config in a throwaway QEMU VM first
 ./tests/eval.sh                         # does a fresh clone of the repo still evaluate? (what CI runs)
@@ -163,7 +164,7 @@ Everything you configure day-to-day lives in **one file**: `modules/hosts/<host>
 
 - **Type `vayume.apps.`** in an editor with Nix LSP — every available app appears by name. A typo is a real evaluation error, not a silently ignored entry.
 - **Leave an app `false`** rather than deleting it — keeps it visible as "exists but off".
-- **DMS Control Center → Vayume Settings** edits this exact same file through a CLI (`vayume-config`), not a separate database. The repo stays the single source of truth.
+- **DMS Control Center → Vayume Settings** edits this exact same file through a CLI (`vayume config`), not a separate database. The repo stays the single source of truth.
 - **Secrets** live here too (`vayume.users.<name>.secrets`). Missing keys (or the whole block) fall back to `"REPLACE_ME"` placeholders — the consumer simply disables that feature instead of configuring it with a useless value. Full schema: [docs/core-users.md](docs/core-users.md).
 
 ---

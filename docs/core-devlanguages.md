@@ -60,4 +60,4 @@ They just agree on what shape this data comes in.
 
 ---
 
-[← Config.nix](core-vayume-config.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)
+[← Commands.nix](core-commands.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)

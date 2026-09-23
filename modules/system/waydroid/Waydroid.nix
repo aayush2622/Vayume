@@ -139,10 +139,21 @@
 
       environment.systemPackages = [
         waydroid-script
-        unpatch
-        android11
         pkgs.waydroid-helper
       ];
+
+      vayume.commands = {
+        waydroid-android11 = {
+          command = lib.getExe android11;
+          description = "Wipe Waydroid and reinstall it from the pinned Android 11 images with microG";
+          confirm = true;
+        };
+        waydroid-unpatch = {
+          command = lib.getExe unpatch;
+          description = "Remove a broken services.jar patch from the Waydroid overlay";
+          confirm = true;
+        };
+      };
 
       security.sudo.extraRules = lib.mkIf (config ? vayume && config.vayume ? users) (
         map (name: {

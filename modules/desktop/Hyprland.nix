@@ -100,7 +100,6 @@
       ) (lib.range 1 10);
     in
     {
-      home.packages = [ typeClipboard ];
 
       wayland.windowManager.hyprland = {
         enable = true;
@@ -234,7 +233,7 @@
             (bind "S" (lua "hl.dsp.workspace.toggle_special()"))
             (bind "A" (dms "spotlight toggle"))
             (bind "V" (dms "clipboard toggle"))
-            (bindBare "ALT + V" (spawn "vayume-type-clipboard") { })
+            (bindBare "ALT + V" (spawn (lib.getExe typeClipboard)) { })
             (bind "COMMA" (dms "settings toggle"))
             (bind "L" (dms "lock lock"))
             (bind "SHIFT + W" (spawn "dms ipc wallpaperCarousel open"))

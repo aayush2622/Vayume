@@ -70,18 +70,27 @@ for state in true false; do
     in sys.config.system.build.toplevel.drvPath"
 done
 
-step "vayume-config against the example _config.nix"
+step "vayume command: no stray vayume-* binaries, help lists subcommands"
+stray=$(nix_ eval --impure --raw --expr "
+  let f = builtins.getFlake \"path:$work\"; c = f.nixosConfigurations.Diablo.config;
+      names = map (p: p.name or \"\") (c.home-manager.users.ash.home.packages ++ c.environment.systemPackages);
+  in toString (builtins.filter (n: builtins.match \"vayume-.*\" n != null) names)")
+[ -z "$stray" ] || { echo "vayume-* packages on PATH (register them in vayume.commands instead): $stray" >&2; exit 1; }
 vc=$(nix_ build --no-link --print-out-paths --impure --expr "
   let f = builtins.getFlake \"path:$work\";
-  in builtins.head (builtins.filter (p: (p.name or \"\") == \"vayume-config\")
-    f.nixosConfigurations.Diablo.config.home-manager.users.ash.home.packages)")/bin/vayume-config
+  in builtins.head (builtins.filter (p: (p.name or \"\") == \"vayume\")
+    f.nixosConfigurations.Diablo.config.home-manager.users.ash.home.packages)")/bin/vayume
+"$vc" help | grep -q '^  config ' || { echo "vayume help has no config" >&2; exit 1; }
+"$vc" --has config
+
+step "vayume config against the example _config.nix"
 vc_home=$(mktemp -d)
 ln -s "$work" "$vc_home/vayume"
 cfg="$work/modules/hosts/Diablo/_config.nix"
 cfg_before=$(mktemp)
 cp "$cfg" "$cfg_before"
 chmod 644 "$cfg"
-vc_() { HOME="$vc_home" "$vc" "$@"; }
+vc_() { HOME="$vc_home" "$vc" config "$@"; }
 expect_fail() { if vc_ "$@" 2>/dev/null; then echo "vayume-config $* should have failed" >&2; exit 1; fi; }
 vc_ repo | jq -e '.hostName == "Diablo"' >/dev/null
 vc_ apps set Zed true | jq -e '.ok' >/dev/null

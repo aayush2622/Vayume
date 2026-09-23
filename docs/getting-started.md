@@ -94,7 +94,7 @@ visible that the app exists and is simply off.
 
 The same toggles are also reachable without opening an editor at all -
 DMS's control center has a **Vayume Settings** widget that edits this
-same file through a small CLI, `vayume-config` (see
+same file through a small CLI, `vayume config` (see
 [core-vayume-config.md](core-vayume-config.md)). Either way changes the
 same file; there's only one place this is actually stored.
 

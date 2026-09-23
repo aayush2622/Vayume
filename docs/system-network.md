@@ -144,14 +144,14 @@ both directions are ordered defensively:
 Privilege follows the same pattern as the rebuild/GC scripts in
 [Dms.nix](desktop-dms.md): a root-side `vayume-torctl` that accepts only
 `start`, `stop` and `newnym`, allowed NOPASSWD - never general
-`systemctl` access. The user-facing `vayume-tor` wrapper shells out to it. Only
+`systemctl` access. The user-facing `vayume tor` wrapper shells out to it. Only
 users in `wheel` get that sudo rule: Tor mode reroutes every process on
 the machine, not just the caller's, so it's an admin action like a
-rebuild. Anyone can still read the state (`vayume-tor status`, the
+rebuild. Anyone can still read the state (`vayume tor status`, the
 widget's indicator); a non-admin asking to switch gets a one-line
 refusal from the wrapper instead of a bare sudo password error.
 
-`vayume-tor newnym` asks Tor for fresh circuits over its control socket.
+`vayume tor newnym` asks Tor for fresh circuits over its control socket.
 That lives on the privileged side because the socket is root-owned.
 
 ### The widget
@@ -160,7 +160,7 @@ That lives on the privileged side because the socket is root-owned.
 registry does Tor - the closest are ProtonVPN, Tailscale and mihomo,
 which are all different things.
 
-`vayume-tor` itself - the CLI the widget shells out to by bare name,
+`vayume tor` itself - the CLI the widget shells out to by bare name,
 relying on `PATH` - is defined here in `Network.nix` rather than beside
 the widget, since it's a networking concern first. The widget's own DMS
 plugin registration lives separately, at
@@ -175,7 +175,7 @@ entire contract for showing up there. The rest of the surface
 `onCcWidgetToggled`) is modelled on DMS's own `TailscaleWidget.qml`,
 which is the closest built-in analogue since it's also a service toggle.
 
-The widget re-polls `vayume-tor status` every 5s rather than trusting its
+The widget re-polls `vayume tor status` every 5s rather than trusting its
 own last click, so starting or stopping Tor from a terminal doesn't leave
 the toggle lying.
 

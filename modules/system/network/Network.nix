@@ -164,7 +164,7 @@
         case "''${1:-status}" in
           start|stop|newnym)
             ${pkgs.coreutils}/bin/id -nG | ${pkgs.gnugrep}/bin/grep -qw wheel || {
-              echo "vayume-tor: switching Tor routes the whole machine, so it's limited to users in wheel" >&2
+              echo "vayume tor: switching Tor routes the whole machine, so it's limited to users in wheel" >&2
               exit 1
             }
             ;;
@@ -174,7 +174,7 @@
           start)  exec sudo -n ${torCtl} start ;;
           stop)   exec sudo -n ${torCtl} stop ;;
           newnym) exec sudo -n ${torCtl} newnym ;;
-          *)      echo "usage: vayume-tor start|stop|status|newnym" >&2; exit 2 ;;
+          *)      echo "usage: vayume tor start|stop|status|newnym" >&2; exit 2 ;;
         esac
       '';
     in
@@ -325,9 +325,11 @@
           }) (builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups)
             (builtins.attrNames config.vayume.users));
 
-          home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {
-            home.packages = [ torToggle ];
-          });
+          vayume.commands.tor = {
+            command = lib.getExe torToggle;
+            description = "Route the whole machine through Tor, or back (status for everyone, switching for wheel)";
+            usage = "start|stop|status|newnym";
+          };
         })
       ];
     };

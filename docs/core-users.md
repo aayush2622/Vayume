@@ -70,7 +70,7 @@ to "where do I configure Vayume for myself":
   access to this checkout - see below for the one real trade-off this
   makes.
 - **DMS's "Vayume Settings" plugin edits both halves of this file**
-  through `vayume-config` - see
+  through `vayume config` - see
   [core-vayume-config.md](core-vayume-config.md). Accounts themselves
   (add/remove), display name, groups, password, `secrets`, and
   `packages` are all editable from its Users page now; `avatar`,
