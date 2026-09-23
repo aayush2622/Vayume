@@ -24,7 +24,7 @@ dive.
 **Core & hosts** - who this machine is, and who's allowed to use it
 1. [hosts/\<name\>/Host.nix](core-host.md)
 2. [hosts/\<name\>/\_hardware.nix](core-hardware.md)
-3. [hosts/\<name\>/Vm.nix](core-vm.md)
+3. [system/Vm.nix](core-vm.md) (the VM test harness, `nix run path:.#vm`)
 4. [vayume/Users.nix](core-users.md)
 5. [vayume/Theme.nix](core-theme.md)
 6. [vayume/Config.nix](core-vayume-config.md)

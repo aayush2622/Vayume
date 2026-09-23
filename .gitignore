@@ -22,7 +22,6 @@ secrets/
 # matching *.nix.example next to them and fill it in.
 modules/hosts/*/*
 !modules/hosts/*/Host.nix
-!modules/hosts/*/Vm.nix
 !modules/hosts/*/*.nix.example
 
 # Editor files
