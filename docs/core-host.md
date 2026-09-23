@@ -9,11 +9,13 @@ Every machine starts here. `Host.nix` is the one file that says what this partic
 **`vayume.theme`** is a submodule declared in
 [vayume/Theme.nix](core-theme.md), the same shared-module pattern as
 `vayume.users`/`vayume.apps` - every host imports `self.nixosModules.Theme`
-and gets the option, then sets whichever fields it wants under its own
-`config.vayume.theme` here. Comes with sane defaults (JetBrainsMono Nerd
-Font, Bibata-Modern-Ice, Adwaita). Change one field without touching the
-rest - `vayume.theme.font = "Fira Code";` and it updates everywhere at
-once, since fontconfig, GTK, kitty, and DMS all read the same option.
+and gets the option; the fields themselves are set in `_config.nix`,
+not here, since they're a personal choice rather than a machine fact.
+Comes with sane defaults (JetBrains Mono NL, Bibata-Modern-Ice,
+Adwaita). Change one field without touching the rest -
+`vayume.theme.fontSize = 12;` and it updates everywhere at once, since
+fontconfig, GTK, kitty, and DMS all read the same option. The full
+field list is on the [Theme.nix](core-theme.md) page.
 
 NixOS modules can read `config.vayume.theme.*` directly. Home-manager
 modules can't - they run as a totally separate module tree that never
