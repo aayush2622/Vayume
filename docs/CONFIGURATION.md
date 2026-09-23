@@ -36,38 +36,39 @@ dive.
 10. [desktop/Dms.nix](desktop-dms.md)
 11. [desktop/Niri.nix](desktop-niri.md)
 12. [desktop/Hyprland.nix](desktop-hyprland.md)
-13. [desktop/Fonts.nix / Portals.nix](desktop-portals-fonts.md)
-14. [desktop/Theming.nix](desktop-theming.md)
-15. [desktop/Matugen.nix](desktop-matugen.md)
-16. [desktop/sddm/SddmTheme.nix](desktop-sddm.md)
+13. [desktop/DefaultApps.nix](desktop-default-apps.md) (`vayume.defaultApps`)
+14. [desktop/Fonts.nix / Portals.nix](desktop-portals-fonts.md)
+15. [desktop/Theming.nix](desktop-theming.md)
+16. [desktop/Matugen.nix](desktop-matugen.md)
+17. [desktop/sddm/SddmTheme.nix](desktop-sddm.md)
 
 **System** - infrastructure that doesn't care what desktop you're running
-17. [system/Misc.nix](system-misc.md) (Zram, DevTooling, GrubTheme)
-18. [system/Network.nix](system-network.md)
-19. [system/waydroid/Waydroid.nix](system-waydroid.md)
+18. [system/Misc.nix](system-misc.md) (Zram, DevTooling, GrubTheme)
+19. [system/Network.nix](system-network.md)
+20. [system/waydroid/Waydroid.nix](system-waydroid.md)
 
 **Apps - development**
-20. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
-21. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
-22. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
-23. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt, Python)
-24. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
-25. [apps/development/ccSwitch/CcSwitch.nix](apps-dev-ccswitch.md)
+21. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
+22. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
+23. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
+24. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt, Python)
+25. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
+26. [apps/development/ccSwitch/CcSwitch.nix](apps-dev-ccswitch.md)
 
 **Apps - gaming**
-26. [apps/gaming/Gaming.nix](apps-gaming.md)
+27. [apps/gaming/Gaming.nix](apps-gaming.md)
 
 **Apps - utils**
-27. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
-28. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
-29. [apps/utils/spotifast/Spotifast.nix](apps-utils-spotifast.md)
-30. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
-31. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
-32. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
-33. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
-34. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
-35. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
-36. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
+28. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
+29. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
+30. [apps/utils/spotifast/Spotifast.nix](apps-utils-spotifast.md)
+31. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
+32. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
+33. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
+34. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
+35. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
+36. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
+37. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
 
 ---
 

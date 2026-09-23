@@ -33,6 +33,11 @@ PluginComponent {
     property bool usersError: false
     readonly property bool usersSaving: usersSetProc.running || usersPasswordProc.running || usersAddRemoveProc.running
 
+    property var defaultApps: []
+    property bool defaultAppsLoading: true
+    property string defaultAppsStatus: ""
+    property bool defaultAppsError: false
+
     property var packageSearchResults: []
     readonly property bool packageSearching: packageSearchProc.running
     property string packageSearchError: ""
@@ -59,14 +64,20 @@ PluginComponent {
         return current;
     }
 
-    readonly property bool saving: root.themePending || setAppProc.running || root.usersSaving
-    readonly property bool lastError: root.themeError || root.usersError
+    readonly property bool saving: root.themePending || setAppProc.running || root.usersSaving || defaultsSetProc.running
+    readonly property bool lastError: root.themeError || root.usersError || root.defaultAppsError
 
     function refreshRepo() { repoProc.running = true; }
     function refreshApps() { appsLoading = true; appsListProc.running = true; }
     function refreshDevelopment() { developmentLoading = true; developmentListProc.running = true; }
     function refreshTheme() { themeLoading = true; themeGetProc.running = true; }
     function refreshUsers() { usersLoading = true; usersListProc.running = true; }
+    function refreshDefaultApps() { defaultAppsLoading = true; defaultsGetProc.running = true; }
+
+    function setDefaultApp(role, id) {
+        defaultsSetProc.command = ["vayume", "config", "defaults", "set", role, id];
+        defaultsSetProc.running = true;
+    }
 
     function refreshAll() {
         refreshRepo();
@@ -74,6 +85,7 @@ PluginComponent {
         refreshDevelopment();
         refreshTheme();
         refreshUsers();
+        refreshDefaultApps();
     }
 
     // Every backend write pays for a real `nix eval` (apply_edit's own
@@ -341,6 +353,39 @@ PluginComponent {
                 root.refreshApps();
                 root.refreshDevelopment();
             }
+            root.refreshDefaultApps();
+            root.refreshRepo();
+        }
+    }
+
+    Process {
+        id: defaultsGetProc
+        command: ["vayume", "config", "defaults", "get"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.defaultAppsLoading = false;
+                try {
+                    root.defaultApps = JSON.parse(text);
+                } catch (e) {
+                    root.defaultApps = [];
+                }
+            }
+        }
+    }
+
+    Process {
+        id: defaultsSetProc
+        running: false
+        property string errorText: ""
+        onStarted: errorText = ""
+        stderr: SplitParser { onRead: line => defaultsSetProc.errorText = root.pickError(defaultsSetProc.errorText, line) }
+        onExited: exitCode => {
+            root.defaultAppsError = exitCode !== 0;
+            root.defaultAppsStatus = exitCode === 0
+                ? I18n.tr("Saved - rebuild to apply.")
+                : (defaultsSetProc.errorText || I18n.tr("Couldn't change that default."));
+            root.refreshDefaultApps();
             root.refreshRepo();
         }
     }

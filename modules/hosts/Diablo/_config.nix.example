@@ -81,6 +81,13 @@
     Distrobox.enable = false;
   };
 
+  # Optional - which app opens folders/links/code files and starts from
+  # its keybind; leave a role out (or null) for the first enabled one.
+  # See docs/desktop-default-apps.md, or Vayume Settings -> Default Apps.
+  # vayume.defaultApps = {
+  #   editor = "zeditor";
+  # };
+
   # Optional - only set the fields you want to change from the defaults
   # (JetBrains Mono NL, Bibata-Modern-Ice, Adwaita). See
   # modules/vayume/Theme.nix / docs/core-theme.md.

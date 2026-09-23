@@ -53,19 +53,12 @@ The default file manager on this host - and the one that quietly proves how much
   GTK open/save *dialog* reads, in any app, whether Thunar is installed
   or not. Same two-blocks-that-look-identical situation as
   [Nautilus.nix](apps-utils-nautilus.md), for the same reason.
-- **`xdg.mimeApps.enable` isn't implied by setting
-  `defaultApplications`.** It defaults to `false` in home-manager, and
-  without setting it explicitly the whole `defaultApplications` block
-  silently does nothing - no `mimeapps.list` gets written at all, so
-  neither file manager actually claims `inode/directory` and whichever
-  one opens a folder comes down to desktop-file discovery order instead
-  of this repo's own config. Caught by building the real activation
-  package and grepping the output for `thunar.desktop` rather than
-  trusting that `nix flake check` would catch it - it doesn't, since the
-  option evaluates and builds fine either way. This is the one module
-  on this host where `Thunar.enable`/`Nautilus.enable` actually matter:
-  Thunar is on, Nautilus is off, on purpose - one file manager, not two
-  competing for the same mimetype.
+- **Folder and code-file associations aren't set here any more.** They
+  live in [DefaultApps.nix](desktop-default-apps.md), driven by
+  `vayume.defaultApps.fileManager`/`editor` - so turning Thunar off
+  hands folders to Nautilus (if enabled) instead of leaving a dead
+  `thunar.desktop` default behind. Only one file manager is on by
+  default, on purpose.
 - **The right-click menu's permanent "Delete" is one xfconf property.**
   By default it only shows up in the context menu while Shift is held;
   `misc-show-delete-action = true` in `thunar.xml` pins it there
@@ -105,16 +98,6 @@ The default file manager on this host - and the one that quietly proves how much
   runs the same `vayume-launch-terminal` that `Mod+Return` uses (see
   [Hyprland.nix](desktop-hyprland.md)) with `--directory %f`, so it
   opens whichever terminal the keybind would, already in that folder.
-- **The `.ts`/`.tsx` defaults look wrong until you check what they
-  actually resolve to.** The mimetypes in `defaultApplications` are what
-  extensions on this machine's shared-mime-info database actually resolve
-  to right now, checked with `xdg-mime query filetype` rather than
-  guessed - notably `.ts` is `text/vnd.trolltech.linguist` and `.tsx` is
-  `application/x-tiled-tsx` here, both Qt/Tiled leftovers with nothing
-  TypeScript about the name. Doesn't affect double-click behaviour
-  either way - Thunar dispatches on the resolved mimetype, so `.ts`/
-  `.tsx` still open in VS Code - it's just easy to get confused re-reading
-  this list later and think it's misconfigured.
 
 ---
 

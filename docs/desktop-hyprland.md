@@ -27,11 +27,12 @@ shell string, so this file joins each list with spaces once, in the
 not a shared binding syntax - each compositor still declares its own
 binds its own way.
 
-**Each action is a list of candidates, resolved when the key is
+**Each action is a list of choices, resolved when the key is
 pressed.** `desktopActions.editor` is `code`, then `zeditor`, then
 `android-studio`; `vayumeLib.mkDesktopActions pkgs` turns every action
-into a small `vayume-launch-<action>` script that runs the first one on
-`PATH`. Before this, `Mod+C` spawned `code` whether or not
+into a small `vayume-launch-<action>` script that runs the choice picked
+in `vayume.defaultApps` (see [DefaultApps.nix](desktop-default-apps.md))
+if it's installed, otherwise the first one on `PATH`. Before this, `Mod+C` spawned `code` whether or not
 `vayume.apps.Vscode` was on - with only Zed enabled the key silently did
 nothing. Resolving at press time (not evaluation time) is what lets
 Niri use it too: Niri's config is a `perSystem` package that never sees
@@ -247,4 +248,4 @@ same blur strength, clean neutral colors, no cast.
 
 ---
 
-[← Niri.nix](desktop-niri.md) · [Index](CONFIGURATION.md) · [Fonts.nix / Portals.nix →](desktop-portals-fonts.md)
+[← Niri.nix](desktop-niri.md) · [Index](CONFIGURATION.md) · [DefaultApps.nix →](desktop-default-apps.md)

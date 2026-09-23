@@ -86,13 +86,13 @@
         }
       '';
 
-      themeAwk = pkgs.writeText "vayume-config-theme.awk" ''
+      blockAwk = pkgs.writeText "vayume-config-block.awk" ''
         BEGIN { state = 0; depth = 0; found = 0; n = 0 }
         { n++; buf[n] = $0 }
         END {
           for (i = 1; i <= n; i++) {
             line = buf[i]
-            if (state == 0 && line ~ /^[ \t]*vayume\.theme[ \t]*=[ \t]*\{/) {
+            if (state == 0 && line ~ ("^[ \t]*vayume\\." block "[ \t]*=[ \t]*\\{")) {
               state = 1
               match(line, /^[ \t]*/)
               indent = substr(line, 1, RLENGTH) "  "
@@ -122,7 +122,7 @@
           }
 
           if (!found) {
-            insertBeforeFinal = "  vayume.theme = {\n    " field " = " value ";\n  };"
+            insertBeforeFinal = "  vayume." block " = {\n    " field " = " value ";\n  };"
           }
 
           for (i = 1; i <= n; i++) {
@@ -345,6 +345,9 @@
                                            reads the new plaintext password from stdin,
                                            hashes it (mkpasswd -m sha-512), never touches argv
             packages search <query>       matching nixpkgs packages: [{path, pname, version, description}]
+            defaults get                  default app per role (terminal, fileManager, editor, browser) (JSON)
+            defaults set <role> <id|auto> [--if-unmodified-since <epoch>]
+                                           pick a role's default app, auto = first enabled one
             validate                      re-evaluate _config.nix, report pass/fail
           EOF
             exit 2
@@ -380,7 +383,7 @@
 
           validate_config_file() {
             nix eval --impure --json --expr \
-              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.font theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users)" \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps defaultApps theme.font theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users)" \
               >/dev/null
           }
 
@@ -646,7 +649,7 @@
             esac
 
             new_tmp; tmp=$tmp_file
-            awk -v field="$field" -v value="$value" -f ${themeAwk} "$config_file" > "$tmp"
+            awk -v block=theme -v field="$field" -v value="$value" -f ${blockAwk} "$config_file" > "$tmp"
 
             if apply_edit "$tmp"; then
               if [ "$field" = "cursorTheme" ]; then
@@ -986,6 +989,47 @@
             fi
           }
 
+          cmd_defaults_get() {
+            nix eval --impure --json --expr \
+              "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.defaultAppsResolved" \
+              | jq 'to_entries | map(.value + {role: .key}) | map(del(.mimeTypes, .desktop, .effectiveEnabled))'
+          }
+
+          cmd_defaults_set() {
+            local role id since resolved value tmp
+            role=''${1:?role required}
+            id=''${2:?app id (or auto) required}
+            since=""
+            if [ "''${3:-}" = "--if-unmodified-since" ]; then
+              since=''${4:?epoch required after --if-unmodified-since}
+            fi
+            check_since "$since"
+
+            resolved=$(cmd_defaults_get)
+            if ! jq -e --arg r "$role" 'any(.role == $r)' <<<"$resolved" >/dev/null; then
+              echo "vayume-config: unknown role '$role' ($(jq -r 'map(.role) | join(", ")' <<<"$resolved"))" >&2
+              exit 2
+            fi
+            if [ "$id" = auto ]; then
+              value=null
+            else
+              if ! jq -e --arg r "$role" --arg i "$id" '.[] | select(.role == $r) | any(.choices[]; .id == $i and .enabled)' <<<"$resolved" >/dev/null; then
+                echo "vayume-config: '$id' isn't an enabled choice for $role - enabled: $(jq -r --arg r "$role" '.[] | select(.role == $r) | [.choices[] | select(.enabled) | .id] + ["auto"] | join(", ")' <<<"$resolved")" >&2
+                exit 2
+              fi
+              value="\"$id\""
+            fi
+
+            new_tmp; tmp=$tmp_file
+            awk -v block=defaultApps -v field="$role" -v value="$value" -f ${blockAwk} "$config_file" > "$tmp"
+
+            if apply_edit "$tmp"; then
+              jq -n --arg role "$role" --arg id "$id" '{ok: true, role: $role, app: $id}'
+            else
+              exit 1
+            fi
+          }
+
           cmd_validate() {
             if validate_config_file; then
               jq -n '{ok: true}'
@@ -1042,6 +1086,14 @@
                 *) usage;;
               esac
               ;;
+            defaults)
+              shift
+              case "''${1:-}" in
+                get) cmd_defaults_get;;
+                set) shift; cmd_defaults_set "$@";;
+                *) usage;;
+              esac
+              ;;
             validate) cmd_validate;;
             *) usage;;
           esac
@@ -1052,7 +1104,7 @@
       vayume.commands.config = {
         command = lib.getExe vayumeConfigScript;
         description = "Read or edit _config.nix (the backend of Vayume Settings)";
-        usage = "<repo|apps|theme|users|packages|development|validate> ...";
+        usage = "<repo|apps|theme|defaults|users|packages|development|validate> ...";
       };
     };
 }
