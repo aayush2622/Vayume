@@ -23,7 +23,7 @@ The login screen - the one piece of this desktop that has to look right before a
   This is one of the two documented gaps in
   [Fonts.nix / Portals.nix](desktop-portals-fonts.md): the theme's clock
   and labels were designed around its own bundled font, and pointing
-  them at JetBrainsMono Nerd Font makes the layout look wrong rather
+  them at the monospace `vayume.theme.font` makes the layout look wrong rather
   than consistent. Left alone on purpose.
 - **`themeMode=light` is the theme's own setting**, unrelated to the
   GTK/Qt light-dark story in [Theming.nix](desktop-theming.md).
