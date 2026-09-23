@@ -10,7 +10,7 @@
 # then offers to run `sudo nixos-rebuild switch --flake path:.#<host>`.
 #
 # Usage:  ./install.sh [--host NAME] [--system SYS] [--hardware-file PATH]
-#                      [--skip-hardware] [--no-rebuild] [--yes] [--dry-run]
+#                      [--skip-hardware] [--rebuild|--no-rebuild] [--yes] [--dry-run]
 #
 # Nothing is overwritten without asking; replaced files are kept as <file>.bak.
 
@@ -87,7 +87,7 @@ while (( $# )); do
     --rebuild)       DO_REBUILD=1; shift;;
     --yes|-y)        ASSUME_YES=1; shift;;
     --dry-run)       DRY_RUN=1; shift;;
-    -h|--help)       sed -n '2,20p' "$0"; exit 0;;
+    -h|--help)       awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"; exit 0;;
     *) die "unknown option: $1 (see --help)";;
   esac
 done
