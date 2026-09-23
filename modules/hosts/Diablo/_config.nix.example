@@ -72,7 +72,7 @@
     ZenBrowser.enable = true;
     Vesktop.enable = false;
     Spicetify.enable = false;
-    Fastpotify.enable = false;
+    Spotifast.enable = false;
     Bitwarden.enable = false;
     StateBackup.enable = false;
     Distrobox.enable = false;

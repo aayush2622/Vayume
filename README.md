@@ -69,7 +69,7 @@ If this saves you an evening, a star costs nothing. ⭐
 ### Everything Else
 - **Zen Browser** — chrome-scripted so its theme reloads live with matugen
 - **File managers:** Nautilus + Thunar
-- **Music:** Spicetify (Spotify) + Fastpotify (Spotifast)
+- **Music:** Spicetify (Spotify) + Spotifast
 - **Password management:** Bitwarden (desktop + rbw CLI)
 - **Discord:** Vesktop + Vencord
 - **ASUS hardware control:** DankAsusControlCenter widget
