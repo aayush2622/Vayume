@@ -22,10 +22,21 @@ them back on rebuilt clean again.
 | `Rust` | `rustc`, `cargo`, `rust-analyzer`, `rustfmt`, `clippy` | `rust-lang.rust-analyzer` | - | - (bundled) |
 | `Kotlin` | `kotlin`, `kotlin-language-server` | `mathiasfrohlich.kotlin`, `vscjava.vscode-gradle` + `fwcd.kotlin`/`esafirm.kotlin-formatter`/`naco-siren.gradle-language` (marketplace) | `kmm-plugin` (Kotlin Multiplatform - regular Kotlin support is already built in) | `kotlin`, `java`, `groovy` + JVM target/language-server settings |
 | `Flutter` | `flutter` (bundles its own Dart SDK - covers Dart too, see below) | `dart-code.dart-code` + `dart-code.flutter` | `Dart`, Flutter Enhancement Suite, `flutter-intellij`, `flutter-intl` | `dart`, `flutter-snippets` |
-| `Nix` | `nil`, `nixfmt` | `jnoortheen.nix-ide`, `arrterian.nix-env-selector` + `ziyyun.nix-forge`/`pinage404.nix-extension-pack` (marketplace) | NixIDEA | `nix` |
+| `Nix` | `nixd`, `nil`, `nixfmt` | `jnoortheen.nix-ide`, `arrterian.nix-env-selector` + `ziyyun.nix-forge`/`pinage404.nix-extension-pack` (marketplace) | NixIDEA | `nix` |
 | `Qt` | `kdePackages.qtdeclarative` (qmlls) | `theqtcompany.qt-core`/`qt-qml` (marketplace) | - | `qml` |
 | `Python` | `python3` | `ms-python.python`/`vscode-pylance`/`debugpy`/`vscode-python-envs` + `kevinrose.vsc-python-indent`/`njqdev.vscode-python-typehint` (marketplace) | `python-ce` | - (bundled) |
 
+- **VS Code uses `nixd` for Nix, pointed at this flake, with `nil` kept for
+  the other editors.** `nixd` can complete real option names because it
+  evaluates them: the settings give it this repo's pinned nixpkgs, the
+  `Diablo` NixOS options, and the home-manager options
+  (`options.home-manager.users.type.getSubOptions [ ]`). The flake is
+  loaded as `path:` rather than a plain path on purpose - a plain path
+  goes through git and drops the gitignored `_hardware.nix`, which makes the
+  evaluation fail. The expressions are relative to the workspace, so the
+  completions only work when VS Code is opened on this repo. Format-on-save
+  runs `nixfmt` through the `nix-forge` extension. Zed's Nix extension
+  still uses `nil`, which is why both servers are installed.
 - **`fwcd.kotlin` turned out to only exist on the marketplace, not in
   nixpkgs' own curated set** - only a similarly-named extension from a
   different publisher is actually pre-packaged there. Caught this
