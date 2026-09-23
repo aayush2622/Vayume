@@ -100,6 +100,11 @@ The default file manager on this host - and the one that quietly proves how much
   shell-quoted argument and parses the whole command line itself before
   spawning it - handing it a plain executable plus one argument avoids
   stacking this module's own quoting on top of Thunar's.
+- **"Open Terminal Here"** is the second custom action, shown for
+  folders (and the folder you're in, from the empty-space menu). It
+  runs the same `vayume-launch-terminal` that `Mod+Return` uses (see
+  [Hyprland.nix](desktop-hyprland.md)) with `--directory %f`, so it
+  opens whichever terminal the keybind would, already in that folder.
 - **The `.ts`/`.tsx` defaults look wrong until you check what they
   actually resolve to.** The mimetypes in `defaultApplications` are what
   extensions on this machine's shared-mime-info database actually resolve
