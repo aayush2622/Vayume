@@ -141,7 +141,7 @@ PluginComponent {
     // plaintext only exists in this call's local scope and inside the
     // Process's own stdin pipe, same reasoning as
     // vayume-config's own "argv is visible to every process via /proc,
-    // stdin isn't" - see VayumeConfig.nix.
+    // stdin isn't" - see modules/vayume/Config.nix.
     function setUserPassword(user, password) {
         usersPasswordProc.pendingWrite = password;
         usersPasswordProc.command = ["vayume-config", "users", "set-password", user];
@@ -368,7 +368,7 @@ PluginComponent {
     // stdinEnabled + write() rather than a command-line argument, so the
     // new password is never visible via /proc to any other process on
     // the machine the way an argv value would be - see
-    // cmd_users_set_password in VayumeConfig.nix for the same reasoning
+    // cmd_users_set_password in modules/vayume/Config.nix for the same reasoning
     // on the backend side. `pendingWrite` is cleared the instant it's
     // been handed to the process, so the plaintext doesn't linger in a
     // QML property.
