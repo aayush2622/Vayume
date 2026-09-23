@@ -2,7 +2,7 @@
 let
   h = self.vayumeLib.dmsPluginHelpers { inherit pkgs; };
 
-  origDmsShell = inputs.dms.packages.${pkgs.system}.dms-shell;
+  origDmsShell = inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.dms-shell;
 
   inputReplacement = lib.concatStringsSep "\n" [
     "[input]"

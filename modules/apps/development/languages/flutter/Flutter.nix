@@ -53,7 +53,7 @@
   flake.homeModules.apps.Flutter = { inputs, self, pkgs, lib, ... }:
     let
 
-      wpewebkit = inputs.nix-wpe-webkit-bin.packages.${pkgs.system}.default;
+      wpewebkit = inputs.nix-wpe-webkit-bin.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
    
       wpeDeps = with pkgs; [
