@@ -6,18 +6,30 @@ A second Spotify client, next to Spicetify - not a replacement for it, a complet
 
 ## `modules/apps/utils/fastpotify/Fastpotify.nix`
 
-- **Not built from source here - pulled in as its own flake.**
-  [Fastpotify](https://fastpotify.rocks/) already ships a working
-  `flake.nix` with everything the build needs (Rust, cmake, bindgen for
-  the MilkDrop visualizer's C++ bindings, the runtime `LD_LIBRARY_PATH`
-  wrapping for its dlopen'd Wayland/X11/GL libraries) - re-deriving that
-  by hand would just be a worse copy of what upstream already maintains.
-  Added as a flake input the same way `zen-browser` and `spicetify-nix`
-  are, and locked the same way (`nix flake lock`, not hand-edited).
-- **Pinned to a fork's branch, not upstream.** The input points at
-  `github:dim-ghub/fastpotify-theming/astra-redesign` specifically -
-  that's the exact ref this was asked for, and updating it later means
-  `nix flake lock --update-input fastpotify`, same as any other input.
+- **Installed from the upstream release binary, not built from source.**
+  [Spotifast](https://spotifast.rocks/) (formerly Fastpotify) publishes a
+  prebuilt `x86_64-unknown-linux-gnu` tarball with every release, so the
+  module fetches that (`fetchurl` with a pinned hash) and lets
+  `autoPatchelfHook` fix up the ELF, instead of compiling the Rust + C++
+  (MilkDrop) tree. The linked libraries (`alsa-lib`, `libpulseaudio`,
+  libstdc++) are build inputs; the GUI `dlopen`s dbus, Wayland, xkbcommon,
+  X11 and GL at run time, so those go in `runtimeDependencies`, with dbus
+  taken from its `lib` output (the default output has no `libdbus`). The
+  tarball's `spotifast-portable.txt` marker is deliberately not installed -
+  it would switch the app to portable storage. `fastpotify` stays as a
+  symlink for old scripts. Updating means bumping `version` and the hash.
+  It used to be a flake input; that input and its `rust-overlay` are gone.
+- **The 0.9.1 rename moves your profile, and it must be allowed to.** On its
+  first normal launch Spotifast renames `~/.config/fastpotify`,
+  `~/.local/share/fastpotify` and `~/.cache/fastpotify` to `spotifast` and
+  moves saved sign-ins to a new credential-store entry. It never merges
+  into or overwrites a destination that already exists, so **nothing may
+  create `~/.config/spotifast` before that first launch** - which is why the
+  matugen theme output and the settings seed still point at the old
+  `fastpotify` folder until the app has migrated once. After that first
+  launch, switch both to `spotifast`. MPRIS is now
+  `org.mpris.MediaPlayer2.spotifast`, so `playerctl --player=fastpotify`
+  bindings need updating.
 - **It's genuinely not Spicetify.** Spicetify patches the real, official
   Spotify Electron app to reskin and extend it - you get actual Spotify
   with a theme on top. Fastpotify is a from-scratch native client

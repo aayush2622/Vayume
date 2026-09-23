@@ -6,10 +6,59 @@
     spotifastSettingsSeed = pkgs.writeText "spotifast-settings.json" ''
       { "custom_theme": "dankmatugen.json" }
     '';
+
+    spotifast = pkgs.stdenv.mkDerivation rec {
+      pname = "spotifast";
+      version = "0.9.1";
+
+      src = pkgs.fetchurl {
+        url = "https://github.com/crmne/spotifast/releases/download/v${version}/spotifast-v${version}-x86_64-unknown-linux-gnu.tar.gz";
+        hash = "sha256-tv7ixet5Netb5UQ/D0bGXDs3XiCQXeK2ozMssfODViE=";
+      };
+
+      sourceRoot = "spotifast-v${version}-x86_64-unknown-linux-gnu";
+
+      nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+
+      buildInputs = [
+        pkgs.stdenv.cc.cc.lib
+        pkgs.alsa-lib
+        pkgs.libpulseaudio
+      ];
+
+      runtimeDependencies = with pkgs; [
+        (lib.getLib dbus)
+        libxkbcommon
+        wayland
+        libGL
+        libx11
+        libxcursor
+        libxi
+        libxrandr
+      ];
+
+      dontConfigure = true;
+      dontBuild = true;
+
+      installPhase = ''
+        runHook preInstall
+        install -Dm755 spotifast $out/bin/spotifast
+        ln -s spotifast $out/bin/fastpotify
+        install -Dm644 packaging/applications/spotifast.desktop $out/share/applications/spotifast.desktop
+        install -Dm644 packaging/icons/spotifast.svg $out/share/icons/hicolor/scalable/apps/spotifast.svg
+        runHook postInstall
+      '';
+
+      meta = {
+        description = "Spotify, native and fast";
+        homepage = "https://github.com/crmne/spotifast";
+        license = lib.licenses.mit;
+        mainProgram = "spotifast";
+        platforms = [ "x86_64-linux" ];
+      };
+    };
   in {
-    home.packages = [
-      inputs.spotifast.packages.${pkgs.stdenv.hostPlatform.system}.spotifast
-    ];
+    home.packages = [ spotifast ];
 
     xdg.mimeApps = {
       enable = true;

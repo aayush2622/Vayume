@@ -366,34 +366,12 @@
         "nix-wpe-webkit-bin": "nix-wpe-webkit-bin",
         "nixpkgs": "nixpkgs",
         "spicetify-nix": "spicetify-nix",
-        "spotifast": "spotifast",
         "wrapper-modules": "wrapper-modules",
         "zen-browser": "zen-browser",
         "zsh-256color": "zsh-256color",
         "zsh-autosuggestions": "zsh-autosuggestions",
         "zsh-syntax-highlighting": "zsh-syntax-highlighting",
         "zsh-you-should-use": "zsh-you-should-use"
-      }
-    },
-    "rust-overlay": {
-      "inputs": {
-        "nixpkgs": [
-          "spotifast",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1787834454,
-        "narHash": "sha256-jXSvqn04IOecJCvSvl8+g3PsbDVNP6qKs6dKUs/b16k=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "dc2fd1acc537f3583744e1373597a5731ff7a6e3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
       }
     },
     "spicetify-nix": {
@@ -414,28 +392,6 @@
       "original": {
         "owner": "Gerg-L",
         "repo": "spicetify-nix",
-        "type": "github"
-      }
-    },
-    "spotifast": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "rust-overlay": "rust-overlay"
-      },
-      "locked": {
-        "lastModified": 1789495311,
-        "narHash": "sha256-BLOJ7tPsO1ILjqKagkzB0iSLQ3GGqFEcaMJIyjElN7I=",
-        "ref": "refs/heads/main",
-        "rev": "96509d18e7d2309f5c6bb336f36fa6872d55ea16",
-        "revCount": 554,
-        "type": "git",
-        "url": "https://github.com/crmne/spotifast.git"
-      },
-      "original": {
-        "owner": "crmne",
-        "repo": "spotifast",
         "type": "github"
       }
     },
