@@ -148,6 +148,9 @@ dropdown pretending a single-editor choice exists.
 mtime is a free way to answer "has the config changed since the last
 rebuild" without an extra `nix eval`, and it still gives the right
 answer after a DMS restart (nothing about it is session-local state).
+It has to be the symlink's *own* mtime (`stat`, not `stat -L`): the
+store path it points at always has mtime `1` (Nix normalizes it), so
+following the link made `rebuildPending` permanently `true`.
 
 ### Theme fields: why only three of the eight are editable
 
@@ -404,6 +407,19 @@ there is exactly one rolling backup, not an accumulating pile. A
 having loaded the file at some point) refuse to write over a file that
 changed since it was last read, rather than silently clobbering a
 manual edit made while a toggle was in flight.
+
+The temp file comes from `mktemp` next to `_config.nix` (so concurrent
+edits never share one path), takes the original's permissions before
+the rename (so a `chmod 600` on a file holding password hashes
+survives every edit), and is removed by an `EXIT` trap if anything
+fails before the rename.
+
+Every awk editor only recognizes a block opener at the start of a line
+(`^[ \t]*vayume.theme = {`) and skips `#` comment lines when counting
+braces. Without that, the example file's commented-out
+`# vayume.theme = { ... };` hint was taken for the real block, the
+new field landed outside any attrset, and every `theme set` on a fresh
+config failed validation and was reverted.
 
 ### What "live" actually means here
 

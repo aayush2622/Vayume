@@ -20,12 +20,17 @@
         {
           line = $0
 
-          if (state == 0 && line ~ /vayume\.apps[ \t]*=[ \t]*\{/) {
+          if (state == 0 && line ~ /^[ \t]*vayume\.apps[ \t]*=[ \t]*\{/) {
             state = 1
             match(line, /^[ \t]*/)
             indent = substr(line, 1, RLENGTH) "  "
             depth += gsub(/\{/, "{", line)
             depth -= gsub(/\}/, "}", line)
+            if (mode == "set") print line
+            next
+          }
+
+          if (state == 1 && line ~ /^[ \t]*#/) {
             if (mode == "set") print line
             next
           }
@@ -87,7 +92,7 @@
         END {
           for (i = 1; i <= n; i++) {
             line = buf[i]
-            if (state == 0 && line ~ /vayume\.theme[ \t]*=[ \t]*\{/) {
+            if (state == 0 && line ~ /^[ \t]*vayume\.theme[ \t]*=[ \t]*\{/) {
               state = 1
               match(line, /^[ \t]*/)
               indent = substr(line, 1, RLENGTH) "  "
@@ -96,6 +101,7 @@
               buf[i] = line
               continue
             }
+            if (state == 1 && line ~ /^[ \t]*#/) continue
             if (state == 1) {
               depth += gsub(/\{/, "{", line)
               depth -= gsub(/\}/, "}", line)
@@ -142,10 +148,15 @@
           line = $0
 
           if (phase == 0) {
-            if (line ~ /vayume\.users[ \t]*=[ \t]*\{/) {
+            if (line ~ /^[ \t]*vayume\.users[ \t]*=[ \t]*\{/) {
               phase = 1
               depthUsers += braceDelta(line)
             }
+            print line
+            next
+          }
+
+          if ((phase == 1 || phase == 2) && line ~ /^[ \t]*#/) {
             print line
             next
           }
@@ -218,7 +229,7 @@
         END {
           for (i = 1; i <= n; i++) {
             line = buf[i]
-            if (phase == 0 && line ~ /vayume\.users[ \t]*=[ \t]*\{/) {
+            if (phase == 0 && line ~ /^[ \t]*vayume\.users[ \t]*=[ \t]*\{/) {
               phase = 1
               match(line, /^[ \t]*/)
               indent = substr(line, 1, RLENGTH) "  "
@@ -226,6 +237,7 @@
               buf[i] = line
               continue
             }
+            if (phase == 1 && line ~ /^[ \t]*#/) continue
             if (phase == 1) {
               depth += braceDelta(line)
               if (depth <= 0) {
@@ -256,13 +268,20 @@
           line = $0
 
           if (phase == 0) {
-            if (line ~ /vayume\.users[ \t]*=[ \t]*\{/) {
+            if (line ~ /^[ \t]*vayume\.users[ \t]*=[ \t]*\{/) {
               phase = 1
               depthUsers += braceDelta(line)
             }
             print line
             next
           }
+
+          if (phase == 1 && line ~ /^[ \t]*#/) {
+            print line
+            next
+          }
+
+          if (phase == 2 && line ~ /^[ \t]*#/) next
 
           if (phase == 1) {
             if (depthUsers == 1 && !foundUserOpen && line ~ userRe) {
@@ -350,9 +369,17 @@
             exit 1
           }
 
+          tmp_file=""
+          trap 'rm -f "$tmp_file"' EXIT
+
+          new_tmp() {
+            tmp_file=$(mktemp "$config_file.XXXXXX")
+            chmod --reference="$config_file" "$tmp_file"
+          }
+
           validate_config_file() {
             nix eval --impure --json --expr \
-              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users)" \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps theme.font theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users)" \
               >/dev/null
           }
 
@@ -377,8 +404,15 @@
 
           validate_username() {
             case "$1" in
-              [a-z_][a-z0-9_-]*) ;;
-              *) echo "vayume-config: invalid username '$1'" >&2; exit 2 ;;
+              [a-z_]*[!a-z0-9_-]* | [!a-z_]* | "")
+                echo "vayume-config: invalid username '$1'" >&2; exit 2 ;;
+            esac
+          }
+
+          validate_app_name() {
+            case "$1" in
+              [A-Za-z]*[!A-Za-z0-9]* | [!A-Za-z]* | "")
+                echo "vayume-config: invalid app name '$1'" >&2; exit 2 ;;
             esac
           }
 
@@ -409,7 +443,7 @@
             fi
 
             cfgMtime=$(stat -c %Y "$config_file")
-            genMtime=$(stat -L -c %Y /run/current-system 2>/dev/null || echo 0)
+            genMtime=$(stat -c %Y /run/current-system 2>/dev/null || echo 0)
             [ "$cfgMtime" -gt "$genMtime" ] && rebuildPending=true || rebuildPending=false
 
             jq -n --arg path "$flake_dir" --arg branch "$branch" --argjson dirty "$dirty" \
@@ -431,15 +465,13 @@
                   map({(.[0]): (.[1] == "true")}) | add // {}
                 ')
 
-            categories="{}"
-            for cat in development gaming utils; do
-              dir="$flake_dir/modules/apps/$cat"
-              [ -d "$dir" ] || continue
-              while IFS= read -r name; do
-                [ -n "$name" ] || continue
-                categories=$(jq --arg n "$name" --arg c "$cat" '. + {($n): $c}' <<<"$categories")
-              done < <(find "$dir" -name "*.nix" -printf "%f\n" | sed -E 's/\.nix$//')
-            done
+            categories=$(
+              for cat in development gaming utils; do
+                dir="$flake_dir/modules/apps/$cat"
+                [ -d "$dir" ] || continue
+                find "$dir" -name "*.nix" -printf "%f $cat\n" | sed -E 's/\.nix / /'
+              done | jq -R -s 'split("\n") | map(select(length > 0) | split(" ") | {(.[0]): .[1]}) | add // {}'
+            )
 
             jq -n --argjson available "$available" --argjson configured "$configured" \
               --argjson categories "$categories" --argjson descriptions "$descriptions" '
@@ -503,10 +535,11 @@
             if [ "''${3:-}" = "--if-unmodified-since" ]; then
               since=''${4:?epoch required after --if-unmodified-since}
             fi
+            validate_app_name "$name"
             case "$value" in true|false) ;; *) echo "vayume-config: value must be true or false" >&2; exit 2;; esac
             check_since "$since"
 
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             if ! awk -v mode=set -v target="$name" -v value="$value" -f ${appsAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
@@ -611,7 +644,7 @@
                 ;;
             esac
 
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             awk -v field="$field" -v value="$value" -f ${themeAwk} "$config_file" > "$tmp"
 
             if apply_edit "$tmp"; then
@@ -665,7 +698,7 @@
             check_since "$since"
 
             nixValue="\"$(nix_escape "$value")\""
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=fullName -f ${usersAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
@@ -705,7 +738,7 @@
             done < <(jq -r 'to_entries[] | "\(.key)\t\(.value)"' <<<"$merged")
             nixValue+="}"
 
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=secrets -f ${usersAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
@@ -753,7 +786,7 @@
             fi
             nixValue="[ $(jq -r 'map("\"" + . + "\"") | join(" ")' <<<"$newList") ]"
 
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=extraGroups -f ${usersAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
@@ -814,7 +847,7 @@
             done < <(jq -r 'to_entries[] | "\(.key)\t\(.value)"' <<<"$merged")
             nixValue+="}"
 
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=packages -f ${usersAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
@@ -863,7 +896,7 @@
             nixValue="\"$(nix_escape "$hash")\""
             unset hash
 
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -v fieldName=hashedPassword -f ${usersAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
@@ -896,7 +929,7 @@
 
             printf -v nixValue '{\n      fullName = "%s";\n    }' "$(nix_escape "''${fullName:-$user}")"
 
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             if ! USERS_AWK_VALUE="$nixValue" awk -v user="$user" -f ${usersAddAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
@@ -919,7 +952,7 @@
             validate_username "$user"
             check_since "$since"
 
-            tmp="$config_file.vayume-config.tmp"
+            new_tmp; tmp=$tmp_file
             if ! awk -v user="$user" -f ${usersRemoveAwk} "$config_file" > "$tmp"; then
               rm -f "$tmp"
               exit 1
