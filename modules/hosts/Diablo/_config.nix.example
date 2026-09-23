@@ -81,9 +81,12 @@
   };
 
   # Optional - only set the fields you want to change from the defaults
-  # (JetBrainsMono Nerd Font, Bibata-Modern-Ice, Adwaita). See
+  # (JetBrains Mono NL, Bibata-Modern-Ice, Adwaita). See
   # modules/vayume/Theme.nix / docs/core-theme.md.
+  # A font/cursor/icon name must come from its matching *Package, so
+  # change both together (that needs `{ pkgs, ... }:` above the opening
+  # brace of this file).
   # vayume.theme = {
-  #   font = "Fira Code";
+  #   fontSize = 12;
   # };
 }
