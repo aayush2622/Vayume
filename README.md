@@ -238,3 +238,4 @@ Full pinned list: `flake.nix` inputs.
 - **`dankAsusControlCenter`** builds fine but hasn't met real ASUS hardware in testing — see [docs/desktop-dms.md](docs/desktop-dms.md) if `asusctl`/`supergfxctl` won't cooperate.
 - This config assumes a single-user laptop workflow. Multi-user setups work but haven't been exercised heavily.
 - Waydroid's first boot takes a while (image download + signature spoofing patch).
+- **Spotifast is pinned to one release, not "latest".** Nix needs a fixed hash for the prebuilt binary, so [`Spotifast.nix`](modules/apps/utils/spotifast/Spotifast.nix) names a single version (currently `0.9.1`) and its hash. It never updates by itself: a new release means bumping both by hand — see [docs/apps-utils-spotifast.md](docs/apps-utils-spotifast.md).
