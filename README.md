@@ -100,7 +100,7 @@ sudo nixos-rebuild switch --flake path:.#Diablo
 
 > **Why `path:.#Diablo`?** A bare flake ref resolves through git's *tracked files* view, making the gitignored `_hardware.nix` and `_config.nix` appear missing. `path:` reads the real directory as-is.
 
-Any user without a `hashedPassword` gets `changeme` as an initial password — run `passwd` after first login.
+Any user without a `hashedPassword` gets `changeme` as a password. Users are immutable (`users.mutableUsers = false`), so `passwd` changes don't survive the next rebuild — set a real hash in `_config.nix`, or use **Vayume Settings → Users → Password** and rebuild.
 
 ### Make It Your Own Host
 

@@ -31,7 +31,9 @@
             never committed - see docs/core-users.md), not a tracked Nix file,
             so the repo has zero personal data in it and stays safe to
             publish. Leave unset to fall back to initialPassword
-            "changeme" (run `passwd` after first login).
+            "changeme". users.mutableUsers is false, so a `passwd` change
+            is reverted on the next rebuild - set a real hash here (or
+            from Vayume Settings) instead.
           '';
         };
 
@@ -63,7 +65,7 @@
         avatar = lib.mkOption {
           type = lib.types.nullOr lib.types.path;
           default = null;
-          description = "Optional path to a .face avatar image (Noctalia profile card + qylock).";
+          description = "Optional path to a .face avatar image (DMS profile card, via accounts-daemon).";
         };
 
         shell = lib.mkOption {
@@ -140,6 +142,21 @@
     };
 
     config = lib.mkIf (cfg != { }) {
+      assertions = lib.mapAttrsToList (name: u: {
+        assertion = u.hashedPassword == null || !(lib.hasPrefix "REPLACE" u.hashedPassword);
+        message = ''
+          vayume.users.${name}.hashedPassword is still the "${u.hashedPassword}" placeholder
+          from _config.nix.example - that would lock ${name} out. Either paste a real hash
+          (mkpasswd -m sha-512) or delete the line to log in with "changeme".
+        '';
+      }) cfg;
+
+      warnings = lib.optional (!lib.any (u: builtins.elem "wheel" u.extraGroups) (builtins.attrValues cfg)) ''
+        No user in vayume.users has "wheel" in extraGroups - nobody on this machine can use
+        sudo (or vayume-rebuild), and users.mutableUsers = false means that can't be fixed
+        without another rebuild. Add "wheel" to at least one user's extraGroups.
+      '';
+
       users.mutableUsers = false;
 
       users.users = lib.mapAttrs (name: u: {

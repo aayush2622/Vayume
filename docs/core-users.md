@@ -80,8 +80,15 @@ to "where do I configure Vayume for myself":
 Field meanings:
 
 - `hashedPassword`: generate with `mkpasswd -m sha-512`. Leave it unset
-  (`null`) in `_config.nix` and you get `changeme` as a fallback initial
-  password instead.
+  (`null`) in `_config.nix` and you get `changeme` as a fallback
+  password instead. Because `users.mutableUsers = false`, that fallback
+  is re-applied on every rebuild - `passwd` can't change it for good,
+  only a real hash here (or Vayume Settings' password field) can. A
+  value starting with `REPLACE` (the old example's placeholder) is a
+  hard evaluation error, since NixOS itself only *warns* about an
+  invalid hash and then locks the account.
+- **No user in `wheel` is a warning.** With immutable users and no root
+  password, that machine has no way to sudo - including to fix it.
 - `extraGroups`: `"wheel"` for sudo, `"adbusers"` for Android debugging.
 - `packages`: `attrsOf bool`, keyed by a plain nixpkgs attribute path
   string (`"blender"`, `"nodePackages.pnpm"`) - what Vayume
