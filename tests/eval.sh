@@ -38,6 +38,20 @@ while IFS= read -r -d '' f; do
 done < <(find "$work" -name '*.md' -print0)
 [ "$broken" = 0 ]
 
+step "app registries agree (homeModules.apps / appDescriptions / devLanguages / pluginPins)"
+nix_ eval --impure --json --expr "
+  let
+    f = builtins.getFlake \"path:$work\";
+    notApp = reg: builtins.filter (n: !(f.homeModules.apps ? \${n})) (builtins.attrNames reg);
+    problems = {
+      noDescription = builtins.filter (n: !(f.appDescriptions ? \${n})) (builtins.attrNames f.homeModules.apps);
+      descriptionWithoutApp = notApp f.appDescriptions;
+      languageWithoutApp = notApp f.devLanguages;
+      pinsWithoutApp = notApp f.pluginPins;
+    };
+  in if builtins.all (l: l == [ ]) (builtins.attrValues problems) then \"ok\" else throw (builtins.toJSON problems)"
+echo
+
 hosts=$(nix_ eval --json "path:$work#nixosConfigurations" --apply builtins.attrNames | tr -d '[]"' | tr ',' ' ')
 for host in $hosts; do
   step "host $host (example config)"
