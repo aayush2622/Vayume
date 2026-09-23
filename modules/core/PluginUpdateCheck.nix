@@ -233,8 +233,8 @@
           )
           if pending_hash:
               lines.append(
-                  "  (resolving hashes... run `vayume-check-plugin-updates` "
-                  "directly if they don't appear)"
+                  "  (hashes are resolved in the background and show up "
+                  "next time; or run `vayume-check-plugin-updates`)"
               )
           return "\n".join(lines)
 
@@ -269,7 +269,38 @@
           )
 
 
+      USAGE = (
+          "usage: vayume-check-plugin-updates"
+          " [--report-only | --resolve-hashes]"
+      )
+
+
+      def load_cache():
+          try:
+              return json.loads(CACHE_PATH.read_text())
+          except Exception:
+              return None
+
+
+      def resolve_cached_hashes():
+          cache = load_cache()
+          if not cache:
+              return
+          outdated = cache.get("outdated") or []
+          if resolve_hashes(outdated):
+              write_cache(cache.get("checked_at", time.time()), outdated)
+
+
       def main():
+          args = sys.argv[1:]
+          if args not in ([], ["--report-only"], ["--resolve-hashes"]):
+              print(USAGE, file=sys.stderr)
+              sys.exit(2)
+          if args == ["--resolve-hashes"]:
+              resolve_cached_hashes()
+              return
+          hashes_inline = not args
+
           if not PINS_PATH.exists():
               return
           try:
@@ -280,31 +311,26 @@
               return
 
           now = time.time()
-          if not FORCE and CACHE_PATH.exists():
-              try:
-                  cache = json.loads(CACHE_PATH.read_text())
-              except Exception:
-                  cache = None
-              if cache and now - cache.get("checked_at", 0) < TTL:
-                  outdated = cache.get("outdated") or []
-                  if outdated:
+          cache = None if FORCE else load_cache()
+          if cache and now - cache.get("checked_at", 0) < TTL:
+              outdated = cache.get("outdated") or []
+              if outdated:
+                  print(format_report(outdated), file=sys.stderr)
+                  if hashes_inline and resolve_hashes(outdated):
+                      write_cache(cache.get("checked_at", now), outdated)
                       print(format_report(outdated), file=sys.stderr)
-                      # An earlier run may have been killed before it could
-                      # resolve every hash; try again and persist progress.
-                      if resolve_hashes(outdated):
-                          write_cache(cache.get("checked_at", now), outdated)
-                          print(format_report(outdated), file=sys.stderr)
-                  return
+              return
 
           outdated, attempted, skipped = run_checks(pins)
+          trustworthy = attempted == 0 or skipped < attempted
 
-          if attempted == 0 or skipped < attempted:
+          if trustworthy:
               write_cache(now, outdated)
 
           if outdated:
               print(format_report(outdated), file=sys.stderr)
-              if resolve_hashes(outdated):
-                  if attempted == 0 or skipped < attempted:
+              if hashes_inline and resolve_hashes(outdated):
+                  if trustworthy:
                       write_cache(now, outdated)
                   print(format_report(outdated), file=sys.stderr)
 
