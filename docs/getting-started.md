@@ -93,6 +93,22 @@ same file through a small CLI, `vayume-config` (see
 [core-vayume-config.md](core-vayume-config.md)). Either way changes the
 same file; there's only one place this is actually stored.
 
+### Testing a change before it touches the machine
+
+- `./tests/eval.sh` - evaluates the repo exactly as a fresh clone would
+  see it: tracked files only, with every host's `_hardware.nix` /
+  `_config.nix` taken from the `.example` templates, so your real,
+  gitignored files never mask a break. It evaluates every host, Diablo
+  with every app forced on and every app forced off, runs `install.sh`
+  end to end into a throwaway host and evaluates that too, shellchecks
+  the scripts, and evaluates the VM apps. Evaluation only - nothing is
+  built, about a minute warm. `.github/workflows/eval.yml` runs the
+  same script on every push.
+- `nix run path:.#vm` (or `vm-<host>`) - a real build and boot, in a
+  window. See [Vm.nix](core-vm.md).
+- `sudo nixos-rebuild switch --rollback` - if a switch went through but
+  the result is wrong. Every older generation is also a GRUB entry.
+
 Full field-by-field shape for users, apps, and secrets:
 [vayume/Users.nix](core-users.md). What each `Host.nix` option does:
 [hosts/\<name\>/Host.nix](core-host.md).
