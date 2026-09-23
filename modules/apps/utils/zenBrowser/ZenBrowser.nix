@@ -230,9 +230,16 @@ in
         render ${./theme/userContent.css.template} > "$out/userContent.css"
       '';
 
+      zenUnwrapped =
+        inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped.overrideAttrs
+          (old: {
+            passthru = (old.passthru or { }) // {
+              withFFmpeg = true;
+            };
+          });
+
       zen-browser =
-        pkgs.wrapFirefox
-          inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped
+        pkgs.wrapFirefox zenUnwrapped
           {
             extraPrefs = mkPrefLines "lockPref" zenPrefs;
             extraPrefsFiles = [ fxaConfigJs ];
