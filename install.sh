@@ -93,7 +93,7 @@ while (( $# )); do
 done
 
 # ---------------------------------------------------------------- preconditions
-REPO=$(cd "$(dirname "$0")" && pwd)
+REPO=$(cd "$(dirname "$0")" && pwd -P)
 cd "$REPO"
 [[ -f flake.nix && -d modules/hosts/Diablo ]] || die "run this from the Vayume repo root"
 [[ $EUID -ne 0 ]] || die "run as your normal user, not root - the script sudo's the few steps that need it"
