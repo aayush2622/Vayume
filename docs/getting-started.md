@@ -28,7 +28,7 @@ carry someone's real disk UUIDs or password hash.
 ### Trying it on the existing host
 
 ```bash
-git clone https://github.com/aayush2622/Vayume-Rice.git vayume
+git clone https://github.com/aayush2622/Vayume.git vayume
 cd vayume
 cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
 cp modules/hosts/Diablo/_config.nix.example modules/hosts/Diablo/_config.nix
@@ -36,8 +36,13 @@ $EDITOR modules/hosts/Diablo/_config.nix   # at least pick a username
 sudo nixos-rebuild switch --flake path:.#Diablo
 ```
 
-Any user without a `hashedPassword` gets `changeme` as an initial
-password - run `passwd` after the first login.
+Any user without a `hashedPassword` gets `changeme` as a password.
+Users are immutable here (`users.mutableUsers = false`), so a `passwd`
+change is silently reverted on the next rebuild - put a real hash in
+`_config.nix` (`mkpasswd -m sha-512`), or set it from **Vayume Settings
+→ Users** (which writes the hash into `_config.nix` for you) and
+rebuild. The build refuses a leftover `"REPLACE_ME"` hash rather than
+locking you out with it.
 
 ### Making it your own host
 

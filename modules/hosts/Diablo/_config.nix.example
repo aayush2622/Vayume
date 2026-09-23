@@ -11,15 +11,17 @@
 {
   vayume.users = {
     # One entry per person, keyed by their Linux username. Every field
-    # except the name itself is optional - see modules/core/Users.nix's
+    # except the name itself is optional - see modules/vayume/Users.nix's
     # `userSubmodule` for the full list and defaults.
     ash = {
       fullName = "Ash";
       extraGroups = [ "networkmanager" "wheel" "video" "input" ];
-      # mkpasswd -m sha-512 - leave unset for a "changeme" initial password.
-      hashedPassword = "REPLACE_ME";
+      # mkpasswd -m sha-512, then uncomment. Left unset, the password is
+      # "changeme" - and `passwd` can't change it permanently (users are
+      # immutable here), so set a real hash before long.
+      # hashedPassword = "$6$...";
 
-      # Optional: a .face avatar image (Noctalia profile card + qylock).
+      # Optional: a .face avatar image (DMS profile card, via accounts-daemon).
       # Drop the image file anywhere under this Diablo folder (gitignored
       # by default, see .gitignore) and point at it here, e.g.:
       # avatar = ./someimage.png;
@@ -80,7 +82,7 @@
 
   # Optional - only set the fields you want to change from the defaults
   # (JetBrainsMono Nerd Font, Bibata-Modern-Ice, Adwaita). See
-  # modules/core/Theme.nix / docs/core-theme.md.
+  # modules/vayume/Theme.nix / docs/core-theme.md.
   # vayume.theme = {
   #   font = "Fira Code";
   # };
