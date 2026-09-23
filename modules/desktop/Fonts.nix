@@ -1,6 +1,21 @@
 {
   flake.nixosModules.Fonts = { pkgs, config, ... }:
-  let theme = config.vayume.theme; in
+  let
+    theme = config.vayume.theme;
+
+    codeFontAliases = [ "ui-monospace" "SFMono-Regular" "Consolas" ];
+
+    codeFontAliasRules = builtins.concatStringsSep "\n" (map (name: ''
+        <match target="pattern">
+          <test name="family" qual="any">
+            <string>${name}</string>
+          </test>
+          <edit name="family" mode="prepend" binding="strong">
+            <string>${theme.font}</string>
+          </edit>
+        </match>
+    '') codeFontAliases);
+  in
   {
     fonts.packages = with pkgs; [
       inter
@@ -38,6 +53,8 @@
             <string>${theme.font}</string>
           </edit>
         </match>
+
+      ${codeFontAliasRules}
       </fontconfig>
     '';
   };
