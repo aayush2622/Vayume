@@ -87,6 +87,13 @@ Field meanings:
   value starting with `REPLACE` (the old example's placeholder) is a
   hard evaluation error, since NixOS itself only *warns* about an
   invalid hash and then locks the account.
+- **Home Manager backups overwrite the previous backup.** When a
+  managed file collides with an unmanaged one, Home Manager moves the
+  old one to `<file>.backup` - but if that `.backup` already exists
+  (the second time an app rewrites the same file), activation *fails*,
+  and with it the whole user generation, at boot as well as on
+  rebuild. `overwriteBackup = true` keeps the newest displaced copy
+  instead.
 - **No user in `wheel` is a warning.** With immutable users and no root
   password, that machine has no way to sudo - including to fix it.
 - `extraGroups`: `"wheel"` for sudo, `"adbusers"` for Android debugging.
