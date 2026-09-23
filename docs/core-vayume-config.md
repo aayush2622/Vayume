@@ -68,6 +68,12 @@ just `$HOME` directly.
 If no candidate has a `flake.nix`, both fail loudly and stop - never a
 silent fallback to some unrelated directory.
 
+A match is resolved to its real path (`cd -P`) before use. A `path:`
+flake whose root is a symlink - `~/vayume` pointing at
+`~/code/vayume`, say - makes Nix copy the link itself and fail with
+"path ... is a symlink", so every `nix eval` and the rebuild itself
+broke for anyone who had linked the repo into place.
+
 ### Why a hand-rolled `awk` parser instead of a real Nix parser
 
 `vayume.apps = { ... };` in `_config.nix` is a format this repo itself
