@@ -5,6 +5,7 @@
 # _config.nix sitting next to it. To make your own:
 #
 #   cp modules/hosts/Diablo/_config.nix.example modules/hosts/Diablo/_config.nix
+#   chmod 600 modules/hosts/Diablo/_config.nix
 #   mkpasswd -m sha-512          # paste the result in as hashedPassword
 #
 # then edit the attrsets below.

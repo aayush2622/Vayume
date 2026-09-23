@@ -94,6 +94,7 @@ git clone https://github.com/aayush2622/Vayume.git vayume
 cd vayume
 cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
 cp modules/hosts/Diablo/_config.nix.example modules/hosts/Diablo/_config.nix
+chmod 600 modules/hosts/Diablo/_config.nix  # it will hold password hashes
 $EDITOR modules/hosts/Diablo/_config.nix   # at minimum, pick a username
 sudo nixos-rebuild switch --flake path:.#Diablo
 ```
