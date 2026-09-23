@@ -2,8 +2,10 @@
   flake.appDescriptions.Thunar = "Thunar file manager with archive, media-tags, and volume-management plugins.";
 
   flake.homeModules.apps.Thunar =
-    { pkgs, lib, config, ... }:
+    { pkgs, lib, config, self, ... }:
     let
+      terminal = builtins.head (self.vayumeLib.mkDesktopActions pkgs).terminal;
+
       thunarWithPlugins = pkgs.thunar.override {
         thunarPlugins = with pkgs; [
           thunar-archive-plugin
@@ -60,6 +62,16 @@
             <other-files/>
             <text-files/>
             <video-files/>
+          </action>
+          <action>
+            <icon>utilities-terminal</icon>
+            <name>Open Terminal Here</name>
+            <unique-id>1700000000000002-1</unique-id>
+            <command>${terminal} --directory %f</command>
+            <description>Open a terminal in this folder</description>
+            <patterns>*</patterns>
+            <startup-notify/>
+            <directories/>
           </action>
         </actions>
       '';
