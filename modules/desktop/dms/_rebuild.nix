@@ -16,7 +16,7 @@ let
       map (d: ''"$homeDir/${d}"'') repoDiscovery.relativeDirs
       ++ map (d: ''"${d}"'') repoDiscovery.absoluteDirs
     )}; do
-      [ -f "$d/flake.nix" ] && flakeDir="$d" && break
+      [ -f "$d/flake.nix" ] && flakeDir=$(cd -P "$d" && pwd) && break
     done
     if [ -z "$flakeDir" ]; then
       echo "vayume flake not found (checked $homeDir/{${lib.concatStringsSep "," repoDiscovery.relativeDirs}}, ${lib.concatStringsSep ", " repoDiscovery.absoluteDirs}) - add its location to repoDiscovery in modules/lib/VayumeLib.nix" >&2

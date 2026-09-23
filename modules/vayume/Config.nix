@@ -353,7 +353,7 @@
           discover_repo() {
             for d in ${lib.concatStringsSep " " candidateDirs}; do
               if [ -f "$d/flake.nix" ]; then
-                echo "$d"
+                (cd -P "$d" && pwd)
                 return 0
               fi
             done
