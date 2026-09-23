@@ -27,6 +27,17 @@ step "shell scripts"
 bash -n "$work/install.sh"
 nix_ run --inputs-from "$work" nixpkgs#shellcheck -- "$work/install.sh" "$work/tests/eval.sh"
 
+step "markdown links"
+broken=0
+while IFS= read -r -d '' f; do
+  while IFS= read -r link; do
+    target=${link%%#*}
+    case $target in "" | http* | mailto:*) continue ;; esac
+    [ -e "$(dirname "$f")/$target" ] || { echo "$f: broken link $link" >&2; broken=1; }
+  done < <(grep -o '](\([^)[:space:]]*\))' "$f" | sed 's/^](//; s/)$//')
+done < <(find "$work" -name '*.md' -print0)
+[ "$broken" = 0 ]
+
 hosts=$(nix_ eval --json "path:$work#nixosConfigurations" --apply builtins.attrNames | tr -d '[]"' | tr ',' ' ')
 for host in $hosts; do
   step "host $host (example config)"
