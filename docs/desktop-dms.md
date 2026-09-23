@@ -521,11 +521,19 @@ stable-wrapper rationale.
   (`253`, matching the configured `fontSize`/`lineCount` at the time -
   needs updating by hand if either changes, since it's no longer
   auto-computed once pinned).
-- **A scoped sudo rule** lets every user run `nixos-rebuild`/
-  `nix-collect-garbage` without a password - and *only* those two
-  commands, with any arguments. Not blanket passwordless sudo, just
-  enough for the Nix monitor's two buttons to actually work without a
-  TTY to type a password into.
+- **A scoped sudo rule** lets `wheel` users run two fixed root scripts
+  without a password - `vayume-rebuild` (a `nixos-rebuild switch` of
+  the discovered repo) and `vayume-gc` - keyed on their exact store
+  paths, so no arguments can be smuggled in. Not blanket passwordless
+  sudo, just enough for the panel's buttons to work without a TTY to
+  type a password into.
+- **`vayume-gc` keeps the newest 5 system generations.** It used to be
+  `nix-collect-garbage -d`, which deletes *every* old generation - one
+  click and there was nothing left to roll back to. Now it deletes
+  generations older than the newest 5, collects garbage, then runs
+  `switch-to-configuration boot` so the GRUB menu stops listing the
+  generations that were just deleted (booting one of those would fail).
+  The weekly `nix.gc` in `Host.nix` (older than 30 days) is unchanged.
 - **The app-launcher icon theme** is a separate icon pack (MaterialOS)
   fetched straight from its own repo (not in nixpkgs), scoped to DMS's
   launcher only via an env var DMS specifically documents for this - it

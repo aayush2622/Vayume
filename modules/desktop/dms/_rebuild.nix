@@ -1,6 +1,7 @@
 { self, pkgs, lib, config, ... }:
 let
   repoDiscovery = self.vayumeLib.repoDiscovery;
+  keepGenerations = 5;
 
   vayumeHomeByUser = lib.concatMapStringsSep "\n" (
     name: ''"${name}") echo "${config.users.users.${name}.home}" ;;''
@@ -27,7 +28,12 @@ let
     exec nixos-rebuild switch --flake "path:$flakeDir#${config.networking.hostName}"
   '';
 
-  vayumeGcScript = pkgs.writeShellScript "vayume-gc" "exec nix-collect-garbage -d";
+  vayumeGcScript = pkgs.writeShellScript "vayume-gc" ''
+    set -eu
+    nix-env -p /nix/var/nix/profiles/system --delete-generations +${toString keepGenerations}
+    nix-collect-garbage
+    exec /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+  '';
 
   vayumeRebuildCommand = pkgs.writeShellApplication {
     name = "vayume-rebuild";
@@ -40,7 +46,7 @@ let
   vayumeGcCommand = pkgs.writeShellApplication {
     name = "vayume-gc";
     text = ''
-      [ "$#" -eq 0 ] || { echo "usage: vayume-gc (takes no arguments - runs nix-collect-garbage -d)" >&2; exit 2; }
+      [ "$#" -eq 0 ] || { echo "usage: vayume-gc (takes no arguments - keeps the newest ${toString keepGenerations} system generations, deletes older ones, collects garbage)" >&2; exit 2; }
       exec sudo -n ${vayumeGcScript}
     '';
   };
