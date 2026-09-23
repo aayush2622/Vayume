@@ -66,6 +66,20 @@ Then open Waydroid's Settings, find microG's Self-Check, grant "Spoof
 package signature" to the app that wants it, and stop/start the session
 once so the new `services.jar` is actually picked up.
 
+**If Android hangs on the boot animation after this, run
+`vayume-waydroid-unpatch`.** `waydroid-script`'s `nodataperm` step drops a
+prebuilt `services.jar` from a fixed 2023 archive into
+`/var/lib/waydroid/overlay/system/framework/`. When the system image is newer
+than that jar, `system_server` dies on start with
+`NoSuchMethodError: setStartTimes(JJ)V in android.os.Process`, `zygote` exits,
+and nothing ever gets past the boot animation (`waydroid status` shows
+`IP address: UNKNOWN`). Seen in `waydroid logcat` as a `services.jar` checksum
+mismatch followed by that error. `vayume-waydroid-unpatch` stops the
+container, deletes the overlaid `services.jar*` and `nodataperm` files, and
+starts it again, so it needs no password (it has its own sudo rule like the
+sigspoof helper). Signature spoofing is gone afterwards until a matching jar
+exists.
+
 ---
 
 [← Network.nix](system-network.md) · [Index](CONFIGURATION.md) · [AndroidStudio.nix →](apps-dev-androidstudio.md)
