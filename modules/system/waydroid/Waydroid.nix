@@ -3,6 +3,23 @@
     { pkgs, lib, config, ... }:
     let
       waydroidPackage = pkgs.waydroid-nftables;
+      android11Zips = {
+        system = pkgs.fetchurl {
+          url = "https://downloads.sourceforge.net/project/waydroid/images/system/lineage/waydroid_x86_64/lineage-18.1-20250628-VANILLA-waydroid_x86_64-system.zip";
+          hash = "sha256-ZiViqnGNoaWEUgNns522jwAdtTU+vL8M+TAFCI0oQJc=";
+        };
+        vendor = pkgs.fetchurl {
+          url = "https://downloads.sourceforge.net/project/waydroid/images/vendor/waydroid_x86_64/lineage-18.1-20250628-MAINLINE-waydroid_x86_64-vendor.zip";
+          hash = "sha256-VBSic6yXKqGmW8yll9XTKTPYRt0WKM/ckkE7faUzIYk=";
+        };
+      };
+
+      android11Images = pkgs.runCommand "waydroid-android11-images" { nativeBuildInputs = [ pkgs.unzip ]; } ''
+        mkdir -p $out
+        unzip -q ${android11Zips.system} system.img -d $out
+        unzip -q ${android11Zips.vendor} vendor.img -d $out
+      '';
+
       waydroidScriptPython = pkgs.python3.withPackages (ps: with ps; [ tqdm requests inquirerpy ]);
 
       waydroid-script = pkgs.stdenvNoCC.mkDerivation {
@@ -48,47 +65,44 @@
         };
       };
 
-      sigspoofPriv = pkgs.writeShellScript "vayume-waydroid-sigspoof-priv" ''
+      android11Priv = pkgs.writeShellScript "vayume-waydroid-android11-priv" ''
         set -eu
 
-        if [ ! -e /var/lib/waydroid/images/system.img ]; then
-          echo "no system image yet - run 'sudo waydroid init' first" >&2
+        user="''${SUDO_USER:-}"
+        if [ -z "$user" ]; then
+          echo "run this through sudo from your own user" >&2
           exit 1
         fi
-
-        ver="''${WAYDROID_ANDROID_VERSION:-13}"
+        home=$(${pkgs.getent}/bin/getent passwd "$user" | ${pkgs.coreutils}/bin/cut -d: -f6)
 
         echo ":: stopping Waydroid"
         ${lib.getExe waydroidPackage} session stop 2>/dev/null || true
         ${pkgs.systemd}/bin/systemctl stop waydroid-container.service 2>/dev/null || true
 
-        echo ":: applying signature-spoofing + data-permission patch (android $ver)"
-        ${lib.getExe waydroid-script} -a "$ver" hack nodataperm
+        echo ":: clearing Android data and overlays (Android 13 data cannot be reused)"
+        ${pkgs.coreutils}/bin/rm -rf \
+          /var/lib/waydroid/overlay \
+          /var/lib/waydroid/overlay_rw \
+          "$home/.local/share/waydroid"
 
-        case "''${1:-}" in
-          microg | --microg)
-            echo ":: installing microG"
-            ${lib.getExe waydroid-script} -a "$ver" install microg
-            ;;
-        esac
+        echo ":: initialising Waydroid from the pinned Android 11 images"
+        ${lib.getExe waydroidPackage} init -f
 
-        echo ":: restarting Waydroid container"
+        echo ":: installing microG"
+        ${lib.getExe waydroid-script} -a 11 install microg
+
         ${pkgs.systemd}/bin/systemctl start waydroid-container.service || true
 
         cat <<'EOF'
 
-        Done. Next:
-          - start Waydroid, open its Settings / microG Self-Check
-          - grant "Spoof package signature" to the app that needs it
-          - stop + start the session once so the new services.jar is picked up
-
-        The patch ships a services.jar built for an older image. If Android
-        hangs on the boot animation afterwards, run: vayume-waydroid-unpatch
+        Done. Start Waydroid and give the first boot a few minutes.
+        Then open microG Settings, run the Self-Check, and grant
+        "Spoof package signature" to the apps that need it.
         EOF
       '';
 
-      sigspoof = pkgs.writeShellScriptBin "vayume-waydroid-sigspoof" ''
-        exec sudo -n --preserve-env=WAYDROID_ANDROID_VERSION ${sigspoofPriv} "$@"
+      android11 = pkgs.writeShellScriptBin "vayume-waydroid-android11" ''
+        exec sudo -n ${android11Priv}
       '';
 
       unpatchPriv = pkgs.writeShellScript "vayume-waydroid-unpatch-priv" ''
@@ -121,10 +135,12 @@
         package = pkgs.waydroid-nftables;
       };
 
+      environment.etc."waydroid-extra/images".source = android11Images;
+
       environment.systemPackages = [
         waydroid-script
-        sigspoof
         unpatch
+        android11
         pkgs.waydroid-helper
       ];
 
@@ -133,14 +149,11 @@
           users = [ name ];
           commands = [
             {
-              command = "${sigspoofPriv}";
-              options = [
-                "SETENV"
-                "NOPASSWD"
-              ];
+              command = "${unpatchPriv}";
+              options = [ "NOPASSWD" ];
             }
             {
-              command = "${unpatchPriv}";
+              command = "${android11Priv}";
               options = [ "NOPASSWD" ];
             }
           ];

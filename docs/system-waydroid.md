@@ -6,79 +6,64 @@ Android apps in a container - and an honest admission that not everything on a N
 
 ## `modules/system/waydroid/Waydroid.nix`
 
-- **The Android image is deliberately not Nix-managed.** Waydroid keeps
-  a mutable system image under `/var/lib/waydroid/images`, downloaded by
-  `waydroid init` and patched in place afterwards. Nothing in the Nix
-  store owns it, and pretending otherwise would mean re-downloading and
-  re-patching a multi-gigabyte image on every rebuild. So this module
-  ships the *tooling* and stops there: `virtualisation.waydroid.enable`,
-  the patch script, and a wrapper. The patch itself is a one-time manual
-  step you run after `waydroid init`, which is the honest shape for
-  something that lives outside the store.
+- **The Android image is pinned to LineageOS 18.1 (Android 11).**
+  `android11Images` unpacks the `20250628` system and vendor images (the
+  last 18.1 builds Waydroid published) into the store and exposes them at
+  `/etc/waydroid-extra/images`, which `waydroid init` prefers over its own
+  download. That path also makes Waydroid skip the online update check, so
+  the image never moves. The reason for going back to Android 11: **stock
+  Waydroid 18.1 builds already implement signature spoofing** (`services.jar`
+  handles `android.permission.FAKE_PACKAGE_SIGNATURE` and `framework-res`
+  declares it), while the Android 13 (lineage-20) images do not - checked by
+  reading both images' `services.jar`. microG needs that permission, so on
+  Android 13 it can't work without patching the framework.
 - **`waydroid-script` is pinned by commit, not tracked.**
   casualsnek/waydroid_script has no releases worth following, so it's
   fetched at a fixed rev with a hash and wrapped with its own Python
   (`tqdm`, `requests`, `inquirerpy`) plus the binaries it shells out to
   (`waydroid`, `e2fsprogs`, `util-linux`, `tar`, `lzip`, `gzip`). It
   also `cd`s into its own source directory on launch, because it reads
-  files by relative path.
-- **Three jobs it actually does:** `hack nodataperm` swaps in a
-  `services.jar` carrying the signature-spoofing patch
-  (`android.permission.FAKE_PACKAGE_SIGNATURE`) plus blanket
-  Android/data permissions; `install microg` adds the microG
-  GmsCore/GsfProxy/FakeStore stack; `certified` prints the device ID you
-  need to register with the Play Store. Signature spoofing is the one
-  that matters - microG is useless without it, since it has to convince
-  apps it's Google Play Services.
-- **Split into a privileged half and a user half**, same pattern as
-  `vayume-tor` over in [Network.nix](system-network.md) and the
-  rebuild/GC scripts in [Dms.nix](desktop-dms.md). `vayume-waydroid-sigspoof`
-  is what you run; it `sudo -n`s to a root-only script through a NOPASSWD
-  rule. The rule keys on that script's exact store path, which means it
-  has to be invoked *by path* - and it means the rule stops applying by
-  itself the moment the script's contents change, rather than silently
-  granting root to whatever replaced it. The privileged half does no
-  `id`/caller check of its own - it only ever runs as root, since the
-  sudo rule is the only way to reach it.
-- **`SETENV` is in the sudo rule on purpose.** The image channel is
-  picked with `WAYDROID_ANDROID_VERSION` - it defaults to 13, matching
-  the current LineageOS (lineage-20) images, and `=11` selects the older
-  one. `sudo` strips environment variables by default, so without
-  `SETENV` that variable would silently never reach the privileged half
-  and you'd always get the default.
+  files by relative path. Only its `install microg` job is used.
+- **Its `hack nodataperm` job is deliberately not used, despite what this
+  page used to claim.** It is not signature spoofing: it swaps in a prebuilt
+  `services.jar` (last touched June 2023) that only relaxes `/Android/data`
+  permissions. That jar calls `Process.setStartTimes(long, long)` and
+  `Notification.setAllowlistToken(IBinder)`; Android 13 has neither, so
+  `system_server` crashes on start (`NoSuchMethodError`) and Android hangs on
+  the boot animation, and the 2025 Android 11 image lacks
+  `setAllowlistToken`, so it would fail there too, on the first notification.
+- **`vayume-waydroid-android11` is the whole setup**, split into a
+  privileged half and a user half, same pattern as `vayume-tor` over in
+  [Network.nix](system-network.md) and the rebuild/GC scripts in
+  [Dms.nix](desktop-dms.md). It `sudo -n`s to a root-only script through a
+  NOPASSWD rule keyed on that script's exact store path, so the rule stops
+  applying by itself if the script's contents change. The privileged half
+  stops Waydroid, deletes the overlays and the invoking user's
+  `~/.local/share/waydroid` (Android data from another Android version
+  can't be reused), runs `waydroid init -f` against the pinned images and
+  installs microG.
 - **The sudo rules are generated from `vayume.users`**, not hardcoded -
   every user this host declares gets the rule, so adding a second user
   in `_config.nix` doesn't mean remembering to edit this file too. It's
   guarded with a `config ? vayume` check so the module still evaluates
   if it's ever imported somewhere `vayume.users` doesn't exist.
+- **`vayume-waydroid-unpatch` is the recovery path** if a bad `services.jar`
+  is ever left in the overlay: it stops the container, deletes the overlaid
+  `services.jar*` and `nodataperm` files and starts it again, with its own
+  NOPASSWD rule.
 - **`waydroid-helper` is included as a GTK front-end** for the same
   extension jobs, for when a menu is nicer than remembering a
   subcommand.
 
-Usage, once, after `sudo waydroid init`:
+Usage, once (this wipes Android app data):
 
 ```bash
-vayume-waydroid-sigspoof            # signature spoofing only
-vayume-waydroid-sigspoof microg     # + microG
+vayume-waydroid-android11
 ```
 
-Then open Waydroid's Settings, find microG's Self-Check, grant "Spoof
-package signature" to the app that wants it, and stop/start the session
-once so the new `services.jar` is actually picked up.
-
-**If Android hangs on the boot animation after this, run
-`vayume-waydroid-unpatch`.** `waydroid-script`'s `nodataperm` step drops a
-prebuilt `services.jar` from a fixed 2023 archive into
-`/var/lib/waydroid/overlay/system/framework/`. When the system image is newer
-than that jar, `system_server` dies on start with
-`NoSuchMethodError: setStartTimes(JJ)V in android.os.Process`, `zygote` exits,
-and nothing ever gets past the boot animation (`waydroid status` shows
-`IP address: UNKNOWN`). Seen in `waydroid logcat` as a `services.jar` checksum
-mismatch followed by that error. `vayume-waydroid-unpatch` stops the
-container, deletes the overlaid `services.jar*` and `nodataperm` files, and
-starts it again, so it needs no password (it has its own sudo rule like the
-sigspoof helper). Signature spoofing is gone afterwards until a matching jar
-exists.
+Then start Waydroid, give the first boot a few minutes, open microG Settings,
+run the Self-Check and grant "Spoof package signature" to the apps that want
+it.
 
 ---
 
