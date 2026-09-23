@@ -59,7 +59,7 @@ dive.
 **Apps - utils**
 26. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
 27. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
-28. [apps/utils/fastpotify/Fastpotify.nix](apps-utils-fastpotify.md)
+28. [apps/utils/spotifast/Spotifast.nix](apps-utils-spotifast.md)
 29. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
 30. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
 31. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)

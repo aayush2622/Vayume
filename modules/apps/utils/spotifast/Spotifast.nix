@@ -1,10 +1,24 @@
 { inputs, ... }: {
-  flake.appDescriptions.Fastpotify = "Spotifast, a lightweight Spotify client themed to match the desktop.";
+  flake.appDescriptions.Spotifast = "Spotifast, a lightweight Spotify client themed to match the desktop.";
 
-  flake.homeModules.apps.Fastpotify = { self, pkgs, lib, config, ... }:
+  flake.homeModules.apps.Spotifast = { self, pkgs, lib, config, ... }:
   let
     spotifastSettingsSeed = pkgs.writeText "spotifast-settings.json" ''
       { "custom_theme": "dankmatugen.json" }
+    '';
+
+    themeHook = pkgs.writeShellScript "spotifast-theme-hook" ''
+      src="$HOME/.config/matugen/spotifast-dankmatugen.json"
+      [ -f "$src" ] || exit 0
+
+      for dir in "$HOME/.config/spotifast" "$HOME/.config/fastpotify"; do
+        if [ -d "$dir" ]; then
+          ${pkgs.coreutils}/bin/mkdir -p "$dir/themes"
+          ${pkgs.coreutils}/bin/install -m 644 "$src" "$dir/themes/dankmatugen.json"
+        fi
+      done
+
+      ${spotifast}/bin/spotifast reload-themes >/dev/null 2>&1 || true
     '';
 
     spotifast = pkgs.stdenv.mkDerivation rec {
@@ -70,12 +84,17 @@
     vayume.matugenTemplates.spotifast = ''
       [templates.spotifast]
       input_path = '${config.home.homeDirectory}/.config/matugen/templates/spotifast.json'
-      output_path = '${config.home.homeDirectory}/.config/fastpotify/themes/dankmatugen.json'
+      output_path = '${config.home.homeDirectory}/.config/matugen/spotifast-dankmatugen.json'
+      post_hook = '${themeHook}'
     '';
 
     home.activation.seedSpotifastSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      dest="$HOME/.config/fastpotify/settings.json"
-      if [ ! -e "$dest" ]; then
+      dest="$HOME/.config/spotifast/settings.json"
+      unmigrated=0
+      if [ -d "$HOME/.config/fastpotify" ] && [ ! -d "$HOME/.config/spotifast" ]; then
+        unmigrated=1
+      fi
+      if [ "$unmigrated" = 0 ] && [ ! -e "$dest" ]; then
         run mkdir -p "$(dirname "$dest")"
         run cp "${spotifastSettingsSeed}" "$dest"
         run chmod u+w "$dest"

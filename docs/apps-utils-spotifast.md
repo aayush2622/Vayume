@@ -4,7 +4,7 @@
 
 A second Spotify client, next to Spicetify - not a replacement for it, a completely different tradeoff.
 
-## `modules/apps/utils/fastpotify/Fastpotify.nix`
+## `modules/apps/utils/spotifast/Spotifast.nix`
 
 - **Installed from the upstream release binary, not built from source.**
   [Spotifast](https://spotifast.rocks/) (formerly Fastpotify) publishes a
@@ -25,20 +25,19 @@ A second Spotify client, next to Spicetify - not a replacement for it, a complet
   moves saved sign-ins to a new credential-store entry. It never merges
   into or overwrites a destination that already exists, so **nothing may
   create `~/.config/spotifast` before that first launch** - which is why the
-  matugen theme output and the settings seed still point at the old
-  `fastpotify` folder until the app has migrated once. After that first
-  launch, switch both to `spotifast`. MPRIS is now
+  matugen hook and the settings seed both check for an existing profile
+  first instead of creating one. MPRIS is now
   `org.mpris.MediaPlayer2.spotifast`, so `playerctl --player=fastpotify`
   bindings need updating.
 - **It's genuinely not Spicetify.** Spicetify patches the real, official
   Spotify Electron app to reskin and extend it - you get actual Spotify
-  with a theme on top. Fastpotify is a from-scratch native client
+  with a theme on top. Spotifast (formerly Fastpotify) is a from-scratch native client
   (Rust + egui, playback through librespot) that never runs Electron at
   all, at a fraction of the memory. Trading Spotify's own UI/extension
   ecosystem for speed is the whole point, not a bug - so both are worth
   having on for different moods rather than picking one.
 - **`x-scheme-handler/spotify` is explicitly claimed, not left to
-  chance.** Fastpotify's own `.desktop` file declares
+  chance.** Spotifast's own `.desktop` file declares
   `MimeType=x-scheme-handler/spotify`, which only makes it a *candidate*
   handler - without an explicit default, opening a shared Spotify link
   (or the browser handing off an `open.spotify.com` address) has nothing
@@ -48,42 +47,27 @@ A second Spotify client, next to Spicetify - not a replacement for it, a complet
   same landmine applies: `xdg.mimeApps.enable` defaults to `false` in
   home-manager and has to be set explicitly, or the whole block is
   silently inert.
-- **Matugen drives it through a hook Fastpotify already had, not
-  through the `~/.config/fastpotify/schemes/` custom-scheme feature
-  its README advertises.** That feature (pick a named scheme in
-  Settings, reload it with `Ctrl+Shift+R`) is a different subsystem,
-  and it's a shakier thing to build on than it looks: the equivalent
-  upstream work for it
-  ([crmne/fastpotify#171](https://github.com/crmne/fastpotify/pull/171))
-  was closed by the maintainer without merging - "we are not ready to
-  commit to a theme file format and reload API yet." Instead, this
-  targets `~/.local/state/caelestia/scheme.json` - a *different*,
-  older mechanism already in this fork, unrelated to that PR. Caelestia
-  is a separate wallpaper-theming project this repo doesn't run;
-  Fastpotify just reads its file format as a ready-made theming
-  interface, and `ThemeChoice::Caelestia` happens to be Fastpotify's
-  own default, so nothing needs enabling on its side.
-- **Genuinely live, confirmed by reading the source, not assumed.**
-  `apply_theme()` re-checks that file's mtime on every UI frame, and
-  the app already schedules a repaint every 60-300ms for unrelated
-  reasons (toasts, search debounce, remote polling) - so the check
-  fires several times a second even at idle. No post_hook, no
-  live-reload script, no restart: the window repaints with the new
-  palette within a frame of matugen finishing, the same as it would if
-  Fastpotify shipped a file-watcher for this on purpose.
-- **This is fork-specific behaviour, not a stable public API.** It
-  works because this exact fork happens to carry it, not because
-  upstream has committed to keeping it - the maintainer's own comments
-  on #171 point toward a redesigned, currently-undecided theme format
-  for whatever ships officially. Worth knowing before leaning on this
-  further, and worth re-checking after any `--update-input fastpotify`.
+- **Matugen writes a palette, a `post_hook` installs and reloads it.**
+  Official Spotifast reads custom JSON palettes from a `themes` folder beside
+  `settings.json` and only re-reads them when told to
+  (`spotifast reload-themes`, or Ctrl+Shift+R) - the fork this module used to
+  target re-checked a file's mtime every frame, and that behaviour is gone.
+  So the template renders to `~/.config/matugen/spotifast-dankmatugen.json`
+  and its `post_hook` (`spotifast-theme-hook`) copies that into
+  `<profile>/themes/dankmatugen.json`, then runs `spotifast reload-themes`,
+  which only contacts an already-running instance and leaves a stopped app
+  stopped, without interrupting playback. The hook copies only into a profile
+  folder that already exists (`~/.config/spotifast`, or
+  `~/.config/fastpotify` before the 0.9.1 migration) and never creates one,
+  so it can't block the migration described above; on a fresh install with
+  no profile yet, it does nothing until the app has been run once.
 - **A custom theme still needs one manual selection, seeded settings or
   not.** Spotifast only actually picks up a theme once it's chosen under
   Settings > Appearance > Theme - there's no env var or CLI flag for it,
-  just the `custom_theme` field in `settings.json` (still under the old
-  `fastpotify` config dir; upstream kept that path on purpose when
-  renaming the project). `seedSpotifastSettings` writes that field ahead
-  of time, but only once, the same seed-once pattern as `thunar.xml` in
+  just the `custom_theme` field in `settings.json`.
+  `seedSpotifastSettings` writes that field ahead of time, but only once, and
+  only when there is no unmigrated `~/.config/fastpotify` profile waiting
+  (creating `~/.config/spotifast` first would block the migration), the same seed-once pattern as `thunar.xml` in
   [Thunar.nix](apps-utils-thunar.md) - the app owns this file completely
   once it exists (bitrate, sidebar order, sign-in state, ...), so either
   a symlink or an unconditional overwrite would fail every write or blow

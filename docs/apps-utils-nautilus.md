@@ -21,4 +21,4 @@ A second file manager - kept as a toggle, not deleted, even though [Thunar](apps
 
 ---
 
-[← Fastpotify.nix](apps-utils-fastpotify.md) · [Index](CONFIGURATION.md) · [Thunar.nix →](apps-utils-thunar.md)
+[← Spotifast.nix](apps-utils-spotifast.md) · [Index](CONFIGURATION.md) · [Thunar.nix →](apps-utils-thunar.md)
