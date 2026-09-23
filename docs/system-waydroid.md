@@ -43,8 +43,12 @@ Android apps in a container - and an honest admission that not everything on a N
   can't be reused), runs `waydroid init -f` against the pinned images and
   installs microG.
 - **The sudo rules are generated from `vayume.users`**, not hardcoded -
-  every user this host declares gets the rule, so adding a second user
-  in `_config.nix` doesn't mean remembering to edit this file too. It's
+  every `wheel` user this host declares gets the rule, so adding a
+  second admin in `_config.nix` doesn't mean remembering to edit this
+  file too. Non-`wheel` users are left out on purpose, same as
+  `vayume-rebuild`: both helpers wipe machine-wide state under
+  `/var/lib/waydroid` as root, which isn't something a user without
+  sudo should be able to do. It's
   guarded with a `config ? vayume` check so the module still evaluates
   if it's ever imported somewhere `vayume.users` doesn't exist.
 - **`vayume-waydroid-unpatch` is the recovery path** if a bad `services.jar`
