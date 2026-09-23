@@ -13,24 +13,28 @@
       cfg = config.vayume.ubuntuBox;
 
       hostApps = "${config.home.homeDirectory}/.local/share/applications";
-
       hostIcons = "${config.home.homeDirectory}/.local/share/icons";
 
       appImageDeps = [
         "fuse3"
         "libfuse2t64"
-        "libglib2.0-0t64"
+        "libopengl0"
+        "libgl1"
+        "libegl1"
+        "libglx0"
+        "libglu1-mesa"
+        "libgl1-mesa-dri"
+        "libgbm1"
         "libgtk-3-0t64"
-        "libnss3"
-        "libnspr4"
-        "libdbus-1-3"
-        "libatk1.0-0t64"
-        "libatk-bridge2.0-0t64"
-        "libcups2t64"
-        "libpango-1.0-0"
-        "libcairo2"
+        "libglib2.0-0t64"
+        "libglib2.0-bin"
         "libx11-6"
         "libx11-xcb1"
+        "libxcb1"
+        "libxcb-cursor0"
+        "libxcb-xkb1"
+        "libxkbcommon0"
+        "libxkbcommon-x11-0"
         "libxcomposite1"
         "libxdamage1"
         "libxext6"
@@ -39,27 +43,32 @@
         "libxi6"
         "libsm6"
         "libice6"
-        "libxcb1"
-        "libxcb-cursor0"
-        "libxcb-xkb1"
-        "libxkbcommon0"
-        "libxkbcommon-x11-0"
-        "libgbm1"
+        "libpango-1.0-0"
+        "libcairo2"
         "libexpat1"
-        "libudev1"
         "libasound2t64"
         "libpulse0"
-        "libatspi2.0-0t64"
+        "libnss3"
+        "libnspr4"
+        "libdbus-1-3"
+        "libudev1"
         "libcups2t64"
-        "libglib2.0-bin"
+        "libatk1.0-0t64"
+        "libatk-bridge2.0-0t64"
+        "libatspi2.0-0t64"
         "gsettings-desktop-schemas"
         "dconf-gsettings-backend"
-        "mutter-common"
-        "gnome-shell-common"
-        "gnome-settings-daemon-common"
+        "xdg-utils"
         "dbus"
         "dbus-x11"
-        "xdg-utils"
+      ];
+
+      proxySocket = "wayland-focus-proxy";
+
+      guiEnv = lib.concatStringsSep " " [
+        "WAYLAND_DISPLAY=${proxySocket}"
+        "ELECTRON_OZONE_PLATFORM_HINT=auto"
+        "MOZ_ENABLE_WAYLAND=1"
       ];
 
       clipboardDeps = [
@@ -114,16 +123,17 @@
             ]
           );
 
-          boxEnter = ''${pkgs.distrobox}/bin/distrobox enter "${boxName}" --'';
+          enterCmd = ''${pkgs.coreutils}/bin/env ${guiEnv} ${pkgs.distrobox}/bin/distrobox enter "${boxName}"'';
+          boxEnter = "${enterCmd} --";
 
-          ensureAppImageDeps = ''
+          x11Enter = ''${pkgs.coreutils}/bin/env -u WAYLAND_DISPLAY ELECTRON_OZONE_PLATFORM_HINT=x11 GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb ${pkgs.distrobox}/bin/distrobox enter "${boxName}" --'';
+
+          mkEnsureDeps = deps: ''
             ${boxEnter} sh -c '
               missing=""
-
-              for p in ${lib.concatStringsSep " " appImageDeps}; do
+              for p in ${lib.concatStringsSep " " deps}; do
                 dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"
               done
-
               if [ -n "$missing" ]; then
                 sudo apt-get update
                 sudo apt-get install -y $missing
@@ -131,20 +141,8 @@
             ' || true
           '';
 
-          ensureClipboardDeps = ''
-            ${boxEnter} sh -c '
-              missing=""
-
-              for p in ${lib.concatStringsSep " " clipboardDeps}; do
-                dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"
-              done
-
-              if [ -n "$missing" ]; then
-                sudo apt-get update
-                sudo apt-get install -y $missing
-              fi
-            ' || true
-          '';
+          ensureAppImageDeps = mkEnsureDeps appImageDeps;
+          ensureClipboardDeps = mkEnsureDeps clipboardDeps;
 
           ensureDbus = ''
             ${boxEnter} sudo sh -c '
@@ -189,22 +187,25 @@
               ${lib.escapeShellArg hostIcons}
 
             ${lib.optionalString cfg.isolateHome ''
-              if [ -d ${lib.escapeShellArg homeDir}/.local/share/applications ]; then
-                ${pkgs.rsync}/bin/rsync -rlpt --no-owner --no-group \
-                  ${lib.escapeShellArg homeDir}/.local/share/applications/ \
-                  ${lib.escapeShellArg hostApps}/ || true
-              fi
-
-              if [ -d ${lib.escapeShellArg homeDir}/.local/share/icons ]; then
-                ${pkgs.rsync}/bin/rsync -rlpt --no-owner --no-group \
-                  ${lib.escapeShellArg homeDir}/.local/share/icons/ \
-                  ${lib.escapeShellArg hostIcons}/ || true
-              fi
+              for kind in applications icons; do
+                src=${lib.escapeShellArg homeDir}/.local/share/$kind
+                dst=${lib.escapeShellArg "${config.home.homeDirectory}/.local/share"}/$kind
+                if [ -d "$src" ]; then
+                  ${pkgs.rsync}/bin/rsync -rlpt --no-owner --no-group "$src/" "$dst/" || true
+                fi
+              done
             ''}
 
+            for src in ${lib.escapeShellArg boxHome}/.local/share/applications/*.desktop; do
+              [ -f "$src" ] || continue
+              desktop=${lib.escapeShellArg hostApps}/''${src##*/}
+              [ -f "$desktop" ] || continue
+              ${pkgs.gnugrep}/bin/grep -q '^Exec=env WAYLAND_DISPLAY=${proxySocket} ' "$desktop" ||
+                ${pkgs.gnused}/bin/sed -i 's|^Exec=|Exec=env ${guiEnv} |' "$desktop"
+            done
+
             ${pkgs.desktop-file-utils}/bin/update-desktop-database \
-              ${lib.escapeShellArg hostApps} \
-              2>/dev/null || true
+              ${lib.escapeShellArg hostApps} 2>/dev/null || true
           '';
 
           box = pkgs.writeShellScriptBin "vayume-box${cmdSuffix}" ''
@@ -213,7 +214,7 @@
             ${ensureBox}
 
             if [ "$#" -eq 0 ]; then
-              exec ${pkgs.distrobox}/bin/distrobox enter "${boxName}"
+              exec ${enterCmd}
             fi
 
             exec ${boxEnter} "$@"
@@ -234,7 +235,6 @@
 
             case "$target" in
               "~/"*)
-                # only reachable when quoted; the host shell expands a bare ~ first
                 target=${lib.escapeShellArg boxHome}/''${target#\~/}
                 ;;
 
@@ -251,9 +251,18 @@
             case "$target" in
               *.AppImage|*.appimage)
                 ${ensureAppImageDeps}
+                name=''${target##*/}
+                ${boxEnter} sh -c "pkill -f '[''${name:0:1}]''${name:1}'; pkill -f '[.]mount_''${name:0:6}'; sleep 2; pkill -9 -f '[''${name:0:1}]''${name:1}'; pkill -9 -f '[.]mount_''${name:0:6}'; sleep 1" || true
                 ;;
             esac
 
+${lib.optionalString (cfg.x11Apps != [ ]) ''
+              case "''${target##*/}" in
+                ${lib.concatStringsSep "|" cfg.x11Apps})
+                  exec ${x11Enter} "$target" "$@"
+                  ;;
+              esac
+            ''}
             exec ${boxEnter} "$target" "$@"
           '';
 
@@ -459,6 +468,72 @@
 
       boxPackages = lib.concatMap mkBox boxSpecs;
 
+      wlFocusProxy = pkgs.stdenv.mkDerivation {
+        pname = "wl-focus-proxy";
+        version = "0.1.0";
+        src = ./wl-focus-proxy;
+
+        nativeBuildInputs = [
+          pkgs.pkg-config
+          pkgs.wayland-scanner
+        ];
+
+        buildInputs = [
+          pkgs.wayland
+          pkgs.wayland-protocols
+        ];
+
+        installPhase = ''
+          mkdir -p $out/bin
+          cp wl-focus-proxy $out/bin/
+        '';
+
+        meta.description = "Generic Wayland relay that spoofs perpetual keyboard/pointer focus";
+      };
+
+      wlFocusProxyWrapper = pkgs.writeShellScriptBin "wl-focus-proxy-wrapper" ''
+        set -u
+
+        runtime_dir="''${XDG_RUNTIME_DIR:-}"
+        if [ -z "$runtime_dir" ]; then
+          echo "wl-focus-proxy-wrapper: XDG_RUNTIME_DIR is not set" >&2
+          exit 1
+        fi
+
+        ${pkgs.coreutils}/bin/rm -f "$runtime_dir/${proxySocket}"
+
+        upstream=""
+        i=0
+        while [ "$i" -lt 100 ]; do
+          newest=""
+          for s in "$runtime_dir"/wayland-*; do
+            [ -S "$s" ] || continue
+            name=''${s##*/}
+            case "$name" in
+              ${proxySocket}|*.lock) continue ;;
+            esac
+            if [ -z "$newest" ] || [ "$s" -nt "$newest" ]; then
+              newest="$s"
+            fi
+          done
+          if [ -n "$newest" ]; then
+            upstream=''${newest##*/}
+            break
+          fi
+          i=$((i + 1))
+          ${pkgs.coreutils}/bin/sleep 0.2
+        done
+
+        if [ -z "$upstream" ]; then
+          echo "wl-focus-proxy-wrapper: no compositor socket found in $runtime_dir" >&2
+          exit 1
+        fi
+
+        echo "wl-focus-proxy-wrapper: relaying to $upstream" >&2
+        export WAYLAND_DISPLAY="$upstream"
+        exec ${wlFocusProxy}/bin/wl-focus-proxy --listen ${proxySocket}
+      '';
+
     in
     {
       options.vayume.ubuntuBox = {
@@ -597,6 +672,22 @@
           '';
         };
 
+        x11Apps = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ "Neo-Browser*" ];
+
+          example = [
+            "Neo-Browser*"
+          ];
+
+          description = ''
+            Command basenames (shell globs) that vayume-box-run starts
+            under XWayland instead of Wayland, for apps that only go
+            fullscreen or resize correctly on X11. They bypass the focus
+            proxy.
+          '';
+        };
+
         exportApps = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];
@@ -611,9 +702,29 @@
         };
       };
 
-      config.home.packages = [
-        pkgs.distrobox
-      ]
-      ++ boxPackages;
+      config = {
+        home.packages = [
+          pkgs.distrobox
+        ]
+        ++ boxPackages
+        ++ [ wlFocusProxy ];
+
+        systemd.user.services.wl-focus-proxy = {
+          Unit = {
+            Description = "Wayland relay that spoofs perpetual focus for Distrobox apps";
+            After = [ "graphical-session.target" ];
+            PartOf = [ "graphical-session.target" ];
+          };
+          Install.WantedBy = [
+            "graphical-session.target"
+            "default.target"
+          ];
+          Service = {
+            ExecStart = "${wlFocusProxyWrapper}/bin/wl-focus-proxy-wrapper";
+            Restart = "always";
+            RestartSec = 2;
+          };
+        };
+      };
     };
 }
