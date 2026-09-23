@@ -7,6 +7,15 @@ The unglamorous plumbing that makes screen sharing, file pickers, and one shared
 ## `modules/desktop/Fonts.nix` / `Portals.nix`
 
 - One font package for terminal/bar glyphs, one for DMS's icon font.
+- **`ui-monospace`, `SFMono-Regular` and `Consolas` are mapped straight to the
+  theme font in `localConf`.** Fontconfig sorts Noto Color Emoji first for any
+  family name that isn't installed, and WebKitGTK accepts that match for names
+  fontconfig treats as monospace aliases. CSS stacks that lead with those names
+  (CC Switch's JSON editor, most Tailwind `font-mono` stacks) then drew digits
+  and adjacent `.`/`-` from the emoji font, which looks like spaced, dimmed
+  numbers. Reproduced with WebKitGTK's MiniBrowser on a page listing each
+  family separately; only those three names were affected, and prepending the
+  theme font for them fixed all three. The blanket emoji append is unchanged.
 - Two portal backends registered: `xdg-desktop-portal-gnome` (needed for
   screencast/screenshot - niri itself doesn't implement those, and the
   plain GTK portal can't either) and `xdg-desktop-portal-gtk` (the
