@@ -250,7 +250,7 @@ enabling it alone isn't enough.
 **Rebuild/GC integration lives in its own file, `modules/desktop/dms/_rebuild.nix`**,
 `import`ed by `Dms.nix` the same way the plugin files are - the sudoers
 `NOPASSWD` rule, the two underlying scripts, and the stable
-`vayume-rebuild`/`vayume-gc` bare commands, all pulled out of `Dms.nix`
+`vayume rebuild`/`vayume gc` bare commands, all pulled out of `Dms.nix`
 proper since none of it is really DMS-specific (it's what any GUI, or a
 person's own terminal, needs to trigger a rebuild without a password
 prompt) - see [core-vayume-config.md](core-vayume-config.md) for the
@@ -522,12 +522,12 @@ stable-wrapper rationale.
   needs updating by hand if either changes, since it's no longer
   auto-computed once pinned).
 - **A scoped sudo rule** lets `wheel` users run two fixed root scripts
-  without a password - `vayume-rebuild` (a `nixos-rebuild switch` of
-  the discovered repo) and `vayume-gc` - keyed on their exact store
+  without a password - `vayume rebuild` (a `nixos-rebuild switch` of
+  the discovered repo) and `vayume gc` - keyed on their exact store
   paths, so no arguments can be smuggled in. Not blanket passwordless
   sudo, just enough for the panel's buttons to work without a TTY to
   type a password into.
-- **`vayume-gc` keeps the newest 5 system generations.** It used to be
+- **`vayume gc` keeps the newest 5 system generations.** It used to be
   `nix-collect-garbage -d`, which deletes *every* old generation - one
   click and there was nothing left to roll back to. Now it deletes
   generations older than the newest 5, collects garbage, then runs
@@ -599,7 +599,7 @@ stable-wrapper rationale.
 see [core-vayume-config.md](core-vayume-config.md) for the backend it
 drives and why DMS talks to the real `_config.nix` through a CLI instead
 of its own state. The control-center pill
-(`modules/desktop/dms/plugins/vayumeSettings/`) polls `vayume-config
+(`modules/desktop/dms/plugins/vayumeSettings/`) polls `vayume config
 repo` every 60s for a cheap dirty/clean indicator - cheap enough to run
 in the background for the life of the session, unlike the settings
 themselves.
@@ -609,7 +609,7 @@ a genuine separate window (`DankFloatingWindow`, the same base type
 DMS's own Settings modal uses), with a category sidebar down the left
 (Appearance, Development, Applications, Users, System) and a rebuild
 button/status footer along the bottom, closer to DMS's own Settings
-screen than to a control-center card. The pricier `vayume-config apps
+screen than to a control-center card. The pricier `vayume config apps
 list`/`theme get`/`development list`/`users list` calls (real Nix
 evaluations) only run once when that window opens, not continuously -
 the `ccDetailContent` popout that used to hold all of this is now just
@@ -621,7 +621,7 @@ affordance).
 The QML itself is split by responsibility under
 `modules/desktop/dms/plugins/vayumeSettings/`: the root
 `VayumeSettingsWidget.qml` owns the control-center pill and every
-`Process` that talks to `vayume-config` (the one place that reads/writes
+`Process` that talks to `vayume config` (the one place that reads/writes
 backend state), and `ui/` holds the presentational pieces -
 `SettingsWindow.qml` (sidebar + footer shell, including the live
 rebuild-log panel), one file per category page (`AppearancePage.qml`,
@@ -671,10 +671,10 @@ provide.
 
 **Users can be added and removed from this page, not just edited.**
 "Add User" writes just a username (and optional display name) via
-`vayume-config users add` - everything else falls back to
+`vayume config users add` - everything else falls back to
 [vayume/Users.nix](core-users.md)'s own defaults, same as
 `_config.nix.example`'s `random` entry. "Remove" is a two-step
-click-to-arm button (`vayume-config users remove`) rather than a single
+click-to-arm button (`vayume config users remove`) rather than a single
 click, with a line making clear the account is only actually deleted on
 the *next rebuild*, not immediately - removing a user is materially
 more destructive than any other edit on this page (a NixOS account
@@ -689,7 +689,7 @@ optimistically show ahead of the real one.
 **Extra packages, per user, found by searching rather than typed in.**
 "Add a Package" (its own top-level card, not nested per-user - one
 search box, a `DankDropdown` to pick which user gets the result) runs
-`vayume-config packages search` against this flake's own pinned
+`vayume config packages search` against this flake's own pinned
 nixpkgs. Searching is explicit (Enter or the Search button), never
 per-keystroke - `nix search` takes several seconds even warm, up to a
 minute stone-cold, so searching on every keystroke would queue up
@@ -726,8 +726,8 @@ always reads "Rebuild required" once something has changed, never
 something that implies the write alone was the whole story.
 
 **`cursorTheme` is the one exception with an actual live-apply step,
-added directly in `vayume-config theme set` (not the DMS plugin) so a
-terminal `vayume-config theme set cursorTheme ...` gets it too.**
+added directly in `vayume config theme set` (not the DMS plugin) so a
+terminal `vayume config theme set cursorTheme ...` gets it too.**
 Reported as "changing it doesn't update live" - correct as filed, this
 plugin genuinely had no live-apply tier for anything before. Verified
 directly against a running Hyprland session: `hyprctl setcursor <theme>
@@ -746,13 +746,13 @@ themselves - a session with no compositor IPC up yet, or one that isn't
 Hyprland, just skips this step exactly as if it were never called).
 
 Every app/language/editor/tool toggle also shows the one-line
-`description` `vayume-config` reads from `flake.appDescriptions` (see
+`description` `vayume config` reads from `flake.appDescriptions` (see
 [core-vayume-config.md](core-vayume-config.md)) via `DankToggle`'s own
 `description` property - no separate description widget, and nothing
 invented in the UI layer that isn't already declared in the app's own
 `.nix` file.
 
-`SettingsWindow.qml`'s footer streams `vayume-rebuild`'s stdout and
+`SettingsWindow.qml`'s footer streams `vayume rebuild`'s stdout and
 stderr live, line by line (`Quickshell.Io`'s `SplitParser`, not a
 post-hoc `StdioCollector` read at exit) into a capped 500-line buffer
 on the root widget, so a long `nixos-rebuild switch` is visible as it
@@ -778,14 +778,14 @@ to expose:
   password-masked `DankTextField`s with a reveal toggle, same widget
   DMS uses for its own secret-ish fields.
 - **Groups** (`extraGroups`, including `wheel`/sudo) - shown as
-  `DankToggle`s over `vayume-config users list`'s live `groupOptions`
+  `DankToggle`s over `vayume config users list`'s live `groupOptions`
   (curated shortlist ∩ this system's real `config.users.groups`, see
   core-vayume-config.md), never free text - a typo'd group name can't
   reach `_config.nix` at all. "wheel" carries its own description
   calling out that it's full admin access.
 - **Password** (`hashedPassword`) - a "new password"/"confirm
   password" pair, only enabled once they match; the plaintext is
-  written over the `vayume-config users set-password` `Process`'s own
+  written over the `vayume config users set-password` `Process`'s own
   stdin (`stdinEnabled: true` + `write()`), never as a command-line
   argument - argv is readable by any process on the machine via
   `/proc`, stdin isn't. The backend hashes it (`mkpasswd -m sha-512`)

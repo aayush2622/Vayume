@@ -33,7 +33,7 @@ What's in it (`statePaths`):
 
 Deliberately left out: anything that's a cache or re-downloadable
 (`~/.gradle`, Zed's downloaded toolchains, Lutris runners), and
-Waydroid's Android data - big, and `vayume-waydroid-android11` wipes it
+Waydroid's Android data - big, and `vayume waydroid android11` wipes it
 with `rm -rf`, which on a symlink would only remove the link. `.ssh`,
 `.gnupg` and `keyrings` (`privatePaths`) are forced to `0700` after
 linking, the permission ssh and gpg expect.
@@ -77,7 +77,7 @@ just starts fresh.
   locations, not guesses, but worth a quick check against the real
   thing.
 
-**`vayume-app-state backup <file>` / `restore <file>`** turns that same
+**`vayume app-state backup <file>` / `restore <file>`** turns that same
 folder into a single password-encrypted archive and back - AES-256-CBC,
 keyed via PBKDF2 (SHA-256, 10000 iterations) from a passphrase typed at
 the prompt, never passed as a CLI argument (that'd leak through process

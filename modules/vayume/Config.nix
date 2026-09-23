@@ -1049,8 +1049,10 @@
       };
     in
     {
-      home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (_: {
-        home.packages = [ vayumeConfigScript ];
-      });
+      vayume.commands.config = {
+        command = lib.getExe vayumeConfigScript;
+        description = "Read or edit _config.nix (the backend of Vayume Settings)";
+        usage = "<repo|apps|theme|users|packages|development|validate> ...";
+      };
     };
 }

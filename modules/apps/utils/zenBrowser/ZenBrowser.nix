@@ -424,10 +424,12 @@ in
         post_hook = '${zenThemeSyncScript}'
       '';
 
-      home.packages = [
-        zen-browser
-        zen-reload
-      ];
+      home.packages = [ zen-browser ];
+
+      vayume.commands.zen-reload = {
+        command = lib.getExe zen-reload;
+        description = "Restart Zen Browser so it picks up the current wallpaper colors";
+      };
 
       # Just the browser-launching mimetypes - text/html and friends are
       # already claimed for VS Code in Thunar.nix's dev-file-opens-in-editor

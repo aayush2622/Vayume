@@ -10,7 +10,7 @@ How a DMS toggle turns into a line changed in the real `_config.nix` - the backe
 the repo. If "Vayume Settings" kept its own JSON database of which apps
 are enabled, that database and `_config.nix` would drift the moment either
 one changed without the other - two sources of truth pretending to be
-one. `vayume-config` is a thin CLI that reads and writes the *real*
+one. `vayume config` is a thin CLI that reads and writes the *real*
 `modules/hosts/<host>/_config.nix`, so the repository stays the only
 authority. The DMS plugin never parses or writes Nix itself; it just
 runs this CLI as a subprocess and reads JSON back, same as a person
@@ -19,30 +19,30 @@ would from a terminal.
 ### Commands
 
 ```
-vayume-config repo                          # {path, branch, dirty, configFile, hostName, rebuildPending}
-vayume-config apps list                      # every vayume.apps.* + state + category + description
-vayume-config apps set <Name> <true|false> [--if-unmodified-since <epoch>]
-vayume-config development list               # dev languages/editors/tools + descriptions + editor integrations
-vayume-config theme get                      # {font, fontSize, cursorTheme, iconTheme, cursorOptions, fontOptions}
-vayume-config theme set <fontSize|cursorTheme|font> <value> [--if-unmodified-since <epoch>]
-vayume-config users list                     # every vayume.users.* + groupOptions (JSON)
-vayume-config users add <user> [fullName] [--if-unmodified-since <epoch>]
-vayume-config users remove <user> [--if-unmodified-since <epoch>]
+vayume config repo                          # {path, branch, dirty, configFile, hostName, rebuildPending}
+vayume config apps list                      # every vayume.apps.* + state + category + description
+vayume config apps set <Name> <true|false> [--if-unmodified-since <epoch>]
+vayume config development list               # dev languages/editors/tools + descriptions + editor integrations
+vayume config theme get                      # {font, fontSize, cursorTheme, iconTheme, cursorOptions, fontOptions}
+vayume config theme set <fontSize|cursorTheme|font> <value> [--if-unmodified-since <epoch>]
+vayume config users list                     # every vayume.users.* + groupOptions (JSON)
+vayume config users add <user> [fullName] [--if-unmodified-since <epoch>]
+vayume config users remove <user> [--if-unmodified-since <epoch>]
                                               # edits _config.nix only - the account itself is
                                               # only actually deleted on the next rebuild
-vayume-config users set-name <user> <fullName> [--if-unmodified-since <epoch>]
-vayume-config users set-secret <user> <WAKATIME_API_KEY|RBW_EMAIL> <value> [--if-unmodified-since <epoch>]
-vayume-config users set-group <user> <group> <true|false> [--if-unmodified-since <epoch>]
-vayume-config users set-package <user> <attrPath> <true|false> [--if-unmodified-since <epoch>]
+vayume config users set-name <user> <fullName> [--if-unmodified-since <epoch>]
+vayume config users set-secret <user> <WAKATIME_API_KEY|RBW_EMAIL> <value> [--if-unmodified-since <epoch>]
+vayume config users set-group <user> <group> <true|false> [--if-unmodified-since <epoch>]
+vayume config users set-package <user> <attrPath> <true|false> [--if-unmodified-since <epoch>]
                                               # <attrPath> (e.g. "blender", "python3Packages.numpy")
                                               # must resolve to a real package in this flake's nixpkgs
-vayume-config users set-password <user> [--if-unmodified-since <epoch>]
+vayume config users set-password <user> [--if-unmodified-since <epoch>]
                                               # reads the new plaintext password from stdin, never argv
-vayume-config packages search <query>        # matching nixpkgs packages: [{path, pname, version, description}]
-vayume-config validate                       # re-evaluate _config.nix, pass/fail
+vayume config packages search <query>        # matching nixpkgs packages: [{path, pname, version, description}]
+vayume config validate                       # re-evaluate _config.nix, pass/fail
 ```
 
-`vayume-rebuild` and `vayume-gc` (bare commands, `home.packages`) exist
+`vayume rebuild` and `vayume gc` (bare commands, `home.packages`) exist
 alongside it - thin wrappers that just `exec sudo -n` the real,
 content-addressed script [Dms.nix](desktop-dms.md) registers under the
 sudoers `NOPASSWD` rule. They exist because that underlying store path
@@ -54,15 +54,15 @@ it just always execs the currently-correct target.
 
 ### Repo discovery is shared, not re-guessed per script
 
-Both `vayume-rebuild` and `vayume-config` need to answer "where is this
+Both `vayume rebuild` and `vayume config` need to answer "where is this
 flake checked out?" without a hardcoded `/home/<someone>/vayume`, since
 that breaks for every user but the repo's own author. The candidate
 list - `~/vayume`, `~/dotfiles`, `~/.dotfiles`, `/etc/nixos` - lives in
 exactly one place, [`modules/lib/VayumeLib.nix`](../modules/lib/VayumeLib.nix)'s
 `flake.vayumeLib.repoDiscovery`, and both scripts interpolate that same
 Nix-level list into their own shell loop at build time. Change the list
-once, both tools pick it up. `vayume-config` doesn't need
-`vayume-rebuild`'s `$SUDO_USER` indirection (it never runs under sudo),
+once, both tools pick it up. `vayume config` doesn't need
+`vayume rebuild`'s `$SUDO_USER` indirection (it never runs under sudo),
 just `$HOME` directly.
 
 If no candidate has a `flake.nix`, both fail loudly and stop - never a
@@ -353,7 +353,7 @@ database: whatever it says after the next rebuild is exactly who exists
 and who can sudo. So two edits are refused outright instead of being
 left for the rebuild to act on:
 
-- `users remove` of the account running `vayume-config` (`id -un`) -
+- `users remove` of the account running `vayume config` (`id -un`) -
   the rebuild would delete the account you're logged in with.
 - `users remove`, or `users set-group <user> wheel false`, that would
   leave no user in `wheel` - nobody could sudo, including to run the
@@ -430,7 +430,7 @@ having loaded the file at some point) refuse to write over a file that
 changed since it was last read, rather than silently clobbering a
 manual edit made while a toggle was in flight.
 
-`_config.nix` holds password hashes, so every `vayume-config` run also
+`_config.nix` holds password hashes, so every `vayume config` run also
 drops any group/other permission bits it finds on it (`chmod go-rwx`) -
 a file created with plain `cp` from the example starts out `0644`, and
 this closes that the first time Vayume Settings opens.
@@ -454,7 +454,7 @@ Every command reports *why* it refused on stderr - a `vayume-config:`
 line for its own validation ("isn't a family the current fontPackage
 ships"), or Nix's own `error: ...` line when the edited file failed to
 evaluate and was reverted. The Vayume Settings widget reads that stream
-from each `vayume-config` process and shows the most specific line it
+from each `vayume config` process and shows the most specific line it
 saw as the status text (`pickError` in `VayumeSettingsWidget.qml`),
 preferring the Nix error over the generic "failed to evaluate -
 reverted" that always follows it. It used to say "see a terminal for
@@ -464,7 +464,7 @@ never a terminal to look at.
 ### What "live" actually means here
 
 Writing to `_config.nix` is instant and always safe (validated before it's
-kept). Nothing about the *running* system changes until `vayume-rebuild`
+kept). Nothing about the *running* system changes until `vayume rebuild`
 actually runs - the DMS plugin says as much: every app toggle is a
 config change now, a system change only after the next rebuild. There's
 no such thing as an app enable/disable that applies without a rebuild;
@@ -499,4 +499,4 @@ up for real.
 
 ---
 
-[← Theme.nix](core-theme.md) · [Index](CONFIGURATION.md) · [DevLanguages.nix →](core-devlanguages.md)
+[← Theme.nix](core-theme.md) · [Index](CONFIGURATION.md) · [Commands.nix →](core-commands.md)

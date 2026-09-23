@@ -32,8 +32,8 @@ Android apps in a container - and an honest admission that not everything on a N
   `system_server` crashes on start (`NoSuchMethodError`) and Android hangs on
   the boot animation, and the 2025 Android 11 image lacks
   `setAllowlistToken`, so it would fail there too, on the first notification.
-- **`vayume-waydroid-android11` is the whole setup**, split into a
-  privileged half and a user half, same pattern as `vayume-tor` over in
+- **`vayume waydroid android11` is the whole setup**, split into a
+  privileged half and a user half, same pattern as `vayume tor` over in
   [Network.nix](system-network.md) and the rebuild/GC scripts in
   [Dms.nix](desktop-dms.md). It `sudo -n`s to a root-only script through a
   NOPASSWD rule keyed on that script's exact store path, so the rule stops
@@ -46,12 +46,12 @@ Android apps in a container - and an honest admission that not everything on a N
   every `wheel` user this host declares gets the rule, so adding a
   second admin in `_config.nix` doesn't mean remembering to edit this
   file too. Non-`wheel` users are left out on purpose, same as
-  `vayume-rebuild`: both helpers wipe machine-wide state under
+  `vayume rebuild`: both helpers wipe machine-wide state under
   `/var/lib/waydroid` as root, which isn't something a user without
   sudo should be able to do. It's
   guarded with a `config ? vayume` check so the module still evaluates
   if it's ever imported somewhere `vayume.users` doesn't exist.
-- **`vayume-waydroid-unpatch` is the recovery path** if a bad `services.jar`
+- **`vayume waydroid unpatch` is the recovery path** if a bad `services.jar`
   is ever left in the overlay: it stops the container, deletes the overlaid
   `services.jar*` and `nodataperm` files and starts it again, with its own
   NOPASSWD rule.
@@ -62,7 +62,7 @@ Android apps in a container - and an honest admission that not everything on a N
 Usage, once (this wipes Android app data):
 
 ```bash
-vayume-waydroid-android11
+vayume waydroid android11
 ```
 
 Then start Waydroid, give the first boot a few minutes, open microG Settings,

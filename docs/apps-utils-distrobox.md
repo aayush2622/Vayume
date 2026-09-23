@@ -43,7 +43,7 @@ a given box genuinely wants them.
 Isolation has one consequence worth knowing: `distrobox-export` writes
 its `.desktop` entry into the *box's* home, which is no longer the
 host's, so an exported app would never reach the launcher. Both
-`vayume-box-export` and `vayume-box-sync` therefore copy new entries and
+`vayume box export` and `vayume box sync` therefore copy new entries and
 icons back out to `~/.local/share/{applications,icons}` and refresh the
 desktop database, so launcher integration still works exactly as it
 would with a shared home. Every box's exported launchers/icons land in
@@ -90,13 +90,13 @@ the host's binfmt registrations, and the host's interpreter path
 so `exec` fails with `ENOENT`. Mounting a private, empty `binfmt_misc`
 inside the box makes the kernel exec the AppImage directly with its own
 runtime as the parent, without touching the host's registration.
-`vayume-box-run` resolves and rewrites the target path on the host side
+`vayume box run` resolves and rewrites the target path on the host side
 for the same reason - so the command it finally execs is the AppImage's
 own runtime rather than a shell wrapper, keeping that parent chain
 intact.
 
 **Flags only apply at creation time.** An existing box does not
-retroactively gain an isolated home or new namespaces - `vayume-box-reset`
+retroactively gain an isolated home or new namespaces - `vayume box reset`
 destroys and recreates it (prompting first, and keeping the box's home
 directory) for when the options change.
 
@@ -111,29 +111,29 @@ Seven commands, all idempotent:
 
 | Command | Does |
 | --- | --- |
-| `vayume-box` | Enter the box; with arguments, run them inside it |
-| `vayume-box-run <cmd\|file.AppImage>` | Run something inside the box - a bare filename resolves against the box's own `~/Applications` |
-| `vayume-box-install <x.deb\|apt-pkg>...` | Install local `.deb` files (apt resolves their dependencies) or plain apt packages |
-| `vayume-box-apps` | List desktop entries the box now provides |
-| `vayume-box-export <app>...` | Export an entry to the host launcher, so it shows up in DMS's spotlight like any native app |
-| `vayume-box-sync` | Re-apply `vayume.ubuntuBox.aptPackages` + `exportApps` declaratively |
-| `vayume-box-reset` | Destroy and recreate the box, picking up changed creation flags |
+| `vayume box` | Enter the box; with arguments, run them inside it |
+| `vayume box run <cmd\|file.AppImage>` | Run something inside the box - a bare filename resolves against the box's own `~/Applications` |
+| `vayume box install <x.deb\|apt-pkg>...` | Install local `.deb` files (apt resolves their dependencies) or plain apt packages |
+| `vayume box apps` | List desktop entries the box now provides |
+| `vayume box export <app>...` | Export an entry to the host launcher, so it shows up in DMS's spotlight like any native app |
+| `vayume box sync` | Re-apply `vayume.ubuntuBox.aptPackages` + `exportApps` declaratively |
+| `vayume box reset` | Destroy and recreate the box, picking up changed creation flags |
 
-So the CodeTantra path is `vayume-box-install ~/Downloads/codetantra.deb`,
-then `vayume-box-apps` to see what it registered, then
-`vayume-box-export <name>`.
+So the CodeTantra path is `vayume box install ~/Downloads/codetantra.deb`,
+then `vayume box apps` to see what it registered, then
+`vayume box export <name>`.
 
-**`vayume-box-run`'s path resolution runs on the host, before anything
+**`vayume box run`'s path resolution runs on the host, before anything
 crosses into the box.** An unquoted `~` is expanded by the host shell
-before the script ever sees it, so `vayume-box-run ~/x.AppImage` already
+before the script ever sees it, so `vayume box run ~/x.AppImage` already
 points at the *host's* home by the time it arrives - only a quoted
 `"~/x.AppImage"` reaches the script's own `~/` handling, which resolves
 against the box's home instead. A bare filename with no path separator
 is checked against the box's `~/Applications` directory (the same HOST
-path `vayume-box-install` populates, just under the isolated home rather
-than the real one) so `vayume-box-run foo.AppImage` just works after an
+path `vayume box install` populates, just under the isolated home rather
+than the real one) so `vayume box run foo.AppImage` just works after an
 install; anything else - `ls`, `apt`, an explicit path - falls through
-untouched. `vayume-box-run` also runs `ensureAppImageDeps` on every
+untouched. `vayume box run` also runs `ensureAppImageDeps` on every
 `*.AppImage` target, not only right after install, because a box that
 never ran an install (or an AppImage copied in some other way) fails
 with `No suitable fusermount binary found` otherwise - the check is
@@ -142,7 +142,7 @@ simpler to just always run it than to rely on install having gone first.
 
 **`vayume.ubuntuBox` makes the result reproducible** once you know the
 names: `aptPackages` and `exportApps` are re-applied by
-`vayume-box-sync`, so a rebuilt machine gets the same box without
+`vayume box sync`, so a rebuilt machine gets the same box without
 repeating the discovery. A downloaded `.deb` can't be declared this way -
 it isn't in any apt repo and often sits behind a login - so that stays a
 one-liner rather than a lie about being declarative. `name`/`image`
@@ -152,7 +152,7 @@ different base.
 **`vayume.ubuntuBox.count` turns one box into N independent ones.** The
 default, 1, is exactly the seven commands above, unnumbered, entering
 `name`. Set it higher - say 3 - and those seven become twenty-one
-instead: `vayume-box1` .. `vayume-box3` (and each one's `-run`/
+instead: `vayume box1` .. `vayume box3` (and each one's `-run`/
 `-install`/`-apps`/`-export`/`-sync`/`-reset`), one real container per
 number. Every other
 option - `image`, `unshare`, `fuse`, `shmSize`, `aptPackages`,
@@ -163,7 +163,7 @@ box1 is special: its container name and `homeDir` are always exactly
 `name`/`homeDir` as configured, at any `count` - never `<name>1`. So if
 you already have a box running under `count = 1` and raise `count`
 afterward, box1 *is* that same container and home directory, addressed
-as `vayume-box1` from then on instead of `vayume-box` - nothing gets
+as `vayume box1` from then on instead of `vayume box` - nothing gets
 recreated, nothing moves, no mismatch. Only box2..N are genuinely new,
 numbered containers (`<name>2`..`<name><count>`), each with its own
 auto-derived home under `~/.local/share/vayume-boxes/`.

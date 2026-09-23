@@ -234,7 +234,7 @@
           if pending_hash:
               lines.append(
                   "  (hashes are resolved in the background and show up "
-                  "next time; or run `vayume-check-plugin-updates`)"
+                  "next time; or run `vayume check-plugin-updates`)"
               )
           return "\n".join(lines)
 
@@ -270,7 +270,7 @@
 
 
       USAGE = (
-          "usage: vayume-check-plugin-updates"
+          "usage: vayume check-plugin-updates"
           " [--report-only | --resolve-hashes]"
       )
 
@@ -344,6 +344,10 @@
         (name: _: config.vayume.apps.${name}.enable or false)
         self.pluginPins
     );
-    environment.systemPackages = [ checkerScript pkgs.coreutils ];
+    vayume.commands.check-plugin-updates = {
+      command = lib.getExe checkerScript;
+      description = "Compare pinned editor/browser plugins against upstream, with hashes for bumps";
+      usage = "[--report-only | --resolve-hashes]";
+    };
   };
 }

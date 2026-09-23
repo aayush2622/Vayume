@@ -26,6 +26,7 @@ in
       self.nixosModules.Users
       self.nixosModules.Theme
       self.nixosModules.Config
+      self.nixosModules.Commands
       self.nixosModules.Niri
       self.nixosModules.Hyprland
       self.nixosModules.Dms

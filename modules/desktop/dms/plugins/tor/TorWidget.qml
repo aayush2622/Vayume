@@ -22,15 +22,15 @@ PluginComponent {
         if (root.busy)
             return;
         root.busy = true;
-        toggleProc.command = ["vayume-tor", root.torActive ? "stop" : "start"];
+        toggleProc.command = ["vayume", "tor", root.torActive ? "stop" : "start"];
         toggleProc.running = true;
     }
 
-    // `vayume-tor status` prints exactly "active" or "inactive" - see
+    // `vayume tor status` prints exactly "active" or "inactive" - see
     // modules/system/network/Network.nix.
     Process {
         id: statusProc
-        command: ["vayume-tor", "status"]
+        command: ["vayume", "tor", "status"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {

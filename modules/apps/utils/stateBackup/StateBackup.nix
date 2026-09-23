@@ -1,5 +1,5 @@
 {
-  flake.appDescriptions.StateBackup = "vayume-app-state: backs up/restores app config dirs (browser, Discord, editors, vault).";
+  flake.appDescriptions.StateBackup = "vayume app-state: backs up/restores app config dirs (browser, Discord, editors, vault).";
 
   flake.homeModules.apps.StateBackup = { pkgs, lib, ... }:
   let
@@ -39,8 +39,8 @@
       SESSION_DIR="$HOME/.config/vayume/session"
 
       usage() {
-        echo "usage: vayume-app-state backup <output-file>" >&2
-        echo "       vayume-app-state restore <input-file>" >&2
+        echo "usage: vayume app-state backup <output-file>" >&2
+        echo "       vayume app-state restore <input-file>" >&2
         echo "" >&2
         echo "Every app's real login/session state (Zen Browser profile, Vesktop," >&2
         echo "VS Code/Zed accounts, the GNOME keyring, ssh/gpg keys, gh, rbw," >&2
@@ -119,7 +119,11 @@
       esac
     '';
   in {
-    home.packages = [ stateBackupScript ];
+    vayume.commands.app-state = {
+      command = lib.getExe stateBackupScript;
+      description = "Encrypted backup/restore of every app's login state (~/.config/vayume/session)";
+      usage = "backup|restore <file>";
+    };
 
     home.activation.linkSessionState =
       lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''

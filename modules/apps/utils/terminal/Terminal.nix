@@ -180,8 +180,8 @@
         vayume_check_plugin_updates_preexec() {
           case "$1" in
             *nixos-rebuild*|*"home-manager switch"*|*"nix build"*|*"nix flake"*|*"nix run"*)
-              timeout 10s vayume-check-plugin-updates --report-only
-              ( timeout 300s vayume-check-plugin-updates --resolve-hashes >/dev/null 2>&1 & )
+              timeout 10s vayume check-plugin-updates --report-only
+              ( timeout 300s vayume check-plugin-updates --resolve-hashes >/dev/null 2>&1 & )
               ;;
           esac
         }

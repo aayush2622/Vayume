@@ -226,7 +226,7 @@
             ${ensureBox}
 
             if [ "$#" -eq 0 ]; then
-              echo "usage: vayume-box${cmdSuffix}-run <command> [args...]" >&2
+              echo "usage: vayume box${cmdSuffix} run <command> [args...]" >&2
               exit 2
             fi
 
@@ -270,7 +270,7 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
             set -eu
 
             if [ "$#" -eq 0 ]; then
-              echo "usage: vayume-box${cmdSuffix}-install <file.AppImage|file.deb|apt-package>..." >&2
+              echo "usage: vayume box${cmdSuffix} install <file.AppImage|file.deb|apt-package>..." >&2
               exit 2
             fi
 
@@ -312,10 +312,10 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
                   echo "  ${boxHome}/Applications/$base"
                   echo
                   echo "Run:"
-                  echo "  vayume-box${cmdSuffix}-run $base"
+                  echo "  vayume box${cmdSuffix} run $base"
                   echo
                   echo "If FUSE fails:"
-                  echo "  vayume-box${cmdSuffix}-run $base --appimage-extract-and-run"
+                  echo "  vayume box${cmdSuffix} run $base --appimage-extract-and-run"
                   ;;
 
                 *.deb)
@@ -372,7 +372,7 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
             set -eu
 
             if [ "$#" -eq 0 ]; then
-              echo "usage: vayume-box${cmdSuffix}-export <app-name>..." >&2
+              echo "usage: vayume box${cmdSuffix} export <app-name>..." >&2
               exit 2
             fi
 
@@ -453,20 +453,27 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
             echo "minutes and prints nothing - it is not stuck."
             echo
             echo "Reinstall the AppImage dependencies with:"
-            echo "  vayume-box${cmdSuffix}-install <file.AppImage>"
+            echo "  vayume box${cmdSuffix} install <file.AppImage>"
           '';
+          entry = sub: script: description: usage: {
+            name = "box${cmdSuffix}${lib.optionalString (sub != "") "-${sub}"}";
+            value = {
+              command = lib.getExe script;
+              inherit description usage;
+            };
+          };
         in
-        [
-          box
-          boxRun
-          boxInstall
-          boxApps
-          boxExport
-          boxSync
-          boxReset
+        builtins.listToAttrs [
+          (entry "" box "Enter the '${boxName}' Distrobox (or run a command in it)" "[command...]")
+          (entry "run" boxRun "Start a GUI app from '${boxName}' through the focus proxy" "<command> [args...]")
+          (entry "install" boxInstall "Install an AppImage, .deb or apt package into '${boxName}'" "<file.AppImage|file.deb|package>...")
+          (entry "apps" boxApps "List apps installed in '${boxName}'" "")
+          (entry "export" boxExport "Add a '${boxName}' app to the host launcher" "<app-name>...")
+          (entry "sync" boxSync "Re-sync '${boxName}' launcher entries and icons to the host" "")
+          (entry "reset" boxReset "Delete and recreate '${boxName}' (its home dir is kept)" "")
         ];
 
-      boxPackages = lib.concatMap mkBox boxSpecs;
+      boxCommands = lib.foldl' (acc: spec: acc // mkBox spec) { } boxSpecs;
 
       wlFocusProxy = pkgs.stdenv.mkDerivation {
         pname = "wl-focus-proxy";
@@ -544,17 +551,17 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
           description = ''
             How many independent containers to manage. 1 (the default)
             keeps the original single, unnumbered command set -
-            vayume-box, vayume-box-run, vayume-box-install,
-            vayume-box-apps, vayume-box-export, vayume-box-sync,
-            vayume-box-reset - entering "${cfg.name}".
+            `vayume box`, `vayume box run`, `vayume box install`,
+            `vayume box apps`, `vayume box export`, `vayume box sync`,
+            `vayume box reset` - entering "${cfg.name}".
 
             More than 1 replaces those with numbered variants instead:
-            vayume-box1, vayume-box1-run, ... up through
-            vayume-box<count>-reset, each entering its own container.
+            `vayume box1`, `vayume box1 run`, ... up through
+            `vayume box<count> reset`, each entering its own container.
             box1 is always the exact same container/home as count = 1 -
             "${cfg.name}"/homeDir, unchanged - so raising this from 1
             never orphans a box you already have, it's just addressed
-            as vayume-box1 from now on. Only box2..N are new, numbered
+            as `vayume box1` from now on. Only box2..N are new, numbered
             containers ("${cfg.name}2" .. "${cfg.name}<count>"), each
             with its own auto-derived isolated home under
             .local/share/vayume-boxes/. Every other option below -
@@ -654,7 +661,7 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
             Set to "" to leave the runtime default alone.
 
             Changing this only takes effect on a freshly created
-            container, so run vayume-box-reset (or vayume-box<n>-reset)
+            container, so run `vayume box reset` (or `vayume box<n> reset`)
             afterwards.
           '';
         };
@@ -681,7 +688,7 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
           ];
 
           description = ''
-            Command basenames (shell globs) that vayume-box-run starts
+            Command basenames (shell globs) that `vayume box run` starts
             under XWayland instead of Wayland, for apps that only go
             fullscreen or resize correctly on X11. They bypass the focus
             proxy.
@@ -705,9 +712,10 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
       config = {
         home.packages = [
           pkgs.distrobox
-        ]
-        ++ boxPackages
-        ++ [ wlFocusProxy ];
+          wlFocusProxy
+        ];
+
+        vayume.commands = boxCommands;
 
         systemd.user.services.wl-focus-proxy = {
           Unit = {

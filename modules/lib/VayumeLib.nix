@@ -21,7 +21,7 @@
       fileManager = { apps = [ "Thunar" "Nautilus" ]; candidates = [ [ "thunar" ] [ "nautilus" ] ]; };
       editor = { apps = [ "Vscode" "Zed" "AndroidStudio" ]; candidates = [ [ "code" ] [ "zeditor" ] [ "android-studio" ] ]; };
       browser = { apps = [ "ZenBrowser" ]; candidates = [ [ "zen" ] [ "firefox" ] [ "chromium" ] ]; };
-      browserReload = { apps = [ "ZenBrowser" ]; candidates = [ [ "vayume-zen-reload" ] ]; };
+      browserReload = { apps = [ "ZenBrowser" ]; candidates = [ [ "vayume" "zen-reload" ] ]; };
       systemMonitor = { apps = [ "Terminal" ]; candidates = [ [ "kitty" "-e" "btop" ] ]; };
       colorPicker = { apps = [ ]; candidates = [ [ "hyprpicker" "-a" ] ]; };
     };
@@ -46,7 +46,10 @@
     lib.mapAttrs (name: action: [
       (lib.getExe (pkgs.writeShellScriptBin "vayume-launch-${name}" ''
         ${lib.concatMapStrings (argv: ''
-          if command -v ${lib.escapeShellArg (builtins.head argv)} >/dev/null 2>&1; then
+          if command -v ${lib.escapeShellArg (builtins.head argv)} >/dev/null 2>&1${
+            lib.optionalString (builtins.head argv == "vayume")
+              " && vayume --has ${lib.escapeShellArg (builtins.elemAt argv 1)}"
+          }; then
             exec ${lib.escapeShellArgs argv} "$@"
           fi
         '') action.candidates}

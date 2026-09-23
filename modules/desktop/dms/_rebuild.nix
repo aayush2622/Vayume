@@ -38,7 +38,7 @@ let
   vayumeRebuildCommand = pkgs.writeShellApplication {
     name = "vayume-rebuild";
     text = ''
-      [ "$#" -eq 0 ] || { echo "usage: vayume-rebuild (takes no arguments - runs a real nixos-rebuild switch)" >&2; exit 2; }
+      [ "$#" -eq 0 ] || { echo "usage: vayume rebuild (takes no arguments - runs a real nixos-rebuild switch)" >&2; exit 2; }
       exec sudo -n ${vayumeRebuildScript}
     '';
   };
@@ -46,7 +46,7 @@ let
   vayumeGcCommand = pkgs.writeShellApplication {
     name = "vayume-gc";
     text = ''
-      [ "$#" -eq 0 ] || { echo "usage: vayume-gc (takes no arguments - keeps the newest ${toString keepGenerations} system generations, deletes older ones, collects garbage)" >&2; exit 2; }
+      [ "$#" -eq 0 ] || { echo "usage: vayume gc (takes no arguments - keeps the newest ${toString keepGenerations} system generations, deletes older ones, collects garbage)" >&2; exit 2; }
       exec sudo -n ${vayumeGcScript}
     '';
   };
@@ -73,10 +73,15 @@ in
         )
       );
 
-  home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (_: {
-    home.packages = [
-      vayumeRebuildCommand
-      vayumeGcCommand
-    ];
-  });
+  vayume.commands = {
+    rebuild = {
+      command = lib.getExe vayumeRebuildCommand;
+      description = "nixos-rebuild switch from wherever the repo lives (wheel users, no password)";
+    };
+    gc = {
+      command = lib.getExe vayumeGcCommand;
+      description = "Delete all but the newest ${toString keepGenerations} system generations and collect garbage";
+      confirm = true;
+    };
+  };
 }
