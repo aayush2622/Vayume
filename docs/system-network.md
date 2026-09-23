@@ -131,11 +131,15 @@ both directions are ordered defensively:
 - **Stop** tears down rules *first*, then stops Tor - and deliberately
   runs without `set -e`, so a chain that's already gone can't abort
   teardown halfway and strand you between two states.
-- **A firewall restart flushes everything**, including these chains,
-  which would silently drop traffic back to direct while Tor is still
-  running and the widget still says connected.
-  `networking.firewall.extraCommands` re-applies the ruleset on every
-  firewall (re)start if `tor.service` is active.
+- **A firewall (re)start re-applies the ruleset** if `tor.service` is
+  active, via `networking.firewall.extraCommands`. NixOS's iptables
+  firewall only flushes its own `nixos-fw*` chains, so the `VAYUME_*`
+  chains actually survive a restart - but a rebuild that changes the
+  rules (say, `includeContainers` flipped while Tor is on) would
+  otherwise keep running the old ones. It runs teardown first, then
+  setup: setup alone starts with `iptables -N`, which fails on a chain
+  that already exists, so it used to abort on line one and change
+  nothing.
 
 Privilege follows the same pattern as the rebuild/GC scripts in
 [Dms.nix](desktop-dms.md): a root-side `vayume-torctl` that accepts only
