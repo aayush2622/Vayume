@@ -120,6 +120,15 @@ sudo nixos-rebuild switch --flake path:.#<yourhostname>
 
 `./install.sh --help` shows all flags; `--dry-run` previews without writing anything.
 
+### Rebuild, roll back, test
+
+```bash
+vayume-rebuild                          # after first boot: rebuild from wherever the repo lives, no password prompt (wheel users)
+sudo nixos-rebuild switch --rollback    # back to the previous generation (older ones are in the GRUB menu)
+nix run path:.#vm                       # boot this config in a throwaway QEMU VM first
+./tests/eval.sh                         # does a fresh clone of the repo still evaluate? (what CI runs)
+```
+
 ---
 
 ## Configuration
