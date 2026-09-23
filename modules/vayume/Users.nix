@@ -175,6 +175,7 @@
       home-manager.useUserPackages = true;
       home-manager.extraSpecialArgs = { inherit inputs self; vayumeTheme = config.vayume.theme; vayumeApps = enabledAppNames; };
       home-manager.backupFileExtension = "backup";
+      home-manager.overwriteBackup = true;
 
       home-manager.users = lib.mapAttrs (name: u: { lib, pkgs, ... }: {
         _module.args.vayumeSecrets = lib.recursiveUpdate defaultUserSecrets u.secrets;
