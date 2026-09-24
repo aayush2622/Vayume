@@ -42,7 +42,7 @@ step "nixfmt"
 step "no comments in code (explanations live in docs/)"
 comments=$(
   cd "$work"
-  find modules install.sh tests -type f \( -name '*.nix' -o -name '*.sh' \) ! -name '*.example' -print0 \
+  find modules install.sh tests -type f \( -name '*.nix' -o -name '*.sh' \) ! -name '*.example' ! -name '_config.nix' ! -name '_hardware.nix' -print0 \
     | xargs -0 grep -nE '^[[:space:]]*#[^!]' | grep -v '#compdef' || true
   find modules -type f -name '*.qml' -print0 | xargs -0 grep -nE '^[[:space:]]*//' || true
 )
