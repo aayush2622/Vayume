@@ -38,17 +38,17 @@ the real machine's own hand-curated QuickCSS theme with matugen values
 spliced in instead - see its own section for the full story on that one.
 
 **Each template's actual content lives in its own file** under
-`modules/desktop/vendor/matugen-<app>/`, read in with `builtins.readFile`
+`modules/desktop/matugen/<app>/`, read in with `builtins.readFile`
 - `Matugen.nix` itself is just the registry mapping an app name to its
 file (plus the two Android Studio entries, which are functions since
 they need a scheme name spliced in - see below). Adding a themed app
-means adding one `vendor/matugen-<app>/` file and one `readFile` line
+means adding one `matugen/<app>/` file and one `readFile` line
 here, never touching another app's entry.
 
 **Spotifast's template uses a flat `colors` map**, not a nested Material
 scheme like the old fastpotify-theming fork's template did - see that
 project's own `docs/_reference/settings-and-files.md`, "Custom themes".
-Every key in `vendor/matugen-spotifast/spotifast.json.template` is
+Every key in `matugen/spotifast/spotifast.json.template` is
 chosen for its closest Material tonal role, not translated one-to-one
 from the old template.
 

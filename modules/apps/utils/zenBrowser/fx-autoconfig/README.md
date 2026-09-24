@@ -1,17 +1,17 @@
-# Vendored Zen theming sources
+# fx-autoconfig (third-party)
 
 Third-party files, copied in verbatim so the build needs no network and no
 hash pinning. Nothing here is this repo's own work.
 
 | Path | Upstream | Revision | Licence |
 | --- | --- | --- | --- |
-| `fx-autoconfig/` | [parazeeknova/doty](https://github.com/parazeeknova/doty), `modules/features/applications/zen/fx-autoconfig` | `11e911a238c74fe40c4ea03acdf3acf7cebce89d` | MIT |
+| this folder | [parazeeknova/doty](https://github.com/parazeeknova/doty), `modules/features/applications/zen/fx-autoconfig` | `11e911a238c74fe40c4ea03acdf3acf7cebce89d` | MIT |
 
-`fx-autoconfig/chrome/utils/` and `fx-autoconfig/program/config.js` originate
+`chrome/utils/` and `program/config.js` originate
 from [MrOtherGuy/fx-autoconfig](https://github.com/MrOtherGuy/fx-autoconfig)
 (**MPL-2.0**) and keep their own file headers - leave those intact.
 
-**Why vendored rather than fetched:** the JS is committed as symlinks into the
+**Why copied in rather than fetched:** the JS is committed as symlinks into the
 author's private dotfiles tree, so it cannot be fetched from `zen-wabi`
 directly (GitHub's ZIP export turns the dangling links into text files
 containing the link target). `doty` is where the real files live, and it is a
@@ -20,7 +20,7 @@ JavaScript is not worth it.
 
 To update: re-copy from the revision above and bump this table.
 
-## Not vendored here
+## Not a copy
 
 The userChrome / userContent CSS started as
 [parazeeknova/zen-wabi](https://github.com/parazeeknova/zen-wabi)

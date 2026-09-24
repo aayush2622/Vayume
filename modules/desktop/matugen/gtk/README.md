@@ -1,4 +1,4 @@
-# Vendored: matugen-themes GTK theme
+# Upstream copy: matugen-themes GTK theme
 
 Source: https://github.com/InioX/matugen-themes, pull request
 [#161](https://github.com/InioX/matugen-themes/pull/161)
@@ -7,9 +7,9 @@ Source: https://github.com/InioX/matugen-themes, pull request
 Taken from the PR's head branch, `SakibShahariar/matugen-themes`, at commit
 `a30b72762494391b33073b8db4420a364d664fa6`. Licence: MIT (upstream repo).
 
-The PR was still **open, not merged**, when these were vendored - which is
+The PR was still **open, not merged**, when these were copied in - which is
 part of why they're copied in rather than fetched. The other reason is the
-same one that applies to every other vendored tree in this repo: a build
+same one that applies to every other upstream copy in this repo: a build
 that reaches the network at eval time isn't reproducible.
 
 ## What each file is
