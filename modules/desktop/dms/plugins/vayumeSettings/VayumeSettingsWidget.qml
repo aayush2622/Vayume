@@ -93,14 +93,28 @@ PluginComponent {
         defaultsSetProc.running = true;
     }
 
+    property string activePage: "appearance"
+    property var loadedPages: ({})
+
+    function ensurePage(id) {
+        root.activePage = id;
+        if (root.loadedPages[id])
+            return;
+        root.loadedPages = Object.assign({}, root.loadedPages, { [id]: true });
+        switch (id) {
+        case "appearance": refreshTheme(); break;
+        case "development": refreshDevelopment(); refreshApps(); break;
+        case "applications": refreshApps(); break;
+        case "defaults": refreshDefaultApps(); break;
+        case "users": refreshUsers(); break;
+        case "options": refreshSettings(); break;
+        }
+    }
+
     function refreshAll() {
         refreshRepo();
-        refreshApps();
-        refreshDevelopment();
-        refreshTheme();
-        refreshUsers();
-        refreshDefaultApps();
-        refreshSettings();
+        root.loadedPages = ({});
+        ensurePage(root.activePage);
     }
 
     function queueThemeWrite(field, value) {
@@ -218,7 +232,7 @@ PluginComponent {
 
     onCcWidgetExpanded: root.openSettingsWindow()
 
-    Component.onCompleted: refreshAll()
+    Component.onCompleted: refreshRepo()
 
     Process {
         id: repoProc

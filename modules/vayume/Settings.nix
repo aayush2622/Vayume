@@ -3,8 +3,12 @@
   flake.vayumeLib.labels = lib.mapAttrs (_: label: { inherit label; });
 
   flake.nixosModules.Settings =
-    { ... }:
+    { options, config, ... }:
     {
+      config.environment.etc."vayume/settings.json".text = builtins.toJSON (
+        import ./_settings.nix { inherit lib options config; }
+      );
+
       options.vayume.settingsMeta = lib.mkOption {
         default = { };
         description = ''
@@ -27,6 +31,11 @@
                 default = null;
                 description = "Group (card title) shown instead of the first path segment.";
               };
+              icon = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Material Symbols icon name shown beside the setting.";
+              };
               hidden = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
@@ -37,40 +46,76 @@
         );
       };
 
-      config.vayume.settingsMeta =
-        self.vayumeLib.labels {
-          "network.dns.provider" = "DNS provider";
-          "network.dns.overTls" = "DNS over TLS";
-          "network.dns.ipv6" = "IPv6 DNS servers";
-          "network.hardening.enable" = "Network hardening";
-          "network.randomizeMac" = "Randomize Wi-Fi MAC";
-          "network.tor.enable" = "Route everything through Tor";
-          "network.tor.includeContainers" = "Include containers in Tor";
-          "performance.enable" = "System tuning";
-          "performance.gaming" = "Gaming tuning";
-          "performance.kernel" = "Kernel";
-        }
-        //
-          lib.mapAttrs'
-            (
-              name: label:
-              lib.nameValuePair "ubuntuBox.${name}" {
-                inherit label;
-                group = "Distrobox";
-              }
-            )
-            {
-              count = "Number of boxes";
-              name = "Box name";
-              image = "Container image";
-              isolateHome = "Isolated home";
-              homeDir = "Home directory";
-              unshare = "Unshared namespaces";
-              fuse = "FUSE access";
-              shmSize = "Shared memory size";
-              aptPackages = "apt packages";
-              x11Apps = "X11 apps";
-              exportApps = "Exported apps";
+      options.vayume.settingsGroups = lib.mkOption {
+        default = { };
+        description = ''
+          Optional icon and one-line description for a group (card) in the
+          settings list, keyed by the group's displayed name. See
+          docs/core-settings.md.
+        '';
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              icon = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Material Symbols icon name shown in the group's title.";
+              };
+              description = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "One line under the group's title.";
+              };
             };
+          }
+        );
+      };
+
+      config.vayume.settingsGroups = {
+        Network = {
+          icon = "lan";
+          description = "DNS, Tor and network-stack hardening for the whole machine.";
+        };
+        Performance = {
+          icon = "speed";
+          description = "Memory, disk, kernel and gaming tuning.";
+        };
+        Distrobox = {
+          icon = "deployed_code";
+          description = "The Ubuntu containers behind `vayume box`.";
+        };
+      };
+
+      config.vayume.settingsMeta =
+        let
+          entry = label: icon: { inherit label icon; };
+          box = label: icon: {
+            inherit label icon;
+            group = "Distrobox";
+          };
+        in
+        {
+          "network.dns.provider" = entry "DNS provider" "dns";
+          "network.dns.overTls" = entry "DNS over TLS" "lock";
+          "network.dns.ipv6" = entry "IPv6 DNS servers" "language";
+          "network.hardening.enable" = entry "Network hardening" "shield";
+          "network.randomizeMac" = entry "Randomize Wi-Fi MAC" "shuffle";
+          "network.tor.enable" = entry "Route everything through Tor" "vpn_lock";
+          "network.tor.includeContainers" = entry "Include containers in Tor" "deployed_code";
+          "performance.enable" = entry "System tuning" "speed";
+          "performance.gaming" = entry "Gaming tuning" "sports_esports";
+          "performance.kernel" = entry "Kernel" "memory";
+          "ubuntuBox.count" = box "Number of boxes" "numbers";
+          "ubuntuBox.name" = box "Box name" "badge";
+          "ubuntuBox.image" = box "Container image" "image";
+          "ubuntuBox.isolateHome" = box "Isolated home" "home";
+          "ubuntuBox.homeDir" = box "Home directory" "folder";
+          "ubuntuBox.unshare" = box "Unshared namespaces" "lock_open";
+          "ubuntuBox.fuse" = box "FUSE access" "usb";
+          "ubuntuBox.shmSize" = box "Shared memory size" "memory_alt";
+          "ubuntuBox.aptPackages" = box "apt packages" "inventory_2";
+          "ubuntuBox.x11Apps" = box "X11 apps" "desktop_windows";
+          "ubuntuBox.exportApps" = box "Exported apps" "ios_share";
+        };
     };
 }

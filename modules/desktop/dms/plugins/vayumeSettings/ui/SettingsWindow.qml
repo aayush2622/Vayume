@@ -13,6 +13,8 @@ DankFloatingWindow {
     minimumSize: Qt.size(600, 440)
 
     property string activeCategory: "appearance"
+    onActiveCategoryChanged: root.vm.ensurePage(root.activeCategory)
+    Component.onCompleted: root.vm.ensurePage(root.activeCategory)
     property bool logCollapsed: false
     readonly property bool logVisible: root.vm.rebuildLog.length > 0 && !root.logCollapsed
     readonly property var categories: [

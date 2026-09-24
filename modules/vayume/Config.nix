@@ -394,16 +394,37 @@
           tmp_file=""
           trap 'rm -f "$tmp_file"' EXIT
 
+          cache_dir=''${XDG_CACHE_HOME:-$HOME/.cache}/vayume/config
+
+          repo_stamp() {
+            find "$flake_dir/modules" "$flake_dir/flake.nix" "$flake_dir/flake.lock" -type f -printf '%p %T@ %s\n' 2>/dev/null \
+              | LC_ALL=C sort | sha1sum | cut -d' ' -f1
+          }
+
+          with_cache() {
+            local name file out
+            name=$1
+            shift
+            mkdir -p "$cache_dir"
+            file="$cache_dir/$name.$(repo_stamp).json"
+            if [ -f "$file" ]; then
+              cat "$file"
+              return 0
+            fi
+            out=$("$@") || return 1
+            printf '%s\n' "$out" > "$file.tmp" && mv "$file.tmp" "$file"
+            find "$cache_dir" -name "$name.*.json" ! -name "$(basename "$file")" -delete
+            printf '%s\n' "$out"
+          }
+
           new_tmp() {
             tmp_file=$(mktemp "$config_file.XXXXXX")
             chmod --reference="$config_file" "$tmp_file"
           }
 
-          validate_extra=""
-
           validate_config_file() {
             nix eval --impure --json --expr \
-              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps defaultApps theme.font theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users) ++ (if \"$validate_extra\" == \"\" then [ ] else [ (builtins.foldl' (a: k: a.\''${k}) (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume (builtins.filter builtins.isString (builtins.split \"\\\\.\" \"$validate_extra\"))) ])" \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps defaultApps theme.font theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users)" \
               >/dev/null
           }
 
@@ -596,8 +617,15 @@
               fontPackage=$(nix eval --impure --raw --expr \
                 "(builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume.theme.fontPackage")
             fi
-            find "$fontPackage" \( -iname "*.ttf" -o -iname "*.otf" \) -print0 2>/dev/null \
-              | xargs -r -0 fc-scan --format '%{family[0]}\n' 2>/dev/null | sort -u
+            local cached
+            mkdir -p "$cache_dir"
+            cached="$cache_dir/fonts.$(basename "$fontPackage").list"
+            if [ ! -s "$cached" ]; then
+              find "$fontPackage" \( -iname "*.ttf" -o -iname "*.otf" \) -print0 2>/dev/null \
+                | xargs -r -0 fc-scan --format '%{family[0]}\n' 2>/dev/null | sort -u > "$cached.tmp"
+              mv "$cached.tmp" "$cached"
+            fi
+            cat "$cached"
           }
 
           cmd_theme_get() {
@@ -1050,13 +1078,25 @@
             fi
           }
 
+          settings_snapshot=''${VAYUME_SETTINGS_SNAPSHOT:-/etc/vayume/settings.json}
+
+          settings_base() {
+            if [ -f "$settings_snapshot" ]; then
+              cat "$settings_snapshot"
+            else
+              nix eval --impure --json --expr \
+                "let f = builtins.getFlake \"path:$flake_dir\"; sys = f.nixosConfigurations.${hostName}; in import ${./_settings.nix} { lib = f.inputs.nixpkgs.lib; options = sys.options; config = sys.config; }"
+            fi
+          }
+
           cmd_settings_list() {
-            local set_paths
-            set_paths=$(grep -oE '^[[:space:]]*vayume\.[A-Za-z0-9_.]+[[:space:]]*=' "$config_file" \
-              | sed -E 's/^[[:space:]]*vayume\.//; s/[[:space:]]*=$//' | jq -R . | jq -s .)
-            nix eval --impure --json --expr \
-              "import ${./_settings.nix} { flake = builtins.getFlake \"path:$flake_dir\"; host = \"${hostName}\"; }" \
-              | jq --argjson set "$set_paths" 'map(. + {configured: (.path as $p | $set | index($p) != null)})'
+            local base pending
+            base=$(mktemp)
+            pending=$(mktemp)
+            settings_base > "$base"
+            awk -f ${./_setting_read.awk} "$config_file" > "$pending"
+            jq -n --slurpfile base "$base" --rawfile pending "$pending" -f ${./_settings_list.jq}
+            rm -f "$base" "$pending"
           }
 
           settings_edit() {
@@ -1066,12 +1106,11 @@
             value=''${3:-}
             new_tmp; tmp=$tmp_file
             awk -v mode="$mode" -v key="vayume.$path" -v value="$value" -f ${./_setting.awk} "$config_file" > "$tmp"
-            validate_extra=$path
-            if apply_edit "$tmp"; then
-              return 0
+            if ! nix-instantiate --parse "$tmp" >/dev/null 2>&1; then
+              echo "vayume-config: that edit would leave _config.nix unparseable - not applied" >&2
+              return 1
             fi
-            echo "vayume-config: either the value was rejected or $path is also set inside a nested block in _config.nix - change it there" >&2
-            return 1
+            mv "$tmp" "$config_file"
           }
 
           settings_lookup() {
@@ -1084,7 +1123,7 @@
           }
 
           cmd_settings_set() {
-            local path since entry kind value item
+            local path since entry kind value item min
             path=''${1:?setting path required}
             shift
             local -a items=()
@@ -1114,6 +1153,11 @@
                 ;;
               int)
                 [[ ''${items[0]} =~ ^-?[0-9]+$ ]] || { echo "vayume-config: $path must be an integer" >&2; exit 2; }
+                min=$(jq -r '.min // empty' <<<"$entry")
+                if [ -n "$min" ] && [ "''${items[0]}" -lt "$min" ]; then
+                  echo "vayume-config: $path must be at least $min" >&2
+                  exit 2
+                fi
                 value=''${items[0]}
                 ;;
               str)
@@ -1177,7 +1221,7 @@
             apps)
               shift
               case "''${1:-}" in
-                list) cmd_apps_list;;
+                list) with_cache apps cmd_apps_list;;
                 set) shift; cmd_apps_set "$@";;
                 *) usage;;
               esac
@@ -1185,14 +1229,14 @@
             development)
               shift
               case "''${1:-}" in
-                list) cmd_development_list;;
+                list) with_cache development cmd_development_list;;
                 *) usage;;
               esac
               ;;
             theme)
               shift
               case "''${1:-}" in
-                get) cmd_theme_get;;
+                get) with_cache theme cmd_theme_get;;
                 set) shift; cmd_theme_set "$@";;
                 *) usage;;
               esac
@@ -1200,7 +1244,7 @@
             users)
               shift
               case "''${1:-}" in
-                list) cmd_users_list;;
+                list) with_cache users cmd_users_list;;
                 add) shift; cmd_users_add "$@";;
                 remove) shift; cmd_users_remove "$@";;
                 set-name) shift; cmd_users_set_name "$@";;
@@ -1221,7 +1265,7 @@
             defaults)
               shift
               case "''${1:-}" in
-                get) cmd_defaults_get;;
+                get) with_cache defaults cmd_defaults_get;;
                 set) shift; cmd_defaults_set "$@";;
                 *) usage;;
               esac
