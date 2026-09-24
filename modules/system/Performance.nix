@@ -9,6 +9,15 @@
     }:
     let
       cfg = config.vayume.performance;
+      bootReport = pkgs.writeShellScript "vayume-boot-time" ''
+        ${pkgs.systemd}/bin/systemd-analyze
+        echo
+        echo "Slowest units (parallel ones are not necessarily on the critical path):"
+        ${pkgs.systemd}/bin/systemd-analyze blame | ${pkgs.gnugrep}/bin/grep -vE '\.(device|mount|slice|socket|path)' | ${pkgs.coreutils}/bin/head -12
+        echo
+        echo "Critical chain to the login screen:"
+        ${pkgs.systemd}/bin/systemd-analyze critical-chain display-manager.service --no-pager
+      '';
       d = lib.mkOverride 900;
     in
     {
@@ -67,16 +76,31 @@
                 "net.core.somaxconn" = d 8192;
               };
               kernelModules = [ "tcp_bbr" ];
-              kernelParams = [ "nowatchdog" ];
+              kernelParams = [
+                "nowatchdog"
+                "quiet"
+              ];
               blacklistedKernelModules = [
                 "iTCO_wdt"
                 "sp5100_tco"
               ];
               tmp.cleanOnBoot = d true;
               loader.grub.configurationLimit = d 10;
+              loader.timeout = d 2;
             };
 
             services.fstrim.enable = d true;
+
+            virtualisation.docker.enableOnBoot = d false;
+
+            vayume.commands.boot-time = {
+              command = "${bootReport}";
+              description = "How long the last boot took, and which units were slowest";
+              panel = {
+                label = "Boot time report";
+                icon = "timer";
+              };
+            };
 
             services.udev.extraRules = ''
               ACTION=="add|change", KERNEL=="nvme[0-9]*n[0-9]*", ATTR{queue/scheduler}="none"

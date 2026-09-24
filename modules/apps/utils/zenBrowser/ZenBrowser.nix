@@ -412,7 +412,7 @@ in
                   echo "  already have $3, skipping"
                 else
                   echo "  downloading $3..."
-                  run ${pkgs.curl}/bin/curl -fsSL --retry 2 --max-time 15 -o "$1" "$2" || true
+                  run ${pkgs.curl}/bin/curl -fsSL --retry 0 --connect-timeout 3 --max-time 15 -o "$1" "$2" || true
                 fi
               }
 
@@ -552,19 +552,25 @@ in
                 run ${pkgs.coreutils}/bin/chmod u+w "$PROFILE_DIR/chrome/JS/Matugen/MatugenParent.sys.mjs"
                 run ln -sf ${zenUserJs} "$PROFILE_DIR/user.js"
 
-                echo "Fetching Zen mods index..."
-                ZEN_MODS_INDEX="$(mktemp)"
-                if run ${pkgs.curl}/bin/curl -fsSL --retry 2 --max-time 15 -o "$ZEN_MODS_INDEX" "${zenModsIndexUrl}"; then
-                  run ${pkgs.jq}/bin/jq --argjson ids ${lib.escapeShellArg (builtins.toJSON (builtins.attrValues zenMods))} '
-                    to_entries
-                    | map(select(.key as $k | $ids | index($k) != null))
-                    | map(.value += {enabled: true})
-                    | from_entries
-                  ' "$ZEN_MODS_INDEX" > "$PROFILE_DIR/zen-themes.json"
+                mods_stamp=${lib.escapeShellArg (builtins.hashString "sha256" (builtins.toJSON zenMods))}
+                if [ -f "$PROFILE_DIR/zen-themes.json" ] && [ "$(cat "$PROFILE_DIR/.vayume-mods-stamp" 2>/dev/null)" = "$mods_stamp" ]; then
+                  echo "Zen mods index up to date, not downloading"
                 else
-                  echo "  could not reach the mods index, skipping"
+                  echo "Fetching Zen mods index..."
+                  ZEN_MODS_INDEX="$(mktemp)"
+                  if run ${pkgs.curl}/bin/curl -fsSL --retry 0 --connect-timeout 3 --max-time 15 -o "$ZEN_MODS_INDEX" "${zenModsIndexUrl}"; then
+                    run ${pkgs.jq}/bin/jq --argjson ids ${lib.escapeShellArg (builtins.toJSON (builtins.attrValues zenMods))} '
+                      to_entries
+                      | map(select(.key as $k | $ids | index($k) != null))
+                      | map(.value += {enabled: true})
+                      | from_entries
+                    ' "$ZEN_MODS_INDEX" > "$PROFILE_DIR/zen-themes.json"
+                    printf '%s' "$mods_stamp" > "$PROFILE_DIR/.vayume-mods-stamp"
+                  else
+                    echo "  could not reach the mods index, skipping"
+                  fi
+                  rm -f "$ZEN_MODS_INDEX"
                 fi
-                rm -f "$ZEN_MODS_INDEX"
 
                 ${lib.concatStringsSep "\n" (
                   lib.mapAttrsToList (name: id: ''

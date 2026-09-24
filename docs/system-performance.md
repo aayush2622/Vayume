@@ -70,6 +70,26 @@ The `ntsync` module and its udev rule stay in `Host.nix`, since Wine uses them o
 
 `vayume.performance.kernel` swaps `boot.kernelPackages`. Leave it `null` unless you want the change: `zen` ships desktop and gaming patches, `latest` gets new hardware support sooner, `lts` trades both for stability. The Nvidia module rebuilds against whichever you pick, but the first rebuild after switching compiles a kernel, and [Waydroid](system-waydroid.md) needs a kernel with binder support, so check it after switching.
 
+### Boot time
+
+Measured with `systemd-analyze` on this machine before changing anything: 26.1 s in total - firmware 5.4 s, loader (GRUB) 6.6 s, kernel 1.0 s, initrd 2.4 s, userspace 10.8 s. What was worth fixing:
+
+- **Home Manager activation blocked the login screen.** `home-manager-<user>.service` is ordered before `systemd-user-sessions.service`, and the display manager waits for that, so anything slow in an activation script is slow login. The activation itself took about 1 s; the rest was the Zen Browser script downloading its mod index on every activation, including at boot before DNS works, with `curl --retry 2` sleeping 1 s and then 2 s between attempts (`journalctl -b -u home-manager-<user>` showed three "Could not resolve host" lines). It now downloads the index only when it is missing or the set of mods changed (a stamp file in the profile), and curl no longer retries with back-off. No other activation script touches the network. See [ZenBrowser.nix](apps-utils-zenbrowser.md).
+- **GRUB waited 5 s.** `boot.loader.timeout` is 2 s, still enough to hold a key and pick Windows.
+- **`quiet`** on the kernel command line: less console output during boot.
+- **Docker starts on first use** (`virtualisation.docker.enableOnBoot = false`, socket-activated) instead of at boot. A container with a `--restart always` policy won't come back until something first talks to Docker.
+- **Boot time report** (`vayume boot-time`, or System, Maintenance in Vayume Settings) prints `systemd-analyze`, the slowest units and the critical chain to the display manager, so you can measure the effect after a reboot.
+
+Expected saving is roughly 6 s (about 3 s of GRUB menu and about 3 s of curl waiting), but that is an estimate from the logs, not a measurement - reboot and run the report.
+
+Looked at and left alone:
+
+- **`NetworkManager-wait-online` (4.6 s)** is the classic thing to disable, but here it is not on the critical path to the login screen (the chain goes through home-manager), so disabling it would save nothing you'd see and could reorder network-dependent services such as Tor.
+- **Firmware (5.4 s)** is UEFI: enable "Fast Boot" and disable unused boot devices in the firmware setup; nothing in NixOS controls it.
+- **systemd-boot instead of GRUB** loads in tens of milliseconds where GRUB takes seconds, but this host relies on a fixed GRUB chainload entry for Windows and a GRUB theme, so switching is a change of bootloader, not a tweak.
+- **`boot.initrd.systemd.enable`** parallelises the initrd and is often faster, but this root is Btrfs with a `resume=` swap device, and I can't test hibernation here; it is a one-line experiment if you want to try it.
+- **`mitigations=off`** speeds boot slightly and weakens CPU vulnerability protections.
+
 ### Left out on purpose
 
 - **`mitigations=off`**: measurable speed, but it disables CPU vulnerability protections.
