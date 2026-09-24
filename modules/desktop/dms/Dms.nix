@@ -157,7 +157,7 @@
                 };
               };
 
-              spotifyMatugen.enable = true;
+              musicTheme.enable = true;
 
               pureLyrics.enable = true;
 
