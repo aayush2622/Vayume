@@ -77,4 +77,4 @@ Two consequences worth knowing:
 
 ---
 
-[← Commands.nix](core-commands.md) · [Index](CONFIGURATION.md) · [DevLanguages.nix →](core-devlanguages.md)
+[← Commands.nix](core-commands.md) · [Index](CONFIGURATION.md) · [Zsh.nix →](core-zsh.md)

@@ -29,6 +29,7 @@ in
       self.nixosModules.Config
       self.nixosModules.Settings
       self.nixosModules.Commands
+      self.nixosModules.Zsh
       self.nixosModules.DefaultApps
       self.nixosModules.Niri
       self.nixosModules.Hyprland

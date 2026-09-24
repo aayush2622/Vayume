@@ -1,4 +1,4 @@
-{ self, inputs, ... }: {
+{ self, ... }: {
   flake.appDescriptions.Terminal = "kitty terminal, zsh, starship prompt, and fastfetch on launch.";
 
   flake.homeModules.apps.Terminal =
@@ -24,28 +24,11 @@
       ) (builtins.attrNames (builtins.readDir ./images));
       fastfetchImagePaths = map (f: "${./images}/${f}") fastfetchImageFiles;
 
-      zshPlugins = [
-        {
-          name = "zsh-autosuggestions";
-          src = inputs.zsh-autosuggestions;
-        }
-        {
-          name = "zsh-256color";
-          src = inputs.zsh-256color;
-        }
-        {
-          name = "you-should-use";
-          src = inputs.zsh-you-should-use;
-        }
-        {
-          name = "zsh-syntax-highlighting";
-          src = inputs.zsh-syntax-highlighting;
-        }
-      ];
-
       starshipSettings = {
         add_newline = false;
-        format = "$username$directory$git_branch$git_status$cmd_duration$character";
+        command_timeout = 300;
+        scan_timeout = 30;
+        format = "$username$directory$git_branch$git_status$nix_shell$cmd_duration$character";
 
         username = {
           style_user = "bold blue";
@@ -56,21 +39,31 @@
         directory = {
           style = "bold cyan";
           truncation_length = 3;
+          truncation_symbol = "…/";
+          read_only = " 󰌾";
+          read_only_style = "red";
         };
 
         git_branch = {
-          format = "[$branch]($style) ";
+          format = "[ $branch]($style) ";
           style = "bold purple";
         };
 
         git_status = {
-          format = "[$all_status$ahead_behind]($style) ";
+          format = "([$all_status$ahead_behind]($style) )";
           style = "bold yellow";
+        };
+
+        nix_shell = {
+          format = "[󱄅 $state]($style) ";
+          style = "bold blue";
+          impure_msg = "shell";
+          pure_msg = "pure";
         };
 
         cmd_duration = {
           min_time = 2000;
-          format = "took [$duration]($style) ";
+          format = "[󰔛 $duration]($style) ";
           style = "bold yellow";
         };
 
@@ -81,110 +74,60 @@
       };
 
       fastfetchModules = [
+        "title"
         {
-          type = "custom";
-          format = "╭──────────────────────────────────────────╮";
-        }
-        {
-          type = "chassis";
-          key = " 󰇺 Chassis";
-          format = "{1} {2} {3}";
-          keyColor = "cyan";
+          type = "separator";
+          string = "─";
         }
         {
           type = "os";
-          key = " 󰣇 OS";
-          format = "{2}";
-          keyColor = "red";
+          format = "{3} {12}";
         }
         {
-          type = "kernel";
-          key = " 󰒓 Kernel";
-          format = "{2}";
-          keyColor = "red";
+          type = "host";
+          format = "{5} {1}";
+        }
+        "kernel"
+        "uptime"
+        "shell"
+        {
+          type = "terminal";
+          format = "{5}";
         }
         {
-          type = "packages";
-          key = " 󰏗 Packages";
-          keyColor = "green";
+          type = "command";
+          key = "WM";
+          keyIcon = "󱗃";
+          text = "echo \"\${XDG_SESSION_DESKTOP:-$XDG_CURRENT_DESKTOP}\"";
         }
         {
           type = "display";
-          key = " 󰍹 Display";
-          format = "{1}x{2} @ {3}Hz [{7}]";
-          keyColor = "green";
-        }
-        {
-          type = "terminal";
-          key = " 󰆍 Terminal";
-          keyColor = "yellow";
-        }
-        {
-          type = "wm";
-          key = " 󱗃 WM";
-          format = "{2}";
-          keyColor = "yellow";
-        }
-        {
-          type = "custom";
-          format = "╰──────────────────────────────────────────╯";
+          key = "Display";
+          format = "{1}x{2} @ {3}Hz";
         }
         "break"
-        {
-          type = "title";
-          key = " 󰀄";
-          format = "{6} {7} {8}";
-          keyColor = "cyan";
-        }
-        {
-          type = "custom";
-          format = "╭──────────────────────────────────────────╮";
-        }
-        {
-          type = "cpu";
-          key = " 󰍛 CPU";
-          format = "{1} @ {7}";
-          keyColor = "blue";
-        }
+        "cpu"
         {
           type = "gpu";
-          key = " 󰊴 GPU";
-          format = "{1} {2}";
-          keyColor = "blue";
+          format = "{1} {2} ({3})";
         }
-        {
-          type = "gpu";
-          key = " 󰘚 Driver";
-          format = "{3}";
-          keyColor = "magenta";
-        }
-        {
-          type = "memory";
-          key = " 󰍛 Memory";
-          keyColor = "magenta";
-        }
+        "memory"
+        "swap"
         {
           type = "disk";
-          key = " 󱦟 OS Age";
+          key = "Disk";
           folders = "/";
-          format = "{days} days";
-          keyColor = "red";
         }
         {
-          type = "uptime";
-          key = " 󱫐 Uptime";
-          keyColor = "yellow";
+          type = "battery";
+          key = "Battery";
         }
-        {
-          type = "custom";
-          format = "╰──────────────────────────────────────────╯";
-        }
+        "break"
         {
           type = "colors";
           paddingLeft = 2;
           symbol = "circle";
         }
-        "break"
       ];
     in
     {
@@ -205,11 +148,28 @@
           background_opacity = "0.65";
           dynamic_background_opacity = "yes";
 
-          tab_bar_min_tabs = 1;
+          scrollback_lines = 20000;
+          enable_audio_bell = "no";
+          copy_on_select = "clipboard";
+          strip_trailing_spaces = "smart";
+          mouse_hide_wait = "2.0";
+          url_style = "curly";
+          disable_ligatures = "cursor";
+          repaint_delay = 8;
+          input_delay = 1;
+          sync_to_monitor = "yes";
+          allow_remote_control = "no";
+
+          tab_bar_min_tabs = 2;
           tab_bar_edge = "bottom";
-          tab_bar_style = "separator";
-          tab_separator = " | ";
-          tab_title_template = "{title}{' :{}:'.format(num_windows) if num_windows > 1 else ''}";
+          tab_bar_style = "powerline";
+          tab_powerline_style = "round";
+          tab_title_template = "{index}: {title}{' :{}:'.format(num_windows) if num_windows > 1 else ''}";
+        };
+
+        keybindings = {
+          "ctrl+shift+enter" = "launch --cwd=current";
+          "ctrl+shift+t" = "launch --cwd=current --type=tab";
         };
 
         extraConfig = ''
@@ -264,58 +224,85 @@
         settings = starshipSettings;
       };
 
-      programs.zsh = {
+      vayume.zsh = {
         enable = true;
-        autosuggestion.enable = true;
 
-        plugins = zshPlugins;
-
-        oh-my-zsh = {
-          enable = true;
-
-          plugins = [
-            "sudo"
-            "git"
-            "colorize"
-          ];
+        snippets.pluginUpdateCheck = {
+          order = 1500;
+          text = ''
+            vayume_check_plugin_updates_preexec() {
+              case "$1" in
+                *nixos-rebuild*|*"home-manager switch"*|*"nix build"*|*"nix flake"*|*"nix run"*) ;;
+                *) return 0 ;;
+              esac
+              local stamp="''${XDG_STATE_HOME:-$HOME/.local/state}/vayume/plugin-check"
+              if [[ -f $stamp && -z "$(find "$stamp" -mmin +360 2>/dev/null)" ]]; then
+                return 0
+              fi
+              mkdir -p "''${stamp:h}"
+              : > "$stamp"
+              timeout 10s vayume check-plugin-updates --report-only
+              ( timeout 300s vayume check-plugin-updates --resolve-hashes >/dev/null 2>&1 & )
+            }
+            autoload -Uz add-zsh-hook
+            add-zsh-hook preexec vayume_check_plugin_updates_preexec
+          '';
         };
 
-        initContent = ''
-
-          vayume_check_plugin_updates_preexec() {
-            case "$1" in
-              *nixos-rebuild*|*"home-manager switch"*|*"nix build"*|*"nix flake"*|*"nix run"*)
-                timeout 10s vayume check-plugin-updates --report-only
-                ( timeout 300s vayume check-plugin-updates --resolve-hashes >/dev/null 2>&1 & )
-                ;;
-            esac
-          }
-          autoload -Uz add-zsh-hook
-          add-zsh-hook preexec vayume_check_plugin_updates_preexec
-
-          FASTFETCH_IMAGES=(${lib.concatStringsSep " " (map (p: "'${p}'") fastfetchImagePaths)})
-          FASTFETCH_IMAGE=""
-          if [ ''${#FASTFETCH_IMAGES[@]} -gt 0 ]; then
-            FASTFETCH_IMAGE="''${FASTFETCH_IMAGES[$(( RANDOM % ''${#FASTFETCH_IMAGES[@]} + 1 ))]}"
-          fi
-          if [ -n "$FASTFETCH_IMAGE" ]; then
-            fastfetch \
-              --logo-type kitty-icat \
-              --logo "$FASTFETCH_IMAGE" \
-              --logo-width 32 \
-              --logo-height 16
-          else
-            fastfetch
-          fi
-        '';
+        snippets.greeting = {
+          order = 2000;
+          text = ''
+            vayume_greet() {
+              [[ -n $KITTY_WINDOW_ID && -t 1 ]] || return 0
+              local id="$KITTY_PID-$KITTY_WINDOW_ID"
+              [[ $VAYUME_GREETED == "$id" ]] && return 0
+              export VAYUME_GREETED="$id"
+              local images=(${lib.concatStringsSep " " (map (p: "'${p}'") fastfetchImagePaths)})
+              if (( ''${#images[@]} > 0 )); then
+                local img="''${images[$(( RANDOM % ''${#images[@]} + 1 ))]}"
+                local cols=26 rows=13 w h
+                if [[ "$(od -An -tx1 -N4 "$img" 2>/dev/null | tr -d ' ')" == 89504e47 ]]; then
+                  read -r w h < <(od -An -tu4 --endian=big -j16 -N8 "$img")
+                  if (( w > 0 && h > 0 )); then
+                    rows=$(( (cols * h / w + 1) / 2 ))
+                    (( rows < 6 )) && rows=6
+                    (( rows > 18 )) && rows=18
+                  fi
+                fi
+                fastfetch \
+                  --logo-type kitty-direct \
+                  --logo "$img" \
+                  --logo-width "$cols" \
+                  --logo-height "$rows"
+              else
+                fastfetch
+              fi
+            }
+            vayume_greet
+          '';
+        };
       };
+
       programs.fastfetch = {
         enable = true;
 
         settings = {
           "$schema" = "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json";
 
-          display.separator = " 󰁔 ";
+          logo.padding.right = 3;
+
+          display = {
+            separator = "  ";
+            key = {
+              type = "both";
+              width = 10;
+            };
+            color = {
+              keys = "blue";
+              title = "cyan";
+              separator = "bright_black";
+            };
+          };
 
           modules = fastfetchModules;
         };

@@ -91,6 +91,35 @@ for state in true false; do
     in sys.config.system.build.toplevel.drvPath"
 done
 
+step "terminal config (zshrc syntax, plugin order, one compinit, fastfetch json, greeting only in kitty)"
+term_expr="
+  let
+    f = builtins.getFlake \"path:$work\";
+    lib = f.inputs.nixpkgs.lib;
+    sys = f.nixosConfigurations.$host0.extendModules { modules = [ { vayume.apps.Terminal.enable = lib.mkForce true; } ]; };
+    hm = sys.config.home-manager.users.$user1;
+  in"
+zrc=$(mktemp)
+nix_ eval --impure --raw --expr "$term_expr hm.home.file.\"./.zshrc\".text" > "$zrc"
+nix_ run --inputs-from "$work" nixpkgs#zsh -- -n "$zrc"
+grep -q 'KITTY_WINDOW_ID' "$zrc" || { echo "fastfetch greeting is not guarded to kitty" >&2; exit 1; }
+! grep -q 'oh-my-zsh.sh' "$zrc" || { echo "oh-my-zsh is sourced again" >&2; exit 1; }
+[ "$(grep -c 'compinit -C' "$zrc")" = 1 ] || { echo "expected exactly one cached compinit" >&2; exit 1; }
+line_of() { grep -n "$1" "$zrc" | head -1 | cut -d: -f1; }
+[ "$(line_of 'zsh-autosuggestions.plugin.zsh')" -lt "$(line_of 'zsh-syntax-highlighting.plugin.zsh')" ] || { echo "syntax highlighting must load after autosuggestions" >&2; exit 1; }
+[ "$(line_of 'zsh-syntax-highlighting.plugin.zsh')" -lt "$(line_of '^vayume_greet$')" ] || { echo "the greeting must run after every plugin" >&2; exit 1; }
+if nix_ eval --impure --raw --expr "
+  let
+    f = builtins.getFlake \"path:$work\";
+    lib = f.inputs.nixpkgs.lib;
+    bad = f.nixosConfigurations.$host0.extendModules { modules = [ { vayume.apps.Terminal.enable = lib.mkForce true; home-manager.users.$user1.vayume.zsh.plugins.zsh-syntax-highlighting.order = lib.mkForce 1; } ]; };
+  in bad.config.system.build.toplevel.drvPath" >/dev/null 2>&1; then
+  echo "moving zsh-syntax-highlighting before other plugins should fail an assertion" >&2
+  exit 1
+fi
+nix_ eval --impure --raw --expr "$term_expr builtins.readFile hm.xdg.configFile.\"fastfetch/config.jsonc\".source" | jq -e '.modules | length > 5' >/dev/null
+rm -f "$zrc"
+
 step "vayume command: no stray vayume-* binaries, help lists subcommands"
 stray=$(nix_ eval --impure --raw --expr "
   let f = builtins.getFlake \"path:$work\"; c = f.nixosConfigurations.$host0.config;
