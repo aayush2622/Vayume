@@ -109,6 +109,21 @@ shipping a different font file, not flipping a setting. Qt apps also read
 their font from Qt's own config instead, which matugen already manages
 separately.
 
+## One font everywhere
+
+`vayume.theme.font` (in `_config.nix` or the Appearance page) is the only place a font is chosen; these are the consumers:
+
+- **fontconfig defaults:** `sans-serif`, `serif` and `monospace` all resolve to it (`serif` was missing, so apps asking for a serif got Noto Serif or DejaVu Serif).
+- **Named fonts:** an app that asks for a specific family gets your font first, with the original still there as a fallback for glyphs yours lacks. This covers the generic and system names (`system-ui`, `ui-sans-serif`, `ui-monospace`, `-apple-system`, `BlinkMacSystemFont`), the common web and office names (`Arial`, `Helvetica`, `Helvetica Neue`, `Segoe UI`, `Roboto`, `Cantarell`, `Ubuntu`, `Open Sans`, `Inter`, `Noto Sans`, `DejaVu Sans`, `Liberation Sans`, `Adwaita Sans`, `Times New Roman`, `Times`, `Georgia`, `Cambria`, `Noto Serif`, `DejaVu Serif`, `Liberation Serif`), and the code fonts (`Menlo`, `Monaco`, `Consolas`, `Courier New`, `Liberation Mono`, `DejaVu Sans Mono`, `Noto Sans Mono`, `Source Code Pro`, `Fira Code`, `Cascadia Code`, `Roboto Mono`). This is how Electron apps, Steam, Wine and web pages pick it up. Icon fonts (Material Symbols) are deliberately not aliased. Web pages that ask for a serif will now show in a monospace font if that is your font; remove the serif names from `aliasedFamilies` in `Fonts.nix` if that is not what you want.
+- **Icons in every app:** the Nerd Font symbols-only font is installed system-wide, so the glyphs in fastfetch and Starship render outside kitty too (kitty also has its own built-in copy).
+- **GNOME settings (dconf):** `font-name`, `monospace-font-name` and `document-font-name` in `org.gnome.desktop.interface` are all your font and size. libadwaita and GNOME apps (Nautilus, Text Editor, the portals) read those keys, not `settings.ini`; `monospace-font-name` and `document-font-name` were still GNOME's defaults (`Hack` and `Noto Sans`).
+- **Hyprland's own text** (its error and notification banners) uses it through `misc.font_family`.
+- **Qt apps:** `qt5ct.conf` and `qt6ct.conf` have a `[Fonts]` section with your font and size, so Qt apps no longer depend on a fontconfig guess.
+- **Already followed it:** GTK, DMS, kitty, Zed, VS Code (editor, plus now the terminal, debug console, markdown preview, commit box, CodeLens and inlay hints), Zed (interface, editor and now the terminal), Android Studio's editor, Zen Browser, Vesktop, Spicetify and Heroic.
+- **The login screen** follows it too, see [SddmTheme.nix](desktop-sddm.md).
+
+Not covered: GRUB (its font is a converted bitmap in the theme), the text console, and Android Studio's menus and tool windows, which use a separate UI font setting I could not verify a config file for.
+
 ---
 
 [← DefaultApps.nix](desktop-default-apps.md) · [Index](CONFIGURATION.md) · [Theming.nix →](desktop-theming.md)

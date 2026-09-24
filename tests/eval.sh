@@ -120,6 +120,25 @@ fi
 nix_ eval --impure --raw --expr "$term_expr builtins.readFile hm.xdg.configFile.\"fastfetch/config.jsonc\".source" | jq -e '.modules | length > 5' >/dev/null
 rm -f "$zrc"
 
+step "the theme font is used everywhere (fontconfig, serif, Qt, login screen)"
+nix_ eval --impure --json --expr "
+  let
+    f = builtins.getFlake \"path:$work\";
+    lib = f.inputs.nixpkgs.lib;
+    c = f.nixosConfigurations.$host0.config;
+    font = c.vayume.theme.font;
+    hm = c.home-manager.users.$user1;
+    conf = c.fonts.fontconfig.localConf;
+  in
+    c.fonts.fontconfig.defaultFonts.serif == [ font ]
+    && c.fonts.fontconfig.defaultFonts.monospace == [ font ]
+    && lib.hasInfix \"<string>Arial</string>\" conf
+    && lib.hasInfix \"<string>Times New Roman</string>\" conf
+    && lib.hasInfix \"general=\\\"\${font},\" hm.home.file.\".config/qt6ct/qt6ct.conf\".text
+    && lib.hasInfix \"general=\\\"\${font},\" hm.home.file.\".config/qt5ct/qt5ct.conf\".text
+    && hm.dconf.settings.\"org/gnome/desktop/interface\".monospace-font-name == \"\${font} \${toString c.vayume.theme.fontSize}\"" | grep -qx true
+echo "ok"
+
 step "vayume command: no stray vayume-* binaries, help lists subcommands"
 stray=$(nix_ eval --impure --raw --expr "
   let f = builtins.getFlake \"path:$work\"; c = f.nixosConfigurations.$host0.config;

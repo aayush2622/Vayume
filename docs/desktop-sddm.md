@@ -53,6 +53,10 @@ Explanations that used to be comments in the source files.
 - Above `readonly property real cursorSizePx: (typeof config !== "undefined" && config.cursorSiz...`: Cursor size, from vayume.theme.cursorSize via theme.conf (see SddmTheme.nix) - falls back to a sane default if the config key isn't there for any reason.
 - Above `HoverHandler {`: Cursor - drawn here in QML instead of relying on the greeter picking up XCURSOR_THEME over Wayland, which has been unreliable. HoverHandler only observes position, it never grabs clicks - safe to sit on root without breaking the password field or the buttons below it.
 
+## The login screen uses the theme font
+
+`theme.conf` gets `fontFamily=<vayume.theme.font>` and `Main.qml` uses it (`fontName`), looking the family up through the system fontconfig, which the greeter shares. The bundled Itim font is only the fallback if that key is missing. Change the font in `_config.nix` and the login screen follows after the next rebuild.
+
 ---
 
 [← Matugen.nix](desktop-matugen.md) · [Index](CONFIGURATION.md) · [Misc.nix →](system-misc.md)

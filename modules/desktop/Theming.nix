@@ -76,6 +76,10 @@
               color_scheme_path=${config.home.homeDirectory}/.config/qt5ct/colors/matugen.conf
               icon_theme=${theme.iconTheme}
               style=Fusion
+
+              [Fonts]
+              fixed="${theme.font},${toString theme.fontSize},-1,5,50,0,0,0,0,0"
+              general="${theme.font},${toString theme.fontSize},-1,5,50,0,0,0,0,0"
             '';
           };
 
@@ -87,8 +91,18 @@
               color_scheme_path=${config.home.homeDirectory}/.config/qt6ct/colors/matugen.conf
               icon_theme=${theme.iconTheme}
               style=Fusion
+
+              [Fonts]
+              fixed="${theme.font},${toString theme.fontSize},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+              general="${theme.font},${toString theme.fontSize},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
             '';
           };
+        };
+
+        dconf.settings."org/gnome/desktop/interface" = {
+          font-name = lib.mkDefault "${theme.font} ${toString theme.fontSize}";
+          monospace-font-name = "${theme.font} ${toString theme.fontSize}";
+          document-font-name = "${theme.font} ${toString theme.fontSize}";
         };
 
         gtk = {

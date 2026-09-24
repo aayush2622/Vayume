@@ -4,13 +4,48 @@
     let
       theme = config.vayume.theme;
 
-      codeFontAliases = [
+      aliasedFamilies = [
         "ui-monospace"
         "SFMono-Regular"
+        "Menlo"
+        "Monaco"
         "Consolas"
+        "Courier New"
+        "Liberation Mono"
+        "DejaVu Sans Mono"
+        "Noto Sans Mono"
+        "Source Code Pro"
+        "Fira Code"
+        "Cascadia Code"
+        "Roboto Mono"
+        "system-ui"
+        "ui-sans-serif"
+        "-apple-system"
+        "BlinkMacSystemFont"
+        "Segoe UI"
+        "Roboto"
+        "Arial"
+        "Helvetica"
+        "Helvetica Neue"
+        "Noto Sans"
+        "DejaVu Sans"
+        "Liberation Sans"
+        "Cantarell"
+        "Ubuntu"
+        "Open Sans"
+        "Inter"
+        "Adwaita Sans"
+        "ui-serif"
+        "Times New Roman"
+        "Times"
+        "Georgia"
+        "Cambria"
+        "Noto Serif"
+        "DejaVu Serif"
+        "Liberation Serif"
       ];
 
-      codeFontAliasRules = builtins.concatStringsSep "\n" (
+      aliasRules = builtins.concatStringsSep "\n" (
         map (name: ''
           <match target="pattern">
             <test name="family" qual="any">
@@ -20,7 +55,7 @@
               <string>${theme.font}</string>
             </edit>
           </match>
-        '') codeFontAliases
+        '') aliasedFamilies
       );
     in
     {
@@ -31,10 +66,12 @@
         theme.fontPackage
 
         material-symbols
+        nerd-fonts.symbols-only
       ];
 
       fonts.fontconfig.defaultFonts = {
         sansSerif = [ theme.font ];
+        serif = [ theme.font ];
         monospace = [ theme.font ];
         emoji = [ "Noto Color Emoji" ];
       };
@@ -61,7 +98,7 @@
             </edit>
           </match>
 
-        ${codeFontAliasRules}
+        ${aliasRules}
         </fontconfig>
       '';
     };

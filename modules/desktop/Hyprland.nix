@@ -16,6 +16,7 @@
       lib,
       pkgs,
       self,
+      vayumeTheme,
       ...
     }:
     let
@@ -190,6 +191,7 @@
             cursor.no_warps = true;
 
             misc = {
+              font_family = vayumeTheme.font;
               disable_hyprland_logo = true;
               disable_splash_rendering = true;
             };

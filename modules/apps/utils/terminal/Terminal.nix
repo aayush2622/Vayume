@@ -73,56 +73,69 @@
         };
       };
 
+      fastfetchRule = kind: {
+        type = "custom";
+        format =
+          if kind == "top" then
+            "╭${lib.concatStrings (lib.replicate 64 "─")}╮"
+          else
+            "╰${lib.concatStrings (lib.replicate 64 "─")}╯";
+      };
+
+      keyed = color: attrs: attrs // { keyColor = color; };
+
       fastfetchModules = [
-        "title"
+        { type = "title"; }
         {
           type = "separator";
           string = "─";
         }
-        {
+        (fastfetchRule "top")
+        (keyed "red" {
           type = "os";
           format = "{3} {12}";
-        }
-        {
+        })
+        (keyed "cyan" {
           type = "host";
           format = "{5} {1}";
-        }
-        "kernel"
-        "uptime"
-        "shell"
-        {
+        })
+        (keyed "red" { type = "kernel"; })
+        (keyed "yellow" { type = "uptime"; })
+        (keyed "yellow" { type = "shell"; })
+        (keyed "yellow" {
           type = "terminal";
           format = "{5}";
-        }
-        {
+        })
+        (keyed "yellow" {
           type = "command";
           key = "WM";
           keyIcon = "󱗃";
           text = "echo \"\${XDG_SESSION_DESKTOP:-$XDG_CURRENT_DESKTOP}\"";
-        }
-        {
+        })
+        (keyed "green" {
           type = "display";
           key = "Display";
           format = "{1}x{2} @ {3}Hz";
-        }
-        "break"
-        "cpu"
-        {
+        })
+        (fastfetchRule "bottom")
+        (fastfetchRule "top")
+        (keyed "blue" { type = "cpu"; })
+        (keyed "blue" {
           type = "gpu";
           format = "{1} {2} ({3})";
-        }
-        "memory"
-        "swap"
-        {
+        })
+        (keyed "magenta" { type = "memory"; })
+        (keyed "magenta" { type = "swap"; })
+        (keyed "red" {
           type = "disk";
           key = "Disk";
           folders = "/";
-        }
-        {
+        })
+        (keyed "green" {
           type = "battery";
           key = "Battery";
-        }
-        "break"
+        })
+        (fastfetchRule "bottom")
         {
           type = "colors";
           paddingLeft = 2;
@@ -300,7 +313,6 @@
             color = {
               keys = "blue";
               title = "cyan";
-              separator = "bright_black";
             };
           };
 
