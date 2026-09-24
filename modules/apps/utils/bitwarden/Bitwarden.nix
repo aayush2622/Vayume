@@ -6,9 +6,6 @@
     hasEmail = vayumeSecrets.RBW_EMAIL != "REPLACE_ME";
   in
   {
-    # pinentry-gtk2 was removed from nixpkgs (deprecated GTK2 engine) -
-    # pinentry-gnome3 is upstream's suggested replacement and fits this
-    # GTK3/adw-gtk3 desktop better anyway.
     home.packages = [ pkgs.bitwarden-desktop pkgs.pinentry-gnome3 ];
 
     programs.rbw = {

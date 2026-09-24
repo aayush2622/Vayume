@@ -214,7 +214,6 @@ in
             environment.systemPackages = with pkgs; [
               gsettings-desktop-schemas
 
-              # CLI
               vim
               wget
               curl
@@ -233,27 +232,22 @@ in
               procps
               psmisc
 
-              # Archives
               unzip
               zip
 
-              # Build / Nix
               gnumake
               nixfmt
               nil
 
-              # Hardware
               pciutils
               usbutils
 
-              # Disk / Filesystems
               btrfs-progs
               dosfstools
               gptfdisk
               parted
               smartmontools
 
-              # Wayland
               cliphist
               wl-clipboard
               grim
@@ -261,7 +255,6 @@ in
               hyprshot
               hyprpicker
 
-              # Desktop
               playerctl
               brightnessctl
               pavucontrol

@@ -806,6 +806,51 @@ already was, not silently deferred to the next real rebuild.
 (machine-level), not `_config.nix` - editing it here would quietly
 reopen the two-file config split this whole plugin exists to avoid.
 
+## Notes from the code
+
+Explanations that used to be comments in the source files.
+
+### `modules/desktop/dms/plugins/dankAsusControlCenter/CcWidget.qml`
+
+- Above `ccDetailHeight: 480`: DragDropGrid's own detailHeight.js sizes the popup from ccDetailHeight, defaulting to 250 (PluginComponent.qml) when a plugin doesn't set it - our content (profile picker, battery slider, GPU mode buttons) runs taller than that, so it was getting clipped and GPU Mode - being last - never showed at all.
+- Above `onCcWidgetToggled: { }`: DMS's CompoundPill (used whenever ccDetailContent is set) has two independent click zones: the icon tile fires ccWidgetToggled, the text label fires ccWidgetExpanded and opens ccDetailContent below. There's no real on/off state here to toggle - profile switching belongs in the detail view where you can see and pick a specific one, not behind a silent cycle-and-toast on a stray icon tap.
+
+### `modules/desktop/dms/plugins/vayumeSettings/VayumeSettingsWidget.qml`
+
+- Above `function appendRebuildLog(line) {`: Capped so a runaway or unusually chatty rebuild can't grow this without bound - only the tail is useful for "what just happened" anyway.
+- Above `function queueThemeWrite(field, value) {`: Every backend write pays for a real `nix eval` (apply_edit's own validation, never skipped) - too slow to run on every single click of a +/- spinner. The value shown updates immediately (optimistic - only rolled back if the write is later rejected); the actual write is debounced so five quick clicks become one backend call with the final value, not five sequential validate-evals.
+- Above `function setUserPassword(user, password) {`: Not optimistic (there's no visible field to update ahead of the write) and deliberately never kept in a long-lived property - the plaintext only exists in this call's local scope and inside the Process's own stdin pipe, same reasoning as `vayume config`'s own "argv is visible to every process via /proc, stdin isn't" - see modules/vayume/Config.nix.
+- Above `function addUser(user, fullName) {`: Not optimistic like the field setters above - a fresh user arrives with extraGroups/hasPassword/secrets defaults this widget doesn't know ahead of time (userSubmodule's own, not duplicated here), and a removal just needs the list to reflect reality. usersAddRemoveProc always refetches on exit rather than only on failure.
+- Above `function searchPackages(query) {`: Explicit trigger, not per-keystroke - a search against the whole of nixpkgs takes several seconds even with `nix search`'s own cache warm (and up to a minute stone-cold, the first time it builds that cache), so searching on every keystroke would mean piling up several-second subprocess calls behind each other instead of one on Enter/click.
+- Above `function setUserPackage(user, path, enabled) {`: Same optimistic-update convention as setUserGroup - flips the one key immediately, only refetches (undoing the optimistic guess) if the backend rejects it, e.g. a package that stopped existing in nixpkgs since the last `nix flake update`.
+- Above `}`: keep the previous value on a parse failure
+- Above `if (exitCode !== 0) root.refreshTheme();`: Success: the optimistic value shown is already correct, no need to pay for another full theme fetch. Failure: the optimistic guess was wrong - refetch to show the real, unchanged value instead of the rejected one.
+- Above `if (exitCode !== 0) {`: Same reasoning as themeSetProc: the toggle already flipped optimistically, so a success needs no refetch (that's what was showing a spurious "Loading applications..." flash after every toggle, with no rebuild involved). Only re-derive the real state on failure, to undo a toggle the backend rejected.
+- Above `if (exitCode !== 0) root.refreshUsers();`: Same optimistic-update reasoning as setAppProc/themeSetProc - only refetch (and so overwrite the optimistic value) on failure.
+- Above `Process {`: stdinEnabled + write() rather than a command-line argument, so the new password is never visible via /proc to any other process on the machine the way an argv value would be - see cmd_users_set_password in modules/vayume/Config.nix for the same reasoning on the backend side. `pendingWrite` is cleared the instant it's been handed to the process, so the plaintext doesn't linger in a QML property.
+- Above `Loader {`: A closed-then-reopened DankFloatingWindow/FloatingWindow never comes back: once the compositor destroys its Wayland toplevel, setting `visible = true` on the same QML object again is a silent no-op - verified directly with a Quickshell IPC test harness against a live Hyprland session (close via the same dispatcher this repo's own "Q" keybind uses, then call the reopen path: `visible` reports `true` but no window ever reappears). A Loader sidesteps that by fully destroying and recreating the window instead of trying to resurrect one - `active: false` on close, then `active: true` builds a genuinely new FloatingWindow with its own fresh Wayland surface.
+
+### `modules/desktop/dms/plugins/vayumeSettings/ui/ApplicationsPage.qml`
+
+- Above `readonly property var categoryLabels: ({`: Development-category apps get their own dedicated page (with editor integrations, etc.) - showing them here too would just be the same toggle in two places with no extra information in either.
+
+### `modules/desktop/dms/plugins/vayumeSettings/ui/Badge.qml`
+
+- `tone` is one of `neutral`, `info`, `warning`, `error`, `success`.
+
+### `modules/desktop/dms/plugins/vayumeSettings/ui/SettingsCard.qml`
+
+- Above `property bool collapsible: false`: Opt-in - every existing page using this card leaves both at their defaults and renders exactly as before. Only a card that sets collapsible: true gets a clickable title bar and a chevron; collapsed itself is left to the caller to own (per-instance, e.g. one bool per Repeater delegate) rather than reset here, so a page with several of these cards controls each one's default/remembered state itself.
+
+### `modules/desktop/dms/plugins/vayumeSettings/ui/SettingsWindow.qml`
+
+- Above `Connections {`: A rebuild's real output belongs where it's visible no matter which sidebar category happens to be open when it runs, not buried on one settings page - it always shows fresh (never collapsed by default) the moment a rebuild starts, since that's exactly when someone wants to see it.
+- Above `Rectangle {`: The real nixos-rebuild switch output, streamed live - sits at the bottom of the window regardless of which sidebar category is open, so starting a rebuild from Appearance doesn't mean switching to System just to watch it happen.
+
+### `modules/desktop/dms/plugins/vayumeSettings/ui/UsersPage.qml`
+
+- Above `echoMode: secretField.passwordVisible ? TextInput.Normal : TextInput.Password`: DankTextField's own eye button only flips its `passwordVisible` property - it never touches echoMode itself (checked its source directly: no internal binding from one to the other, in this dms pin), so a hardcoded `echoMode: TextInput.Password` clicks the eye but never reveals anything. Bind echoMode to passwordVisible instead - the wiring the component clearly expects the caller to do.
+
 ---
 
 [← PluginUpdateCheck.nix](core-pluginupdatecheck.md) · [Index](CONFIGURATION.md) · [Niri.nix →](desktop-niri.md)

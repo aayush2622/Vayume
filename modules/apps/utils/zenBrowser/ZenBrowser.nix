@@ -138,10 +138,6 @@ in
           e: e.name == name
         ) (throw "zen-browser.nix: no zenExtensions entry named \"${name}\"") zenExtensions).guid;
 
-      # fx-autoconfig is a third-party copy - see fx-autoconfig/README.md for provenance
-      # and licences. Must be a derivation output, not a bare source path: wrapFirefox
-      # interpolates this with `toString`, which drops string context, so a
-      # raw path never becomes a build input and the sandbox cannot read it.
       fxaConfigJs = pkgs.runCommand "fx-autoconfig-config.js" { } ''
         cp ${./fx-autoconfig/program/config.js} $out
       '';
@@ -159,17 +155,6 @@ in
         "JS/Matugen/MatugenParent.sys.mjs" = ./fx-autoconfig/chrome/JS/Matugen/MatugenParent.sys.mjs;
       };
 
-      # The eight placeholders only seed :root fallbacks for first boot,
-      # before matugen has ever run - the bridge overwrites the same
-      # --matugen-* variables live for the browser chrome, and
-      # zenThemeSyncScript below re-renders these same two files on every
-      # real theme change for everything the bridge can't reach (isolated
-      # content documents like about:preferences). Both exist because
-      # neither alone covers every surface.
-      #
-      # ./theme is this repo's own colour-only cut of parazeeknova/zen-wabi:
-      # every border-radius / border / box-shadow / layout rule has been
-      # dropped so Zen's UI shape is left untouched and only colours change.
       renderTheme =
         name: src:
         pkgs.runCommand name { } ''
@@ -188,15 +173,6 @@ in
       zenUserChrome = renderTheme "userChrome.css" ./theme/userChrome.css.template;
       zenUserContent = renderTheme "userContent.css" ./theme/userContent.css.template;
 
-      # Re-renders the same two templates against whatever matugen just
-      # wrote to matugen-vars.json, run as that template's own post_hook -
-      # so the two colour-only .css seeds above stop being "correct once,
-      # at whatever nixos-rebuild last ran" and start tracking every real
-      # theme change instead. Doesn't make the seed *live* for an
-      # already-open window - see the "no live reload" note below for why
-      # that's a genuine Firefox/Zen limitation, not something this script
-      # could fix - but it does mean the next Zen restart (a keybind away,
-      # not a full rebuild away) always picks up today's actual palette.
       zenThemeSyncScript = pkgs.writeShellScript "vayume-zen-theme-sync" ''
         set -euo pipefail
         vars="$HOME/.zen/default/chrome/matugen-vars.json"
@@ -238,28 +214,26 @@ in
             };
           });
 
-      zen-browser =
-        pkgs.wrapFirefox zenUnwrapped
-          {
-            extraPrefs = mkPrefLines "lockPref" zenPrefs;
-            extraPrefsFiles = [ fxaConfigJs ];
-            extraAutoConfig = ''
-              pref("general.config.sandbox_enabled", false);
-            '';
+      zen-browser = pkgs.wrapFirefox zenUnwrapped {
+        extraPrefs = mkPrefLines "lockPref" zenPrefs;
+        extraPrefsFiles = [ fxaConfigJs ];
+        extraAutoConfig = ''
+          pref("general.config.sandbox_enabled", false);
+        '';
 
-            extraPolicies = {
-              DisableTelemetry = true;
-              ExtensionSettings = builtins.listToAttrs (
-                map (e: {
-                  name = e.guid;
-                  value = {
-                    install_url = "https://addons.mozilla.org/en-US/firefox/downloads/latest/${e.slug}/latest.xpi";
-                    installation_mode = "normal_installed";
-                  };
-                }) zenExtensions
-              );
-            };
-          };
+        extraPolicies = {
+          DisableTelemetry = true;
+          ExtensionSettings = builtins.listToAttrs (
+            map (e: {
+              name = e.guid;
+              value = {
+                install_url = "https://addons.mozilla.org/en-US/firefox/downloads/latest/${e.slug}/latest.xpi";
+                installation_mode = "normal_installed";
+              };
+            }) zenExtensions
+          );
+        };
+      };
 
       zenModsRoot = "https://raw.githubusercontent.com/zen-browser/theme-store/main";
       zenModsBaseUrl = "${zenModsRoot}/themes";
@@ -375,10 +349,6 @@ in
       zen-reload = pkgs.writeShellScriptBin "vayume-zen-reload" ''
         set -u
 
-        # wrapFirefox's launcher exec's `.zen-wrapped`, so the running process's
-        # comm is `.zen-wrapped`, not `zen`. Matching `-x zen` here silently
-        # missed it, so the reload never actually restarted Zen. Match the comm
-        # exactly against either name (`zen` kept for forward-compat).
         zen_match='zen|\.zen-wrapped'
         zen_pids() { ${pkgs.procps}/bin/pgrep -x "$zen_match" 2>/dev/null; }
 
@@ -431,7 +401,6 @@ in
         description = "Restart Zen Browser so it picks up the current wallpaper colors";
       };
 
-
       home.activation.zenBrowserConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
               fetch_if_missing() {
                 if [ -f "$1" ]; then
@@ -446,20 +415,11 @@ in
               PROFILE_DIR="$ZEN_BASE/default"
               run mkdir -p "$ZEN_BASE"
 
-              # --- Keep the profile Zen launches at the "default" path -------------
-              # Everything below deploys into $ZEN_BASE/default. A backup restored
-              # from outside `vayume-app-state` (a raw ~/.zen copy, a snapshot tool,
-              # Zen's own profile import) brings its own profiles.ini / installs.ini
-              # that can make a differently-named profile the default - then Zen
-              # shows the restored data while this activation keeps writing to an
-              # unused "default". Detect that and move the restored profile onto the
-              # "default" path so the config always lands on top of it.
               normalize_zen_profile() {
                 local ini="$ZEN_BASE/profiles.ini"
                 local installs="$ZEN_BASE/installs.ini"
                 [ -f "$ini" ] || return 0
 
-                # installs.ini's per-install Default= wins over profiles.ini's Default=1
                 local chosen=""
                 if [ -f "$installs" ]; then
                   chosen="$(${pkgs.gawk}/bin/awk '
@@ -479,7 +439,7 @@ in
 
                 [ -n "$chosen" ] || return 0
                 case "$chosen" in
-                  default) return 0 ;;                 # already correct
+                  default) return 0 ;;
                   ABS:*)   echo "  active Zen profile is an absolute path, leaving it alone"; return 0 ;;
                 esac
                 [ -d "$ZEN_BASE/$chosen" ] || { echo "  profiles.ini default '$chosen' has no directory, ignoring"; return 0; }
@@ -492,7 +452,6 @@ in
                 local ts; ts="$(${pkgs.coreutils}/bin/date +%s)"
                 echo "  restored backup points Zen at '$chosen'; relocating it onto the 'default' path (old default -> *.pre-restore.$ts)"
 
-                # $PROFILE_DIR may be the vayume-session symlink; act on its real target
                 local realdefault="$PROFILE_DIR"
                 [ -L "$PROFILE_DIR" ] && realdefault="$(${pkgs.coreutils}/bin/readlink -f "$PROFILE_DIR")"
                 run ${pkgs.coreutils}/bin/mkdir -p "$(dirname "$realdefault")"

@@ -32,6 +32,14 @@ itself doesn't need an email to exist), but `rbw`'s config file is left
 exactly as it is rather than getting seeded with a literal
 `"REPLACE_ME"` as the account email.
 
+## Notes from the code
+
+Explanations that used to be comments in the source files.
+
+### `modules/apps/utils/bitwarden/Bitwarden.nix`
+
+- Above `home.packages = [ pkgs.bitwarden-desktop pkgs.pinentry-gnome3 ];`: pinentry-gtk2 was removed from nixpkgs (deprecated GTK2 engine) - pinentry-gnome3 is upstream's suggested replacement and fits this GTK3/adw-gtk3 desktop better anyway.
+
 ---
 
 [← Thunar.nix](apps-utils-thunar.md) · [Index](CONFIGURATION.md) · [StateBackup.nix →](apps-utils-statebackup.md)

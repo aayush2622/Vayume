@@ -32,6 +32,15 @@ step "shell scripts"
 bash -n "$work/install.sh"
 nix_ run --inputs-from "$work" nixpkgs#shellcheck -- "$work/install.sh" "$work/tests/eval.sh"
 
+step "no comments in code (explanations live in docs/)"
+comments=$(
+  cd "$work"
+  find modules install.sh tests -type f \( -name '*.nix' -o -name '*.sh' \) ! -name '*.example' -print0 \
+    | xargs -0 grep -nE '^[[:space:]]*#[^!]' | grep -v '#compdef' || true
+  find modules -type f -name '*.qml' -print0 | xargs -0 grep -nE '^[[:space:]]*//' || true
+)
+[ -z "$comments" ] || { printf '%s\n' "$comments" >&2; exit 1; }
+
 step "markdown links"
 broken=0
 while IFS= read -r -d '' f; do

@@ -46,9 +46,6 @@ PluginComponent {
     property string rebuildStatus: ""
     property var rebuildLog: []
 
-    // Capped so a runaway or unusually chatty rebuild can't grow this
-    // without bound - only the tail is useful for "what just happened"
-    // anyway.
     function appendRebuildLog(line) {
         const next = root.rebuildLog.concat([line]);
         root.rebuildLog = next.length > 500 ? next.slice(next.length - 500) : next;
@@ -88,12 +85,6 @@ PluginComponent {
         refreshDefaultApps();
     }
 
-    // Every backend write pays for a real `nix eval` (apply_edit's own
-    // validation, never skipped) - too slow to run on every single click of
-    // a +/- spinner. The value shown updates immediately (optimistic - only
-    // rolled back if the write is later rejected); the actual write is
-    // debounced so five quick clicks become one backend call with the final
-    // value, not five sequential validate-evals.
     function queueThemeWrite(field, value) {
         themeWriteDebounce.field = field;
         themeWriteDebounce.value = String(value);
@@ -157,23 +148,12 @@ PluginComponent {
         usersSetProc.running = true;
     }
 
-    // Not optimistic (there's no visible field to update ahead of the
-    // write) and deliberately never kept in a long-lived property - the
-    // plaintext only exists in this call's local scope and inside the
-    // Process's own stdin pipe, same reasoning as
-    // vayume-config's own "argv is visible to every process via /proc,
-    // stdin isn't" - see modules/vayume/Config.nix.
     function setUserPassword(user, password) {
         usersPasswordProc.pendingWrite = password;
         usersPasswordProc.command = ["vayume", "config", "users", "set-password", user];
         usersPasswordProc.running = true;
     }
 
-    // Not optimistic like the field setters above - a fresh user arrives
-    // with extraGroups/hasPassword/secrets defaults this widget doesn't
-    // know ahead of time (userSubmodule's own, not duplicated here), and
-    // a removal just needs the list to reflect reality. usersAddRemoveProc
-    // always refetches on exit rather than only on failure.
     function addUser(user, fullName) {
         const args = ["vayume", "config", "users", "add", user];
         if (fullName.length > 0) args.push(fullName);
@@ -186,22 +166,12 @@ PluginComponent {
         usersAddRemoveProc.running = true;
     }
 
-    // Explicit trigger, not per-keystroke - a search against the whole
-    // of nixpkgs takes several seconds even with `nix search`'s own
-    // cache warm (and up to a minute stone-cold, the first time it
-    // builds that cache), so searching on every keystroke would mean
-    // piling up several-second subprocess calls behind each other
-    // instead of one on Enter/click.
     function searchPackages(query) {
         root.packageSearchError = "";
         packageSearchProc.command = ["vayume", "config", "packages", "search", query];
         packageSearchProc.running = true;
     }
 
-    // Same optimistic-update convention as setUserGroup - flips the one
-    // key immediately, only refetches (undoing the optimistic guess) if
-    // the backend rejects it, e.g. a package that stopped existing in
-    // nixpkgs since the last `nix flake update`.
     function setUserPackage(user, path, enabled) {
         const current = root.users[user];
         root.users = Object.assign({}, root.users, {
@@ -297,7 +267,6 @@ PluginComponent {
                 try {
                     root.theme = JSON.parse(text);
                 } catch (e) {
-                    // keep the previous value on a parse failure
                 }
             }
         }
@@ -325,10 +294,6 @@ PluginComponent {
             root.themeStatus = exitCode === 0
                 ? I18n.tr("Applied - rebuild to take effect.")
                 : (themeSetProc.errorText || I18n.tr("Couldn't update that setting."));
-            // Success: the optimistic value shown is already correct, no
-            // need to pay for another full theme fetch. Failure: the
-            // optimistic guess was wrong - refetch to show the real,
-            // unchanged value instead of the rejected one.
             if (exitCode !== 0) root.refreshTheme();
             root.refreshRepo();
         }
@@ -344,11 +309,6 @@ PluginComponent {
             root.rebuildStatus = exitCode === 0
                 ? I18n.tr("Saved - rebuild to apply.")
                 : (setAppProc.errorText || I18n.tr("Change failed")) + " - " + I18n.tr("reloading current state.");
-            // Same reasoning as themeSetProc: the toggle already flipped
-            // optimistically, so a success needs no refetch (that's what
-            // was showing a spurious "Loading applications..." flash after
-            // every toggle, with no rebuild involved). Only re-derive the
-            // real state on failure, to undo a toggle the backend rejected.
             if (exitCode !== 0) {
                 root.refreshApps();
                 root.refreshDevelopment();
@@ -420,21 +380,11 @@ PluginComponent {
             root.usersStatus = exitCode === 0
                 ? I18n.tr("Applied - rebuild to take effect.")
                 : (usersSetProc.errorText || I18n.tr("Couldn't update that setting."));
-            // Same optimistic-update reasoning as setAppProc/themeSetProc -
-            // only refetch (and so overwrite the optimistic value) on
-            // failure.
             if (exitCode !== 0) root.refreshUsers();
             root.refreshRepo();
         }
     }
 
-    // stdinEnabled + write() rather than a command-line argument, so the
-    // new password is never visible via /proc to any other process on
-    // the machine the way an argv value would be - see
-    // cmd_users_set_password in modules/vayume/Config.nix for the same reasoning
-    // on the backend side. `pendingWrite` is cleared the instant it's
-    // been handed to the process, so the plaintext doesn't linger in a
-    // QML property.
     Process {
         id: usersPasswordProc
         running: false
@@ -532,16 +482,6 @@ PluginComponent {
         }
     }
 
-    // A closed-then-reopened DankFloatingWindow/FloatingWindow never comes
-    // back: once the compositor destroys its Wayland toplevel, setting
-    // `visible = true` on the same QML object again is a silent no-op -
-    // verified directly with a Quickshell IPC test harness against a live
-    // Hyprland session (close via the same dispatcher this repo's own "Q"
-    // keybind uses, then call the reopen path: `visible` reports `true`
-    // but no window ever reappears). A Loader sidesteps that by fully
-    // destroying and recreating the window instead of trying to resurrect
-    // one - `active: false` on close, then `active: true` builds a
-    // genuinely new FloatingWindow with its own fresh Wayland surface.
     Loader {
         id: settingsWindowLoader
         active: false

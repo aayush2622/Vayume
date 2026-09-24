@@ -7,12 +7,6 @@ Rectangle {
 
     property string title: ""
     property string icon: ""
-    // Opt-in - every existing page using this card leaves both at their
-    // defaults and renders exactly as before. Only a card that sets
-    // collapsible: true gets a clickable title bar and a chevron; collapsed
-    // itself is left to the caller to own (per-instance, e.g. one bool per
-    // Repeater delegate) rather than reset here, so a page with several of
-    // these cards controls each one's default/remembered state itself.
     property bool collapsible: false
     property bool collapsed: false
     default property alias content: contentColumn.data

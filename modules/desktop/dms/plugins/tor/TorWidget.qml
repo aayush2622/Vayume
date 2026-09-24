@@ -26,8 +26,6 @@ PluginComponent {
         toggleProc.running = true;
     }
 
-    // `vayume tor status` prints exactly "active" or "inactive" - see
-    // modules/system/network/Network.nix.
     Process {
         id: statusProc
         command: ["vayume", "tor", "status"]
@@ -46,9 +44,6 @@ PluginComponent {
         onExited: statusProc.running = true
     }
 
-    // Tor takes a moment to bootstrap, and it can also be started or
-    // stopped from outside this widget, so re-read rather than trusting
-    // the last toggle.
     Timer {
         interval: 5000
         running: true

@@ -173,9 +173,6 @@
       };
 
       initContent = ''
-        # ─────────────────────────────────────────────
-        # Plugin update check
-        # ─────────────────────────────────────────────
 
         vayume_check_plugin_updates_preexec() {
           case "$1" in
@@ -187,10 +184,6 @@
         }
         autoload -Uz add-zsh-hook
         add-zsh-hook preexec vayume_check_plugin_updates_preexec
-
-        # ─────────────────────────────────────────────
-        # Fastfetch
-        # ─────────────────────────────────────────────
 
         FASTFETCH_IMAGES=(${lib.concatStringsSep " " (map (p: "'${p}'") fastfetchImagePaths)})
         FASTFETCH_IMAGE=""
