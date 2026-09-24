@@ -48,6 +48,11 @@ let
                     default = [ ];
                     description = "Arguments the button passes after the command name.";
                   };
+                  app = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "Name of a vayume.apps.<Name> module. The button is then shown under that app in Applications instead of in System > Maintenance.";
+                  };
                 };
               }
             );

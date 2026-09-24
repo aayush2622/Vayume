@@ -56,7 +56,9 @@ Vayume Settings, System, Maintenance (see [DMS](desktop-dms.md)). Only
 commands that need no typed arguments qualify; `args` covers the fixed
 ones (`check-plugin-updates` runs with `--report-only`, `config` with
 `validate`). Shipped: `gc`, `config validate`, `check-plugin-updates`,
-`zen-reload`, and the two Waydroid commands. `rebuild` is not in the
+`zen-reload`, and the two Waydroid commands. A panel entry can also set
+`app = "<Name>"`, which puts its button under that app's collapsed
+section in Applications instead of System (`zen-reload` does). `rebuild` is not in the
 list because it has its own button in the window's footer. The panel
 reads the list with `vayume --json`, which prints the registry (name,
 description, usage, `confirm`, `panel`) from a file baked in at build
