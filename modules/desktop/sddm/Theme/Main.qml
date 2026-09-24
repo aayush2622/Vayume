@@ -19,6 +19,8 @@ Rectangle {
     property int userIndex: (typeof userModel !== "undefined" && userModel.lastIndex >= 0) ? userModel.lastIndex : 0
     property real ui: 0
 
+    readonly property string fontName: (typeof config !== "undefined" && config.fontFamily) ? config.fontFamily : mainFont.name
+
     readonly property real cursorSizePx: (typeof config !== "undefined" && config.cursorSize) ? Number(config.cursorSize) : 24
 
     FolderListModel { id: fontFolder; folder: Qt.resolvedUrl("font"); nameFilters: ["*.ttf", "*.otf"] }
@@ -52,12 +54,12 @@ Rectangle {
             anchors.left: parent.left; spacing: -10 * s
             Text {
                 id: clockText; text: Qt.formatTime(new Date(), "HH:mm")
-                color: root.cInk; font.family: mainFont.name; font.pixelSize: 84 * s
+                color: root.cInk; font.family: root.fontName; font.pixelSize: 84 * s
                 Timer { interval: 1000; running: true; repeat: true; onTriggered: clockText.text = Qt.formatTime(new Date(), "HH:mm") }
             }
             Text {
                 text: Qt.formatDate(new Date(), "dddd, MMMM d").toLowerCase()
-                color: root.cSub; font.family: mainFont.name; font.pixelSize: 18 * s; font.letterSpacing: 1 * s
+                color: root.cSub; font.family: root.fontName; font.pixelSize: 18 * s; font.letterSpacing: 1 * s
             }
         }
     }
@@ -77,7 +79,7 @@ Rectangle {
             Text {
                 id: userDisp; anchors.horizontalCenter: parent.horizontalCenter
                 text: ((userHelper.currentItem && userHelper.currentItem.uName) ? userHelper.currentItem.uName : (typeof userModel !== "undefined" ? userModel.lastUser : "user")).toUpperCase()
-                color: userMa.containsMouse ? root.cPink : root.cInk; font.family: mainFont.name; font.pixelSize: 18 * s; font.letterSpacing: 4 * s
+                color: userMa.containsMouse ? root.cPink : root.cInk; font.family: root.fontName; font.pixelSize: 18 * s; font.letterSpacing: 4 * s
                 Behavior on color { ColorAnimation { duration: 200 } }
                 MouseArea { id: userMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.BlankCursor; onClicked: { if (typeof userModel !== "undefined") root.userIndex = (root.userIndex + 1) % userModel.rowCount() } }
             }
@@ -91,13 +93,13 @@ Rectangle {
                     id: pwd; anchors.fill: parent; anchors.leftMargin: 15*s; anchors.rightMargin: 15*s
                     horizontalAlignment: TextInput.AlignHCenter; verticalAlignment: TextInput.AlignVCenter
                     echoMode: TextInput.Password; passwordCharacter: "•"; color: root.cInk
-                    font.family: mainFont.name; font.pixelSize: 18 * s; font.letterSpacing: 8 * s
+                    font.family: root.fontName; font.pixelSize: 18 * s; font.letterSpacing: 8 * s
                     focus: true; clip: true; cursorVisible: false; cursorDelegate: Item { width: 0; height: 0 }
                     onAccepted: doLogin()
                     
                     Text {
                         anchors.centerIn: parent; text: "password"; color: root.cSub; opacity: pwd.text.length === 0 ? 0.6 : 0
-                        font.family: mainFont.name; font.pixelSize: 14 * s; font.letterSpacing: 2 * s
+                        font.family: root.fontName; font.pixelSize: 14 * s; font.letterSpacing: 2 * s
                         Behavior on opacity { NumberAnimation { duration: 200 } }
                     }
 
@@ -113,7 +115,7 @@ Rectangle {
 
             Text {
                 id: errorMsg; anchors.horizontalCenter: parent.horizontalCenter
-                text: ""; color: root.cPink; font.family: mainFont.name; font.pixelSize: 12 * s; font.letterSpacing: 1 * s
+                text: ""; color: root.cPink; font.family: root.fontName; font.pixelSize: 12 * s; font.letterSpacing: 1 * s
                 visible: text !== ""
             }
 
@@ -127,7 +129,7 @@ Rectangle {
                     ]
                     delegate: Text {
                         text: (modelData.a === 0 && sessionHelper.currentItem) ? sessionHelper.currentItem.sName.toUpperCase() : modelData.l
-                        color: actMa.containsMouse ? root.cPink : root.cSub; font.family: mainFont.name; font.pixelSize: 11 * s; font.letterSpacing: 2 * s
+                        color: actMa.containsMouse ? root.cPink : root.cSub; font.family: root.fontName; font.pixelSize: 11 * s; font.letterSpacing: 2 * s
                         Behavior on color { ColorAnimation { duration: 200 } }
                         MouseArea {
                             id: actMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.BlankCursor

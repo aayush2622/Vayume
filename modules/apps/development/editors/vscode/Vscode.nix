@@ -114,6 +114,12 @@ in
         "files.autoSave" = "onWindowChange";
 
         "editor.fontFamily" = vayumeTheme.font;
+        "terminal.integrated.fontFamily" = vayumeTheme.font;
+        "debug.console.fontFamily" = vayumeTheme.font;
+        "markdown.preview.fontFamily" = vayumeTheme.font;
+        "scm.inputFontFamily" = vayumeTheme.font;
+        "editor.codeLensFontFamily" = vayumeTheme.font;
+        "editor.inlayHints.fontFamily" = vayumeTheme.font;
         "editor.fontLigatures" = true;
         "editor.fontSize" = 15;
         "editor.fontWeight" = "normal";

@@ -46,6 +46,7 @@
         ui_font_weight = 400.0;
         ui_font_family = vayumeTheme.font;
         buffer_font_family = vayumeTheme.font;
+        terminal.font_family = vayumeTheme.font;
         ui_font_size = 16;
         buffer_font_size = 15;
         base_keymap = "JetBrains";

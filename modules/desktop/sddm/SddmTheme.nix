@@ -6,6 +6,7 @@
         [General]
         background=bg.png
         font=Itim
+        fontFamily=${config.vayume.theme.font}
         themeMode=light
         cursorTheme=${config.vayume.theme.cursorTheme}
         cursorSize=${toString config.vayume.theme.cursorSize}
