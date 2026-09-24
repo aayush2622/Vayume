@@ -773,8 +773,10 @@ collapsed by hand once it's no longer needed.
 Below the repository info, the System page has a Maintenance card with
 one row per command that sets `panel` in the `vayume.commands` registry
 ([Commands.nix](core-commands.md)): clean up old generations (`gc`), check
-`_config.nix` (`config validate`), check plugin updates, reload Zen, and
-the Waydroid reinstall and repair. `ActionRow.qml` draws each; commands
+`_config.nix` (`config validate`), check plugin updates, and the Waydroid
+reinstall and repair. A command whose `panel` names an app (`app =
+"ZenBrowser"` for reload Zen) is shown under that app in Applications
+instead, in the same collapsed section as its settings. `ActionRow.qml` draws each; commands
 marked `confirm` need a second click within five seconds. The list comes
 from `vayume --json`, so a button exists exactly when its command does
 (no Zen button if Zen is off), and adding a button is one `panel`
@@ -794,7 +796,7 @@ rebuild, since settings edits are not evaluated when saved.
 
 Each `SettingRow.qml` has an icon chip, the label, the description, and the control: a toggle for booleans, a dropdown for enums (with a "Default" entry when the option is nullable), a text field for numbers, strings and string lists. A row whose value differs from what is running gets an amber accent, a "Pending rebuild" badge and a "Running now: ..." line; a row with a line in `_config.nix` shows "Customized" and an undo button that resets it. There is no per-option QML - a new `lib.mkOption` under `vayume.*` appears on the page after the next rebuild; how that works and how to customise the label and icon is in [Settings.nix](core-settings.md). Errors come back the same way as on the other pages (`pickError`).
 
-**App settings live under the app.** `AppSettings.qml` sits beneath each toggle on the Applications page and lists the settings whose `settingsMeta` names that app (Distrobox has eleven). It starts collapsed, and its header shows how many options there are and how many are pending a rebuild; it reuses `SettingRow.qml`, so the controls behave exactly as on All Settings. Apps with no settings show nothing extra. The Development page does not render them yet, since none of its apps declares options.
+**App settings live under the app.** `AppSettings.qml` sits beneath each toggle on the Applications page and lists the settings whose `settingsMeta` names that app (Distrobox has eleven). It is a rounded bar inset under the toggle, collapsed by default: an icon chip, "<App> options", a count pill, a pending-rebuild badge when needed, and a chevron on the right. Expanded, the rows sit in their own inset panel with an accent line, and the app's buttons (see the System page section) follow the settings; it reuses `SettingRow.qml`, so the controls behave exactly as on All Settings. Apps with no settings show nothing extra. The Development page does not render them yet, since none of its apps declares options.
 
 **Loading is lazy.** The bar widget only runs `vayume config repo` (about 60 ms) at login. Opening the window loads just the visible page's data (`ensurePage`), and each other page the first time it is opened; reopening the window reloads the active page. Combined with the read cache in [Config.nix](core-vayume-config.md), switching pages is instant unless something in the repo changed.
 

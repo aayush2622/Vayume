@@ -402,6 +402,7 @@ in
         panel = {
           label = "Reload Zen Browser";
           icon = "refresh";
+          app = "ZenBrowser";
         };
       };
 

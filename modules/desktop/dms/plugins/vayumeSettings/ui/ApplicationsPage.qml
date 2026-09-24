@@ -72,7 +72,7 @@ Column {
             width: parent.width
             height: contentHeight
             clip: true
-            spacing: 2
+            spacing: 6
             visible: !root.vm.appsLoading && root.filteredApps.length > 0
             model: root.filteredApps
 
@@ -95,6 +95,7 @@ Column {
                 id: appEntry
                 required property var modelData
                 width: appsListView.width
+                spacing: Theme.spacingXS
 
                 DankToggle {
                     width: parent.width

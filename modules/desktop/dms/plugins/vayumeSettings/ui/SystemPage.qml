@@ -6,6 +6,7 @@ Column {
     id: root
 
     required property var vm
+    readonly property var systemActions: root.vm.actions.filter(a => !a.panel.app)
     width: parent.width
     spacing: Theme.spacingM
 
@@ -106,10 +107,10 @@ Column {
         icon: "build_circle"
         subtitle: I18n.tr("One-click versions of vayume commands. Output streams into the log at the bottom.")
         width: parent.width
-        visible: root.vm.actions.length > 0
+        visible: root.systemActions.length > 0
 
         Repeater {
-            model: root.vm.actions
+            model: root.systemActions
 
             Column {
                 required property var modelData

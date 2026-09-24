@@ -108,7 +108,7 @@ PluginComponent {
         switch (id) {
         case "appearance": refreshTheme(); break;
         case "development": refreshDevelopment(); refreshApps(); break;
-        case "applications": refreshApps(); refreshSettings(); break;
+        case "applications": refreshApps(); refreshSettings(); refreshActions(); break;
         case "defaults": refreshDefaultApps(); break;
         case "users": refreshUsers(); break;
         case "options": refreshSettings(); break;
