@@ -7,18 +7,21 @@
         xwayland.enable = true;
       };
 
-      
       programs.ydotool.enable = true;
       users.groups.ydotool.members = lib.attrNames config.vayume.users;
     };
 
   flake.homeModules.Hyprland =
-    { lib, pkgs, self, ... }:
+    {
+      lib,
+      pkgs,
+      self,
+      ...
+    }:
     let
       actions = lib.mapAttrs (_: lib.concatStringsSep " ") (self.vayumeLib.mkDesktopActions pkgs);
       lua = lib.generators.mkLuaInline;
 
-    
       typeClipboard = pkgs.writeShellScriptBin "vayume-type-clipboard" ''
         set -euo pipefail
 
@@ -214,7 +217,9 @@
           layer_rule = [
             {
               name = "dms-blur";
-              match = { namespace = "^dms:.*$"; };
+              match = {
+                namespace = "^dms:.*$";
+              };
               blur = true;
               blur_popups = true;
               xray = true;

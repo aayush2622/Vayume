@@ -1,203 +1,235 @@
 { self, inputs, ... }: {
-  flake.nixosModules.Users = { config, lib, pkgs, ... }:
-  let
-    defaultUserSecrets = {
-      WAKATIME_API_KEY = "REPLACE_ME";
-      RBW_EMAIL = "REPLACE_ME";
-    };
-
-    cfg = config.vayume.users;
-
-    availableApps = builtins.attrNames self.homeModules.apps;
-
-    enabledAppNames = builtins.attrNames (
-      lib.filterAttrs (_: app: app.enable) config.vayume.apps
-    );
-
-    userSubmodule = lib.types.submodule ({ name, ... }: {
-      options = {
-        fullName = lib.mkOption {
-          type = lib.types.str;
-          default = name;
-          description = "Display name (GECOS).";
-        };
-
-        hashedPassword = lib.mkOption {
-          type = lib.types.nullOr lib.types.str;
-          default = null;
-          description = ''
-            Hashed password (mkpasswd -m sha-512). Set this from
-            _config.nix (a gitignored file that lives next to Host.nix,
-            never committed - see docs/core-users.md), not a tracked Nix file,
-            so the repo has zero personal data in it and stays safe to
-            publish. Leave unset to fall back to initialPassword
-            "changeme". users.mutableUsers is false, so a `passwd` change
-            is reverted on the next rebuild - set a real hash here (or
-            from Vayume Settings) instead.
-          '';
-        };
-
-        extraGroups = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ "networkmanager" "video" "input" ];
-          description = "Add \"wheel\" here for sudo access, \"adbusers\" for Android debugging, etc.";
-        };
-
-        secrets = lib.mkOption {
-          type = lib.types.attrsOf lib.types.anything;
-          default = { };
-          description = ''
-            Small per-app credentials (WakaTime key, rbw email - see
-            docs/core-users.md for the full shape) passed straight to
-            every app module as the `vayumeSecrets` argument. Left-out
-            keys, or the whole attrset, fall back to "REPLACE_ME"
-            placeholders - a key still equal to that disables whatever
-            it would've configured (no WakaTime extension installed, no
-            rbw email written) instead of configuring it with a useless
-            value. Plain values, no encryption layer - fine given
-            _config.nix is already gitignored and owner-only on disk;
-            lands in the world-readable Nix store wherever a consuming
-            app module writes it out, same as any other Nix-declared
-            value.
-          '';
-        };
-
-        avatar = lib.mkOption {
-          type = lib.types.nullOr lib.types.path;
-          default = null;
-          description = "Optional path to a .face avatar image (DMS profile card, via accounts-daemon).";
-        };
-
-        shell = lib.mkOption {
-          type = lib.types.package;
-          default = pkgs.zsh;
-        };
-
-        extraPackages = lib.mkOption {
-          type = lib.types.listOf lib.types.package;
-          default = [ ];
-          description = "Any one-off packages just for this user, e.g. `[ pkgs.blender ]`.";
-        };
-
-        packages = lib.mkOption {
-          type = lib.types.attrsOf lib.types.bool;
-          default = { };
-          description = ''
-            Extra packages by nixpkgs attribute path (e.g. "blender",
-            "nodePackages.pnpm"), each individually toggleable - what
-            Vayume Settings' package search reads and writes, see
-            docs/core-vayume-config.md. Different from extraPackages
-            (a plain package list, Nix-only, for anything a name-based
-            search can't express - an override, a wrapped derivation):
-            every entry here is a plain string key, so turning one off
-            keeps it listed instead of forgetting it outright the way
-            removing it from extraPackages would. A key that doesn't
-            resolve to a real nixpkgs package fails the same way any
-            other bad value in _config.nix does - at evaluation, not
-            silently.
-          '';
-        };
+  flake.nixosModules.Users =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      defaultUserSecrets = {
+        WAKATIME_API_KEY = "REPLACE_ME";
+        RBW_EMAIL = "REPLACE_ME";
       };
-    });
 
-    resolvePackagePath = path: lib.attrByPath (lib.splitString "." path)
-      (throw "vayume: unknown package \"${path}\" in vayume.users.*.packages") pkgs;
-  in {
-    options.vayume.users = lib.mkOption {
-      type = lib.types.attrsOf userSubmodule;
-      default = { };
-      description = ''
-        One entry per person using this machine. Set from
-        modules/hosts/<name>/_config.nix (see docs/core-users.md) - a gitignored
-        file, required, not a Nix-declared block here, so the repo has
-        zero personal data in it and stays safe to publish. Fine to set
-        directly in a tracked host file instead if you'd rather commit
-        real users to git - not recommended for a public repo.
-      '';
-    };
+      cfg = config.vayume.users;
 
-    options.vayume.apps = lib.mkOption {
-      type = lib.types.submodule {
-        options = lib.genAttrs availableApps (
-          name: lib.mkOption {
-            type = lib.types.submodule {
-              options.enable = lib.mkEnableOption "the ${name} app module (modules/apps/**/${name}.nix) for every user on this machine";
+      availableApps = builtins.attrNames self.homeModules.apps;
+
+      enabledAppNames = builtins.attrNames (lib.filterAttrs (_: app: app.enable) config.vayume.apps);
+
+      userSubmodule = lib.types.submodule (
+        { name, ... }: {
+          options = {
+            fullName = lib.mkOption {
+              type = lib.types.str;
+              default = name;
+              description = "Display name (GECOS).";
             };
-            default = { };
-          }
-        );
-      };
-      default = { };
-      description = ''
-        Which optional app modules (from modules/apps/) EVERYONE on this
-        machine gets, e.g. `vayume.apps.Vscode.enable = true;`. One real,
-        individually-named option per module under modules/apps/ - type
-        `vayume.apps.` in an editor with Nix LSP support and every
-        available app shows up by name, instead of needing to already
-        know the exact quoted string a `listOf` would require. Set from
-        modules/hosts/<name>/_config.nix, same file as `vayume.users` -
-        also the file DMS's "Vayume Settings" plugin edits, through
-        `vayume-config` (see docs/core-vayume-config.md).
-      '';
-    };
 
-    config = lib.mkIf (cfg != { }) {
-      assertions = lib.mapAttrsToList (name: u: {
-        assertion = u.hashedPassword == null || !(lib.hasPrefix "REPLACE" u.hashedPassword);
-        message = ''
-          vayume.users.${name}.hashedPassword is still the "${u.hashedPassword}" placeholder
-          from _config.nix.example - that would lock ${name} out. Either paste a real hash
-          (mkpasswd -m sha-512) or delete the line to log in with "changeme".
+            hashedPassword = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = ''
+                Hashed password (mkpasswd -m sha-512). Set this from
+                _config.nix (a gitignored file that lives next to Host.nix,
+                never committed - see docs/core-users.md), not a tracked Nix file,
+                so the repo has zero personal data in it and stays safe to
+                publish. Leave unset to fall back to initialPassword
+                "changeme". users.mutableUsers is false, so a `passwd` change
+                is reverted on the next rebuild - set a real hash here (or
+                from Vayume Settings) instead.
+              '';
+            };
+
+            extraGroups = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [
+                "networkmanager"
+                "video"
+                "input"
+              ];
+              description = "Add \"wheel\" here for sudo access, \"adbusers\" for Android debugging, etc.";
+            };
+
+            secrets = lib.mkOption {
+              type = lib.types.attrsOf lib.types.anything;
+              default = { };
+              description = ''
+                Small per-app credentials (WakaTime key, rbw email - see
+                docs/core-users.md for the full shape) passed straight to
+                every app module as the `vayumeSecrets` argument. Left-out
+                keys, or the whole attrset, fall back to "REPLACE_ME"
+                placeholders - a key still equal to that disables whatever
+                it would've configured (no WakaTime extension installed, no
+                rbw email written) instead of configuring it with a useless
+                value. Plain values, no encryption layer - fine given
+                _config.nix is already gitignored and owner-only on disk;
+                lands in the world-readable Nix store wherever a consuming
+                app module writes it out, same as any other Nix-declared
+                value.
+              '';
+            };
+
+            avatar = lib.mkOption {
+              type = lib.types.nullOr lib.types.path;
+              default = null;
+              description = "Optional path to a .face avatar image (DMS profile card, via accounts-daemon).";
+            };
+
+            shell = lib.mkOption {
+              type = lib.types.package;
+              default = pkgs.zsh;
+            };
+
+            extraPackages = lib.mkOption {
+              type = lib.types.listOf lib.types.package;
+              default = [ ];
+              description = "Any one-off packages just for this user, e.g. `[ pkgs.blender ]`.";
+            };
+
+            packages = lib.mkOption {
+              type = lib.types.attrsOf lib.types.bool;
+              default = { };
+              description = ''
+                Extra packages by nixpkgs attribute path (e.g. "blender",
+                "nodePackages.pnpm"), each individually toggleable - what
+                Vayume Settings' package search reads and writes, see
+                docs/core-vayume-config.md. Different from extraPackages
+                (a plain package list, Nix-only, for anything a name-based
+                search can't express - an override, a wrapped derivation):
+                every entry here is a plain string key, so turning one off
+                keeps it listed instead of forgetting it outright the way
+                removing it from extraPackages would. A key that doesn't
+                resolve to a real nixpkgs package fails the same way any
+                other bad value in _config.nix does - at evaluation, not
+                silently.
+              '';
+            };
+          };
+        }
+      );
+
+      resolvePackagePath =
+        path:
+        lib.attrByPath (lib.splitString "." path)
+          (throw "vayume: unknown package \"${path}\" in vayume.users.*.packages")
+          pkgs;
+    in
+    {
+      options.vayume.users = lib.mkOption {
+        type = lib.types.attrsOf userSubmodule;
+        default = { };
+        description = ''
+          One entry per person using this machine. Set from
+          modules/hosts/<name>/_config.nix (see docs/core-users.md) - a gitignored
+          file, required, not a Nix-declared block here, so the repo has
+          zero personal data in it and stays safe to publish. Fine to set
+          directly in a tracked host file instead if you'd rather commit
+          real users to git - not recommended for a public repo.
         '';
-      }) cfg;
+      };
 
-      warnings = lib.optional (!lib.any (u: builtins.elem "wheel" u.extraGroups) (builtins.attrValues cfg)) ''
-        No user in vayume.users has "wheel" in extraGroups - nobody on this machine can use
-        sudo (or vayume-rebuild), and users.mutableUsers = false means that can't be fixed
-        without another rebuild. Add "wheel" to at least one user's extraGroups.
-      '';
-
-      users.mutableUsers = false;
-
-      users.users = lib.mapAttrs (name: u: {
-        isNormalUser = true;
-        description = u.fullName;
-        extraGroups = u.extraGroups;
-        shell = u.shell;
-      } // (if u.hashedPassword != null
-            then { hashedPassword = u.hashedPassword; }
-            else { initialPassword = "changeme"; }
-          )) cfg;
-
-      programs.zsh.enable = true;
-
-      home-manager.useGlobalPkgs = true;
-      home-manager.useUserPackages = true;
-      home-manager.extraSpecialArgs = { inherit inputs self; vayumeTheme = config.vayume.theme; vayumeApps = enabledAppNames; };
-      home-manager.backupFileExtension = "backup";
-      home-manager.overwriteBackup = true;
-
-      home-manager.users = lib.mapAttrs (name: u: { lib, pkgs, ... }: {
-        _module.args.vayumeSecrets = lib.recursiveUpdate defaultUserSecrets u.secrets;
-
-        imports = [
-          self.homeModules.Theming
-          self.homeModules.Hyprland
-        ] ++ (map (app: self.homeModules.apps.${app}) enabledAppNames);
-
-        home.stateVersion = config.system.stateVersion;
-        home.packages = u.extraPackages ++ (
-          lib.mapAttrsToList (path: _: resolvePackagePath path)
-            (lib.filterAttrs (_: enabled: enabled) u.packages)
-        );
-        home.file = lib.mkIf (u.avatar != null) {
-          ".face".source = u.avatar;
+      options.vayume.apps = lib.mkOption {
+        type = lib.types.submodule {
+          options = lib.genAttrs availableApps (
+            name:
+            lib.mkOption {
+              type = lib.types.submodule {
+                options.enable = lib.mkEnableOption "the ${name} app module (modules/apps/**/${name}.nix) for every user on this machine";
+              };
+              default = { };
+            }
+          );
         };
-      }) cfg;
+        default = { };
+        description = ''
+          Which optional app modules (from modules/apps/) EVERYONE on this
+          machine gets, e.g. `vayume.apps.Vscode.enable = true;`. One real,
+          individually-named option per module under modules/apps/ - type
+          `vayume.apps.` in an editor with Nix LSP support and every
+          available app shows up by name, instead of needing to already
+          know the exact quoted string a `listOf` would require. Set from
+          modules/hosts/<name>/_config.nix, same file as `vayume.users` -
+          also the file DMS's "Vayume Settings" plugin edits, through
+          `vayume-config` (see docs/core-vayume-config.md).
+        '';
+      };
 
-      systemd.services = lib.mapAttrs' (name: u: lib.nameValuePair "home-manager-${name}" {
-        serviceConfig.TimeoutStartSec = lib.mkForce "600sec";
-      }) cfg;
+      config = lib.mkIf (cfg != { }) {
+        assertions = lib.mapAttrsToList (name: u: {
+          assertion = u.hashedPassword == null || !(lib.hasPrefix "REPLACE" u.hashedPassword);
+          message = ''
+            vayume.users.${name}.hashedPassword is still the "${u.hashedPassword}" placeholder
+            from _config.nix.example - that would lock ${name} out. Either paste a real hash
+            (mkpasswd -m sha-512) or delete the line to log in with "changeme".
+          '';
+        }) cfg;
+
+        warnings =
+          lib.optional (!lib.any (u: builtins.elem "wheel" u.extraGroups) (builtins.attrValues cfg))
+            ''
+              No user in vayume.users has "wheel" in extraGroups - nobody on this machine can use
+              sudo (or vayume-rebuild), and users.mutableUsers = false means that can't be fixed
+              without another rebuild. Add "wheel" to at least one user's extraGroups.
+            '';
+
+        users.mutableUsers = false;
+
+        users.users = lib.mapAttrs (
+          name: u:
+          {
+            isNormalUser = true;
+            description = u.fullName;
+            extraGroups = u.extraGroups;
+            shell = u.shell;
+          }
+          // (
+            if u.hashedPassword != null then
+              { hashedPassword = u.hashedPassword; }
+            else
+              { initialPassword = "changeme"; }
+          )
+        ) cfg;
+
+        programs.zsh.enable = true;
+
+        home-manager.useGlobalPkgs = true;
+        home-manager.useUserPackages = true;
+        home-manager.extraSpecialArgs = {
+          inherit inputs self;
+          vayumeTheme = config.vayume.theme;
+          vayumeApps = enabledAppNames;
+        };
+        home-manager.backupFileExtension = "backup";
+        home-manager.overwriteBackup = true;
+
+        home-manager.users = lib.mapAttrs (name: u: { lib, pkgs, ... }: {
+          _module.args.vayumeSecrets = lib.recursiveUpdate defaultUserSecrets u.secrets;
+
+          imports = [
+            self.homeModules.Theming
+            self.homeModules.Hyprland
+          ]
+          ++ (map (app: self.homeModules.apps.${app}) enabledAppNames);
+
+          home.stateVersion = config.system.stateVersion;
+          home.packages =
+            u.extraPackages
+            ++ (lib.mapAttrsToList (path: _: resolvePackagePath path) (
+              lib.filterAttrs (_: enabled: enabled) u.packages
+            ));
+          home.file = lib.mkIf (u.avatar != null) {
+            ".face".source = u.avatar;
+          };
+        }) cfg;
+
+        systemd.services = lib.mapAttrs' (
+          name: u:
+          lib.nameValuePair "home-manager-${name}" {
+            serviceConfig.TimeoutStartSec = lib.mkForce "600sec";
+          }
+        ) cfg;
+      };
     };
-  };
 }

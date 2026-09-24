@@ -221,49 +221,49 @@
           '';
 
           boxRun = pkgs.writeShellScriptBin "vayume-box${cmdSuffix}-run" ''
-            set -eu
+                        set -eu
 
-            ${ensureBox}
+                        ${ensureBox}
 
-            if [ "$#" -eq 0 ]; then
-              echo "usage: vayume box${cmdSuffix} run <command> [args...]" >&2
-              exit 2
-            fi
+                        if [ "$#" -eq 0 ]; then
+                          echo "usage: vayume box${cmdSuffix} run <command> [args...]" >&2
+                          exit 2
+                        fi
 
-            target=$1
-            shift
+                        target=$1
+                        shift
 
-            case "$target" in
-              "~/"*)
-                target=${lib.escapeShellArg boxHome}/''${target#\~/}
-                ;;
+                        case "$target" in
+                          "~/"*)
+                            target=${lib.escapeShellArg boxHome}/''${target#\~/}
+                            ;;
 
-              */*)
-                ;;
+                          */*)
+                            ;;
 
-              *)
-                if [ -e ${lib.escapeShellArg "${boxHome}/Applications"}/"$target" ]; then
-                  target=${lib.escapeShellArg "${boxHome}/Applications"}/"$target"
-                fi
-                ;;
-            esac
+                          *)
+                            if [ -e ${lib.escapeShellArg "${boxHome}/Applications"}/"$target" ]; then
+                              target=${lib.escapeShellArg "${boxHome}/Applications"}/"$target"
+                            fi
+                            ;;
+                        esac
 
-            case "$target" in
-              *.AppImage|*.appimage)
-                ${ensureAppImageDeps}
-                name=''${target##*/}
-                ${boxEnter} sh -c "pkill -f '[''${name:0:1}]''${name:1}'; pkill -f '[.]mount_''${name:0:6}'; sleep 2; pkill -9 -f '[''${name:0:1}]''${name:1}'; pkill -9 -f '[.]mount_''${name:0:6}'; sleep 1" || true
-                ;;
-            esac
+                        case "$target" in
+                          *.AppImage|*.appimage)
+                            ${ensureAppImageDeps}
+                            name=''${target##*/}
+                            ${boxEnter} sh -c "pkill -f '[''${name:0:1}]''${name:1}'; pkill -f '[.]mount_''${name:0:6}'; sleep 2; pkill -9 -f '[''${name:0:1}]''${name:1}'; pkill -9 -f '[.]mount_''${name:0:6}'; sleep 1" || true
+                            ;;
+                        esac
 
-${lib.optionalString (cfg.x11Apps != [ ]) ''
+            ${lib.optionalString (cfg.x11Apps != [ ]) ''
               case "''${target##*/}" in
                 ${lib.concatStringsSep "|" cfg.x11Apps})
                   exec ${x11Enter} "$target" "$@"
                   ;;
               esac
             ''}
-            exec ${boxEnter} "$target" "$@"
+                        exec ${boxEnter} "$target" "$@"
           '';
 
           boxInstall = pkgs.writeShellScriptBin "vayume-box${cmdSuffix}-install" ''
@@ -465,8 +465,12 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
         in
         builtins.listToAttrs [
           (entry "" box "Enter the '${boxName}' Distrobox (or run a command in it)" "[command...]")
-          (entry "run" boxRun "Start a GUI app from '${boxName}' through the focus proxy" "<command> [args...]")
-          (entry "install" boxInstall "Install an AppImage, .deb or apt package into '${boxName}'" "<file.AppImage|file.deb|package>...")
+          (entry "run" boxRun "Start a GUI app from '${boxName}' through the focus proxy"
+            "<command> [args...]"
+          )
+          (entry "install" boxInstall "Install an AppImage, .deb or apt package into '${boxName}'"
+            "<file.AppImage|file.deb|package>..."
+          )
           (entry "apps" boxApps "List apps installed in '${boxName}'" "")
           (entry "export" boxExport "Add a '${boxName}' app to the host launcher" "<app-name>...")
           (entry "sync" boxSync "Re-sync '${boxName}' launcher entries and icons to the host" "")

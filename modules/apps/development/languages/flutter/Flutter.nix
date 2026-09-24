@@ -23,14 +23,29 @@
     };
     androidStudio = {
       autoPlugins = [
-        { dirName = "Dart"; id = "Dart"; }
-        { dirName = "Flutter Enhancement Suite"; id = "de.mariushoefler.flutter_enhancement_suite"; }
-        { dirName = "flutter-intellij"; id = "io.flutter"; }
-        { dirName = "flutter-intl"; id = "com.localizely.flutter-intl"; }
+        {
+          dirName = "Dart";
+          id = "Dart";
+        }
+        {
+          dirName = "Flutter Enhancement Suite";
+          id = "de.mariushoefler.flutter_enhancement_suite";
+        }
+        {
+          dirName = "flutter-intellij";
+          id = "io.flutter";
+        }
+        {
+          dirName = "flutter-intl";
+          id = "com.localizely.flutter-intl";
+        }
       ];
     };
     zed = {
-      extensions = [ "dart" "flutter-snippets" ];
+      extensions = [
+        "dart"
+        "flutter-snippets"
+      ];
       tasks = [
         {
           label = "Dart: Run current file";
@@ -50,12 +65,18 @@
 
   flake.appDescriptions.Flutter = "Flutter/Dart SDK and editor integrations.";
 
-  flake.homeModules.apps.Flutter = { inputs, self, pkgs, lib, ... }:
+  flake.homeModules.apps.Flutter =
+    {
+      inputs,
+      self,
+      pkgs,
+      lib,
+      ...
+    }:
     let
 
       wpewebkit = inputs.nix-wpe-webkit-bin.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
-   
       wpeDeps = with pkgs; [
         wpewebkit
         libwpe
@@ -68,9 +89,11 @@
         libglvnd
       ];
 
-    
-      buildTools = with pkgs; [ pkg-config ninja patchelf ];
-
+      buildTools = with pkgs; [
+        pkg-config
+        ninja
+        patchelf
+      ];
 
       otherPluginDeps = with pkgs; [
         alsa-lib
@@ -86,20 +109,21 @@
       ];
 
       allDeps = wpeDeps ++ otherPluginDeps;
-    in {
+    in
+    {
       home.packages = with pkgs; [ flutter ] ++ allDeps ++ buildTools;
 
-      home.sessionVariables.PKG_CONFIG_PATH =
-        "${lib.makeSearchPath "lib/pkgconfig" (map lib.getDev allDeps)}:$PKG_CONFIG_PATH";
+      home.sessionVariables.PKG_CONFIG_PATH = "${lib.makeSearchPath "lib/pkgconfig" (map lib.getDev allDeps)}:$PKG_CONFIG_PATH";
 
-      home.sessionVariables.CMAKE_PREFIX_PATH =
-        "${lib.concatMapStringsSep ":" (p: "${lib.getDev p}:${lib.getLib p}") allDeps}:$CMAKE_PREFIX_PATH";
+      home.sessionVariables.CMAKE_PREFIX_PATH = "${
+        lib.concatMapStringsSep ":" (p: "${lib.getDev p}:${lib.getLib p}") allDeps
+      }:$CMAKE_PREFIX_PATH";
 
-      home.sessionVariables.CPATH =
-        "${lib.makeSearchPath "include" (map lib.getDev allDeps)}:$CPATH";
+      home.sessionVariables.CPATH = "${lib.makeSearchPath "include" (map lib.getDev allDeps)}:$CPATH";
 
-      home.sessionVariables.FLUTTER_NIX_LIB_DIRS =
-        lib.concatMapStringsSep ":" (p: "${lib.getLib p}/lib") allDeps;
+      home.sessionVariables.FLUTTER_NIX_LIB_DIRS = lib.concatMapStringsSep ":" (
+        p: "${lib.getLib p}/lib"
+      ) allDeps;
 
       home.file.".local/share/dart-sdk".source = "${pkgs.flutter}/bin/cache/dart-sdk";
       home.file.".local/share/flutter-sdk".source = "${pkgs.flutter}";

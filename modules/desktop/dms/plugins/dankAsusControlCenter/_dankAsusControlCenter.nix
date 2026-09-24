@@ -1,4 +1,10 @@
-{ self, pkgs, lib, config, ... }:
+{
+  self,
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   h = self.vayumeLib.dmsPluginHelpers { inherit pkgs; };
 

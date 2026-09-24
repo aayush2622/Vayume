@@ -2,8 +2,14 @@
   flake.devLanguages.Qt = {
     vscode = {
       marketplaceExtensions = [
-        { publisher = "theqtcompany"; name = "qt-core"; }
-        { publisher = "theqtcompany"; name = "qt-qml"; }
+        {
+          publisher = "theqtcompany";
+          name = "qt-core";
+        }
+        {
+          publisher = "theqtcompany";
+          name = "qt-qml";
+        }
       ];
       settings = pkgs: {
         "qt-qml.qmlls.useQmlImportPathEnvVar" = true;

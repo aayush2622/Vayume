@@ -1,4 +1,12 @@
-{ self, pkgs, lib, config, gamesDir, vayumeTheme, ... }:
+{
+  self,
+  pkgs,
+  lib,
+  config,
+  gamesDir,
+  vayumeTheme,
+  ...
+}:
 {
   home.packages = with pkgs; [
     lutris

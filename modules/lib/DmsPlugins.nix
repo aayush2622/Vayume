@@ -1,7 +1,8 @@
 { inputs, lib, ... }: {
   options.flake.vayumeLib.dmsPluginHelpers = lib.mkOption {
     type = lib.types.unspecified;
-    default = { pkgs }:
+    default =
+      { pkgs }:
       let
         assertPatched = file: needle: ''
           grep -qF ${lib.escapeShellArg needle} "${file}" || {
@@ -17,13 +18,15 @@
           }
         '';
 
-        mkPatchedPlugin = name: src: patchScript:
+        mkPatchedPlugin =
+          name: src: patchScript:
           pkgs.runCommand "dms-plugin-${name}-patched" { } ''
             cp -r ${src} $out
             chmod -R u+w $out
             ${patchScript}
           '';
-      in {
+      in
+      {
         registryPlugins = pkgs.callPackage "${inputs.dms-plugin-registry}/nix/default.nix" { };
 
         audioIsPlayingScript = pkgs.writeShellScript "vayume-audio-is-playing" ''

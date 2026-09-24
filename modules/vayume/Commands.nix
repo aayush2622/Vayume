@@ -7,28 +7,30 @@ let
       docs/core-commands.md. A module registers one here instead of
       putting its own vayume-<name> binary on PATH.
     '';
-    type = lib.types.attrsOf (lib.types.submodule {
-      options = {
-        command = lib.mkOption {
-          type = lib.types.str;
-          description = "Absolute path of the executable; arguments after the subcommand are passed through.";
+    type = lib.types.attrsOf (
+      lib.types.submodule {
+        options = {
+          command = lib.mkOption {
+            type = lib.types.str;
+            description = "Absolute path of the executable; arguments after the subcommand are passed through.";
+          };
+          description = lib.mkOption {
+            type = lib.types.str;
+            description = "One line, shown in `vayume help`, the menu, and completion.";
+          };
+          usage = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            description = "Argument synopsis. Empty means the command takes no arguments, so the menu runs it straight away.";
+          };
+          confirm = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Ask before running it from the menu (destructive or slow commands).";
+          };
         };
-        description = lib.mkOption {
-          type = lib.types.str;
-          description = "One line, shown in `vayume help`, the menu, and completion.";
-        };
-        usage = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-          description = "Argument synopsis. Empty means the command takes no arguments, so the menu runs it straight away.";
-        };
-        confirm = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "Ask before running it from the menu (destructive or slow commands).";
-        };
-      };
-    });
+      }
+    );
   };
 in
 {
@@ -38,7 +40,12 @@ in
   };
 
   flake.homeModules.Commands =
-    { pkgs, config, osConfig, ... }:
+    {
+      pkgs,
+      config,
+      osConfig,
+      ...
+    }:
     let
       commands = (osConfig.vayume.commands or { }) // config.vayume.commands;
       names = lib.sort lib.lessThan (builtins.attrNames commands);
@@ -67,7 +74,11 @@ in
         #compdef vayume
         local -a subcommands
         subcommands=(
-        ${lib.concatMapStrings (name: "  ${lib.escapeShellArg "${name}:${commands.${name}.description}"}\n") names})
+        ${
+          lib.concatMapStrings (
+            name: "  ${lib.escapeShellArg "${name}:${commands.${name}.description}"}\n"
+          ) names
+        })
         if (( CURRENT == 2 )); then
           _describe 'vayume command' subcommands
         else
@@ -77,7 +88,10 @@ in
 
       dispatcher = pkgs.writeShellApplication {
         name = "vayume";
-        runtimeInputs = [ pkgs.fzf pkgs.coreutils ];
+        runtimeInputs = [
+          pkgs.fzf
+          pkgs.coreutils
+        ];
         text = ''
           declare -A cmd shown usage desc confirm
           ${table}

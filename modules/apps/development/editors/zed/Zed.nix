@@ -1,90 +1,102 @@
 { self, ... }: {
   flake.appDescriptions.Zed = "Zed editor, with extensions/tasks/settings pulled in per enabled language.";
 
-  flake.homeModules.apps.Zed = { pkgs, lib, config, vayumeTheme, vayumeApps, vayumeSecrets, ... }:
-  let
-    hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";
+  flake.homeModules.apps.Zed =
+    {
+      pkgs,
+      lib,
+      config,
+      vayumeTheme,
+      vayumeApps,
+      vayumeSecrets,
+      ...
+    }:
+    let
+      hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
-    languageZed = lib.mapAttrsToList (_: l: l.zed or { }) (self.enabledDevLanguages vayumeApps);
+      languageZed = lib.mapAttrsToList (_: l: l.zed or { }) (self.enabledDevLanguages vayumeApps);
 
-    languageExtensions = lib.unique (lib.concatMap (v: v.extensions or [ ]) languageZed);
-    languageSettings = lib.foldl' lib.recursiveUpdate { } (map (v: v.settings or { }) languageZed);
-    languageTasks = lib.concatMap (v: v.tasks or [ ]) languageZed;
+      languageExtensions = lib.unique (lib.concatMap (v: v.extensions or [ ]) languageZed);
+      languageSettings = lib.foldl' lib.recursiveUpdate { } (map (v: v.settings or { }) languageZed);
+      languageTasks = lib.concatMap (v: v.tasks or [ ]) languageZed;
 
-    extensions = [
-      "catppuccin"
-      "catppuccin-icons"
-      "color-highlight"
-      "discord-presence"
-      "html"
-      "one-dark-pro-enhanced"
-      "toml"
-    ] ++ languageExtensions ++ lib.optional hasWakatime "wakatime";
+      extensions = [
+        "catppuccin"
+        "catppuccin-icons"
+        "color-highlight"
+        "discord-presence"
+        "html"
+        "one-dark-pro-enhanced"
+        "toml"
+      ]
+      ++ languageExtensions
+      ++ lib.optional hasWakatime "wakatime";
 
-    settings = lib.recursiveUpdate {
-      git = {
-        inline_blame.show_commit_summary = true;
-        branch_picker.show_author_name = true;
-        disable_git = false;
-      };
-      git_panel.dock = "left";
-      autosave = "on_focus_change";
-      icon_theme = "Catppuccin Mocha";
-      cli_default_open_behavior = "existing_window";
-      project_panel.dock = "left";
-      ui_font_weight = 400.0;
-      ui_font_family = vayumeTheme.font;
-      buffer_font_family = vayumeTheme.font;
-      ui_font_size = 16;
-      buffer_font_size = 15;
-      base_keymap = "JetBrains";
-      theme = "DankShell Dark";
-      session.trust_all_worktrees = true;
-      agent = {
-        default_model = {
-          provider = "copilot_chat";
-          model = "gpt-5-mini";
-          enable_thinking = true;
-          effort = "high";
+      settings = lib.recursiveUpdate {
+        git = {
+          inline_blame.show_commit_summary = true;
+          branch_picker.show_author_name = true;
+          disable_git = false;
         };
-        favorite_models = [ ];
-        model_parameters = [ ];
+        git_panel.dock = "left";
+        autosave = "on_focus_change";
+        icon_theme = "Catppuccin Mocha";
+        cli_default_open_behavior = "existing_window";
+        project_panel.dock = "left";
+        ui_font_weight = 400.0;
+        ui_font_family = vayumeTheme.font;
+        buffer_font_family = vayumeTheme.font;
+        ui_font_size = 16;
+        buffer_font_size = 15;
+        base_keymap = "JetBrains";
+        theme = "DankShell Dark";
+        session.trust_all_worktrees = true;
+        agent = {
+          default_model = {
+            provider = "copilot_chat";
+            model = "gpt-5-mini";
+            enable_thinking = true;
+            effort = "high";
+          };
+          favorite_models = [ ];
+          model_parameters = [ ];
+        };
+        agent_servers = {
+          "codex-acp".type = "registry";
+          "github-copilot-cli".type = "registry";
+        };
+      } languageSettings;
+    in
+    {
+      programs.zed-editor = {
+        enable = true;
+        inherit extensions;
+        userSettings = settings;
+        userTasks = languageTasks;
       };
-      agent_servers = {
-        "codex-acp".type = "registry";
-        "github-copilot-cli".type = "registry";
-      };
-    } languageSettings;
-  in {
-    programs.zed-editor = {
-      enable = true;
-      inherit extensions;
-      userSettings = settings;
-      userTasks = languageTasks;
+
+      home.file.".config/matugen/templates/dank-zed-theme.json".text = self.matugenTemplates.zed;
+
+      vayume.matugenTemplates.zed = ''
+        [templates.zed]
+        input_path = '${config.home.homeDirectory}/.config/matugen/templates/dank-zed-theme.json'
+        output_path = '${config.home.homeDirectory}/.config/zed/themes/dank-zed-theme.json'
+      '';
+
+      home.activation.zedWakatimeKey = lib.hm.dag.entryAfter [ "writeBoundary" "zedSettingsActivation" ] (
+        lib.optionalString hasWakatime ''
+          SETTINGS_FILE="$HOME/.config/zed/settings.json"
+          WAKATIME_KEY=${lib.escapeShellArg vayumeSecrets.WAKATIME_API_KEY}
+          SETTINGS_TMP="$(mktemp)"
+
+          ${pkgs.jq}/bin/jq \
+            --arg key "$WAKATIME_KEY" \
+            '.lsp.wakatime.initialization_options."api-key" = $key' \
+            "$SETTINGS_FILE" > "$SETTINGS_TMP" \
+            && run cp "$SETTINGS_TMP" "$SETTINGS_FILE"
+
+          rm -f "$SETTINGS_TMP"
+        ''
+      );
     };
-
-    home.file.".config/matugen/templates/dank-zed-theme.json".text = self.matugenTemplates.zed;
-
-    vayume.matugenTemplates.zed = ''
-      [templates.zed]
-      input_path = '${config.home.homeDirectory}/.config/matugen/templates/dank-zed-theme.json'
-      output_path = '${config.home.homeDirectory}/.config/zed/themes/dank-zed-theme.json'
-    '';
-
-    home.activation.zedWakatimeKey = lib.hm.dag.entryAfter [ "writeBoundary" "zedSettingsActivation" ] (
-      lib.optionalString hasWakatime ''
-        SETTINGS_FILE="$HOME/.config/zed/settings.json"
-        WAKATIME_KEY=${lib.escapeShellArg vayumeSecrets.WAKATIME_API_KEY}
-        SETTINGS_TMP="$(mktemp)"
-
-        ${pkgs.jq}/bin/jq \
-          --arg key "$WAKATIME_KEY" \
-          '.lsp.wakatime.initialization_options."api-key" = $key' \
-          "$SETTINGS_FILE" > "$SETTINGS_TMP" \
-          && run cp "$SETTINGS_TMP" "$SETTINGS_FILE"
-
-        rm -f "$SETTINGS_TMP"
-      ''
-    );
-  };
 }

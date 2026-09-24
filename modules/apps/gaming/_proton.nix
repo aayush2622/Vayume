@@ -1,4 +1,10 @@
-{ self, pkgs, config, gamesDir, ... }:
+{
+  self,
+  pkgs,
+  config,
+  gamesDir,
+  ...
+}:
 {
   home.packages = with pkgs; [
     umu-launcher
