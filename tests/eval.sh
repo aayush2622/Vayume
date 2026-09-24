@@ -101,7 +101,8 @@ vc=$(nix_ build --no-link --print-out-paths --impure --expr "
   let f = builtins.getFlake \"path:$work\";
   in builtins.head (builtins.filter (p: (p.name or \"\") == \"vayume\")
     f.nixosConfigurations.$host0.config.home-manager.users.$user1.home.packages)")/bin/vayume
-"$vc" help | grep -q '^  config ' || { echo "vayume help has no config" >&2; exit 1; }
+help_out=$("$vc" help)
+grep -q '^  config ' <<<"$help_out" || { echo "vayume help has no config" >&2; exit 1; }
 "$vc" --has config
 
 step "vayume config against the example _config.nix"
@@ -132,6 +133,8 @@ vc_ defaults get | jq -e '.[] | select(.role == "editor") | .effective == "zedit
 vc_ defaults set editor auto | jq -e '.ok' >/dev/null
 expect_fail defaults set shell kitty
 vc_ settings list | jq -e 'length >= 10 and all(.[]; (.path | length) > 0 and (.kind | length) > 0)' >/dev/null
+vc_ settings list | jq -e '[.[] | select(.path | startswith("ubuntuBox."))] | length > 0 and all(.[]; .app == "Distrobox")' >/dev/null
+vc_ settings list | jq -e '[.[] | select(.path | startswith("network."))] | all(.[]; .app == null)' >/dev/null
 vc_ settings set network.tor.enable false | jq -e '.ok' >/dev/null
 vc_ settings list | jq -e '.[] | select(.path == "network.tor.enable") | .value == false and .applied == true and .configured and .pending' >/dev/null
 expect_fail settings set network.dns.provider nope

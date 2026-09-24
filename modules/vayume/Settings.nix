@@ -36,6 +36,11 @@
                 default = null;
                 description = "Material Symbols icon name shown beside the setting.";
               };
+              app = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Name of a vayume.apps.<Name> module. The setting is then shown under that app in Applications instead of on the All Settings page.";
+              };
               hidden = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
@@ -80,10 +85,6 @@
           icon = "speed";
           description = "Memory, disk, kernel and gaming tuning.";
         };
-        Distrobox = {
-          icon = "deployed_code";
-          description = "The Ubuntu containers behind `vayume box`.";
-        };
       };
 
       config.vayume.settingsMeta =
@@ -91,7 +92,7 @@
           entry = label: icon: { inherit label icon; };
           box = label: icon: {
             inherit label icon;
-            group = "Distrobox";
+            app = "Distrobox";
           };
         in
         {
