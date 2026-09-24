@@ -64,4 +64,4 @@ something to type.
 
 ---
 
-[← Config.nix](core-vayume-config.md) · [Index](CONFIGURATION.md) · [DevLanguages.nix →](core-devlanguages.md)
+[← Config.nix](core-vayume-config.md) · [Index](CONFIGURATION.md) · [Settings.nix →](core-settings.md)

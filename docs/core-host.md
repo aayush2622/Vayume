@@ -6,6 +6,11 @@ Every machine starts here. `Host.nix` is the one file that says what this partic
 
 ## `modules/hosts/<name>/Host.nix`
 
+**The `vayume.network` values in `Host.nix` are `lib.mkDefault`.** That
+lets `_config.nix` (and the All Settings page, see
+[Settings.nix](core-settings.md)) override them with a plain assignment;
+a plain value here would make the same option defined twice.
+
 **The host name is the folder name.** `Host.nix` sets
 `hostName = baseNameOf ./.` and uses it for `nixosConfigurations.<name>`,
 `networking.hostName`, and the "missing `_config.nix`" hint, so a host is

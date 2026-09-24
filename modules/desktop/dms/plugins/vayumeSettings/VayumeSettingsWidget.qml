@@ -38,6 +38,12 @@ PluginComponent {
     property string defaultAppsStatus: ""
     property bool defaultAppsError: false
 
+    property var settings: []
+    property bool settingsLoading: true
+    property string settingsStatus: ""
+    property bool settingsError: false
+    readonly property bool settingsSaving: settingsSetProc.running
+
     property var packageSearchResults: []
     readonly property bool packageSearching: packageSearchProc.running
     property string packageSearchError: ""
@@ -61,8 +67,8 @@ PluginComponent {
         return current;
     }
 
-    readonly property bool saving: root.themePending || setAppProc.running || root.usersSaving || defaultsSetProc.running
-    readonly property bool lastError: root.themeError || root.usersError || root.defaultAppsError
+    readonly property bool saving: root.themePending || setAppProc.running || root.usersSaving || defaultsSetProc.running || root.settingsSaving
+    readonly property bool lastError: root.themeError || root.usersError || root.defaultAppsError || root.settingsError
 
     function refreshRepo() { repoProc.running = true; }
     function refreshApps() { appsLoading = true; appsListProc.running = true; }
@@ -70,6 +76,17 @@ PluginComponent {
     function refreshTheme() { themeLoading = true; themeGetProc.running = true; }
     function refreshUsers() { usersLoading = true; usersListProc.running = true; }
     function refreshDefaultApps() { defaultAppsLoading = true; defaultsGetProc.running = true; }
+    function refreshSettings() { settingsLoading = true; settingsGetProc.running = true; }
+
+    function setSetting(path, values) {
+        settingsSetProc.command = ["vayume", "config", "settings", "set", path].concat(values);
+        settingsSetProc.running = true;
+    }
+
+    function resetSetting(path) {
+        settingsSetProc.command = ["vayume", "config", "settings", "reset", path];
+        settingsSetProc.running = true;
+    }
 
     function setDefaultApp(role, id) {
         defaultsSetProc.command = ["vayume", "config", "defaults", "set", role, id];
@@ -83,6 +100,7 @@ PluginComponent {
         refreshTheme();
         refreshUsers();
         refreshDefaultApps();
+        refreshSettings();
     }
 
     function queueThemeWrite(field, value) {
@@ -346,6 +364,38 @@ PluginComponent {
                 ? I18n.tr("Saved - rebuild to apply.")
                 : (defaultsSetProc.errorText || I18n.tr("Couldn't change that default."));
             root.refreshDefaultApps();
+            root.refreshRepo();
+        }
+    }
+
+    Process {
+        id: settingsGetProc
+        command: ["vayume", "config", "settings", "list"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.settingsLoading = false;
+                try {
+                    root.settings = JSON.parse(text);
+                } catch (e) {
+                    root.settings = [];
+                }
+            }
+        }
+    }
+
+    Process {
+        id: settingsSetProc
+        running: false
+        property string errorText: ""
+        onStarted: errorText = ""
+        stderr: SplitParser { onRead: line => settingsSetProc.errorText = root.pickError(settingsSetProc.errorText, line) }
+        onExited: exitCode => {
+            root.settingsError = exitCode !== 0;
+            root.settingsStatus = exitCode === 0
+                ? I18n.tr("Saved - rebuild to apply.")
+                : (settingsSetProc.errorText || I18n.tr("Couldn't change that setting."));
+            root.refreshSettings();
             root.refreshRepo();
         }
     }

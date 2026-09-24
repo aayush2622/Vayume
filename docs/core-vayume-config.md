@@ -28,6 +28,11 @@ vayume config theme set <fontSize|cursorTheme|font> <value> [--if-unmodified-sin
 vayume config defaults get                   # per role: chosen, automatic, effective, choices (see desktop-default-apps.md)
 vayume config defaults set <role> <id|auto> [--if-unmodified-since <epoch>]
                                               # only enabled apps are accepted; auto = null in _config.nix
+vayume config settings list                  # every other vayume.* option: value, default, kind, choices (see core-settings.md)
+vayume config settings set <path> <value...> [--if-unmodified-since <epoch>]
+                                              # flat `vayume.<path> = ...;` line; lists take one argument per element
+vayume config settings reset <path> [--if-unmodified-since <epoch>]
+                                              # removes that line, back to the default
 vayume config users list                     # every vayume.users.* + groupOptions (JSON)
 vayume config users add <user> [fullName] [--if-unmodified-since <epoch>]
 vayume config users remove <user> [--if-unmodified-since <epoch>]

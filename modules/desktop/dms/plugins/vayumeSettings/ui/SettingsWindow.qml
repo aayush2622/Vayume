@@ -20,6 +20,7 @@ DankFloatingWindow {
         { id: "development", label: I18n.tr("Development"), icon: "code" },
         { id: "applications", label: I18n.tr("Applications"), icon: "apps" },
         { id: "defaults", label: I18n.tr("Default Apps"), icon: "open_in_new" },
+        { id: "options", label: I18n.tr("All Settings"), icon: "tune" },
         { id: "users", label: I18n.tr("Users"), icon: "person" },
         { id: "system", label: I18n.tr("System"), icon: "info" }
     ]
@@ -149,6 +150,7 @@ DankFloatingWindow {
                         case "development": return developmentPageComponent;
                         case "applications": return applicationsPageComponent;
                         case "defaults": return defaultAppsPageComponent;
+                        case "options": return optionsPageComponent;
                         case "users": return usersPageComponent;
                         case "system": return systemPageComponent;
                         default: return null;
@@ -237,7 +239,7 @@ DankFloatingWindow {
                     anchors.right: logToggle.left
                     anchors.rightMargin: Theme.spacingM
                     text: {
-                        if (root.vm.lastError) return I18n.tr("Last change failed - see the page where it happened, or run vayume-config validate in a terminal.");
+                        if (root.vm.lastError) return I18n.tr("Last change failed - see the page where it happened, or run `vayume config validate` in a terminal.");
                         if (root.vm.saving) return I18n.tr("Saving changes...");
                         if (root.vm.rebuildBusy) return I18n.tr("Rebuilding system configuration...");
                         if (root.vm.repoKnown && root.vm.repo.rebuildPending) return I18n.tr("Changes saved - rebuild to apply them.");
@@ -297,6 +299,7 @@ DankFloatingWindow {
     Component { id: developmentPageComponent; DevelopmentPage { vm: root.vm } }
     Component { id: applicationsPageComponent; ApplicationsPage { vm: root.vm } }
     Component { id: defaultAppsPageComponent; DefaultAppsPage { vm: root.vm } }
+    Component { id: optionsPageComponent; OptionsPage { vm: root.vm } }
     Component { id: usersPageComponent; UsersPage { vm: root.vm } }
     Component { id: systemPageComponent; SystemPage { vm: root.vm } }
 }

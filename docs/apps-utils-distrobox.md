@@ -140,6 +140,10 @@ with `No suitable fusermount binary found` otherwise - the check is
 idempotent and cheap once the dependencies are already there, so it's
 simpler to just always run it than to rely on install having gone first.
 
+**`vayume.ubuntuBox` is a NixOS-level option**, set in `_config.nix` (or
+from the All Settings page in Vayume Settings) like any other; see
+[Settings.nix](core-settings.md).
+
 **`vayume.ubuntuBox` makes the result reproducible** once you know the
 names: `aptPackages` and `exportApps` are re-applied by
 `vayume box sync`, so a rebuilt machine gets the same box without

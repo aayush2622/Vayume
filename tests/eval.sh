@@ -130,6 +130,16 @@ vc_ defaults set editor zeditor | jq -e '.ok' >/dev/null
 vc_ defaults get | jq -e '.[] | select(.role == "editor") | .effective == "zeditor"' >/dev/null
 vc_ defaults set editor auto | jq -e '.ok' >/dev/null
 expect_fail defaults set shell kitty
+vc_ settings list | jq -e 'length >= 10 and all(.[]; (.path | length) > 0 and (.kind | length) > 0)' >/dev/null
+vc_ settings set network.tor.enable false | jq -e '.ok' >/dev/null
+vc_ settings list | jq -e '.[] | select(.path == "network.tor.enable") | .value == false and .configured' >/dev/null
+expect_fail settings set network.dns.provider nope
+expect_fail settings set ubuntuBox.count abc
+expect_fail settings set ubuntuBox.count 0
+expect_fail settings set no.such.thing 1
+vc_ settings set ubuntuBox.unshare ipc netns | jq -e '.ok' >/dev/null
+vc_ settings reset network.tor.enable | jq -e '.ok' >/dev/null
+vc_ settings list | jq -e '.[] | select(.path == "network.tor.enable") | .value == true and (.configured | not)' >/dev/null
 vc_ validate | jq -e '.ok' >/dev/null
 [ "$(stat -c %a "$cfg")" = 600 ] || { echo "vayume-config changed _config.nix's mode" >&2; exit 1; }
 [ -z "$(find "$(dirname "$cfg")" -name '_config.nix.*' ! -name '*.example')" ] || { echo "vayume-config left temp files" >&2; exit 1; }
@@ -137,6 +147,18 @@ vc_ theme get | jq -e '.fontSize == 13' >/dev/null
 echo "ok"
 cp "$cfg_before" "$cfg"
 rm -rf "$vc_home" "$cfg_before"
+
+step "a newly declared option shows up in the settings list"
+nix_ eval --impure --json --expr "
+  let
+    f = builtins.getFlake \"path:$work\";
+    lib = f.inputs.nixpkgs.lib;
+    extended = f.nixosConfigurations.$host0.extendModules {
+      modules = [ { options.vayume.demo.flag = lib.mkOption { type = lib.types.bool; default = false; description = \"Demo.\"; }; } ];
+    };
+    list = import $work/modules/vayume/_settings.nix { flake = f // { nixosConfigurations.$host0 = extended; }; host = \"$host0\"; };
+  in builtins.any (s: s.path == \"demo.flag\" && s.kind == \"bool\" && s.group == \"Demo\") list" | grep -qx true
+echo "ok"
 
 step "install.sh end to end (new host CiHost)"
 printf '%s\n' ci "" y audio y hunter2 hunter2 "" hello y wk_key me@example.com n \
