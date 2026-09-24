@@ -48,6 +48,10 @@ PluginComponent {
     readonly property bool packageSearching: packageSearchProc.running
     property string packageSearchError: ""
 
+    property var actions: []
+    property string runLabel: ""
+    property bool runRefresh: false
+
     property bool rebuildBusy: false
     property string rebuildStatus: ""
     property var rebuildLog: []
@@ -108,6 +112,7 @@ PluginComponent {
         case "defaults": refreshDefaultApps(); break;
         case "users": refreshUsers(); break;
         case "options": refreshSettings(); break;
+        case "system": refreshActions(); break;
         }
     }
 
@@ -213,9 +218,24 @@ PluginComponent {
         usersSetProc.running = true;
     }
 
-    function rebuild() {
+    function refreshActions() { actionsProc.running = true; }
+
+    function runCommand(argv, label, refreshAfter) {
+        if (root.rebuildBusy)
+            return;
+        root.runLabel = label;
+        root.runRefresh = refreshAfter;
         root.rebuildLog = [];
+        rebuildProc.command = argv;
         rebuildProc.running = true;
+    }
+
+    function rebuild() {
+        runCommand(["vayume", "rebuild"], I18n.tr("Rebuild"), true);
+    }
+
+    function runAction(action) {
+        runCommand(["vayume", action.name].concat(action.panel.args), action.panel.label, false);
     }
 
     ccWidgetIcon: "settings_suggest"
@@ -506,21 +526,36 @@ PluginComponent {
     }
 
     Process {
+        id: actionsProc
+        command: ["vayume", "--json"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.actions = JSON.parse(text).filter(c => c.panel !== null && c.name !== "rebuild");
+                } catch (e) {
+                    root.actions = [];
+                }
+            }
+        }
+    }
+
+    Process {
         id: rebuildProc
-        command: ["vayume", "rebuild"]
         running: false
         stdout: SplitParser { onRead: line => root.appendRebuildLog(line) }
         stderr: SplitParser { onRead: line => root.appendRebuildLog(line) }
         onStarted: {
             root.rebuildBusy = true;
-            root.rebuildStatus = I18n.tr("Rebuilding - this can take a minute...");
+            root.rebuildStatus = I18n.tr("%1 - running, this can take a minute...").arg(root.runLabel);
         }
         onExited: exitCode => {
             root.rebuildBusy = false;
             root.rebuildStatus = exitCode === 0
-                ? I18n.tr("Rebuild succeeded.")
-                : I18n.tr("Rebuild failed (exit %1) - the log below has the details.").arg(exitCode);
-            root.refreshApps();
+                ? I18n.tr("%1 finished.").arg(root.runLabel)
+                : I18n.tr("%1 failed (exit %2) - the log below has the details.").arg(root.runLabel).arg(exitCode);
+            if (root.runRefresh)
+                root.refreshApps();
             root.refreshRepo();
         }
     }

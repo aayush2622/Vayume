@@ -23,7 +23,12 @@ vayume.commands.zen-reload = {
   command = lib.getExe zen-reload;       # any executable
   description = "Restart Zen Browser ...";
   usage = "";                            # argument synopsis; "" = no arguments
-  confirm = false;                       # true = the menu asks first
+  confirm = false;                       # true = the menu and the panel ask first
+  panel = {                              # optional: a button in Vayume Settings
+    label = "Reload Zen Browser";
+    icon = "refresh";                    # Material Symbols name
+    args = [ ];                          # passed after the command name
+  };
 };
 ```
 
@@ -45,6 +50,17 @@ arguments shows its usage and asks for them on a prompt with normal
 line editing (quotes work, so paths with spaces are fine); `confirm`
 commands - `gc`, the Waydroid reset - ask before running. Run without a
 terminal, it prints the list instead of opening a menu.
+
+**Panel buttons.** A command with `panel` set becomes a button under
+Vayume Settings, System, Maintenance (see [DMS](desktop-dms.md)). Only
+commands that need no typed arguments qualify; `args` covers the fixed
+ones (`check-plugin-updates` runs with `--report-only`, `config` with
+`validate`). Shipped: `gc`, `config validate`, `check-plugin-updates`,
+`zen-reload`, and the two Waydroid commands. `rebuild` is not in the
+list because it has its own button in the window's footer. The panel
+reads the list with `vayume --json`, which prints the registry (name,
+description, usage, `confirm`, `panel`) from a file baked in at build
+time, so it needs no evaluation and is instant.
 
 **Names with a shared prefix are grouped.** A registered name like
 `box2-install` is shown as `box2 install` when `box2` is itself a

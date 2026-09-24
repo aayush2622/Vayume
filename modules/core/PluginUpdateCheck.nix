@@ -353,6 +353,11 @@
         command = lib.getExe checkerScript;
         description = "Compare pinned editor/browser plugins against upstream, with hashes for bumps";
         usage = "[--report-only | --resolve-hashes]";
+        panel = {
+          label = "Check plugin updates";
+          icon = "update";
+          args = [ "--report-only" ];
+        };
       };
     };
 }

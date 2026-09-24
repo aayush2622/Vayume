@@ -101,4 +101,35 @@ Column {
             }
         }
     }
+    SettingsCard {
+        title: I18n.tr("Maintenance")
+        icon: "build_circle"
+        subtitle: I18n.tr("One-click versions of vayume commands. Output streams into the log at the bottom.")
+        width: parent.width
+        visible: root.vm.actions.length > 0
+
+        Repeater {
+            model: root.vm.actions
+
+            Column {
+                required property var modelData
+                required property int index
+                width: parent.width
+                spacing: 0
+
+                Rectangle {
+                    visible: index > 0
+                    width: parent.width
+                    height: 1
+                    color: Theme.outline
+                    opacity: 0.12
+                }
+
+                ActionRow {
+                    vm: root.vm
+                    action: modelData
+                }
+            }
+        }
+    }
 }

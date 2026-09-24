@@ -90,6 +90,10 @@ in
       command = lib.getExe vayumeGcCommand;
       description = "Delete all but the newest ${toString keepGenerations} system generations and collect garbage";
       confirm = true;
+      panel = {
+        label = "Clean up old generations";
+        icon = "delete_sweep";
+      };
     };
   };
 }

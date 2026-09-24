@@ -26,7 +26,31 @@ let
           confirm = lib.mkOption {
             type = lib.types.bool;
             default = false;
-            description = "Ask before running it from the menu (destructive or slow commands).";
+            description = "Ask before running it from the menu or the Vayume Settings panel (destructive or slow commands).";
+          };
+          panel = lib.mkOption {
+            default = null;
+            description = "Show the command as a button in Vayume Settings > System > Maintenance. Only for commands that need no typed arguments; `args` are passed as given.";
+            type = lib.types.nullOr (
+              lib.types.submodule {
+                options = {
+                  label = lib.mkOption {
+                    type = lib.types.str;
+                    description = "Button label.";
+                  };
+                  icon = lib.mkOption {
+                    type = lib.types.str;
+                    default = "play_arrow";
+                    description = "Material Symbols icon name.";
+                  };
+                  args = lib.mkOption {
+                    type = lib.types.listOf lib.types.str;
+                    default = [ ];
+                    description = "Arguments the button passes after the command name.";
+                  };
+                };
+              }
+            );
           };
         };
       }
@@ -69,6 +93,21 @@ in
         desc[${lib.escapeShellArg name}]=${lib.escapeShellArg commands.${name}.description}
         confirm[${lib.escapeShellArg name}]=${if commands.${name}.confirm then "1" else "0"}
       '') names;
+
+      catalog = pkgs.writeText "vayume-commands.json" (
+        builtins.toJSON (
+          map (name: {
+            inherit name;
+            shown = display name;
+            inherit (commands.${name})
+              description
+              usage
+              confirm
+              panel
+              ;
+          }) names
+        )
+      );
 
       completion = pkgs.writeTextDir "share/zsh/site-functions/_vayume" ''
         #compdef vayume
@@ -145,6 +184,9 @@ in
               ;;
             --has)
               [ -n "''${cmd[''${2:-}]+x}" ]
+              ;;
+            --json)
+              cat ${catalog}
               ;;
             *)
               if [ "$#" -ge 2 ] && [ -n "''${cmd[$1-$2]+x}" ]; then

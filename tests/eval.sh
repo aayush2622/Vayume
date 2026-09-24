@@ -103,6 +103,7 @@ vc=$(nix_ build --no-link --print-out-paths --impure --expr "
     f.nixosConfigurations.$host0.config.home-manager.users.$user1.home.packages)")/bin/vayume
 help_out=$("$vc" help)
 grep -q '^  config ' <<<"$help_out" || { echo "vayume help has no config" >&2; exit 1; }
+"$vc" --json | jq -e 'any(.[]; .name == "gc" and .confirm and .panel.label != null) and all(.[]; .panel == null or (.panel.label | length) > 0)' >/dev/null
 "$vc" --has config
 
 step "vayume config against the example _config.nix"
