@@ -76,6 +76,27 @@ A second Spotify client, next to Spicetify - not a replacement for it, a complet
   needs that one manual theme selection, matching upstream's own
   documented flow exactly.
 
+- **Album-art theming comes from the DMS Music Theme plugin, not from
+  Spotifast.** [dms-music-theme](https://github.com/felipeadeildo/dms-music-theme)
+  retints the whole desktop palette from the cover art of whatever is
+  playing and goes back to the wallpaper colors when playback stops. It
+  reads DMS's own MPRIS state, so it works with any player; Spotifast
+  qualifies because it publishes `org.mpris.MediaPlayer2.spotifast` with
+  `mpris:artUrl` (the binary contains the property; it was not
+  run-tested here). Spotifast is themed by the matugen template and hook
+  above, and the plugin drives the same matugen pipeline, so each retint
+  re-renders the palette, the hook installs it and runs
+  `spotifast reload-themes` - nothing Spotifast-specific had to be
+  added. It replaces the older `spotifyMatugen` plugin, which only
+  followed a player whose MPRIS name contains "spotify" and so never
+  matched Spotifast. It is one line, `musicTheme.enable = true;`, in the
+  `plugins` block of `modules/desktop/dms/Dms.nix` (where `spotifyMatugen`
+  was); remove it for wallpaper-only colors. The plugin comes from the
+  DMS plugin registry, which pins upstream commit `b7314c0`, so there is
+  no extra pin to maintain - it moves with the `dms-plugin-registry` flake
+  input. Its own settings (update delay, palette) are in DMS Settings >
+  Plugins.
+
 ---
 
 [← Spicetify.nix](apps-utils-spicetify.md) · [Index](CONFIGURATION.md) · [Nautilus.nix →](apps-utils-nautilus.md)
