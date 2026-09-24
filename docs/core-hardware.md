@@ -114,6 +114,33 @@ through one real "disk full" incident this project.
   more than once. Confirmed in the real built `/etc/fstab`, not just the
   Nix option.
 
+### Windows missing from the GRUB menu
+
+`Host.nix` sets `useOSProber = true`, but os-prober only looks for EFI
+bootloaders on partitions whose GPT *type* is "EFI System"
+(`c12a7328-f81f-11d2-ba4b-00a0c93ec93b`) - its `05efi` probe skips
+everything else without a message. A Windows ESP that was created (or
+later retyped) as anything else - "BIOS boot" is a common one - boots
+fine from the firmware menu, since the firmware's NVRAM entry points at
+the partition directly, but never shows up in GRUB. Check with
+
+```bash
+lsblk -o NAME,FSTYPE,PARTTYPENAME,UUID     # which vfat partition, and its type
+nix run nixpkgs#efibootmgr -- -v           # "Windows Boot Manager" -> HD(<partition number>, ...)
+```
+
+Two fixes:
+
+- **A fixed menu entry** (what Diablo uses): `boot.loader.grub.extraEntries`
+  in `_hardware.nix` chainloading `/EFI/Microsoft/Boot/bootmgfw.efi` from
+  that partition's filesystem UUID - a commented template is in
+  `_hardware.nix.example`. Doesn't depend on os-prober at all, and
+  takes effect on the next rebuild.
+- **Retype the partition** to EFI System (`sudo sgdisk -t <n>:ef00
+  /dev/<disk>`, metadata only - neither the data nor the firmware entry
+  changes) and let os-prober find it. If you do this with the fixed
+  entry still in place, Windows will show up twice.
+
 ---
 
 [← Host.nix](core-host.md) · [Index](CONFIGURATION.md) · [Vm.nix →](core-vm.md)

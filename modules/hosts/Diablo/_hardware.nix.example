@@ -45,6 +45,18 @@
 
   boot.resumeDevice = "/dev/disk/by-uuid/REPLACE-WITH-SWAP-UUID";
 
+  # Only if Windows is missing from the GRUB menu - see
+  # docs/core-hardware.md. The UUID is the filesystem UUID of the FAT
+  # partition holding EFI/Microsoft/Boot/bootmgfw.efi (lsblk -f).
+  # boot.loader.grub.extraEntries = ''
+  #   menuentry "Windows" --class windows --class os {
+  #     insmod part_gpt
+  #     insmod fat
+  #     search --no-floppy --fs-uuid --set=root XXXX-XXXX
+  #     chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+  #   }
+  # '';
+
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
