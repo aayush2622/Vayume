@@ -3,44 +3,35 @@ import QtQuick.Window
 import Qt.labs.folderlistmodel
 import SddmComponents 2.0
 
-// Theme
 Rectangle {
     id: root
     width: Screen.width; height: Screen.height
     readonly property real s: height / 768
     color: "#f0eee9"
 
-    // Palette
     readonly property color cInk:    "#4b4b4b"
     readonly property color cSub:    "#8b8b8b"
     readonly property color cPink:   "#d37785"
     readonly property color cGlass:  "#20000000"
 
-    // State
     property bool isQuickshell: typeof sddm === "undefined" || sddm.hostName === undefined
     property int sessionIndex: (typeof sessionModel !== "undefined" && sessionModel.lastIndex >= 0) ? sessionModel.lastIndex : 0
     property int userIndex: (typeof userModel !== "undefined" && userModel.lastIndex >= 0) ? userModel.lastIndex : 0
     property real ui: 0
 
-    // Cursor size, from vayume.theme.cursorSize via theme.conf (see SddmTheme.nix) -
-    // falls back to a sane default if the config key isn't there for any reason.
     readonly property real cursorSizePx: (typeof config !== "undefined" && config.cursorSize) ? Number(config.cursorSize) : 24
 
-    // Assets
     FolderListModel { id: fontFolder; folder: Qt.resolvedUrl("font"); nameFilters: ["*.ttf", "*.otf"] }
     FontLoader { id: mainFont; source: fontFolder.count > 0 ? "font/" + fontFolder.get(0, "fileName") : "" }
     TextConstants { id: textConstants }
 
-    // Helpers
     ListView { id: sessionHelper; model: typeof sessionModel !== "undefined" ? sessionModel : null; currentIndex: root.sessionIndex; opacity: 0; width: 1; height: 1; delegate: Item { property string sName: model.name || "" } }
     ListView { id: userHelper; model: typeof userModel !== "undefined" ? userModel : null; currentIndex: root.userIndex; opacity: 0; width: 1; height: 1; delegate: Item { property string uName: model.realName || model.name || ""; property string uLogin: model.name || "" } }
 
-    // Logic
     Timer { interval: 300; running: true; onTriggered: pwd.forceActiveFocus() }
     Component.onCompleted: { fadeAnim.start(); keyboard.numLock = true }
     NumberAnimation { id: fadeAnim; target: root; property: "ui"; from: 0; to: 1; duration: 1500; easing.type: Easing.OutCubic }
 
-    // Background
     Image {
         anchors.fill: parent
         source: "bg.png"
@@ -49,12 +40,10 @@ Rectangle {
         opacity: root.ui
     }
 
-    // Shadow
     Rectangle {
         anchors.fill: parent; visible: root.ui < 1.0; opacity: 1.0 - root.ui; color: "#f0eee9"; z: 100
     }
 
-    // Header
     Item {
         anchors.top: parent.top; anchors.left: parent.left
         anchors.margins: 60 * s; height: 120 * s; opacity: root.ui
@@ -73,7 +62,6 @@ Rectangle {
         }
     }
 
-    // Login
     Item {
         id: bellyArea
         anchors.horizontalCenter: parent.horizontalCenter
@@ -86,7 +74,6 @@ Rectangle {
         Column {
             id: loginCol; width: parent.width; spacing: 18 * s
 
-            // User
             Text {
                 id: userDisp; anchors.horizontalCenter: parent.horizontalCenter
                 text: ((userHelper.currentItem && userHelper.currentItem.uName) ? userHelper.currentItem.uName : (typeof userModel !== "undefined" ? userModel.lastUser : "user")).toUpperCase()
@@ -95,7 +82,6 @@ Rectangle {
                 MouseArea { id: userMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.BlankCursor; onClicked: { if (typeof userModel !== "undefined") root.userIndex = (root.userIndex + 1) % userModel.rowCount() } }
             }
 
-            // Input
             Rectangle {
                 width: parent.width; height: 42 * s; radius: 10 * s; color: root.cGlass
                 border.color: pwd.activeFocus ? root.cInk : "transparent"; border.width: 1 * s
@@ -115,7 +101,6 @@ Rectangle {
                         Behavior on opacity { NumberAnimation { duration: 200 } }
                     }
 
-                    // Cursor
                     Rectangle {
                         id: cursor; width: 2 * s; height: 18 * s; color: root.cInk; anchors.verticalCenter: parent.verticalCenter
                         x: pwd.cursorRectangle.x; visible: pwd.focus && pwd.text.length > 0
@@ -126,14 +111,12 @@ Rectangle {
                 MouseArea { anchors.fill: parent; cursorShape: Qt.BlankCursor; onClicked: pwd.forceActiveFocus() }
             }
 
-            // Error
             Text {
                 id: errorMsg; anchors.horizontalCenter: parent.horizontalCenter
                 text: ""; color: root.cPink; font.family: mainFont.name; font.pixelSize: 12 * s; font.letterSpacing: 1 * s
                 visible: text !== ""
             }
 
-            // Actions
             Row {
                 anchors.horizontalCenter: parent.horizontalCenter; spacing: 25 * s
                 Repeater {
@@ -160,10 +143,6 @@ Rectangle {
         }
     }
 
-    // Cursor - drawn here in QML instead of relying on the greeter picking up
-    // XCURSOR_THEME over Wayland, which has been unreliable (see docs/core.md).
-    // HoverHandler only observes position, it never grabs clicks - safe to sit
-    // on root without breaking the password field or the buttons below it.
     HoverHandler {
         id: pointerTracker
         target: root
@@ -202,7 +181,6 @@ Rectangle {
         }
     }
 
-    // Wiring
     Connections {
         target: typeof sddm !== "undefined" ? sddm : null
         function onLoginFailed() { errorMsg.text = "try again"; pwd.text = ""; pwd.focus = true }

@@ -119,6 +119,23 @@ Full field-by-field shape for users, apps, and secrets:
 [vayume/Users.nix](core-users.md). What each `Host.nix` option does:
 [hosts/\<name\>/Host.nix](core-host.md).
 
+## Notes from the code
+
+Explanations that used to be comments in the source files.
+
+### `install.sh` function signatures
+
+- `ask`: ask "prompt" "default" -> echo answer
+- `confirm`: confirm "prompt" [Y|N default] -> return 0/1
+- `ask_secret`: ask_secret "prompt" -> echo value (no echo to screen)
+- `write_file`: write_file PATH  (content on stdin); backs up an existing file
+### `install.sh`
+
+- Above `say()  { printf '%s\n' "${bold}::${rst} $*" >&2; }`: all UI chatter goes to stderr; stdout is reserved for captured values (ask answers, generated Nix) so `x=$(fn)` never picks up a log line
+- Above `TTY_OK=0; if (exec </dev/tty) 2>/dev/null; then TTY_OK=1; fi`: read from the terminal even when stdin is the script (curl | bash), but fall back to stdin when there's no usable controlling tty (pipes, CI)
+- Above `nix_str() { printf '%s' "${1-}" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\${/\\${/g'...`: escape an arbitrary string for a Nix "double-quoted" literal (backslash, quote, and the ${ interpolation opener - a lone $ is literal in Nix)
+- Above `hw_content=$(printf '%s\n' "$hw_content" | sed -E \`: pin the platform to the chosen system
+
 ---
 
 [Index](CONFIGURATION.md) · [Host.nix →](core-host.md)

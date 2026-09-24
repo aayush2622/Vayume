@@ -3,19 +3,8 @@
     ccWidgetSecondaryText: root.showBatteryIcon ? (root.batteryLevel + "%") : root.activeProfile
     ccWidgetIsActive: !root.asusCtlInfo.includes("MISSING")
 
-    // DragDropGrid's own detailHeight.js sizes the popup from
-    // ccDetailHeight, defaulting to 250 (PluginComponent.qml) when a
-    // plugin doesn't set it - our content (profile picker, battery
-    // slider, GPU mode buttons) runs taller than that, so it was
-    // getting clipped and GPU Mode - being last - never showed at all.
     ccDetailHeight: 480
 
-    // DMS's CompoundPill (used whenever ccDetailContent is set) has two
-    // independent click zones: the icon tile fires ccWidgetToggled, the
-    // text label fires ccWidgetExpanded and opens ccDetailContent below.
-    // There's no real on/off state here to toggle - profile switching
-    // belongs in the detail view where you can see and pick a specific
-    // one, not behind a silent cycle-and-toast on a stray icon tap.
     onCcWidgetToggled: { }
 
     ccDetailContent: Component {

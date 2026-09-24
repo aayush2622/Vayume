@@ -11,9 +11,6 @@ Column {
 
     property string searchQuery: ""
 
-    // Development-category apps get their own dedicated page (with editor
-    // integrations, etc.) - showing them here too would just be the same
-    // toggle in two places with no extra information in either.
     readonly property var categoryLabels: ({
         "gaming": I18n.tr("Gaming"),
         "utils": I18n.tr("Utilities")

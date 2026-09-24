@@ -44,6 +44,15 @@ The login screen - the one piece of this desktop that has to look right before a
   dialogs around it draw. Both are needed, which is why the cursor
   values get built once in one `let` binding up there and reused.
 
+## Notes from the code
+
+Explanations that used to be comments in the source files.
+
+### `modules/desktop/sddm/Theme/Main.qml`
+
+- Above `readonly property real cursorSizePx: (typeof config !== "undefined" && config.cursorSiz...`: Cursor size, from vayume.theme.cursorSize via theme.conf (see SddmTheme.nix) - falls back to a sane default if the config key isn't there for any reason.
+- Above `HoverHandler {`: Cursor - drawn here in QML instead of relying on the greeter picking up XCURSOR_THEME over Wayland, which has been unreliable. HoverHandler only observes position, it never grabs clicks - safe to sit on root without breaking the password field or the buttons below it.
+
 ---
 
 [← Matugen.nix](desktop-matugen.md) · [Index](CONFIGURATION.md) · [Misc.nix →](system-misc.md)

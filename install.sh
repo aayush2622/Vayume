@@ -1,37 +1,37 @@
 #!/usr/bin/env bash
-# Vayume bootstrap - stand up a new host from this flake without hand-editing Nix.
-#
-# It does the three things a fresh machine needs (see docs/getting-started.md):
-#   1. host dir   - modules/hosts/<host>/ (copied from an existing host if new)
-#   2. _hardware.nix - from `nixos-generate-config` (or an existing file you point at)
-#   3. _config.nix   - the one user-facing file: built interactively (users,
-#                      groups, sudo, password hash, extra packages, per-user
-#                      secrets, avatar), plus every app disabled by default
-# then offers to run `sudo nixos-rebuild switch --flake path:.#<host>`.
-#
-# Usage:  ./install.sh [--host NAME] [--system SYS] [--hardware-file PATH]
-#                      [--skip-hardware] [--rebuild|--no-rebuild] [--yes] [--dry-run]
-#
-# Nothing is overwritten without asking; replaced files are kept as <file>.bak.
+
+usage() {
+  cat <<'EOF'
+Vayume bootstrap - stand up a new host from this flake without hand-editing Nix.
+
+It does the three things a fresh machine needs (see docs/getting-started.md):
+  1. host dir   - modules/hosts/<host>/ (copied from an existing host if new)
+  2. _hardware.nix - from `nixos-generate-config` (or an existing file you point at)
+  3. _config.nix   - the one user-facing file: built interactively (users,
+                     groups, sudo, password hash, extra packages, per-user
+                     secrets, avatar), plus every app disabled by default
+then offers to run `sudo nixos-rebuild switch --flake path:.#<host>`.
+
+Usage:  ./install.sh [--host NAME] [--system SYS] [--hardware-file PATH]
+                     [--skip-hardware] [--rebuild|--no-rebuild] [--yes] [--dry-run]
+
+Nothing is overwritten without asking; replaced files are kept as <file>.bak.
+EOF
+}
 
 set -euo pipefail
 
-# ---------------------------------------------------------------- ui helpers ---
 bold=$'\e[1m'; dim=$'\e[2m'; red=$'\e[31m'; grn=$'\e[32m'; ylw=$'\e[33m'; rst=$'\e[0m'
-# all UI chatter goes to stderr; stdout is reserved for captured values
-# (ask answers, generated Nix) so `x=$(fn)` never picks up a log line
 say()  { printf '%s\n' "${bold}::${rst} $*" >&2; }
 info() { printf '%s\n' "   $*" >&2; }
 warn() { printf '%s\n' "${ylw}!!${rst} $*" >&2; }
 die()  { printf '%s\n' "${red}xx${rst} $*" >&2; exit 1; }
 
-# read from the terminal even when stdin is the script (curl | bash),
-# but fall back to stdin when there's no usable controlling tty (pipes, CI)
 TTY_OK=0; if (exec </dev/tty) 2>/dev/null; then TTY_OK=1; fi
 _read() { if (( TTY_OK )); then IFS= read -r "$@" </dev/tty; else IFS= read -r "$@"; fi; }
 
 ASSUME_YES=0
-ask() { # ask "prompt" "default" -> echo answer
+ask() {
   local prompt=$1 default=${2:-} reply
   if (( ASSUME_YES )) && [[ -n $default ]]; then printf '%s\n' "$default"; return; fi
   if [[ -n $default ]]; then printf '%s' "${bold}?${rst} $prompt ${dim}[$default]${rst} " >&2
@@ -39,7 +39,7 @@ ask() { # ask "prompt" "default" -> echo answer
   _read reply || true
   printf '%s\n' "${reply:-$default}"
 }
-confirm() { # confirm "prompt" [Y|N default] -> return 0/1
+confirm() {
   local prompt=$1 default=${2:-N} reply
   if (( ASSUME_YES )); then [[ $default == Y ]]; return; fi
   local hint='[y/N]'; [[ $default == Y ]] && hint='[Y/n]'
@@ -48,7 +48,7 @@ confirm() { # confirm "prompt" [Y|N default] -> return 0/1
   reply=${reply:-$default}
   [[ $reply == [yY]* ]]
 }
-ask_secret() { # ask_secret "prompt" -> echo value (no echo to screen)
+ask_secret() {
   local prompt=$1 reply
   printf '%s' "${bold}?${rst} $prompt " >&2
   if (( TTY_OK )); then IFS= read -rs reply </dev/tty; else IFS= read -rs reply; fi
@@ -56,13 +56,11 @@ ask_secret() { # ask_secret "prompt" -> echo value (no echo to screen)
   printf '%s\n' "$reply"
 }
 
-# escape an arbitrary string for a Nix "double-quoted" literal
-# (backslash, quote, and the ${ interpolation opener - a lone $ is literal in Nix)
 nix_str() { printf '%s' "${1-}" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\${/\\${/g'; }
 
 DRY_RUN=0
 run() { if (( DRY_RUN )); then info "${dim}would run:${rst} $*"; else "$@"; fi; }
-write_file() { # write_file PATH  (content on stdin); backs up an existing file
+write_file() {
   local path=$1 tmp
   tmp=$(mktemp); cat >"$tmp"
   if (( DRY_RUN )); then
@@ -75,7 +73,6 @@ write_file() { # write_file PATH  (content on stdin); backs up an existing file
   say "wrote ${path#"$REPO/"}"
 }
 
-# ---------------------------------------------------------------- args ---------
 HOST=""; SYSTEM=""; HARDWARE_FILE=""; SKIP_HW=0; DO_REBUILD=-1
 while (( $# )); do
   case $1 in
@@ -87,12 +84,11 @@ while (( $# )); do
     --rebuild)       DO_REBUILD=1; shift;;
     --yes|-y)        ASSUME_YES=1; shift;;
     --dry-run)       DRY_RUN=1; shift;;
-    -h|--help)       awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"; exit 0;;
+    -h|--help)       usage; exit 0;;
     *) die "unknown option: $1 (see --help)";;
   esac
 done
 
-# ---------------------------------------------------------------- preconditions
 REPO=$(cd "$(dirname "$0")" && pwd -P)
 cd "$REPO"
 TEMPLATE=""
@@ -106,7 +102,6 @@ command -v mkpasswd >/dev/null || MKPASSWD=(nix run --extra-experimental-feature
 
 IS_GIT=0; git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1 && IS_GIT=1
 
-# ---------------------------------------------------------------- host + system
 detect_host() {
   local h; h=$(hostnamectl --static 2>/dev/null || true)
   [[ -z $h || $h == localhost ]] && h=$(cat /proc/sys/kernel/hostname 2>/dev/null || true)
@@ -133,7 +128,6 @@ resolve_host_and_system() {
   say "Host ${bold}$HOST${rst}  ·  system ${bold}$SYSTEM${rst}  ·  $HOSTDIR"
 }
 
-# ---------------------------------------------------------------- host dir -----
 setup_host_dir() {
   if [[ ! -d $HOSTDIR ]]; then
     info "creating $HOSTDIR from the $TEMPLATE template"
@@ -155,7 +149,6 @@ setup_host_dir() {
     warn "$HOSTDIR/Vm.nix is left over from an older install.sh - delete it (the VM module is shared now, modules/system/Vm.nix); two copies break every host's VM build"
 }
 
-# ---------------------------------------------------------------- _hardware.nix
 gen_hardware() {
   if [[ -n $HARDWARE_FILE ]]; then
     [[ -f $HARDWARE_FILE ]] || die "--hardware-file $HARDWARE_FILE not found"
@@ -178,7 +171,6 @@ setup_hardware() {
     info "keeping existing $HW"
   else
     hw_content=$(gen_hardware)
-    # pin the platform to the chosen system
     hw_content=$(printf '%s\n' "$hw_content" | sed -E \
       "s#(nixpkgs\.hostPlatform *= *(lib\.mkDefault +)?)\"[^\"]*\"#\1\"$SYSTEM\"#")
     if ! grep -q 'nixpkgs\.hostPlatform' <<<"$hw_content"; then
@@ -191,7 +183,6 @@ setup_hardware() {
   fi
 }
 
-# ---------------------------------------------------------------- _config.nix --
 build_user_block() {
   local uname fullname groups extra_groups g hash pw pw2
   local -a group_list pkg_list
@@ -206,7 +197,6 @@ build_user_block() {
   confirm "  sudo access (add to 'wheel')?" Y && group_list+=(wheel)
   extra_groups=$(ask "  extra groups (space-separated, blank for none)" "")
   for g in $extra_groups; do [[ $g =~ ^[a-zA-Z0-9_-]+$ ]] && group_list+=("$g"); done
-  # dedupe, preserve order
   groups=$(printf '%s\n' "${group_list[@]}" | awk '!seen[$0]++' | sed 's/.*/"&"/' | paste -sd' ' -)
 
   hash=""
@@ -241,7 +231,6 @@ build_user_block() {
     rbw=$(ask "    RBW_EMAIL (blank to skip)" "")
   fi
 
-  # ---- emit ----
   printf '    %s = {\n' "$uname"
   printf '      fullName = "%s";\n' "$(nix_str "$fullname")"
   printf '      extraGroups = [ %s ];\n' "$groups"
@@ -291,7 +280,6 @@ setup_config() {
   info "every app starts disabled - flip the ones you want in $CFG, or from DMS's Vayume Settings after first boot"
 }
 
-# ---------------------------------------------------------------- wrap up ------
 finalize() {
   local f
 

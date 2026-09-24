@@ -229,6 +229,21 @@ It gets reused and re-synced on every rebuild.
     missing `curl` there fails silently instead of loudly. Found this by
     actually booting a fresh VM, not by guessing.
 
+## Notes from the code
+
+Explanations that used to be comments in the source files.
+
+### `modules/apps/utils/zenBrowser/ZenBrowser.nix`
+
+- In the profile-path check, `default) return 0` means the profile is already at the `default` path.
+- Above `fxaConfigJs = pkgs.runCommand "fx-autoconfig-config.js" { } ''`: fx-autoconfig is a third-party copy - see fx-autoconfig/README.md for provenance and licences. Must be a derivation output, not a bare source path: wrapFirefox interpolates this with `toString`, which drops string context, so a raw path never becomes a build input and the sandbox cannot read it.
+- Above `renderTheme =`: The eight placeholders only seed :root fallbacks for first boot, before matugen has ever run - the bridge overwrites the same --matugen-* variables live for the browser chrome, and zenThemeSyncScript below re-renders these same two files on every real theme change for everything the bridge can't reach (isolated content documents like about:preferences). Both exist because neither alone covers every surface. ./theme is this repo's own colour-only cut of parazeeknova/zen-wabi: every border-radius / border / box-shadow / layout rule has been dropped so Zen's UI shape is left untouched and only colours change.
+- Above `zenThemeSyncScript = pkgs.writeShellScript "vayume-zen-theme-sync" ''`: Re-renders the same two templates against whatever matugen just wrote to matugen-vars.json, run as that template's own post_hook - so the two colour-only .css seeds above stop being "correct once, at whatever nixos-rebuild last ran" and start tracking every real theme change instead. Doesn't make the seed *live* for an already-open window - see the "no live reload" note below for why that's a genuine Firefox/Zen limitation, not something this script could fix - but it does mean the next Zen restart (a keybind away, not a full rebuild away) always picks up today's actual palette.
+- Above `zen_match='zen|\.zen-wrapped'`: wrapFirefox's launcher exec's `.zen-wrapped`, so the running process's comm is `.zen-wrapped`, not `zen`. Matching `-x zen` here silently missed it, so the reload never actually restarted Zen. Match the comm exactly against either name (`zen` kept for forward-compat).
+- Above `local chosen=""`, the block that keeps the profile Zen launches at the `default` path: everything below it deploys into `$ZEN_BASE/default`. A backup restored from outside `vayume app-state` (a raw `~/.zen` copy, a snapshot tool, Zen's own profile import) brings its own `profiles.ini` / `installs.ini` that can make a differently-named profile the default - then Zen shows the restored data while this activation keeps writing to an unused `default`. The block detects that and moves the restored profile onto the `default` path so the config always lands on top of it.
+- Above `local chosen=""`: installs.ini's per-install Default= wins over profiles.ini's Default=1
+- Above `local realdefault="$PROFILE_DIR"`: $PROFILE_DIR may be the vayume-session symlink; act on its real target
+
 ---
 
 [← Gaming.nix](apps-gaming.md) · [Index](CONFIGURATION.md) · [Spicetify.nix →](apps-utils-spicetify.md)

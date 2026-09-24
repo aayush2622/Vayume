@@ -265,7 +265,6 @@ Column {
             collapsible: true
             collapsed: false
 
-            // --- remove ---
             Row {
                 width: parent.width
                 Item { width: parent.width - removeButton.width; height: 1 }
@@ -318,7 +317,6 @@ Column {
 
             Rectangle { width: parent.width; height: 1; color: Theme.outline; opacity: 0.2 }
 
-            // --- display name ---
             Row {
                 width: parent.width
                 spacing: Theme.spacingS
@@ -352,7 +350,6 @@ Column {
 
             Rectangle { width: parent.width; height: 1; color: Theme.outline; opacity: 0.2 }
 
-            // --- groups ---
             Column {
                 width: parent.width
                 spacing: Theme.spacingXS
@@ -393,7 +390,6 @@ Column {
 
             Rectangle { width: parent.width; height: 1; color: Theme.outline; opacity: 0.2 }
 
-            // --- packages ---
             Column {
                 width: parent.width
                 spacing: Theme.spacingXS
@@ -435,7 +431,6 @@ Column {
 
             Rectangle { width: parent.width; height: 1; color: Theme.outline; opacity: 0.2 }
 
-            // --- app secrets ---
             Column {
                 width: parent.width
                 spacing: Theme.spacingM
@@ -477,15 +472,6 @@ Column {
                             id: secretField
                             width: 240
                             anchors.verticalCenter: parent.verticalCenter
-                            // DankTextField's own eye button only flips its
-                            // `passwordVisible` property - it never touches
-                            // echoMode itself (checked its source directly:
-                            // no internal binding from one to the other, in
-                            // this dms pin), so a hardcoded
-                            // `echoMode: TextInput.Password` clicks the eye
-                            // but never reveals anything. Bind echoMode to
-                            // passwordVisible instead - the wiring the
-                            // component clearly expects the caller to do.
                             echoMode: secretField.passwordVisible ? TextInput.Normal : TextInput.Password
                             showPasswordToggle: true
                             placeholderText: I18n.tr("Not set")
@@ -501,7 +487,6 @@ Column {
 
             Rectangle { width: parent.width; height: 1; color: Theme.outline; opacity: 0.2 }
 
-            // --- password ---
             Column {
                 width: parent.width
                 spacing: Theme.spacingS

@@ -24,11 +24,6 @@ DankFloatingWindow {
         { id: "system", label: I18n.tr("System"), icon: "info" }
     ]
 
-    // A rebuild's real output belongs where it's visible no matter which
-    // sidebar category happens to be open when it runs, not buried on
-    // one settings page - it always shows fresh (never collapsed by
-    // default) the moment a rebuild starts, since that's exactly when
-    // someone wants to see it.
     Connections {
         target: root.vm
         function onRebuildBusyChanged() {
@@ -175,10 +170,6 @@ DankFloatingWindow {
                 opacity: 0.2
             }
 
-            // The real nixos-rebuild switch output, streamed live - sits
-            // at the bottom of the window regardless of which sidebar
-            // category is open, so starting a rebuild from Appearance
-            // doesn't mean switching to System just to watch it happen.
             Rectangle {
                 width: parent.width
                 height: root.logVisible ? 180 : 0

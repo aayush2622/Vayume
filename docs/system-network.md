@@ -204,6 +204,15 @@ Not verified: whether real container traffic routes as intended, which
 needs a live container and a running Tor, and the actual latency of
 browsing through it.
 
+## Notes from the code
+
+Explanations that used to be comments in the source files.
+
+### `modules/desktop/dms/plugins/tor/TorWidget.qml`
+
+- Above `Process {`: `vayume tor status` prints exactly "active" or "inactive" - see modules/system/network/Network.nix.
+- Above `Timer {`: Tor takes a moment to bootstrap, and it can also be started or stopped from outside this widget, so re-read rather than trusting the last toggle.
+
 ---
 
 [← Misc.nix](system-misc.md) · [Index](CONFIGURATION.md) · [Waydroid.nix →](system-waydroid.md)

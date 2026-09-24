@@ -6,7 +6,7 @@ Row {
     id: root
 
     property string label: ""
-    property string tone: "neutral" // neutral | info | warning | error | success
+    property string tone: "neutral"
     spacing: Theme.spacingXS
 
     readonly property color dotColor: {
