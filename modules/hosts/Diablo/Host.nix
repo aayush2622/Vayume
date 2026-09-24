@@ -1,24 +1,25 @@
 { self, inputs, ... }:
 let
+  hostName = baseNameOf ./.;
   requireLocalFile =
     path: name:
     if builtins.pathExists path then
       path
     else
       throw ''
-        modules/hosts/Diablo/${name} is missing.
+        modules/hosts/${hostName}/${name} is missing.
 
         It's gitignored on purpose (real machine-specific data) and required -
         copy the template and fill it in:
 
-          cp modules/hosts/Diablo/${name}.example modules/hosts/Diablo/${name}
+          cp modules/hosts/${hostName}/${name}.example modules/hosts/${hostName}/${name}
 
         See docs/core-hardware.md or docs/core-users.md for what belongs
         in it.
       '';
 in
 {
-  flake.nixosConfigurations.Diablo = inputs.nixpkgs.lib.nixosSystem {
+  flake.nixosConfigurations.${hostName} = inputs.nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs self; };
     modules = [
       inputs.home-manager.nixosModules.home-manager
@@ -87,7 +88,7 @@ in
               };
             };
 
-            networking.hostName = "Diablo";
+            networking.hostName = hostName;
             networking.networkmanager.enable = true;
 
             vayume.network = {

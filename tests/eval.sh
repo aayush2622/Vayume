@@ -23,6 +23,11 @@ fill_examples() {
 }
 fill_examples
 
+host0=$(basename "$(find "$work/modules/hosts" -mindepth 1 -maxdepth 1 -type d | sort | head -1)")
+mapfile -t users0 < <(nix_ eval --json "path:$work#nixosConfigurations.$host0.config.vayume.users" --apply builtins.attrNames | jq -r '.[]')
+user1=${users0[0]}
+user2=${users0[1]}
+
 step "shell scripts"
 bash -n "$work/install.sh"
 nix_ run --inputs-from "$work" nixpkgs#shellcheck -- "$work/install.sh" "$work/tests/eval.sh"
@@ -59,12 +64,12 @@ for host in $hosts; do
 done
 
 for state in true false; do
-  step "Diablo with every app enable = $state"
+  step "$host0 with every app enable = $state"
   eval_drv --impure --expr "
     let
       f = builtins.getFlake \"path:$work\";
       lib = f.inputs.nixpkgs.lib;
-      sys = f.nixosConfigurations.Diablo.extendModules {
+      sys = f.nixosConfigurations.$host0.extendModules {
         modules = [ { vayume.apps = lib.mapAttrs (_: _: { enable = lib.mkForce $state; }) f.homeModules.apps; } ];
       };
     in sys.config.system.build.toplevel.drvPath"
@@ -72,35 +77,35 @@ done
 
 step "vayume command: no stray vayume-* binaries, help lists subcommands"
 stray=$(nix_ eval --impure --raw --expr "
-  let f = builtins.getFlake \"path:$work\"; c = f.nixosConfigurations.Diablo.config;
-      names = map (p: p.name or \"\") (c.home-manager.users.ash.home.packages ++ c.environment.systemPackages);
+  let f = builtins.getFlake \"path:$work\"; c = f.nixosConfigurations.$host0.config;
+      names = map (p: p.name or \"\") (c.home-manager.users.$user1.home.packages ++ c.environment.systemPackages);
   in toString (builtins.filter (n: builtins.match \"vayume-.*\" n != null) names)")
 [ -z "$stray" ] || { echo "vayume-* packages on PATH (register them in vayume.commands instead): $stray" >&2; exit 1; }
 vc=$(nix_ build --no-link --print-out-paths --impure --expr "
   let f = builtins.getFlake \"path:$work\";
   in builtins.head (builtins.filter (p: (p.name or \"\") == \"vayume\")
-    f.nixosConfigurations.Diablo.config.home-manager.users.ash.home.packages)")/bin/vayume
+    f.nixosConfigurations.$host0.config.home-manager.users.$user1.home.packages)")/bin/vayume
 "$vc" help | grep -q '^  config ' || { echo "vayume help has no config" >&2; exit 1; }
 "$vc" --has config
 
 step "vayume config against the example _config.nix"
 vc_home=$(mktemp -d)
 ln -s "$work" "$vc_home/vayume"
-cfg="$work/modules/hosts/Diablo/_config.nix"
+cfg="$work/modules/hosts/$host0/_config.nix"
 cfg_before=$(mktemp)
 cp "$cfg" "$cfg_before"
 chmod 644 "$cfg"
 vc_() { HOME="$vc_home" "$vc" config "$@"; }
 expect_fail() { if vc_ "$@" 2>/dev/null; then echo "vayume-config $* should have failed" >&2; exit 1; fi; }
-vc_ repo | jq -e '.hostName == "Diablo"' >/dev/null
+vc_ repo | jq -e '.hostName == "'"$host0"'"' >/dev/null
 vc_ theme set fontSize 13 | jq -e '.ok' >/dev/null
 expect_fail theme set fontSize abc
 expect_fail apps set 'Foo.bar' true
-expect_fail users set-name 'ash; rm' x
+expect_fail users set-name "$user1; rm" x
 vc_ users add bob "Bob B" | jq -e '.ok' >/dev/null
 vc_ users set-group bob wheel true | jq -e '.ok' >/dev/null
 expect_fail users remove random-but-missing
-vc_ users remove random | jq -e '.ok' >/dev/null
+vc_ users remove "$user2" | jq -e '.ok' >/dev/null
 echo hunter2 | vc_ users set-password bob | jq -e '.ok' >/dev/null
 expect_fail defaults set editor zeditor
 vc_ apps set Zed true | jq -e '.ok' >/dev/null
@@ -123,6 +128,7 @@ printf '%s\n' ci "" y audio y hunter2 hunter2 "" hello y wk_key me@example.com n
 cp "$work/modules/hosts/CiHost/_hardware.nix.example" "$work/modules/hosts/CiHost/_hardware.nix"
 [ "$(stat -c %a "$work/modules/hosts/CiHost/_config.nix")" = 600 ] || { echo "_config.nix is not 0600" >&2; exit 1; }
 eval_drv "path:$work#nixosConfigurations.CiHost.config.system.build.toplevel.drvPath"
+[ "$(nix_ eval --raw "path:$work#nixosConfigurations.CiHost.config.networking.hostName")" = CiHost ] || { echo "host name is not taken from the folder" >&2; exit 1; }
 
 step "nix flake check (every system, no builds)"
 if ! out=$(nix_ flake check --no-build --all-systems "path:$work" 2>&1); then
