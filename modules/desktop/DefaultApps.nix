@@ -13,13 +13,17 @@ in
         role: action:
         let
           choices = map (c: {
-            inherit (c) id label app desktop;
+            inherit (c)
+              id
+              label
+              app
+              desktop
+              ;
             enabled = appEnabled c.app;
           }) (pickable role);
           chosen = config.vayume.defaultApps.${role};
           automatic = lib.findFirst (c: c.enabled) null choices;
-          effective =
-            if chosen != null then lib.findFirst (c: c.id == chosen) null choices else automatic;
+          effective = if chosen != null then lib.findFirst (c: c.id == chosen) null choices else automatic;
         in
         {
           inherit (action) label mimeTypes;
@@ -32,8 +36,7 @@ in
       ) roles;
 
       mimeDefaults = lib.foldl' (
-        acc: r:
-        acc // lib.optionalAttrs (r.desktop != null) (lib.genAttrs r.mimeTypes (_: r.desktop))
+        acc: r: acc // lib.optionalAttrs (r.desktop != null) (lib.genAttrs r.mimeTypes (_: r.desktop))
       ) { } (builtins.attrValues resolved);
     in
     {
@@ -45,7 +48,9 @@ in
           example = (builtins.head (pickable role)).id;
           description = ''
             ${action.label} to use for its keybind and as the default
-            for its file types: one of ${lib.concatMapStringsSep ", " (c: "\"${c.id}\" (vayume.apps.${c.app})") (pickable role)}.
+            for its file types: one of ${
+              lib.concatMapStringsSep ", " (c: "\"${c.id}\" (vayume.apps.${c.app})") (pickable role)
+            }.
             null picks the first of those that's enabled.
           '';
         }
@@ -70,7 +75,9 @@ in
         }) resolved;
 
         environment.etc."vayume/default-apps".text = lib.concatStrings (
-          lib.mapAttrsToList (role: r: lib.optionalString (r.effective != null) "${role}=${r.effective}\n") resolved
+          lib.mapAttrsToList (
+            role: r: lib.optionalString (r.effective != null) "${role}=${r.effective}\n"
+          ) resolved
         );
 
         home-manager.sharedModules = [

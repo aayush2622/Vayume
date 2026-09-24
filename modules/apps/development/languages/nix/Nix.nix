@@ -16,8 +16,14 @@ in
         "arrterian.nix-env-selector"
       ];
       marketplaceExtensions = [
-        { publisher = "ziyyun"; name = "nix-forge"; }
-        { publisher = "pinage404"; name = "nix-extension-pack"; }
+        {
+          publisher = "ziyyun";
+          name = "nix-forge";
+        }
+        {
+          publisher = "pinage404";
+          name = "nix-extension-pack";
+        }
       ];
       settings = {
         "nix.enableLanguageServer" = true;
@@ -39,7 +45,10 @@ in
     };
     androidStudio = {
       autoPlugins = [
-        { dirName = "NixIDEA"; id = "nix-idea"; }
+        {
+          dirName = "NixIDEA";
+          id = "nix-idea";
+        }
       ];
     };
     zed = {

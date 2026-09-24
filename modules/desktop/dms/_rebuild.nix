@@ -1,4 +1,10 @@
-{ self, pkgs, lib, config, ... }:
+{
+  self,
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   repoDiscovery = self.vayumeLib.repoDiscovery;
   keepGenerations = 5;
@@ -13,10 +19,12 @@ let
       *) echo "$HOME" ;;
     esac)"
     flakeDir=""
-    for d in ${lib.concatStringsSep " " (
-      map (d: ''"$homeDir/${d}"'') repoDiscovery.relativeDirs
-      ++ map (d: ''"${d}"'') repoDiscovery.absoluteDirs
-    )}; do
+    for d in ${
+      lib.concatStringsSep " " (
+        map (d: ''"$homeDir/${d}"'') repoDiscovery.relativeDirs
+        ++ map (d: ''"${d}"'') repoDiscovery.absoluteDirs
+      )
+    }; do
       [ -f "$d/flake.nix" ] && flakeDir=$(cd -P "$d" && pwd) && break
     done
     if [ -z "$flakeDir" ]; then

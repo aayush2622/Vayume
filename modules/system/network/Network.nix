@@ -1,6 +1,11 @@
 {
   flake.nixosModules.Network =
-    { pkgs, lib, config, ... }:
+    {
+      pkgs,
+      lib,
+      config,
+      ...
+    }:
     let
       cfg = config.vayume.network;
 
@@ -10,13 +15,25 @@
       dnsProviders = {
         cloudflare = {
           hostname = "one.one.one.one";
-          v4 = [ "1.1.1.1" "1.0.0.1" ];
-          v6 = [ "2606:4700:4700::1111" "2606:4700:4700::1001" ];
+          v4 = [
+            "1.1.1.1"
+            "1.0.0.1"
+          ];
+          v6 = [
+            "2606:4700:4700::1111"
+            "2606:4700:4700::1001"
+          ];
         };
         quad9 = {
           hostname = "dns.quad9.net";
-          v4 = [ "9.9.9.9" "149.112.112.112" ];
-          v6 = [ "2620:fe::fe" "2620:fe::9" ];
+          v4 = [
+            "9.9.9.9"
+            "149.112.112.112"
+          ];
+          v6 = [
+            "2620:fe::fe"
+            "2620:fe::9"
+          ];
         };
         mullvad = {
           hostname = "dns.mullvad.net";
@@ -25,13 +42,25 @@
         };
         adguard = {
           hostname = "dns.adguard-dns.com";
-          v4 = [ "94.140.14.14" "94.140.15.15" ];
-          v6 = [ "2a10:50c0::ad1:ff" "2a10:50c0::ad2:ff" ];
+          v4 = [
+            "94.140.14.14"
+            "94.140.15.15"
+          ];
+          v6 = [
+            "2a10:50c0::ad1:ff"
+            "2a10:50c0::ad2:ff"
+          ];
         };
         google = {
           hostname = "dns.google";
-          v4 = [ "8.8.8.8" "8.8.4.4" ];
-          v6 = [ "2001:4860:4860::8888" "2001:4860:4860::8844" ];
+          v4 = [
+            "8.8.8.8"
+            "8.8.4.4"
+          ];
+          v6 = [
+            "2001:4860:4860::8888"
+            "2001:4860:4860::8844"
+          ];
         };
       };
 
@@ -47,25 +76,24 @@
         "169.254.0.0/16"
       ];
 
-      returnDirect = table: chain:
-        lib.concatMapStringsSep "\n"
-          (net: "${ipt} -t ${table} -A ${chain} -d ${net} -j RETURN")
-          directNets;
+      returnDirect =
+        table: chain:
+        lib.concatMapStringsSep "\n" (net: "${ipt} -t ${table} -A ${chain} -d ${net} -j RETURN") directNets;
 
-      containerNets = [ "172.16.0.0/12" "10.88.0.0/16" ];
+      containerNets = [
+        "172.16.0.0/12"
+        "10.88.0.0/16"
+      ];
 
-      containerRedirect =
-        lib.optionalString cfg.tor.includeContainers (
-          lib.concatMapStringsSep "\n"
-            (net: ''
-              ${ipt} -t nat -A VAYUME_TOR_PRE -s ${net} -p udp --dport 53 -j REDIRECT --to-ports 9053
-              ${ipt} -t nat -A VAYUME_TOR_PRE -s ${net} -p tcp -j REDIRECT --to-ports 9040
-              ${ipt} -A VAYUME_TOR_FWD -s ${net} -p tcp -j RETURN
-              ${ipt} -A VAYUME_TOR_FWD -s ${net} -p udp --dport 53 -j RETURN
-              ${ipt} -A VAYUME_TOR_FWD -s ${net} -j REJECT --reject-with icmp-port-unreachable
-            '')
-            containerNets
-        );
+      containerRedirect = lib.optionalString cfg.tor.includeContainers (
+        lib.concatMapStringsSep "\n" (net: ''
+          ${ipt} -t nat -A VAYUME_TOR_PRE -s ${net} -p udp --dport 53 -j REDIRECT --to-ports 9053
+          ${ipt} -t nat -A VAYUME_TOR_PRE -s ${net} -p tcp -j REDIRECT --to-ports 9040
+          ${ipt} -A VAYUME_TOR_FWD -s ${net} -p tcp -j RETURN
+          ${ipt} -A VAYUME_TOR_FWD -s ${net} -p udp --dport 53 -j RETURN
+          ${ipt} -A VAYUME_TOR_FWD -s ${net} -j REJECT --reject-with icmp-port-unreachable
+        '') containerNets
+      );
 
       torUp = pkgs.writeShellScript "vayume-tor-rules-up" ''
         set -eu
@@ -192,7 +220,11 @@
           };
 
           overTls = lib.mkOption {
-            type = lib.types.enum [ "false" "opportunistic" "true" ];
+            type = lib.types.enum [
+              "false"
+              "opportunistic"
+              "true"
+            ];
             default = "opportunistic";
             description = ''
               DNS-over-TLS mode. `opportunistic` encrypts where possible
@@ -314,16 +346,22 @@
             fi
           '';
 
-          security.sudo.extraRules = map (name: {
-            users = [ name ];
-            commands = [
-              {
-                command = "${torCtl}";
-                options = [ "NOPASSWD" ];
-              }
-            ];
-          }) (builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups)
-            (builtins.attrNames config.vayume.users));
+          security.sudo.extraRules =
+            map
+              (name: {
+                users = [ name ];
+                commands = [
+                  {
+                    command = "${torCtl}";
+                    options = [ "NOPASSWD" ];
+                  }
+                ];
+              })
+              (
+                builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups) (
+                  builtins.attrNames config.vayume.users
+                )
+              );
 
           vayume.commands.tor = {
             command = lib.getExe torToggle;

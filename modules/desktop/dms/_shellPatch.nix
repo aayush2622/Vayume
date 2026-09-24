@@ -1,4 +1,11 @@
-{ inputs, self, pkgs, lib, config, ... }:
+{
+  inputs,
+  self,
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   h = self.vayumeLib.dmsPluginHelpers { inherit pkgs; };
 
@@ -40,37 +47,39 @@ let
   newRunning = "running: root.cavaAvailable && root.refCount > 0 && root.playbackActive";
 
   dmsShellPatched =
-    pkgs.runCommand "${origDmsShell.name}-cava-patched" {
-      meta = (origDmsShell.meta or { }) // {
-        mainProgram = "dms";
-      };
-    } ''
-      cp -r ${origDmsShell} $out
-      chmod -R u+w $out
+    pkgs.runCommand "${origDmsShell.name}-cava-patched"
+      {
+        meta = (origDmsShell.meta or { }) // {
+          mainProgram = "dms";
+        };
+      }
+      ''
+        cp -r ${origDmsShell} $out
+        chmod -R u+w $out
 
-      substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
-        --replace-quiet ${lib.escapeShellArg "[general]"} ${lib.escapeShellArg inputReplacement}
-      ${h.assertPatched "$out/share/quickshell/dms/Services/CavaService.qml" "source=auto"}
+        substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
+          --replace-quiet ${lib.escapeShellArg "[general]"} ${lib.escapeShellArg inputReplacement}
+        ${h.assertPatched "$out/share/quickshell/dms/Services/CavaService.qml" "source=auto"}
 
-      substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
-        --replace-quiet ${lib.escapeShellArg "    Process {\n        id: cavaProcess"} ${lib.escapeShellArg watchdogBlock}
-      substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
-        --replace-quiet ${lib.escapeShellArg oldRunning} ${lib.escapeShellArg newRunning}
-      ${h.assertPatched "$out/share/quickshell/dms/Services/CavaService.qml" "playbackActive"}
+        substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
+          --replace-quiet ${lib.escapeShellArg "    Process {\n        id: cavaProcess"} ${lib.escapeShellArg watchdogBlock}
+        substituteInPlace $out/share/quickshell/dms/Services/CavaService.qml \
+          --replace-quiet ${lib.escapeShellArg oldRunning} ${lib.escapeShellArg newRunning}
+        ${h.assertPatched "$out/share/quickshell/dms/Services/CavaService.qml" "playbackActive"}
 
-      substituteInPlace $out/share/quickshell/dms/shell.qml \
-        --replace-quiet \
-          ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && CompositorService.isNiri"} \
-          ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && (CompositorService.isNiri || CompositorService.isHyprland)"}
-      ${h.assertPatched "$out/share/quickshell/dms/shell.qml" "CompositorService.isHyprland"}
+        substituteInPlace $out/share/quickshell/dms/shell.qml \
+          --replace-quiet \
+            ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && CompositorService.isNiri"} \
+            ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && (CompositorService.isNiri || CompositorService.isHyprland)"}
+        ${h.assertPatched "$out/share/quickshell/dms/shell.qml" "CompositorService.isHyprland"}
 
-      substituteInPlace $out/bin/dms \
-        --replace-quiet "${origDmsShell}/share/quickshell/dms" "$out/share/quickshell/dms"
-      if grep -qF ${lib.escapeShellArg "${origDmsShell}/share/quickshell/dms"} "$out/bin/dms"; then
-        echo "patch verification failed: bin/dms still references the original share/quickshell/dms path (upstream wrapper script format likely changed - update the patch)" >&2
-        exit 1
-      fi
-    '';
+        substituteInPlace $out/bin/dms \
+          --replace-quiet "${origDmsShell}/share/quickshell/dms" "$out/share/quickshell/dms"
+        if grep -qF ${lib.escapeShellArg "${origDmsShell}/share/quickshell/dms"} "$out/bin/dms"; then
+          echo "patch verification failed: bin/dms still references the original share/quickshell/dms path (upstream wrapper script format likely changed - update the patch)" >&2
+          exit 1
+        fi
+      '';
 in
 {
   home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {

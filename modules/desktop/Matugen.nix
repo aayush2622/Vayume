@@ -25,14 +25,17 @@
 
     wine = builtins.readFile ./matugen/wine/wine.reg.template;
 
-    androidStudio = schemeName: builtins.replaceStrings
-      [ "VAYUME_SCHEME_TOKEN" ]
-      [ schemeName ]
-      (builtins.readFile ./matugen/androidstudio/scheme.xml.template);
+    androidStudio =
+      schemeName:
+      builtins.replaceStrings [ "VAYUME_SCHEME_TOKEN" ] [ schemeName ] (
+        builtins.readFile ./matugen/androidstudio/scheme.xml.template
+      );
 
-    androidStudioTheme = schemeName: colorSchemeName: builtins.replaceStrings
-      [ "VAYUME_SCHEME_TOKEN" "VAYUME_COLORSCHEME_TOKEN" ]
-      [ schemeName colorSchemeName ]
-      (builtins.readFile ./matugen/androidstudio/theme.json.template);
+    androidStudioTheme =
+      schemeName: colorSchemeName:
+      builtins.replaceStrings
+        [ "VAYUME_SCHEME_TOKEN" "VAYUME_COLORSCHEME_TOKEN" ]
+        [ schemeName colorSchemeName ]
+        (builtins.readFile ./matugen/androidstudio/theme.json.template);
   };
 }

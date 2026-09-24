@@ -1,5 +1,10 @@
-
-{ inputs, pkgs, lib, gamesDir, ... }:
+{
+  inputs,
+  pkgs,
+  lib,
+  gamesDir,
+  ...
+}:
 {
   home.packages = [ inputs.hytale-launcher.packages.${pkgs.stdenv.hostPlatform.system}.default ];
   home.file."Games/Hytale/.keep".text = "";

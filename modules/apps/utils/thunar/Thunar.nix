@@ -2,7 +2,13 @@
   flake.appDescriptions.Thunar = "Thunar file manager with archive, media-tags, and volume-management plugins.";
 
   flake.homeModules.apps.Thunar =
-    { pkgs, lib, config, self, ... }:
+    {
+      pkgs,
+      lib,
+      config,
+      self,
+      ...
+    }:
     let
       terminal = builtins.head (self.vayumeLib.mkDesktopActions pkgs).terminal;
 
@@ -142,7 +148,6 @@
         '';
       };
 
-      
       home.activation.seedThunarConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/thunar.xml"
         if ! ${pkgs.diffutils}/bin/cmp -s "${thunarXml}" "$dest"; then

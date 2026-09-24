@@ -1,8 +1,14 @@
 let
   cppManualExtensionsSpec = [
-    { name = "cpp-extentions-pack"; publisher = "boundarystudio"; version = "0.3.0"; hash = "sha256-UX7+sjlqfWUINtye2XYOndMvya2j0TMXEUbnJ9CDBig="; }
+    {
+      name = "cpp-extentions-pack";
+      publisher = "boundarystudio";
+      version = "0.3.0";
+      hash = "sha256-UX7+sjlqfWUINtye2XYOndMvya2j0TMXEUbnJ9CDBig=";
+    }
   ];
-in {
+in
+{
   flake.devLanguages.Cpp = {
     vscode = {
       nixpkgsExtensions = [
@@ -13,9 +19,18 @@ in {
         "vadimcn.vscode-lldb"
       ];
       marketplaceExtensions = [
-        { publisher = "danielpinto8zz6"; name = "c-cpp-compile-run"; }
-        { publisher = "ms-vscode"; name = "cpp-devtools"; }
-        { publisher = "ms-vscode"; name = "cpptools-themes"; }
+        {
+          publisher = "danielpinto8zz6";
+          name = "c-cpp-compile-run";
+        }
+        {
+          publisher = "ms-vscode";
+          name = "cpp-devtools";
+        }
+        {
+          publisher = "ms-vscode";
+          name = "cpptools-themes";
+        }
       ];
       manualExtensions = cppManualExtensionsSpec;
       settings = pkgs: {

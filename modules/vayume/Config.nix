@@ -1,6 +1,11 @@
 { self, ... }: {
   flake.nixosModules.Config =
-    { pkgs, lib, config, ... }:
+    {
+      pkgs,
+      lib,
+      config,
+      ...
+    }:
     let
       repoDiscovery = self.vayumeLib.repoDiscovery;
       hostName = config.networking.hostName;
@@ -8,9 +13,7 @@
       candidateDirs =
         map (d: ''"$HOME/${d}"'') repoDiscovery.relativeDirs
         ++ map (d: ''"${d}"'') repoDiscovery.absoluteDirs;
-      candidateDirsDisplay =
-        map (d: "~/${d}") repoDiscovery.relativeDirs
-        ++ repoDiscovery.absoluteDirs;
+      candidateDirsDisplay = map (d: "~/${d}") repoDiscovery.relativeDirs ++ repoDiscovery.absoluteDirs;
 
       appsAwk = pkgs.writeText "vayume-config-apps.awk" ''
         BEGIN {
@@ -314,7 +317,16 @@
 
       vayumeConfigScript = pkgs.writeShellApplication {
         name = "vayume-config";
-        runtimeInputs = with pkgs; [ gnugrep gawk jq git nix coreutils fontconfig mkpasswd ];
+        runtimeInputs = with pkgs; [
+          gnugrep
+          gawk
+          jq
+          git
+          nix
+          coreutils
+          fontconfig
+          mkpasswd
+        ];
         text = ''
           usage() {
             cat >&2 <<'EOF'

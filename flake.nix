@@ -36,7 +36,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-  
     danksession = {
       url = "github:alcxyz/DankSession/v0.3.5";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -66,10 +65,6 @@
     };
   };
 
-  outputs = inputs:
-  inputs.flake-parts.lib.mkFlake
-  { inherit inputs; }
-  (inputs.import-tree ./modules);
-
+  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
 
 }

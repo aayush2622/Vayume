@@ -6,18 +6,34 @@
         "vscjava.vscode-gradle"
       ];
       marketplaceExtensions = [
-        { publisher = "fwcd"; name = "kotlin"; }
-        { publisher = "esafirm"; name = "kotlin-formatter"; }
-        { publisher = "naco-siren"; name = "gradle-language"; }
+        {
+          publisher = "fwcd";
+          name = "kotlin";
+        }
+        {
+          publisher = "esafirm";
+          name = "kotlin-formatter";
+        }
+        {
+          publisher = "naco-siren";
+          name = "gradle-language";
+        }
       ];
     };
     androidStudio = {
       autoPlugins = [
-        { dirName = "kmm-plugin"; id = "com.jetbrains.kmm"; }
+        {
+          dirName = "kmm-plugin";
+          id = "com.jetbrains.kmm";
+        }
       ];
     };
     zed = {
-      extensions = [ "kotlin" "java" "groovy" ];
+      extensions = [
+        "kotlin"
+        "java"
+        "groovy"
+      ];
       settings = {
         lsp.kotlin-language-server.settings.compiler.jvm.target = "21";
         languages.Kotlin.language_servers = [ "kotlin-lsp" ];

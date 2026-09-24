@@ -1,6 +1,11 @@
 {
   flake.nixosModules.Waydroid =
-    { pkgs, lib, config, ... }:
+    {
+      pkgs,
+      lib,
+      config,
+      ...
+    }:
     let
       waydroidPackage = pkgs.waydroid-nftables;
       android11Zips = {
@@ -14,13 +19,21 @@
         };
       };
 
-      android11Images = pkgs.runCommand "waydroid-android11-images" { nativeBuildInputs = [ pkgs.unzip ]; } ''
-        mkdir -p $out
-        unzip -q ${android11Zips.system} system.img -d $out
-        unzip -q ${android11Zips.vendor} vendor.img -d $out
-      '';
+      android11Images =
+        pkgs.runCommand "waydroid-android11-images" { nativeBuildInputs = [ pkgs.unzip ]; }
+          ''
+            mkdir -p $out
+            unzip -q ${android11Zips.system} system.img -d $out
+            unzip -q ${android11Zips.vendor} vendor.img -d $out
+          '';
 
-      waydroidScriptPython = pkgs.python3.withPackages (ps: with ps; [ tqdm requests inquirerpy ]);
+      waydroidScriptPython = pkgs.python3.withPackages (
+        ps: with ps; [
+          tqdm
+          requests
+          inquirerpy
+        ]
+      );
 
       waydroid-script = pkgs.stdenvNoCC.mkDerivation {
         pname = "waydroid-script";
@@ -156,20 +169,25 @@
       };
 
       security.sudo.extraRules = lib.mkIf (config ? vayume && config.vayume ? users) (
-        map (name: {
-          users = [ name ];
-          commands = [
-            {
-              command = "${unpatchPriv}";
-              options = [ "NOPASSWD" ];
-            }
-            {
-              command = "${android11Priv}";
-              options = [ "NOPASSWD" ];
-            }
-          ];
-        }) (builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups)
-          (builtins.attrNames config.vayume.users))
+        map
+          (name: {
+            users = [ name ];
+            commands = [
+              {
+                command = "${unpatchPriv}";
+                options = [ "NOPASSWD" ];
+              }
+              {
+                command = "${android11Priv}";
+                options = [ "NOPASSWD" ];
+              }
+            ];
+          })
+          (
+            builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups) (
+              builtins.attrNames config.vayume.users
+            )
+          )
       );
     };
 }

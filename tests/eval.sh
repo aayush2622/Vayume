@@ -32,6 +32,13 @@ step "shell scripts"
 bash -n "$work/install.sh"
 nix_ run --inputs-from "$work" nixpkgs#shellcheck -- "$work/install.sh" "$work/tests/eval.sh"
 
+step "nixfmt"
+(
+  cd "$work"
+  find modules flake.nix -name '*.nix' ! -name '_hardware.nix' ! -name '_config.nix' -print0 \
+    | xargs -0 nix --extra-experimental-features 'nix-command flakes' run --inputs-from "$work" nixpkgs#nixfmt -- --check
+)
+
 step "no comments in code (explanations live in docs/)"
 comments=$(
   cd "$work"

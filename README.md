@@ -212,7 +212,9 @@ modules/
 
 **Add a person:** an entry in `_config.nix`.
 **Add an app:** a folder under `modules/apps/*/` setting `flake.homeModules.apps.<Name>` — picked up automatically, then flip it on in `_config.nix`.
-**Add a host:** `./install.sh`, or copy `Host.nix` + the `*.example` files from `modules/hosts/Diablo/`.
+**Add a host:** `./install.sh`, or copy `Host.nix` + the `*.example` files from any folder under `modules/hosts/` into a new folder; the folder name becomes the host name.
+
+**Conventions:** no comments in code — the reasoning lives in `docs/`, in each page's "Notes from the code" section; every `.nix` file is `nixfmt`-formatted. `tests/eval.sh` checks both.
 
 ---
 
