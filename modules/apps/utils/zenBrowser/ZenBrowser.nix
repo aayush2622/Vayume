@@ -138,25 +138,25 @@ in
           e: e.name == name
         ) (throw "zen-browser.nix: no zenExtensions entry named \"${name}\"") zenExtensions).guid;
 
-      # fx-autoconfig is vendored under ./vendor - see its README for provenance
+      # fx-autoconfig is a third-party copy - see fx-autoconfig/README.md for provenance
       # and licences. Must be a derivation output, not a bare source path: wrapFirefox
       # interpolates this with `toString`, which drops string context, so a
       # raw path never becomes a build input and the sandbox cannot read it.
       fxaConfigJs = pkgs.runCommand "fx-autoconfig-config.js" { } ''
-        cp ${./vendor/fx-autoconfig/program/config.js} $out
+        cp ${./fx-autoconfig/program/config.js} $out
       '';
 
       fxaProfileFiles = {
-        "utils/boot.sys.mjs" = ./vendor/fx-autoconfig/chrome/utils/boot.sys.mjs;
-        "utils/chrome.manifest" = ./vendor/fx-autoconfig/chrome/utils/chrome.manifest;
-        "utils/fs.sys.mjs" = ./vendor/fx-autoconfig/chrome/utils/fs.sys.mjs;
-        "utils/module_loader.mjs" = ./vendor/fx-autoconfig/chrome/utils/module_loader.mjs;
-        "utils/uc_api.sys.mjs" = ./vendor/fx-autoconfig/chrome/utils/uc_api.sys.mjs;
-        "utils/utils.sys.mjs" = ./vendor/fx-autoconfig/chrome/utils/utils.sys.mjs;
-        "JS/matugen-bridge.uc.js" = ./vendor/fx-autoconfig/chrome/JS/matugen-bridge.uc.js;
-        "JS/matugen-boosts.uc.js" = ./vendor/fx-autoconfig/chrome/JS/matugen-boosts.uc.js;
-        "JS/Matugen/MatugenChild.sys.mjs" = ./vendor/fx-autoconfig/chrome/JS/Matugen/MatugenChild.sys.mjs;
-        "JS/Matugen/MatugenParent.sys.mjs" = ./vendor/fx-autoconfig/chrome/JS/Matugen/MatugenParent.sys.mjs;
+        "utils/boot.sys.mjs" = ./fx-autoconfig/chrome/utils/boot.sys.mjs;
+        "utils/chrome.manifest" = ./fx-autoconfig/chrome/utils/chrome.manifest;
+        "utils/fs.sys.mjs" = ./fx-autoconfig/chrome/utils/fs.sys.mjs;
+        "utils/module_loader.mjs" = ./fx-autoconfig/chrome/utils/module_loader.mjs;
+        "utils/uc_api.sys.mjs" = ./fx-autoconfig/chrome/utils/uc_api.sys.mjs;
+        "utils/utils.sys.mjs" = ./fx-autoconfig/chrome/utils/utils.sys.mjs;
+        "JS/matugen-bridge.uc.js" = ./fx-autoconfig/chrome/JS/matugen-bridge.uc.js;
+        "JS/matugen-boosts.uc.js" = ./fx-autoconfig/chrome/JS/matugen-boosts.uc.js;
+        "JS/Matugen/MatugenChild.sys.mjs" = ./fx-autoconfig/chrome/JS/Matugen/MatugenChild.sys.mjs;
+        "JS/Matugen/MatugenParent.sys.mjs" = ./fx-autoconfig/chrome/JS/Matugen/MatugenParent.sys.mjs;
       };
 
       # The eight placeholders only seed :root fallbacks for first boot,

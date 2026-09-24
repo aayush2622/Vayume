@@ -24,8 +24,8 @@
           dest="$themesDir/$name/gtk-3.0"
           ${pkgs.coreutils}/bin/mkdir -p "$dest"
 
-          ${pkgs.coreutils}/bin/cp ${./vendor/matugen-gtk/gtk3.css} "$dest/gtk.css"
-          ${pkgs.coreutils}/bin/cp ${./vendor/matugen-gtk/gtk3.css} "$dest/gtk-dark.css"
+          ${pkgs.coreutils}/bin/cp ${./matugen/gtk/gtk3.css} "$dest/gtk.css"
+          ${pkgs.coreutils}/bin/cp ${./matugen/gtk/gtk3.css} "$dest/gtk-dark.css"
           ${pkgs.coreutils}/bin/cp "$colors" "$dest/colors.css"
           ${pkgs.coreutils}/bin/chmod u+w "$dest/gtk.css" "$dest/gtk-dark.css" "$dest/colors.css"
 
@@ -63,7 +63,7 @@
 
           ".config/gtk-3.0/gtk.css".text = "";
 
-          ".config/gtk-4.0/gtk.css".source = ./vendor/matugen-gtk/gtk4.css;
+          ".config/gtk-4.0/gtk.css".source = ./matugen/gtk/gtk4.css;
 
           ".config/matugen/templates/gtk3-colors.css".text = self.matugenTemplates.gtk3;
           ".config/matugen/templates/gtk4-colors.css".text = self.matugenTemplates.gtk4;

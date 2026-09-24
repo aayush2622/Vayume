@@ -1,7 +1,7 @@
 /**
  * Oxocarbon by Adolar0042 (based on refact0r's Midnight), repalettised to
  * matugen. Structure and selectors are upstream's; only the base00-base28
- * palette below is generated. See vendor/README.md.
+ * palette below is generated. See docs/apps-utils-vesktop.md.
 */
 
 @import url("https://refact0r.github.io/midnight-discord/build/midnight.css");

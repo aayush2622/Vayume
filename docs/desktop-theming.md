@@ -201,7 +201,7 @@ opt-in pick, it's just part of what this desktop *is*.
     upstream layout is about theming *completeness*, not liveness: new
     apps get new colors, already-open ones never do.
   - **So the two are complementary, and this repo takes both halves.**
-    The vendored theme (`modules/desktop/vendor/matugen-gtk/`, MIT, see
+    The vendored theme (`modules/desktop/matugen/gtk/`, MIT, see
     its README) supplies completeness; the rotating theme supplies
     liveness. GTK4 follows upstream's layout exactly - the full
     `gtk4.css` as `~/.config/gtk-4.0/gtk.css`, its 121-var `colors.css`
