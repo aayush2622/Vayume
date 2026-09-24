@@ -12,13 +12,14 @@ Column {
     property string searchQuery: ""
     property bool modifiedOnly: false
 
-    readonly property int pendingCount: root.vm.settings.filter(s => s.pending).length
-    readonly property int customizedCount: root.vm.settings.filter(s => s.configured).length
+    readonly property var systemSettings: root.vm.settings.filter(s => !s.app)
+    readonly property int pendingCount: root.systemSettings.filter(s => s.pending).length
+    readonly property int customizedCount: root.systemSettings.filter(s => s.configured).length
 
     readonly property var groups: {
         const q = root.searchQuery.trim().toLowerCase();
         const byGroup = {};
-        for (const s of root.vm.settings) {
+        for (const s of root.systemSettings) {
             if (root.modifiedOnly && !s.configured && !s.pending)
                 continue;
             if (q.length > 0 && !(s.label + " " + s.description + " " + s.path + " " + s.group).toLowerCase().includes(q))
@@ -63,9 +64,9 @@ Column {
             }
 
             StyledText {
-                text: root.vm.settingsLoading && root.vm.settings.length === 0
+                text: root.vm.settingsLoading && root.systemSettings.length === 0
                     ? I18n.tr("Loading...")
-                    : I18n.tr("%1 settings · %2 customized").arg(root.vm.settings.length).arg(root.customizedCount)
+                    : I18n.tr("%1 settings · %2 customized").arg(root.systemSettings.length).arg(root.customizedCount)
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.surfaceVariantText
             }
@@ -73,7 +74,7 @@ Column {
     }
 
     StyledText {
-        text: I18n.tr("Every option a Vayume module declares that has no page of its own - new options show up here automatically. Changes are written to _config.nix instantly and checked when you rebuild.")
+        text: I18n.tr("System-level options a Vayume module declares - new ones show up here automatically. An app's own options are under that app in Applications. Changes are written to _config.nix instantly and checked when you rebuild.")
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
         wrapMode: Text.WordWrap

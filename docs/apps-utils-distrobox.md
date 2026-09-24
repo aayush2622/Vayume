@@ -141,7 +141,8 @@ idempotent and cheap once the dependencies are already there, so it's
 simpler to just always run it than to rely on install having gone first.
 
 **`vayume.ubuntuBox` is a NixOS-level option**, set in `_config.nix` (or
-from the All Settings page in Vayume Settings) like any other; see
+from Vayume Settings: Applications, then the collapsed "Distrobox
+settings" section under the Distrobox toggle) like any other; see
 [Settings.nix](core-settings.md).
 
 **`vayume.ubuntuBox` makes the result reproducible** once you know the

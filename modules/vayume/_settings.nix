@@ -123,6 +123,7 @@ let
             label = null;
             group = null;
             icon = null;
+            app = null;
             hidden = false;
           };
         groupName = if meta.group != null then meta.group else humanize (builtins.head rel);
@@ -156,6 +157,7 @@ let
               if builtins.isString (v.description or null) then v.description else ""
             );
             icon = meta.icon;
+            app = meta.app;
             groupIcon = groupMeta.icon;
             groupDescription = groupMeta.description;
             value = safe (lib.attrByPath rel null vayume);

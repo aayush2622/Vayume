@@ -70,7 +70,7 @@ Column {
         ListView {
             id: appsListView
             width: parent.width
-            height: Math.min(480, contentHeight)
+            height: contentHeight
             clip: true
             spacing: 2
             visible: !root.vm.appsLoading && root.filteredApps.length > 0
@@ -91,13 +91,23 @@ Column {
                 }
             }
 
-            delegate: DankToggle {
+            delegate: Column {
+                id: appEntry
                 required property var modelData
                 width: appsListView.width
-                text: modelData.name
-                description: modelData.description
-                checked: modelData.enabled
-                onToggled: isChecked => root.vm.setAppEnabled(modelData.name, isChecked)
+
+                DankToggle {
+                    width: parent.width
+                    text: appEntry.modelData.name
+                    description: appEntry.modelData.description
+                    checked: appEntry.modelData.enabled
+                    onToggled: isChecked => root.vm.setAppEnabled(appEntry.modelData.name, isChecked)
+                }
+
+                AppSettings {
+                    vm: root.vm
+                    appName: appEntry.modelData.name
+                }
             }
         }
     }
