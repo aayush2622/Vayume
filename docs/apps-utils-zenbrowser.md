@@ -229,6 +229,10 @@ It gets reused and re-synced on every rebuild.
     missing `curl` there fails silently instead of loudly. Found this by
     actually booting a fresh VM, not by guessing.
 
+## Activation does not touch the network at boot
+
+`home.activation.zenBrowserConfig` runs inside `home-manager-<user>.service`, which is ordered before user sessions, so its duration is login delay. It used to fetch the mods index on every run - at boot, before DNS, with `--retry 2` back-off, about 3 s of waiting. The index is now fetched only when `~/.zen/default/zen-themes.json` is missing or the stamp in `~/.zen/default/.vayume-mods-stamp` (a hash of the configured mod ids) differs; curl uses `--retry 0 --connect-timeout 3`. Individual mod files are still fetched only if missing, and a failed fetch fails immediately instead of sleeping. To force a refresh, delete the stamp file and rebuild. See [Performance.nix](system-performance.md#boot-time).
+
 ## Notes from the code
 
 Explanations that used to be comments in the source files.
