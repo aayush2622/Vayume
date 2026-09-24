@@ -84,7 +84,7 @@
             cfg.homeDir
           else
             "${config.home.homeDirectory}/.local/share/vayume-boxes/${cfg.name}${toString i}";
-        cmdSuffix = if cfg.count <= 1 then "" else toString i;
+        cmdSuffix = if i == 1 then "" else toString i;
       }) (lib.range 1 cfg.count);
 
       mkBox =
@@ -549,19 +549,18 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
           type = lib.types.ints.positive;
           default = 2;
           description = ''
-            How many independent containers to manage. 1 (the default)
-            keeps the original single, unnumbered command set -
-            `vayume box`, `vayume box run`, `vayume box install`,
-            `vayume box apps`, `vayume box export`, `vayume box sync`,
-            `vayume box reset` - entering "${cfg.name}".
+            How many independent containers to manage. The first is
+            always the unnumbered command set - `vayume box`,
+            `vayume box run`, `vayume box install`, `vayume box apps`,
+            `vayume box export`, `vayume box sync`, `vayume box reset` -
+            entering "${cfg.name}".
 
-            More than 1 replaces those with numbered variants instead:
-            `vayume box1`, `vayume box1 run`, ... up through
+            More than 1 adds numbered sets beside it, starting at 2:
+            `vayume box2`, `vayume box2 run`, ... up through
             `vayume box<count> reset`, each entering its own container.
-            box1 is always the exact same container/home as count = 1 -
-            "${cfg.name}"/homeDir, unchanged - so raising this from 1
-            never orphans a box you already have, it's just addressed
-            as `vayume box1` from now on. Only box2..N are new, numbered
+            The first box stays the exact same container/home and the
+            same commands at any count, so raising this never orphans
+            or renames a box you already have. Only box2..N are new, numbered
             containers ("${cfg.name}2" .. "${cfg.name}<count>"), each
             with its own auto-derived isolated home under
             .local/share/vayume-boxes/. Every other option below -
@@ -574,9 +573,9 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
           type = lib.types.str;
           default = "ubuntu";
           description = ''
-            Distrobox container name for box1. Also the prefix for
+            Distrobox container name for the first box (vayume box). Also the prefix for
             box2..N when count > 1, e.g. "ubuntu" gives "ubuntu2" ..
-            "ubuntu<count>" (box1 itself stays plain "ubuntu").
+            "ubuntu<count>" (the first box itself stays plain "ubuntu").
           '';
         };
 
@@ -599,7 +598,7 @@ ${lib.optionalString (cfg.x11Apps != [ ]) ''
           type = lib.types.str;
           default = "${config.home.homeDirectory}/.local/share/vayume-boxes/${cfg.name}";
           description = ''
-            Host directory used as box1's container home when
+            Host directory used as the first box's container home when
             isolateHome is enabled, at any count. box2..N always get
             their own auto-derived directory instead
             (.local/share/vayume-boxes/<name><n>) and ignore this
