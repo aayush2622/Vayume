@@ -102,6 +102,7 @@ term_expr="
 zrc=$(mktemp)
 nix_ eval --impure --raw --expr "$term_expr hm.home.file.\"./.zshrc\".text" > "$zrc"
 nix_ run --inputs-from "$work" nixpkgs#zsh -- -n "$zrc"
+grep -q 'setsid -w timeout [0-9]* fastfetch' "$zrc" || { echo "the fastfetch measuring pass must run detached from the terminal, or it is stopped by SIGTTIN and the shell hangs" >&2; exit 1; }
 grep -q 'KITTY_WINDOW_ID' "$zrc" || { echo "fastfetch greeting is not guarded to kitty" >&2; exit 1; }
 ! grep -q 'oh-my-zsh.sh' "$zrc" || { echo "oh-my-zsh is sourced again" >&2; exit 1; }
 [ "$(grep -c 'compinit -C' "$zrc")" = 1 ] || { echo "expected exactly one cached compinit" >&2; exit 1; }
