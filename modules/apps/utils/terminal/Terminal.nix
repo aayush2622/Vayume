@@ -73,13 +73,20 @@
         };
       };
 
+      cpuLine = pkgs.writeShellScript "vayume-cpu-line" ''
+        ${pkgs.gnused}/bin/sed -n 's/^model name[^:]*: //p' /proc/cpuinfo | ${pkgs.coreutils}/bin/head -1 \
+          | ${pkgs.gnused}/bin/sed -E 's/\((R|TM)\)//g; s/^[0-9]+(st|nd|rd|th) Gen //; s/ [0-9]+-Core Processor//; s/ CPU.*$//; s/ +/ /g'
+      '';
+
+      fastfetchRuleWidth = 52;
+
       fastfetchRule = kind: {
         type = "custom";
         format =
           if kind == "top" then
-            "╭${lib.concatStrings (lib.replicate 64 "─")}╮"
+            "╭${lib.concatStrings (lib.replicate fastfetchRuleWidth "─")}╮"
           else
-            "╰${lib.concatStrings (lib.replicate 64 "─")}╯";
+            "╰${lib.concatStrings (lib.replicate fastfetchRuleWidth "─")}╯";
       };
 
       keyed = color: attrs: attrs // { keyColor = color; };
@@ -119,7 +126,12 @@
         })
         (fastfetchRule "bottom")
         (fastfetchRule "top")
-        (keyed "blue" { type = "cpu"; })
+        (keyed "blue" {
+          type = "command";
+          key = "CPU";
+          keyIcon = "󰻠";
+          text = "${cpuLine}";
+        })
         (keyed "blue" {
           type = "gpu";
           format = "{1} {2} ({3})";
@@ -265,6 +277,31 @@
         snippets.greeting = {
           order = 2000;
           text = ''
+            vayume_fastfetch() {
+              setopt local_options extended_glob
+              local cfg="''${XDG_CONFIG_HOME:-$HOME/.config}/fastfetch/config.jsonc"
+              local rule=''${(l:${toString fastfetchRuleWidth}::─:)}
+              local line plain rest col w widest=0 json tmp
+              while IFS= read -r line; do
+                plain=''${line//$'\e'\[[0-9;]#m/}
+                [[ $plain == *$'\e['<->G* ]] || continue
+                col=''${''${plain#*$'\e['}%%G*}
+                rest=''${plain#*$'\e['$col'G'}
+                w=$(( col - 1 + ''${#rest} ))
+                (( w > widest )) && widest=$w
+              done < <(setsid -w timeout 3 fastfetch --logo none --pipe false </dev/null 2>/dev/null)
+              json=$(<"$cfg") 2>/dev/null
+              if (( widest > 0 )) && [[ -n $json && -n $XDG_RUNTIME_DIR ]]; then
+                tmp=$(mktemp --suffix=.jsonc "$XDG_RUNTIME_DIR/vayume-fastfetch.XXXXXX") && {
+                  print -r -- "''${json//$rule/''${(l:$widest::─:)}}" > "$tmp"
+                  fastfetch -c "$tmp" "$@"
+                  command rm -f "$tmp"
+                  return
+                }
+              fi
+              fastfetch "$@"
+            }
+
             vayume_greet() {
               [[ -n $KITTY_WINDOW_ID && -t 1 ]] || return 0
               local id="$KITTY_PID-$KITTY_WINDOW_ID"
@@ -282,13 +319,13 @@
                     (( rows > 18 )) && rows=18
                   fi
                 fi
-                fastfetch \
+                vayume_fastfetch \
                   --logo-type kitty-direct \
                   --logo "$img" \
                   --logo-width "$cols" \
                   --logo-height "$rows"
               else
-                fastfetch
+                vayume_fastfetch
               fi
             }
             vayume_greet
