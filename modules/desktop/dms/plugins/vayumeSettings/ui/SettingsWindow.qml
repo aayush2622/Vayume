@@ -192,7 +192,7 @@ DankFloatingWindow {
                         width: parent.width
                         StyledText {
                             width: parent.width - clearLogText.width - Theme.spacingS
-                            text: root.vm.rebuildBusy ? I18n.tr("Live rebuild output") : I18n.tr("Last rebuild output")
+                            text: root.vm.rebuildBusy ? I18n.tr("Live output") : I18n.tr("Last output")
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
                         }
@@ -243,7 +243,7 @@ DankFloatingWindow {
                     text: {
                         if (root.vm.lastError) return I18n.tr("Last change failed - see the page where it happened, or run `vayume config validate` in a terminal.");
                         if (root.vm.saving) return I18n.tr("Saving changes...");
-                        if (root.vm.rebuildBusy) return I18n.tr("Rebuilding system configuration...");
+                        if (root.vm.rebuildBusy) return root.vm.rebuildStatus;
                         if (root.vm.repoKnown && root.vm.repo.rebuildPending) return I18n.tr("Changes saved - rebuild to apply them.");
                         if (root.vm.rebuildStatus.length > 0) return root.vm.rebuildStatus;
                         return I18n.tr("Everything up to date.");

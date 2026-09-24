@@ -399,6 +399,10 @@ in
       vayume.commands.zen-reload = {
         command = lib.getExe zen-reload;
         description = "Restart Zen Browser so it picks up the current wallpaper colors";
+        panel = {
+          label = "Reload Zen Browser";
+          icon = "refresh";
+        };
       };
 
       home.activation.zenBrowserConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

@@ -1290,6 +1290,11 @@
         command = lib.getExe vayumeConfigScript;
         description = "Read or edit _config.nix (the backend of Vayume Settings)";
         usage = "<repo|apps|theme|defaults|settings|users|packages|development|validate> ...";
+        panel = {
+          label = "Check _config.nix";
+          icon = "fact_check";
+          args = [ "validate" ];
+        };
       };
     };
 }

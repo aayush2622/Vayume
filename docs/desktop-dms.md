@@ -219,9 +219,13 @@ enabling it alone isn't enough.
   a password into whatever window happens to have focus is a riskier
   default than copy-to-clipboard, which is what Bitwarden's own UI
   defaults to anyway.
-- **`spotifyMatugen`** has no settings beyond "on" - the whole feature is
-  locking DMS's dynamic color to whatever's on the album art currently
-  playing, and that's the entirety of what enabling it does.
+- **`spotifyMatugen` was replaced by `musicTheme`.** It locked DMS's
+  dynamic color to the album art of the playing track, but only for a
+  player whose MPRIS name contains "spotify" (checked in its
+  `SpotifyMatugen.qml`), so it never matched Spotifast
+  (`org.mpris.MediaPlayer2.spotifast`). Music Theme does the same for any
+  MPRIS player; the two would also both drive the theme at once, so only
+  the new one is enabled. See [Spotifast.nix](apps-utils-spotifast.md).
 - **Three community plugins needed icon patches to actually match the
   rest of the bar.** They hand-roll their own layout instead of using
   DMS's shared bar-pill component, so nothing forces them to agree on
@@ -763,6 +767,26 @@ no matter which sidebar category happens to be open when a rebuild is
 started - it auto-expands the moment a rebuild begins (a
 `Connections { target: root.vm }` on `rebuildBusy`), and can be
 collapsed by hand once it's no longer needed.
+
+### System page: Maintenance buttons
+
+Below the repository info, the System page has a Maintenance card with
+one row per command that sets `panel` in the `vayume.commands` registry
+([Commands.nix](core-commands.md)): clean up old generations (`gc`), check
+`_config.nix` (`config validate`), check plugin updates, reload Zen, and
+the Waydroid reinstall and repair. `ActionRow.qml` draws each; commands
+marked `confirm` need a second click within five seconds. The list comes
+from `vayume --json`, so a button exists exactly when its command does
+(no Zen button if Zen is off), and adding a button is one `panel`
+attribute in the module that registers the command.
+
+Running a button reuses the rebuild machinery: `runCommand` in the widget
+starts the process, streams stdout and stderr into the same log at the
+bottom of the window, and shows "<label> - running..." then "<label>
+finished." or "failed (exit N)" in the footer. Only one command runs at a
+time, and the buttons and the footer Rebuild button are disabled while one
+does. "Check _config.nix" is the place to catch a bad edit before a
+rebuild, since settings edits are not evaluated when saved.
 
 ### All Settings page: every other `vayume.*` option
 
