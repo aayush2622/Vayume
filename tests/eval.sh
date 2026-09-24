@@ -111,7 +111,8 @@ cfg="$work/modules/hosts/$host0/_config.nix"
 cfg_before=$(mktemp)
 cp "$cfg" "$cfg_before"
 chmod 644 "$cfg"
-vc_() { HOME="$vc_home" "$vc" config "$@"; }
+nix_ eval --raw "path:$work#nixosConfigurations.$host0.config.environment.etc.\"vayume/settings.json\".text" > "$vc_home/settings.json"
+vc_() { HOME="$vc_home" VAYUME_SETTINGS_SNAPSHOT="$vc_home/settings.json" XDG_CACHE_HOME="$vc_home/cache" "$vc" config "$@"; }
 expect_fail() { if vc_ "$@" 2>/dev/null; then echo "vayume-config $* should have failed" >&2; exit 1; fi; }
 vc_ repo | jq -e '.hostName == "'"$host0"'"' >/dev/null
 vc_ theme set fontSize 13 | jq -e '.ok' >/dev/null
@@ -132,14 +133,15 @@ vc_ defaults set editor auto | jq -e '.ok' >/dev/null
 expect_fail defaults set shell kitty
 vc_ settings list | jq -e 'length >= 10 and all(.[]; (.path | length) > 0 and (.kind | length) > 0)' >/dev/null
 vc_ settings set network.tor.enable false | jq -e '.ok' >/dev/null
-vc_ settings list | jq -e '.[] | select(.path == "network.tor.enable") | .value == false and .configured' >/dev/null
+vc_ settings list | jq -e '.[] | select(.path == "network.tor.enable") | .value == false and .applied == true and .configured and .pending' >/dev/null
 expect_fail settings set network.dns.provider nope
 expect_fail settings set ubuntuBox.count abc
 expect_fail settings set ubuntuBox.count 0
 expect_fail settings set no.such.thing 1
 vc_ settings set ubuntuBox.unshare ipc netns | jq -e '.ok' >/dev/null
 vc_ settings reset network.tor.enable | jq -e '.ok' >/dev/null
-vc_ settings list | jq -e '.[] | select(.path == "network.tor.enable") | .value == true and (.configured | not)' >/dev/null
+vc_ settings list | jq -e '.[] | select(.path == "network.tor.enable") | .value == true and (.configured | not) and (.pending | not)' >/dev/null
+[ "$(VAYUME_SETTINGS_SNAPSHOT=/nonexistent HOME="$vc_home" "$vc" config settings list | jq length)" = "$(vc_ settings list | jq length)" ] || { echo "settings list without a snapshot disagrees with the snapshot" >&2; exit 1; }
 vc_ validate | jq -e '.ok' >/dev/null
 [ "$(stat -c %a "$cfg")" = 600 ] || { echo "vayume-config changed _config.nix's mode" >&2; exit 1; }
 [ -z "$(find "$(dirname "$cfg")" -name '_config.nix.*' ! -name '*.example')" ] || { echo "vayume-config left temp files" >&2; exit 1; }
@@ -156,7 +158,7 @@ nix_ eval --impure --json --expr "
     extended = f.nixosConfigurations.$host0.extendModules {
       modules = [ { options.vayume.demo.flag = lib.mkOption { type = lib.types.bool; default = false; description = \"Demo.\"; }; } ];
     };
-    list = import $work/modules/vayume/_settings.nix { flake = f // { nixosConfigurations.$host0 = extended; }; host = \"$host0\"; };
+    list = import $work/modules/vayume/_settings.nix { inherit lib; inherit (extended) options config; };
   in builtins.any (s: s.path == \"demo.flag\" && s.kind == \"bool\" && s.group == \"Demo\") list" | grep -qx true
 echo "ok"
 

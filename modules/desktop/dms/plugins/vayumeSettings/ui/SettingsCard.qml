@@ -7,6 +7,7 @@ Rectangle {
 
     property string title: ""
     property string icon: ""
+    property string subtitle: ""
     property bool collapsible: false
     property bool collapsed: false
     default property alias content: contentColumn.data
@@ -54,12 +55,24 @@ Rectangle {
                     }
                 }
 
-                StyledText {
+                Column {
                     id: titleText
-                    text: root.title
-                    font.pixelSize: Theme.fontSizeMedium
-                    font.weight: Font.Medium
-                    color: Theme.surfaceText
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 1
+
+                    StyledText {
+                        text: root.title
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.Medium
+                        color: Theme.surfaceText
+                    }
+
+                    StyledText {
+                        visible: root.subtitle.length > 0
+                        text: root.subtitle
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceVariantText
+                    }
                 }
             }
 

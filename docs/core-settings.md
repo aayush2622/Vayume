@@ -44,16 +44,28 @@ vayume.settingsMeta = self.vayumeLib.labels {
 };
 ```
 
-`labels` is shorthand for `{ label = ...; }`. The full form also takes `group` (the card title) and `hidden`. Without an entry the label is the path with camel-case split into words (`network.dns.overTls` becomes "Dns over tls") and the group is the first segment. The labels for the shipped options live in `Settings.nix` itself, so a new module doesn't have to touch it unless it wants a nicer name.
+`labels` is shorthand for `{ label = ...; }`. The full form also takes `group` (the card title), `icon` (a Material Symbols name) and `hidden`. A group's own icon and one-line description come from `vayume.settingsGroups.<group name> = { icon = ...; description = ...; };`. With no icon the row uses one for its type. Without an entry the label is the path with camel-case split into words (`network.dns.overTls` becomes "Dns over tls") and the group is the first segment. The labels for the shipped options live in `Settings.nix` itself, so a new module doesn't have to touch it unless it wants a nicer name.
+
+### No Nix evaluation on load or save
+
+Evaluating the option tree takes a few seconds per call, so the panel never does it. Instead:
+
+- **At rebuild time** the `Settings` module writes `/etc/vayume/settings.json`: one record per option with its label, group, icon, type, choices, the value the running system has (`value`), what the option would be without `_config.nix` (`base`), and its declared `default`.
+- **`vayume config settings list`** reads that file and overlays the flat `vayume.<path> = ...;` lines currently in `_config.nix` (a small `awk` finds them, `jq` parses the literals). Each record gains `configured` (there is a line), `applied` (what is running), `value` (what will be running after a rebuild) and `pending` (they differ). It takes about 60 ms. If the snapshot doesn't exist yet - before the first rebuild after adding this module - it falls back to evaluating the flake once.
+- **`settings set` / `settings reset`** check the value against the record (kind, enum choices, and `min` for positive or unsigned ints), rewrite the file atomically, and run `nix-instantiate --parse` on the result so a syntactically broken file is never written. That is about 100 ms. Nothing is evaluated, so an option that is valid in type but rejected by an assertion or another module is only caught by the rebuild - which evaluates everything - and the rebuild leaves the running system alone if it fails. Reset removes the line again.
+
+The snapshot is the reason a brand-new option appears only after the next rebuild: until then the running system doesn't know about it.
+
+`VAYUME_SETTINGS_SNAPSHOT` overrides the snapshot path; `tests/eval.sh` uses it so a test run never reads the host's real one.
 
 ### Where a write goes
 
-`vayume config settings set <path> <value...>` edits `_config.nix` as one flat line, `vayume.<path> = <value>;`, replacing an existing flat line for that path or adding one before the closing brace. `settings reset <path>` deletes that line, so the option returns to its default. Then the same checks as every other edit apply: the file is evaluated, the option's own value is forced (so a wrong type or `ubuntuBox.count = 0` is rejected), and anything that fails is reverted - see [Config.nix](core-vayume-config.md) for the atomic-write and `--if-unmodified-since` details.
+`vayume config settings set <path> <value...>` edits `_config.nix` as one flat line, `vayume.<path> = <value>;`, replacing an existing flat line for that path (multi-line ones included) or adding one before the closing brace. `settings reset <path>` deletes that line, so the option returns to its `base`. See [Config.nix](core-vayume-config.md) for the atomic-write and `--if-unmodified-since` details.
 
 Two consequences worth knowing:
 
-- **The option must be overridable.** Anything `Host.nix` sets for one of these options has to use `lib.mkDefault`, otherwise `_config.nix` and `Host.nix` define the same option and evaluation fails. The `vayume.network` block in `Host.nix` is written that way for this reason.
-- **A value set inside a nested block wins the edit.** If you wrote `vayume.network = { tor.enable = true; };` by hand, the flat line the panel adds defines the same option a second time and evaluation fails; the edit is reverted and the error says so. The list marks a setting as "Set in _config.nix" only when it finds a flat `vayume.<path> =` line.
+- **The option must be overridable.** Anything `Host.nix` sets for one of these options has to use `lib.mkDefault`, otherwise `_config.nix` and `Host.nix` define the same option and the rebuild fails. The `vayume.network` block in `Host.nix` is written that way for this reason.
+- **A value set inside a nested block wins.** If you wrote `vayume.network = { tor.enable = true; };` by hand, the flat line the panel adds defines the same option a second time and the rebuild fails with a "defined multiple times" error. The list marks a setting as customized only when it finds a flat `vayume.<path> =` line, and shows a note if that line is a multi-line expression it can't display.
 
 ### Distrobox
 
@@ -61,7 +73,7 @@ Two consequences worth knowing:
 
 ### How the list is built
 
-`_settings.nix` takes the evaluated flake and a host name, walks `nixosConfigurations.<host>.options.vayume`, classifies each option's type, and returns one record per option: `path`, `group`, `label`, `description` (first paragraph), `kind`, `nullable`, `choices`, `value`, `default`. `vayume config settings list` adds `configured`. Because it reads the option tree rather than a hand-kept table, it can't drift from the modules. `tests/eval.sh` covers both the edit paths and a throwaway option appearing with no other change.
+`_settings.nix` is a function of `lib`, `options` and `config`. The `Settings` module calls it with the system's own, so it runs during the rebuild; the fallback and the tests call it with a host's evaluated options. It walks `options.vayume`, classifies each option's type, and returns one record per option: `path`, `group`, `groupIcon`, `groupDescription`, `label`, `icon`, `description` (first paragraph), `kind`, `nullable`, `choices`, `min`, `value`, `base`, `default`. `vayume config settings list` adds `applied`, `configured`, `pending`. Because it reads the option tree rather than a hand-kept table, it can't drift from the modules. `tests/eval.sh` covers both the edit paths and a throwaway option appearing with no other change.
 
 ---
 

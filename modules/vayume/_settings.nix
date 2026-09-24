@@ -1,14 +1,17 @@
-{ flake, host }:
+{
+  lib,
+  options,
+  config,
+}:
 let
-  lib = flake.inputs.nixpkgs.lib;
-  sys = flake.nixosConfigurations.${host};
-  vayume = sys.config.vayume;
+  vayume = config.vayume;
 
   dedicated = [
     "apps"
     "commands"
     "defaultApps"
     "defaultAppsResolved"
+    "settingsGroups"
     "settingsMeta"
     "theme"
     "users"
@@ -36,7 +39,16 @@ let
         choices = t.functor.payload.values;
       }
     else if builtins.match "(unsigned|signed|positive|nonnegative)?[iI]nt.*" n != null then
-      { kind = "int"; }
+      {
+        kind = "int";
+        min =
+          if n == "positiveInt" then
+            1
+          else if n == "unsignedInt" || n == "nonnegativeInt" then
+            0
+          else
+            null;
+      }
     else if
       builtins.elem n [
         "str"
@@ -84,6 +96,21 @@ let
     in
     if r.success then r.value else null;
 
+  fromOtherFiles =
+    o:
+    let
+      defs = builtins.filter (d: !(lib.hasSuffix "/_config.nix" (toString d.file))) (
+        o.definitionsWithLocations or [ ]
+      );
+      strip = v: if builtins.isAttrs v && (v._type or null) == "override" then v.content else v;
+      prio = v: if builtins.isAttrs v && (v._type or null) == "override" then v.priority else 100;
+      sorted = lib.sort (a: b: prio a.value < prio b.value) defs;
+    in
+    if sorted == [ ] then
+      if o ? default then safe o.default else null
+    else
+      safe (strip (builtins.head sorted).value);
+
   firstParagraph = s: lib.trim (builtins.head (lib.splitString "\n\n" (lib.trim s)));
 
   walk =
@@ -95,7 +122,14 @@ let
           vayume.settingsMeta.${path} or {
             label = null;
             group = null;
+            icon = null;
             hidden = false;
+          };
+        groupName = if meta.group != null then meta.group else humanize (builtins.head rel);
+        groupMeta =
+          vayume.settingsGroups.${groupName} or {
+            icon = null;
+            description = null;
           };
         shape = describe v.type;
       in
@@ -110,7 +144,7 @@ let
         (
           {
             inherit path;
-            group = if meta.group != null then meta.group else humanize (builtins.head rel);
+            group = groupName;
             label =
               if meta.label != null then
                 meta.label
@@ -121,10 +155,15 @@ let
             description = firstParagraph (
               if builtins.isString (v.description or null) then v.description else ""
             );
+            icon = meta.icon;
+            groupIcon = groupMeta.icon;
+            groupDescription = groupMeta.description;
             value = safe (lib.attrByPath rel null vayume);
+            base = fromOtherFiles v;
             default = if v ? default then safe v.default else null;
             nullable = false;
             choices = null;
+            min = null;
           }
           // shape
         )
@@ -133,6 +172,6 @@ let
     else
       [ ];
 
-  top = lib.filterAttrs (n: _: !(builtins.elem n dedicated)) sys.options.vayume;
+  top = lib.filterAttrs (n: _: !(builtins.elem n dedicated)) options.vayume;
 in
 builtins.concatLists (lib.mapAttrsToList (n: v: walk [ n ] v) top)

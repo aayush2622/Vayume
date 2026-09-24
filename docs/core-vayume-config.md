@@ -422,6 +422,12 @@ never actually applies here.
   excludes it - the entry, and the UI's toggle for it, stays put rather
   than disappearing the way removing it outright would.
 
+### Reads are cached, and `settings` never evaluates
+
+`apps list`, `development list`, `theme get`, `users list` and `defaults get` each cost a `nix eval` (1 to 3 seconds; `theme get` also scans every font file for family names). They are cached under `~/.cache/vayume/config/`, keyed by a hash of the name, size and mtime of everything in `modules/`, `flake.nix`, `flake.lock` and `_config.nix`: any edit to the repo changes the key, so the cache can serve a stale answer only if a file is changed without its mtime changing. Old entries for a command are deleted when a new one is written. The font list is cached separately per font package store path, which never changes. `repo` is not cached (it is already about 60 ms and reports live state).
+
+The `settings` commands don't evaluate at all - see [Settings.nix](core-settings.md#no-nix-evaluation-on-load-or-save). That is deliberate: a settings edit is checked when you rebuild, not when you click.
+
 ### Atomic writes, validated before they're trusted
 
 `apps set` never truncates `_config.nix` in place. It writes the new

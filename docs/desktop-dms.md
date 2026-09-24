@@ -610,8 +610,9 @@ DMS's own Settings modal uses), with a category sidebar down the left
 (Appearance, Development, Applications, Default Apps, All Settings, Users, System) and a rebuild
 button/status footer along the bottom, closer to DMS's own Settings
 screen than to a control-center card. The pricier `vayume config apps
-list`/`theme get`/`development list`/`users list`/`settings list` calls (real Nix
-evaluations) only run once when that window opens, not continuously -
+list`/`theme get`/`development list`/`users list`/`defaults get` calls (real Nix
+evaluations, cached between runs) only run for the page you open, not
+continuously, and `settings list` reads a snapshot instead of evaluating -
 the `ccDetailContent` popout that used to hold all of this is now just
 a one-line "opens in its own window" hint, kept only so DMS still gives
 the pill an expand click zone at all (removing `ccDetailContent`
@@ -765,17 +766,11 @@ collapsed by hand once it's no longer needed.
 
 ### All Settings page: every other `vayume.*` option
 
-`OptionsPage.qml` renders `vayume config settings list`, grouped by the
-option's group, with one `SettingRow.qml` per option: a toggle for
-booleans, a dropdown for enums (with a "Default" entry when the option
-is nullable), a text field for numbers, strings and string lists. A row
-that has a flat line in `_config.nix` shows a Reset button. There is no
-per-option QML - a new `lib.mkOption` under `vayume.*` appears on the
-page by itself; how that works and how to customise the label is in
-[Settings.nix](core-settings.md). Errors from a rejected value come back
-the same way as on the other pages (`pickError`), and every change
-carries the "Rebuild required" badge because it edits `_config.nix`, not
-the running system.
+`OptionsPage.qml` renders `vayume config settings list`. The header shows how many settings exist and how many are customized; a banner with a "Rebuild now" button appears while any change is saved but not applied. Below it are a search box, an All/Modified filter, and one card per group (icon and one-line description from `vayume.settingsGroups`).
+
+Each `SettingRow.qml` has an icon chip, the label, the description, and the control: a toggle for booleans, a dropdown for enums (with a "Default" entry when the option is nullable), a text field for numbers, strings and string lists. A row whose value differs from what is running gets an amber accent, a "Pending rebuild" badge and a "Running now: ..." line; a row with a line in `_config.nix` shows "Customized" and an undo button that resets it. There is no per-option QML - a new `lib.mkOption` under `vayume.*` appears on the page after the next rebuild; how that works and how to customise the label and icon is in [Settings.nix](core-settings.md). Errors come back the same way as on the other pages (`pickError`).
+
+**Loading is lazy.** The bar widget only runs `vayume config repo` (about 60 ms) at login. Opening the window loads just the visible page's data (`ensurePage`), and each other page the first time it is opened; reopening the window reloads the active page. Combined with the read cache in [Config.nix](core-vayume-config.md), switching pages is instant unless something in the repo changed.
 
 ### Users page: the one category that can change real access
 
