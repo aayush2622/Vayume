@@ -3,7 +3,7 @@
 # something to publish) and required: Host.nix refuses to evaluate without
 # a real _hardware.nix sitting next to it. To make your own:
 #
-#   cp modules/hosts/Diablo/_hardware.nix.example modules/hosts/Diablo/_hardware.nix
+#   cp modules/hosts/<host>/_hardware.nix.example modules/hosts/<host>/_hardware.nix
 #   sudo nixos-generate-config --show-hardware-config
 #
 # then paste the fileSystems/swapDevices/boot.initrd bits nixos-generate-config

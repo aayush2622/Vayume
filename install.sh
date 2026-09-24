@@ -2,7 +2,7 @@
 # Vayume bootstrap - stand up a new host from this flake without hand-editing Nix.
 #
 # It does the three things a fresh machine needs (see docs/getting-started.md):
-#   1. host dir   - modules/hosts/<host>/ (copied + renamed from Diablo if new)
+#   1. host dir   - modules/hosts/<host>/ (copied from an existing host if new)
 #   2. _hardware.nix - from `nixos-generate-config` (or an existing file you point at)
 #   3. _config.nix   - the one user-facing file: built interactively (users,
 #                      groups, sudo, password hash, extra packages, per-user
@@ -95,7 +95,9 @@ done
 # ---------------------------------------------------------------- preconditions
 REPO=$(cd "$(dirname "$0")" && pwd -P)
 cd "$REPO"
-[[ -f flake.nix && -d modules/hosts/Diablo ]] || die "run this from the Vayume repo root"
+TEMPLATE=""
+for d in modules/hosts/*/; do [[ -f ${d}Host.nix ]] && { TEMPLATE=$(basename "$d"); break; }; done
+[[ -f flake.nix && -n $TEMPLATE ]] || die "run this from the Vayume repo root"
 [[ $EUID -ne 0 ]] || die "run as your normal user, not root - the script sudo's the few steps that need it"
 command -v nix >/dev/null || die "nix not found - this bootstrap targets a NixOS machine"
 
@@ -133,37 +135,24 @@ resolve_host_and_system() {
 
 # ---------------------------------------------------------------- host dir -----
 setup_host_dir() {
-  if [[ $HOST != Diablo && ! -d $HOSTDIR ]]; then
-    info "creating $HOSTDIR from the Diablo template"
+  if [[ ! -d $HOSTDIR ]]; then
+    info "creating $HOSTDIR from the $TEMPLATE template"
     if (( DRY_RUN )); then
-      info "would rename Diablo -> $HOST in $HOSTDIR/{Host.nix,*.example}"
+      info "would copy Host.nix and the *.example files from modules/hosts/$TEMPLATE"
     else
-      # Build the new host dir at a temp sibling and only `mv` it into place
-      # once fully prepared - a script kill/crash mid-copy or mid-rename then
-      # leaves at most a harmless "$HOSTDIR.new" stray, never a half-renamed
-      # real host dir that a later run or rebuild could silently pick up.
       local tmp_hostdir="$HOSTDIR.new"
       rm -rf "$tmp_hostdir"
       mkdir -p "$tmp_hostdir"
-      cp modules/hosts/Diablo/Host.nix modules/hosts/Diablo/*.nix.example "$tmp_hostdir/"
-      while IFS= read -r -d '' f; do sed -i "s/Diablo/$HOST/g" "$f"; done \
-        < <(find "$tmp_hostdir" -maxdepth 1 -type f \( -name '*.nix' -o -name '*.nix.example' \) -print0)
+      cp "modules/hosts/$TEMPLATE/Host.nix" modules/hosts/"$TEMPLATE"/*.nix.example "$tmp_hostdir/"
       mv "$tmp_hostdir" "$HOSTDIR"
-      info "renamed Diablo -> $HOST in $HOSTDIR/{Host.nix,*.example}"
+      info "created $HOSTDIR - the host name is taken from the folder name"
     fi
-  elif [[ -d $HOSTDIR ]]; then
-    info "$HOSTDIR already exists - filling in what's missing, not touching Host.nix"
   else
-    info "using the existing Diablo host dir in place"
+    info "$HOSTDIR already exists - filling in what's missing, not touching Host.nix"
   fi
   (( DRY_RUN )) || [[ -f $HOSTDIR/Host.nix ]] || die "$HOSTDIR/Host.nix missing - unexpected"
-  [[ $HOST == Diablo || ! -f $HOSTDIR/Vm.nix ]] || \
+  [[ ! -f $HOSTDIR/Vm.nix ]] || \
     warn "$HOSTDIR/Vm.nix is left over from an older install.sh - delete it (the VM module is shared now, modules/system/Vm.nix); two copies break every host's VM build"
-
-  # keep networking.hostName in sync with the chosen name
-  if (( ! DRY_RUN )) && grep -q 'networking\.hostName' "$HOSTDIR/Host.nix"; then
-    sed -i "s/\(networking\.hostName *= *\"\)[^\"]*\"/\1$HOST\"/" "$HOSTDIR/Host.nix"
-  fi
 }
 
 # ---------------------------------------------------------------- _hardware.nix
@@ -306,7 +295,7 @@ setup_config() {
 finalize() {
   local f
 
-  if (( IS_GIT && ! DRY_RUN )) && [[ -d $HOSTDIR && $HOST != Diablo ]]; then
+  if (( IS_GIT && ! DRY_RUN )) && [[ -d $HOSTDIR && $HOST != "$TEMPLATE" ]]; then
     git -C "$REPO" add "$HOSTDIR/Host.nix" "$HOSTDIR"/*.nix.example 2>/dev/null || true
     info "staged the tracked files in $HOSTDIR (_hardware.nix / _config.nix stay gitignored)"
   fi

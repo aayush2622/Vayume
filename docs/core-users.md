@@ -23,7 +23,7 @@ ordinary configuration). One file now covers both - the actual answer
 to "where do I configure Vayume for myself":
 
 ```nix
-# modules/hosts/Diablo/_config.nix
+# modules/hosts/<host>/_config.nix
 { pkgs, ... }:
 {
   vayume.users = {

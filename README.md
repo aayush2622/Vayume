@@ -113,7 +113,7 @@ Any user without a `hashedPassword` gets `changeme` as a password. Users are imm
 mkdir modules/hosts/<yourhostname>
 cp modules/hosts/Diablo/{Host.nix,*.example} modules/hosts/<yourhostname>/
 sudo nixos-generate-config --show-hardware-config > modules/hosts/<yourhostname>/_hardware.nix
-# Edit Host.nix: replace "Diablo" with <yourhostname>, fix timezone, locale, bootloader
+# The host name is the folder name; edit Host.nix for timezone, locale, bootloader
 cp modules/hosts/<yourhostname>/_config.nix.example modules/hosts/<yourhostname>/_config.nix
 # Fill in _config.nix: username, password hash (mkpasswd -m sha-512), enable apps
 sudo nixos-rebuild switch --flake path:.#<yourhostname>

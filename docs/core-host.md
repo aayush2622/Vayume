@@ -6,6 +6,17 @@ Every machine starts here. `Host.nix` is the one file that says what this partic
 
 ## `modules/hosts/<name>/Host.nix`
 
+**The host name is the folder name.** `Host.nix` sets
+`hostName = baseNameOf ./.` and uses it for `nixosConfigurations.<name>`,
+`networking.hostName`, and the "missing `_config.nix`" hint, so a host is
+created by copying the folder - no text inside it names the host, and
+`install.sh` doesn't rewrite anything. Users come from `vayume.users` in
+`_config.nix`; nothing in the modules names a user or a home directory.
+`install.sh` copies its template from the first host folder that has a
+`Host.nix`, and `tests/eval.sh` discovers the host and the first two
+users the same way, so renaming the shipped `Diablo` folder breaks
+nothing.
+
 **`vayume.theme`** is a submodule declared in
 [vayume/Theme.nix](core-theme.md), the same shared-module pattern as
 `vayume.users`/`vayume.apps` - every host imports `self.nixosModules.Theme`

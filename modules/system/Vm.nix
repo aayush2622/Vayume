@@ -87,6 +87,8 @@
     {
       apps =
         lib.mapAttrs' (name: _: lib.nameValuePair "vm-${name}" (mkVmApp name)) self.nixosConfigurations
-        // lib.optionalAttrs (self.nixosConfigurations ? Diablo) { vm = mkVmApp "Diablo"; };
+        // lib.optionalAttrs (self.nixosConfigurations != { }) {
+          vm = mkVmApp (builtins.head (builtins.attrNames self.nixosConfigurations));
+        };
     };
 }

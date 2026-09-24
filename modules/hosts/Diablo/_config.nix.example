@@ -4,8 +4,8 @@
 # to publish) and required: Host.nix refuses to evaluate without a real
 # _config.nix sitting next to it. To make your own:
 #
-#   cp modules/hosts/Diablo/_config.nix.example modules/hosts/Diablo/_config.nix
-#   chmod 600 modules/hosts/Diablo/_config.nix
+#   cp modules/hosts/<host>/_config.nix.example modules/hosts/<host>/_config.nix
+#   chmod 600 modules/hosts/<host>/_config.nix
 #   mkpasswd -m sha-512          # paste the result in as hashedPassword
 #
 # then edit the attrsets below.
@@ -23,7 +23,7 @@
       # hashedPassword = "$6$...";
 
       # Optional: a .face avatar image (DMS profile card, via accounts-daemon).
-      # Drop the image file anywhere under this Diablo folder (gitignored
+      # Drop the image file anywhere under this host folder (gitignored
       # by default, see .gitignore) and point at it here, e.g.:
       # avatar = ./someimage.png;
 

@@ -9,7 +9,7 @@ A second, disposable copy of the whole machine that boots in a window - how ever
 ### Running it
 
 ```bash
-nix run path:.#vm              # Diablo
+nix run path:.#vm              # the first host
 nix run path:.#vm-<host>       # any host under modules/hosts/
 nix run path:.#vm -- --fresh   # throw the disk image away first
 ```
@@ -30,7 +30,7 @@ it into every new host. Two copies of the same module both set
 host existed, *every* host's VM failed to evaluate - and the list-typed
 QEMU flags were doubled. Nothing in it was ever Diablo-specific, so it
 lives in `system/` now and generates a `vm-<host>` app for each entry
-in `nixosConfigurations`; `vm` stays as an alias for Diablo. A host
+in `nixosConfigurations`; `vm` is an alias for the first host in the list. A host
 created by an older `install.sh` still has its own `Vm.nix` - delete it
 (`install.sh` warns about it on a re-run).
 

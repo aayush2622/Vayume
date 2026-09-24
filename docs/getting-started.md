@@ -58,9 +58,10 @@ locking you out with it.
 3. `cp .../<yourhostname>/_config.nix.example .../<yourhostname>/_config.nix`
    and `chmod 600` it, then fill it in - `mkpasswd -m sha-512` for the hash, then flip the
    apps you want on
-4. Edit `Host.nix` - replace every `Diablo` with your host name
-   (`nixosConfigurations.<name>` and `networking.hostName` must match),
-   fix timezone/locale/bootloader
+4. Edit `Host.nix` for timezone/locale/bootloader. The host name is
+   the folder name (`Host.nix` reads it with `baseNameOf ./.` for both
+   `nixosConfigurations.<name>` and `networking.hostName`), so there is
+   nothing to rename
 5. `sudo nixos-rebuild switch --flake path:.#<yourhostname>`
 
 Or run `./install.sh` instead of steps 1-3 - it does the same thing
