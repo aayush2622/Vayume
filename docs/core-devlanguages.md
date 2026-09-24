@@ -60,4 +60,4 @@ They just agree on what shape this data comes in.
 
 ---
 
-[← Settings.nix](core-settings.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)
+[← Zsh.nix](core-zsh.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)

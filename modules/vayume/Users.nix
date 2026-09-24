@@ -193,6 +193,7 @@
         ) cfg;
 
         programs.zsh.enable = true;
+        programs.zsh.enableGlobalCompInit = !(config.vayume.apps.Terminal.enable or false);
 
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
