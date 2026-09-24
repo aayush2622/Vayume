@@ -19,6 +19,10 @@ genuine overflow. Not hardware-specific, so it isn't in `_hardware.nix` -
 any host with enough RAM benefits the same way, and a second host
 defined later gets it for free instead of needing this copied in.
 
+[Performance.nix](system-performance.md) later raised the priority to
+`100` and added the swap-related sysctls (`vm.swappiness = 180` and
+friends) that go with zram; the algorithm and size are unchanged.
+
 ### DevTooling
 
 Docker and Podman, side by side - infrastructure that doesn't care what
@@ -82,4 +86,4 @@ hand-rolled packaging like the old theme needed.
 
 ---
 
-[← SddmTheme.nix](desktop-sddm.md) · [Index](CONFIGURATION.md) · [Network.nix →](system-network.md)
+[← SddmTheme.nix](desktop-sddm.md) · [Index](CONFIGURATION.md) · [Performance.nix →](system-performance.md)

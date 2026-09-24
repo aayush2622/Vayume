@@ -38,6 +38,7 @@ in
       self.nixosModules.GrubTheme
       self.nixosModules.DevTooling
       self.nixosModules.Zram
+      self.nixosModules.Performance
       self.nixosModules.Network
       self.nixosModules.Waydroid
       self.nixosModules.VmTesting
@@ -156,13 +157,6 @@ in
             services.udev.extraRules = ''
               KERNEL=="ntsync", MODE="0660", TAG+="uaccess"
             '';
-
-            boot.kernel.sysctl = {
-              "kernel.sched_cfs_bandwidth_slice_us" = 3000;
-              "net.ipv4.tcp_fin_timeout" = 5;
-              "kernel.split_lock_mitigate" = 0;
-              "vm.max_map_count" = 2147483642;
-            };
 
             services.pulseaudio.enable = false;
             security.rtkit.enable = true;
