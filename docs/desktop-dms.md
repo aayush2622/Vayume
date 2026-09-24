@@ -607,10 +607,10 @@ themselves.
 Clicking the pill's expand zone doesn't open an inline popout - it opens
 a genuine separate window (`DankFloatingWindow`, the same base type
 DMS's own Settings modal uses), with a category sidebar down the left
-(Appearance, Development, Applications, Users, System) and a rebuild
+(Appearance, Development, Applications, Default Apps, All Settings, Users, System) and a rebuild
 button/status footer along the bottom, closer to DMS's own Settings
 screen than to a control-center card. The pricier `vayume config apps
-list`/`theme get`/`development list`/`users list` calls (real Nix
+list`/`theme get`/`development list`/`users list`/`settings list` calls (real Nix
 evaluations) only run once when that window opens, not continuously -
 the `ccDetailContent` popout that used to hold all of this is now just
 a one-line "opens in its own window" hint, kept only so DMS still gives
@@ -625,7 +625,7 @@ The QML itself is split by responsibility under
 backend state), and `ui/` holds the presentational pieces -
 `SettingsWindow.qml` (sidebar + footer shell, including the live
 rebuild-log panel), one file per category page (`AppearancePage.qml`,
-`DevelopmentPage.qml`, `ApplicationsPage.qml`, `UsersPage.qml`,
+`DevelopmentPage.qml`, `ApplicationsPage.qml`, `OptionsPage.qml`, `SettingRow.qml`, `UsersPage.qml`,
 `SystemPage.qml`), and three small reused pieces (`SettingsCard.qml` -
 the card wrapper every page's content sits in, `SidebarItem.qml`,
 `Badge.qml` - the "Rebuild required"/config-status dots). Pages receive
@@ -762,6 +762,20 @@ no matter which sidebar category happens to be open when a rebuild is
 started - it auto-expands the moment a rebuild begins (a
 `Connections { target: root.vm }` on `rebuildBusy`), and can be
 collapsed by hand once it's no longer needed.
+
+### All Settings page: every other `vayume.*` option
+
+`OptionsPage.qml` renders `vayume config settings list`, grouped by the
+option's group, with one `SettingRow.qml` per option: a toggle for
+booleans, a dropdown for enums (with a "Default" entry when the option
+is nullable), a text field for numbers, strings and string lists. A row
+that has a flat line in `_config.nix` shows a Reset button. There is no
+per-option QML - a new `lib.mkOption` under `vayume.*` appears on the
+page by itself; how that works and how to customise the label is in
+[Settings.nix](core-settings.md). Errors from a rejected value come back
+the same way as on the other pages (`pickError`), and every change
+carries the "Rebuild required" badge because it edits `_config.nix`, not
+the running system.
 
 ### Users page: the one category that can change real access
 

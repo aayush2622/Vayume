@@ -60,4 +60,4 @@ They just agree on what shape this data comes in.
 
 ---
 
-[← Commands.nix](core-commands.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)
+[← Settings.nix](core-settings.md) · [Index](CONFIGURATION.md) · [PluginUpdateCheck.nix →](core-pluginupdatecheck.md)

@@ -360,6 +360,12 @@
             defaults get                  default app per role (terminal, fileManager, editor, browser) (JSON)
             defaults set <role> <id|auto> [--if-unmodified-since <epoch>]
                                            pick a role's default app, auto = first enabled one
+            settings list                 every other vayume.* option: value, default, type, choices (JSON)
+            settings set <path> <value...> [--if-unmodified-since <epoch>]
+                                           set one option as a flat `vayume.<path> = ...;` line;
+                                           lists take one argument per element
+            settings reset <path> [--if-unmodified-since <epoch>]
+                                           drop that line so the option returns to its default
             validate                      re-evaluate _config.nix, report pass/fail
           EOF
             exit 2
@@ -393,9 +399,11 @@
             chmod --reference="$config_file" "$tmp_file"
           }
 
+          validate_extra=""
+
           validate_config_file() {
             nix eval --impure --json --expr \
-              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps defaultApps theme.font theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users)" \
+              "with (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume; [ apps defaultApps theme.font theme.fontSize theme.cursorTheme ] ++ builtins.attrValues (builtins.mapAttrs (_: u: [ u.fullName u.hashedPassword u.extraGroups (builtins.attrValues u.secrets) (builtins.attrValues u.packages) ]) users) ++ (if \"$validate_extra\" == \"\" then [ ] else [ (builtins.foldl' (a: k: a.\''${k}) (builtins.getFlake \"path:$flake_dir\").nixosConfigurations.${hostName}.config.vayume (builtins.filter builtins.isString (builtins.split \"\\\\.\" \"$validate_extra\"))) ])" \
               >/dev/null
           }
 
@@ -1042,6 +1050,118 @@
             fi
           }
 
+          cmd_settings_list() {
+            local set_paths
+            set_paths=$(grep -oE '^[[:space:]]*vayume\.[A-Za-z0-9_.]+[[:space:]]*=' "$config_file" \
+              | sed -E 's/^[[:space:]]*vayume\.//; s/[[:space:]]*=$//' | jq -R . | jq -s .)
+            nix eval --impure --json --expr \
+              "import ${./_settings.nix} { flake = builtins.getFlake \"path:$flake_dir\"; host = \"${hostName}\"; }" \
+              | jq --argjson set "$set_paths" 'map(. + {configured: (.path as $p | $set | index($p) != null)})'
+          }
+
+          settings_edit() {
+            local mode path value tmp
+            mode=$1
+            path=$2
+            value=''${3:-}
+            new_tmp; tmp=$tmp_file
+            awk -v mode="$mode" -v key="vayume.$path" -v value="$value" -f ${./_setting.awk} "$config_file" > "$tmp"
+            validate_extra=$path
+            if apply_edit "$tmp"; then
+              return 0
+            fi
+            echo "vayume-config: either the value was rejected or $path is also set inside a nested block in _config.nix - change it there" >&2
+            return 1
+          }
+
+          settings_lookup() {
+            local path entry
+            path=$1
+            [[ $path =~ ^[A-Za-z][A-Za-z0-9]*(\.[A-Za-z][A-Za-z0-9]*)*$ ]] || { echo "vayume-config: invalid setting path '$path'" >&2; exit 2; }
+            entry=$(cmd_settings_list | jq -c --arg p "$path" '.[] | select(.path == $p)')
+            [ -n "$entry" ] || { echo "vayume-config: unknown setting '$path' (see: vayume config settings list)" >&2; exit 2; }
+            printf '%s' "$entry"
+          }
+
+          cmd_settings_set() {
+            local path since entry kind value item
+            path=''${1:?setting path required}
+            shift
+            local -a items=()
+            since=""
+            while [ "$#" -gt 0 ]; do
+              if [ "$1" = "--if-unmodified-since" ]; then
+                since=''${2:?epoch required after --if-unmodified-since}
+                shift 2
+              else
+                items+=("$1")
+                shift
+              fi
+            done
+            check_since "$since"
+
+            entry=$(settings_lookup "$path")
+            kind=$(jq -r '.kind' <<<"$entry")
+
+            if [ "$kind" != list ] && [ "''${#items[@]}" -ne 1 ]; then
+              echo "vayume-config: $path takes exactly one value" >&2
+              exit 2
+            fi
+
+            case "$kind" in
+              bool)
+                case "''${items[0]}" in true|false) value=''${items[0]};; *) echo "vayume-config: $path must be true or false" >&2; exit 2;; esac
+                ;;
+              int)
+                [[ ''${items[0]} =~ ^-?[0-9]+$ ]] || { echo "vayume-config: $path must be an integer" >&2; exit 2; }
+                value=''${items[0]}
+                ;;
+              str)
+                case "''${items[0]}" in *$'\n'*) echo "vayume-config: $path can't contain a newline" >&2; exit 2;; esac
+                value="\"$(nix_escape "''${items[0]}")\""
+                ;;
+              enum)
+                jq -e --arg v "''${items[0]}" '.choices | index($v) != null' <<<"$entry" >/dev/null \
+                  || { echo "vayume-config: $path must be one of: $(jq -r '.choices | join(", ")' <<<"$entry")" >&2; exit 2; }
+                value="\"$(nix_escape "''${items[0]}")\""
+                ;;
+              list)
+                value="["
+                for item in "''${items[@]}"; do
+                  case "$item" in *$'\n'*) echo "vayume-config: list items can't contain a newline" >&2; exit 2;; esac
+                  if jq -e '.choices != null' <<<"$entry" >/dev/null; then
+                    jq -e --arg v "$item" '.choices | index($v) != null' <<<"$entry" >/dev/null \
+                      || { echo "vayume-config: $path items must be from: $(jq -r '.choices | join(", ")' <<<"$entry")" >&2; exit 2; }
+                  fi
+                  value="$value \"$(nix_escape "$item")\""
+                done
+                value="$value ]"
+                ;;
+            esac
+
+            if settings_edit set "$path" "$value"; then
+              jq -n --arg path "$path" '{ok: true, path: $path}'
+            else
+              exit 1
+            fi
+          }
+
+          cmd_settings_reset() {
+            local path since
+            path=''${1:?setting path required}
+            since=""
+            if [ "''${2:-}" = "--if-unmodified-since" ]; then
+              since=''${3:?epoch required after --if-unmodified-since}
+            fi
+            check_since "$since"
+            settings_lookup "$path" >/dev/null
+            if settings_edit reset "$path"; then
+              jq -n --arg path "$path" '{ok: true, path: $path}'
+            else
+              exit 1
+            fi
+          }
+
           cmd_validate() {
             if validate_config_file; then
               jq -n '{ok: true}'
@@ -1106,6 +1226,15 @@
                 *) usage;;
               esac
               ;;
+            settings)
+              shift
+              case "''${1:-}" in
+                list) cmd_settings_list;;
+                set) shift; cmd_settings_set "$@";;
+                reset) shift; cmd_settings_reset "$@";;
+                *) usage;;
+              esac
+              ;;
             validate) cmd_validate;;
             *) usage;;
           esac
@@ -1116,7 +1245,7 @@
       vayume.commands.config = {
         command = lib.getExe vayumeConfigScript;
         description = "Read or edit _config.nix (the backend of Vayume Settings)";
-        usage = "<repo|apps|theme|defaults|users|packages|development|validate> ...";
+        usage = "<repo|apps|theme|defaults|settings|users|packages|development|validate> ...";
       };
     };
 }

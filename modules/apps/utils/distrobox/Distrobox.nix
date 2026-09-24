@@ -1,16 +1,187 @@
 {
   flake.appDescriptions.Distrobox = "Ubuntu Distrobox container, with host app/icon integration for AppImages.";
 
+  flake.nixosModules.DistroboxSettings =
+    { lib, ... }:
+    {
+      options.vayume.ubuntuBox = {
+
+        count = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 2;
+          description = ''
+            How many independent containers to manage. The first is
+            always the unnumbered command set - `vayume box`,
+            `vayume box run`, `vayume box install`, `vayume box apps`,
+            `vayume box export`, `vayume box sync`, `vayume box reset` -
+            entering the box named by `name`.
+
+            More than 1 adds numbered sets beside it, starting at 2:
+            `vayume box2`, `vayume box2 run`, ... up through
+            `vayume box<count> reset`, each entering its own container.
+            The first box stays the exact same container/home and the
+            same commands at any count, so raising this never orphans
+            or renames a box you already have. Only box2..N are new, numbered
+            containers ("<name>2" .. "<name>N"), each
+            with its own auto-derived isolated home under
+            .local/share/vayume-boxes/. Every other option below -
+            image, unshare, fuse, shmSize, aptPackages, exportApps - is
+            shared across all of them.
+          '';
+        };
+
+        name = lib.mkOption {
+          type = lib.types.str;
+          default = "ubuntu";
+          description = ''
+            Distrobox container name for the first box (vayume box). Also the prefix for
+            box2..N when count > 1, e.g. "ubuntu" gives "ubuntu2" ..
+            "ubuntu<count>" (the first box itself stays plain "ubuntu").
+          '';
+        };
+
+        image = lib.mkOption {
+          type = lib.types.str;
+          default = "docker.io/library/ubuntu:24.04";
+          description = "Container image.";
+        };
+
+        isolateHome = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            Give the container its own home directory.
+            The container does not use the host's normal $HOME.
+          '';
+        };
+
+        homeDir = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = ''
+            Host directory used as the first box's container home when
+            isolateHome is enabled, at any count. box2..N always get
+            their own auto-derived directory instead
+            (.local/share/vayume-boxes/<name><n>) and ignore this
+            option entirely. null means
+            ~/.local/share/vayume-boxes/<name>.
+          '';
+        };
+
+        unshare = lib.mkOption {
+          type = lib.types.listOf (
+            lib.types.enum [
+              "ipc"
+              "process"
+              "netns"
+              "devsys"
+              "groups"
+            ]
+          );
+
+          default = [
+            "ipc"
+            "process"
+            "devsys"
+          ];
+
+          description = ''
+            Namespaces to unshare.
+
+            ipc     = isolate IPC
+            process = isolate processes
+            netns   = isolate network
+            devsys  = isolate device/system namespace
+            groups  = isolate groups
+
+            netns is intentionally not enabled by default because
+            browser applications need network access.
+          '';
+        };
+
+        fuse = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            Expose /dev/fuse to the container for AppImages.
+          '';
+        };
+
+        shmSize = lib.mkOption {
+          type = lib.types.str;
+          default = "2g";
+
+          description = ''
+            Size of /dev/shm inside the container.
+
+            Chromium-based apps map large shared-memory segments and
+            are killed with SIGBUS once /dev/shm is exhausted, which
+            looks like the app freezing as soon as a page loads.
+            Podman's 64M default is far too small for a real page.
+
+            Set to "" to leave the runtime default alone.
+
+            Changing this only takes effect on a freshly created
+            container, so run `vayume box reset` (or `vayume box<n> reset`)
+            afterwards.
+          '';
+        };
+
+        aptPackages = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+
+          example = [
+            "libwebkit2gtk-4.1-0"
+          ];
+
+          description = ''
+            Packages kept installed with apt.
+          '';
+        };
+
+        x11Apps = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ "Neo-Browser*" ];
+
+          example = [
+            "Neo-Browser*"
+          ];
+
+          description = ''
+            Command basenames (shell globs) that `vayume box run` starts
+            under XWayland instead of Wayland, for apps that only go
+            fullscreen or resize correctly on X11. They bypass the focus
+            proxy.
+          '';
+        };
+
+        exportApps = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+
+          example = [
+            "codetantra"
+          ];
+
+          description = ''
+            Desktop-entry names to export to the host launcher.
+          '';
+        };
+      };
+    };
+
   flake.homeModules.apps.Distrobox =
     {
       pkgs,
       lib,
       config,
+      osConfig,
       ...
     }:
 
     let
-      cfg = config.vayume.ubuntuBox;
+      cfg = osConfig.vayume.ubuntuBox;
 
       hostApps = "${config.home.homeDirectory}/.local/share/applications";
       hostIcons = "${config.home.homeDirectory}/.local/share/icons";
@@ -81,7 +252,12 @@
         boxName = if i == 1 then cfg.name else "${cfg.name}${toString i}";
         homeDir =
           if i == 1 then
-            cfg.homeDir
+            (
+              if cfg.homeDir != null then
+                cfg.homeDir
+              else
+                "${config.home.homeDirectory}/.local/share/vayume-boxes/${cfg.name}"
+            )
           else
             "${config.home.homeDirectory}/.local/share/vayume-boxes/${cfg.name}${toString i}";
         cmdSuffix = if i == 1 then "" else toString i;
@@ -547,171 +723,6 @@
 
     in
     {
-      options.vayume.ubuntuBox = {
-
-        count = lib.mkOption {
-          type = lib.types.ints.positive;
-          default = 2;
-          description = ''
-            How many independent containers to manage. The first is
-            always the unnumbered command set - `vayume box`,
-            `vayume box run`, `vayume box install`, `vayume box apps`,
-            `vayume box export`, `vayume box sync`, `vayume box reset` -
-            entering "${cfg.name}".
-
-            More than 1 adds numbered sets beside it, starting at 2:
-            `vayume box2`, `vayume box2 run`, ... up through
-            `vayume box<count> reset`, each entering its own container.
-            The first box stays the exact same container/home and the
-            same commands at any count, so raising this never orphans
-            or renames a box you already have. Only box2..N are new, numbered
-            containers ("${cfg.name}2" .. "${cfg.name}<count>"), each
-            with its own auto-derived isolated home under
-            .local/share/vayume-boxes/. Every other option below -
-            image, unshare, fuse, shmSize, aptPackages, exportApps - is
-            shared across all of them.
-          '';
-        };
-
-        name = lib.mkOption {
-          type = lib.types.str;
-          default = "ubuntu";
-          description = ''
-            Distrobox container name for the first box (vayume box). Also the prefix for
-            box2..N when count > 1, e.g. "ubuntu" gives "ubuntu2" ..
-            "ubuntu<count>" (the first box itself stays plain "ubuntu").
-          '';
-        };
-
-        image = lib.mkOption {
-          type = lib.types.str;
-          default = "docker.io/library/ubuntu:24.04";
-          description = "Container image.";
-        };
-
-        isolateHome = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-          description = ''
-            Give the container its own home directory.
-            The container does not use the host's normal $HOME.
-          '';
-        };
-
-        homeDir = lib.mkOption {
-          type = lib.types.str;
-          default = "${config.home.homeDirectory}/.local/share/vayume-boxes/${cfg.name}";
-          description = ''
-            Host directory used as the first box's container home when
-            isolateHome is enabled, at any count. box2..N always get
-            their own auto-derived directory instead
-            (.local/share/vayume-boxes/<name><n>) and ignore this
-            option entirely.
-          '';
-        };
-
-        unshare = lib.mkOption {
-          type = lib.types.listOf (
-            lib.types.enum [
-              "ipc"
-              "process"
-              "netns"
-              "devsys"
-              "groups"
-            ]
-          );
-
-          default = [
-            "ipc"
-            "process"
-            "devsys"
-          ];
-
-          description = ''
-            Namespaces to unshare.
-
-            ipc     = isolate IPC
-            process = isolate processes
-            netns   = isolate network
-            devsys  = isolate device/system namespace
-            groups  = isolate groups
-
-            netns is intentionally not enabled by default because
-            browser applications need network access.
-          '';
-        };
-
-        fuse = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-          description = ''
-            Expose /dev/fuse to the container for AppImages.
-          '';
-        };
-
-        shmSize = lib.mkOption {
-          type = lib.types.str;
-          default = "2g";
-
-          description = ''
-            Size of /dev/shm inside the container.
-
-            Chromium-based apps map large shared-memory segments and
-            are killed with SIGBUS once /dev/shm is exhausted, which
-            looks like the app freezing as soon as a page loads.
-            Podman's 64M default is far too small for a real page.
-
-            Set to "" to leave the runtime default alone.
-
-            Changing this only takes effect on a freshly created
-            container, so run `vayume box reset` (or `vayume box<n> reset`)
-            afterwards.
-          '';
-        };
-
-        aptPackages = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ ];
-
-          example = [
-            "libwebkit2gtk-4.1-0"
-          ];
-
-          description = ''
-            Packages kept installed with apt.
-          '';
-        };
-
-        x11Apps = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ "Neo-Browser*" ];
-
-          example = [
-            "Neo-Browser*"
-          ];
-
-          description = ''
-            Command basenames (shell globs) that `vayume box run` starts
-            under XWayland instead of Wayland, for apps that only go
-            fullscreen or resize correctly on X11. They bypass the focus
-            proxy.
-          '';
-        };
-
-        exportApps = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ ];
-
-          example = [
-            "codetantra"
-          ];
-
-          description = ''
-            Desktop-entry names to export to the host launcher.
-          '';
-        };
-      };
-
       config = {
         home.packages = [
           pkgs.distrobox

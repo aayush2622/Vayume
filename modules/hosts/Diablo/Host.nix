@@ -27,6 +27,7 @@ in
       self.nixosModules.Users
       self.nixosModules.Theme
       self.nixosModules.Config
+      self.nixosModules.Settings
       self.nixosModules.Commands
       self.nixosModules.DefaultApps
       self.nixosModules.Niri
@@ -39,6 +40,7 @@ in
       self.nixosModules.DevTooling
       self.nixosModules.Zram
       self.nixosModules.Performance
+      self.nixosModules.DistroboxSettings
       self.nixosModules.Network
       self.nixosModules.Waydroid
       self.nixosModules.VmTesting
@@ -94,19 +96,19 @@ in
 
             vayume.network = {
               dns = {
-                provider = "cloudflare";
-                overTls = "opportunistic";
-                ipv6 = true;
+                provider = lib.mkDefault "cloudflare";
+                overTls = lib.mkDefault "opportunistic";
+                ipv6 = lib.mkDefault true;
               };
 
               tor = {
-                enable = true;
-                includeContainers = true;
+                enable = lib.mkDefault true;
+                includeContainers = lib.mkDefault true;
               };
 
-              hardening.enable = true;
+              hardening.enable = lib.mkDefault true;
 
-              randomizeMac = false;
+              randomizeMac = lib.mkDefault false;
             };
 
             time.timeZone = "Asia/Kolkata";
