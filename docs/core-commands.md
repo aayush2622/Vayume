@@ -10,7 +10,7 @@ One command instead of twenty-odd - every Vayume helper is a subcommand of `vayu
 vayume                           # menu: type to filter, Enter to run
 vayume help                      # every subcommand, one line each
 vayume config apps list          # run one directly
-vayume box1 install app.AppImage # "box1 install" and "box1-install" both work
+vayume box2 install app.AppImage # "box2 install" and "box2-install" both work
 ```
 
 Tab completion lists the subcommands with their descriptions.
@@ -47,7 +47,7 @@ commands - `gc`, the Waydroid reset - ask before running. Run without a
 terminal, it prints the list instead of opening a menu.
 
 **Names with a shared prefix are grouped.** A registered name like
-`box1-install` is shown as `box1 install` when `box1` is itself a
+`box2-install` is shown as `box2 install` when `box2` is itself a
 command or more than one name shares the prefix, and the dispatcher
 accepts either spelling: if `<first>-<second>` is a command it wins,
 otherwise `<first>` is run with the rest as arguments.

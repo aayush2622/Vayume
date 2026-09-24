@@ -150,21 +150,22 @@ default to `ubuntu`/`ubuntu:24.04` and exist for when something needs a
 different base.
 
 **`vayume.ubuntuBox.count` turns one box into N independent ones.** The
-default, 1, is exactly the seven commands above, unnumbered, entering
-`name`. Set it higher - say 3 - and those seven become twenty-one
-instead: `vayume box1` .. `vayume box3` (and each one's `-run`/
-`-install`/`-apps`/`-export`/`-sync`/`-reset`), one real container per
-number. Every other
+first box is always the seven commands above, unnumbered, entering
+`name`. Set `count` higher - say 3 - and each extra box gets its own
+numbered set starting at 2: `vayume box2`, `vayume box3` (and each
+one's `run`/`install`/`apps`/`export`/`sync`/`reset`), one real
+container per number. Every other
 option - `image`, `unshare`, `fuse`, `shmSize`, `aptPackages`,
 `exportApps` - is shared across all of them; there's no per-box override
 for those, just per-box identity and storage.
 
-box1 is special: its container name and `homeDir` are always exactly
-`name`/`homeDir` as configured, at any `count` - never `<name>1`. So if
-you already have a box running under `count = 1` and raise `count`
-afterward, box1 *is* that same container and home directory, addressed
-as `vayume box1` from then on instead of `vayume box` - nothing gets
-recreated, nothing moves, no mismatch. Only box2..N are genuinely new,
+The first box never changes: its container name and `homeDir` are
+always exactly `name`/`homeDir` as configured, and its commands are
+always `vayume box ...`, at any `count`. So raising `count` on a machine
+that already has a box never renames, recreates or moves anything - the
+existing box keeps its commands and the new ones appear beside it. (It
+used to become `box1` the moment `count` went above 1, which silently
+broke every script and habit that said `box`.) Only box2..N are genuinely new,
 numbered containers (`<name>2`..`<name><count>`), each with its own
 auto-derived home under `~/.local/share/vayume-boxes/`.
 
