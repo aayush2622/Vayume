@@ -295,7 +295,7 @@
             separator = "  ";
             key = {
               type = "both";
-              width = 10;
+              width = 13;
             };
             color = {
               keys = "blue";
