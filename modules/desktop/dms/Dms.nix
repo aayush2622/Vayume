@@ -178,7 +178,7 @@
 
               matugenScheme = "scheme-content";
 
-      mediaUseAlbumArtAccent = true;
+              mediaUseAlbumArtAccent = true;
 
               cornerRadius = 12;
 
@@ -308,7 +308,7 @@
               gtkThemingEnabled = true;
               qtThemingEnabled = true;
 
-              terminalsAlwaysDark = true;
+              terminalsAlwaysDark = false;
 
               showDock = true;
               dockAutoHide = true;

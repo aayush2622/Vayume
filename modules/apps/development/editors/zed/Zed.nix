@@ -50,7 +50,11 @@
         ui_font_size = 16;
         buffer_font_size = 15;
         base_keymap = "JetBrains";
-        theme = "DankShell Dark";
+        theme = {
+          mode = "system";
+          light = "DankShell Light";
+          dark = "DankShell Dark";
+        };
         session.trust_all_worktrees = true;
         agent = {
           default_model = {

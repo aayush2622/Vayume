@@ -896,3 +896,17 @@ Explanations that used to be comments in the source files.
 ---
 
 [← PluginUpdateCheck.nix](core-pluginupdatecheck.md) · [Index](CONFIGURATION.md) · [Niri.nix →](desktop-niri.md)
+
+## Light mode
+
+Every app theme was audited for hard-coded dark values; the ones found were changed so switching the DMS dark/light toggle retints everything through the normal matugen run (its post hooks reload GTK3 through a fresh named theme, GTK4 through the `color-scheme` gsettings key, and the file-watching apps pick up their regenerated files):
+
+- `terminalsAlwaysDark` is `false`, so kitty follows the mode instead of staying dark on a light desktop.
+- GTK3 no longer forces `gtk-application-prefer-dark-theme`; the mode comes from the generated colors.
+- Zed uses `mode = "system"` with `DankShell Light` and `DankShell Dark`, both of which the matugen template already generates.
+- Zen's `prefers-color-scheme.content-override` is `2` (follow the system) instead of `0` (always dark).
+- The Android Studio theme template writes `"dark": {{is_dark_mode}}` and no longer names `Islands Dark` as its parent, since matugen templates can't pick a parent by mode. Not checked in Android Studio itself.
+- VS Code auto-detects the system color scheme (`window.autoDetectColorScheme`) and switches between the DMS extension's `(Dark)` and `(Light)` themes; the single `Dynamic Base16 DankShell` entry is declared `vs-dark`, so its window chrome stayed dark in light mode.
+- Already mode-aware and left alone: kitty (`dank-theme.conf`), btop, cava, Spotifast (`"base": "{{mode}}"`), Vesktop and Wine (`.default` colors), the Nautilus and Thunar GTK apps.
+- Not mode-aware: the Spicetify Hazy theme for the official Spotify client is a dark-only theme.
+- Not changed: `mod.cleanedurlbar.customcolor` in the Zen prefs is a fixed dark value, and the GRUB theme is `dark`.

@@ -284,7 +284,7 @@ in
         "font.name.cursive.x-western" = theme.font;
         "font.name.fantasy.x-western" = theme.font;
         "font.name-list.emoji" = "Noto Color Emoji";
-        "layout.css.prefers-color-scheme.content-override" = 0;
+        "layout.css.prefers-color-scheme.content-override" = 2;
 
         "mod.cleanedurlbar.customcolor" = "hsl(0 0 10)";
         "mod.cleanedurlbar.customselectcolor" = "rgba(80, 80, 250, 0.75)";
