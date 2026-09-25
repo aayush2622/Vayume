@@ -78,6 +78,13 @@
           | ${pkgs.gnused}/bin/sed -E 's/\((R|TM)\)//g; s/^[0-9]+(st|nd|rd|th) Gen //; s/ [0-9]+-Core Processor//; s/ CPU.*$//; s/ +/ /g'
       '';
 
+      gpuLine = pkgs.writeShellScript "vayume-gpu-line" ''
+        ${pkgs.fastfetch}/bin/fastfetch --structure gpu --format json \
+          | ${pkgs.jq}/bin/jq -r '.[].result[].name' \
+          | ${pkgs.gnused}/bin/sed -E 's/ [0-9]+GB//; s/ (Laptop )?GPU$//; s/ Graphics$//; s/ +/ /g' \
+          | ${pkgs.gnused}/bin/sed -n "''${1}p"
+      '';
+
       fastfetchRuleWidth = 52;
 
       fastfetchRule = kind: {
@@ -133,8 +140,16 @@
           text = "${cpuLine}";
         })
         (keyed "blue" {
-          type = "gpu";
-          format = "{1} {2} ({3})";
+          type = "command";
+          key = "GPU";
+          keyIcon = "󰾲";
+          text = "${gpuLine} 1";
+        })
+        (keyed "blue" {
+          type = "command";
+          key = "iGPU";
+          keyIcon = "󰾲";
+          text = "${gpuLine} 2";
         })
         (keyed "magenta" { type = "memory"; })
         (keyed "magenta" { type = "swap"; })
