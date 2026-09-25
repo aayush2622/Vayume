@@ -18,16 +18,14 @@ Rectangle {
     }
 
     implicitWidth: 240
-    implicitHeight: Vayori.controlHeight
-    radius: Vayori.radius
+    implicitHeight: Vayori.controlHeight + 4
+    radius: Vayori.radiusSmall + 2
     opacity: root.enabled ? 1 : 0.5
-    color: area.containsMouse || picker.menuOpen ? Theme.withAlpha(Theme.surfaceContainerHigh, 0.8) : Vayori.field
-    border.width: 1
-    border.color: picker.menuOpen ? Vayori.focus : (area.containsMouse ? Vayori.lineStrong : Vayori.hairline)
+    color: Vayori.field
+    border.width: picker.menuOpen ? 2 : 0
+    border.color: Vayori.focus
 
     activeFocusOnTab: root.enabled
-
-    FocusRing {}
     Keys.onPressed: event => {
         switch (event.key) {
         case Qt.Key_Space:
@@ -41,9 +39,18 @@ Rectangle {
         }
     }
 
+    FocusRing {}
+
+    Rectangle {
+        anchors.fill: parent
+        radius: parent.radius
+        color: Vayori.ink
+        opacity: area.containsMouse ? 0.06 : 0
+    }
+
     StyledText {
         anchors.left: parent.left
-        anchors.leftMargin: 10
+        anchors.leftMargin: 14
         anchors.right: countText.visible ? countText.left : chevron.left
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
@@ -60,7 +67,6 @@ Rectangle {
         anchors.rightMargin: 6
         anchors.verticalCenter: parent.verticalCenter
         text: String(root.options.length)
-        isMonospace: true
         font.pixelSize: Vayori.micro
         color: Vayori.inkGhost
         wrapMode: Text.NoWrap
@@ -69,11 +75,11 @@ Rectangle {
     DankIcon {
         id: chevron
         anchors.right: parent.right
-        anchors.rightMargin: 8
+        anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
         name: picker.menuOpen ? "expand_less" : "expand_more"
-        size: 16
-        color: Vayori.inkFaint
+        size: 20
+        color: Vayori.inkMuted
     }
 
     MouseArea {

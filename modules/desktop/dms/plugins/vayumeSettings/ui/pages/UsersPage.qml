@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../components"
 
 Column {
     id: root
@@ -28,8 +29,8 @@ Column {
         property bool checked: false
         signal toggled(bool value)
 
-        height: 30
-        implicitWidth: lineToggle.width + 10 + lineLabel.implicitWidth + (lineHint.visible ? lineHint.implicitWidth + 8 : 0)
+        height: 40
+        implicitWidth: lineToggle.width + 12 + lineLabel.implicitWidth + (lineHint.visible ? lineHint.implicitWidth + 8 : 0)
 
         Toggle {
             id: lineToggle
@@ -41,12 +42,11 @@ Column {
 
         StyledText {
             id: lineLabel
-            x: lineToggle.width + 10
+            x: lineToggle.width + 12
             width: Math.min(implicitWidth, line.width - x)
             anchors.verticalCenter: parent.verticalCenter
             text: line.label
-            isMonospace: true
-            font.pixelSize: Vayori.body
+            font.pixelSize: Vayori.body + 1
             color: line.checked ? Vayori.ink : Vayori.inkMuted
             wrapMode: Text.NoWrap
 
@@ -81,7 +81,7 @@ Column {
         busy: true
     }
 
-    SettingsCard {
+    Section {
         title: I18n.tr("Add User")
 
         SettingItem {
@@ -140,7 +140,7 @@ Column {
         }
     }
 
-    SettingsCard {
+    Section {
         title: I18n.tr("Add a Package")
         meta: root.vm.packageSearchResults.length > 0 ? I18n.tr("%1 results").arg(root.vm.packageSearchResults.length) : ""
 
@@ -215,7 +215,7 @@ Column {
     Repeater {
         model: root.vm.usersLoading ? [] : root.usersList
 
-        SettingsCard {
+        Section {
             id: userCard
             required property var modelData
             readonly property var packageNames: Object.keys(modelData.packages).sort()
@@ -255,7 +255,7 @@ Column {
                         LabeledToggle {
                             id: groupLine
                             required property string modelData
-                            width: 190
+                            width: 200
                             label: modelData
                             hint: modelData === "wheel" ? I18n.tr("admin") : ""
                             checked: userCard.modelData.extraGroups.includes(modelData)
@@ -273,7 +273,6 @@ Column {
                 notes: StyledText {
                     visible: userCard.packageNames.length === 0
                     text: I18n.tr("None yet.")
-                    isMonospace: true
                     font.pixelSize: Vayori.micro
                     color: Vayori.inkGhost
                     wrapMode: Text.NoWrap

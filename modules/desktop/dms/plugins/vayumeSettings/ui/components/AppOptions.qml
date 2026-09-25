@@ -21,52 +21,54 @@ Column {
 
     visible: root.totalCount > 0
     width: parent ? parent.width : 400
-    spacing: 0
+    spacing: 10
 
-    Item {
+    Rectangle {
         id: disclosure
-        width: disclosureRow.width + 16
-        height: 26
-        x: -8
+        width: disclosureRow.implicitWidth + 28
+        height: 32
+        radius: height / 2
+        color: root.collapsed ? Vayori.tonal : Vayori.chosen
 
         activeFocusOnTab: root.visible
         Keys.onSpacePressed: root.toggle()
         Keys.onReturnPressed: root.toggle()
         Keys.onEnterPressed: root.toggle()
 
+        FocusRing {}
+
         Rectangle {
             anchors.fill: parent
-            radius: Vayori.radiusSmall
-            color: area.containsMouse ? Vayori.hover : "transparent"
-            border.width: disclosure.activeFocus ? 1 : 0
-            border.color: Vayori.focus
+            radius: parent.radius
+            color: Vayori.ink
+            opacity: area.containsMouse ? 0.07 : 0
         }
 
         Row {
             id: disclosureRow
-            x: 8
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.centerIn: parent
             spacing: 8
 
             DankIcon {
-                name: root.collapsed ? "add" : "remove"
-                size: 12
-                color: area.containsMouse ? Vayori.ink : Vayori.inkFaint
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Eyebrow {
-                text: I18n.tr("%1 options").arg(root.appName)
-                font.pixelSize: Vayori.micro
-                color: area.containsMouse || !root.collapsed ? Vayori.ink : Vayori.inkFaint
+                name: "tune"
+                size: 16
+                color: Vayori.ink
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             StyledText {
-                text: String(root.totalCount).padStart(2, "0")
-                isMonospace: true
+                text: I18n.tr("%1 options").arg(root.appName)
+                font.pixelSize: Vayori.body
+                font.weight: Font.Medium
+                color: Vayori.ink
+                wrapMode: Text.NoWrap
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            StyledText {
+                text: String(root.totalCount)
                 font.pixelSize: Vayori.micro
-                color: Vayori.inkGhost
+                color: Vayori.inkMuted
                 wrapMode: Text.NoWrap
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -75,6 +77,13 @@ Column {
                 visible: root.pendingCount > 0
                 label: I18n.tr("%1 pending rebuild").arg(root.pendingCount)
                 tone: "warning"
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            DankIcon {
+                name: root.collapsed ? "expand_more" : "expand_less"
+                size: 18
+                color: Vayori.inkMuted
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -88,32 +97,28 @@ Column {
         }
     }
 
-    Item {
+    Rectangle {
         visible: !root.collapsed
         width: parent.width
-        height: body.implicitHeight + 6
-
-        Rectangle {
-            x: 5
-            y: 6
-            width: 1
-            height: parent.height - 12
-            color: Vayori.hairline
-        }
+        height: body.implicitHeight + 8
+        radius: Vayori.radiusSmall + 2
+        color: Theme.withAlpha(Theme.surfaceContainerLowest, 0.55)
 
         Column {
             id: body
-            x: 22
-            width: parent.width - x
+            x: 18
+            y: 4
+            width: parent.width - 36
 
             Repeater {
                 model: root.collapsed ? [] : root.items
 
-                SettingRow {
+                OptionRow {
                     required property var modelData
                     required property int index
                     vm: root.vm
                     setting: modelData
+                    card: false
                     divider: index > 0
                 }
             }
@@ -121,10 +126,12 @@ Column {
             Repeater {
                 model: root.collapsed ? [] : root.actionItems
 
-                ActionRow {
+                CommandRow {
                     required property var modelData
                     vm: root.vm
                     action: modelData
+                    card: false
+                    divider: true
                 }
             }
         }
@@ -132,6 +139,6 @@ Column {
 
     Item {
         width: 1
-        height: 10
+        height: 2
     }
 }

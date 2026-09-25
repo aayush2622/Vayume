@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../components"
 
 Column {
     id: root
@@ -11,7 +12,7 @@ Column {
 
     readonly property string meta: root.vm.themeLoading ? I18n.tr("reading theme...") : I18n.tr("changes apply on rebuild")
 
-    SettingsCard {
+    Section {
         title: I18n.tr("Font")
         meta: root.vm.themePending ? I18n.tr("saving...") : ""
 
@@ -24,7 +25,7 @@ Column {
 
                 TextButton {
                     icon: "remove"
-                    implicitHeight: 26
+                    implicitHeight: 32
                     enabled: !root.vm.themeLoading && root.vm.theme.fontSize > 8
                     anchors.verticalCenter: parent.verticalCenter
                     onClicked: root.vm.setFontSize(-1)
@@ -38,8 +39,8 @@ Column {
                     StyledText {
                         width: 28
                         text: root.vm.themeLoading ? "··" : String(root.vm.theme.fontSize)
-                        isMonospace: true
-                        font.pixelSize: Vayori.title + 1
+                        font.pixelSize: Vayori.title + 2
+                        font.weight: Font.Medium
                         color: root.vm.themeLoading ? Vayori.inkFaint : Vayori.ink
                         horizontalAlignment: Text.AlignRight
                         wrapMode: Text.NoWrap
@@ -48,7 +49,6 @@ Column {
 
                     StyledText {
                         text: "pt"
-                        isMonospace: true
                         font.pixelSize: Vayori.micro
                         color: Vayori.inkFaint
                         wrapMode: Text.NoWrap
@@ -58,7 +58,7 @@ Column {
 
                 TextButton {
                     icon: "add"
-                    implicitHeight: 26
+                    implicitHeight: 32
                     enabled: !root.vm.themeLoading && root.vm.theme.fontSize < 24
                     anchors.verticalCenter: parent.verticalCenter
                     onClicked: root.vm.setFontSize(1)
@@ -84,7 +84,7 @@ Column {
         }
     }
 
-    SettingsCard {
+    Section {
         title: I18n.tr("Cursor")
 
         SettingItem {
@@ -110,14 +110,8 @@ Column {
         tone: root.vm.themeError ? "error" : "neutral"
     }
 
-    Column {
-        width: parent.width
-        spacing: 12
-
-        Eyebrow {
-            text: I18n.tr("Elsewhere")
-            font.pixelSize: Vayori.micro
-        }
+    Section {
+        title: I18n.tr("Elsewhere")
 
         Notice {
             text: I18n.tr("Dark/light mode, wallpaper, and Material You colors are DMS's own settings, not Vayume's - find those in DMS Settings directly.")

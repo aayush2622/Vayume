@@ -12,6 +12,19 @@ SettingItem {
     readonly property bool isList: setting.kind === "list"
     readonly property bool isText: setting.kind === "int" || setting.kind === "str" || setting.kind === "list"
     readonly property bool busy: root.vm.settingsSaving
+    readonly property string defaultLabel: I18n.tr("Default")
+    readonly property var enumOptions: setting.kind === "enum" ? (setting.nullable ? [root.defaultLabel] : []).concat(setting.choices || []) : []
+    readonly property bool segmented: root.enumOptions.length > 0 && root.enumOptions.length <= 3 && root.enumOptions.every(o => String(o).length <= 14)
+    readonly property string enumValue: setting.value === null ? root.defaultLabel : String(setting.value)
+
+    function pickEnum(value) {
+        if (value === root.defaultLabel) {
+            if (root.setting.value !== null)
+                root.vm.resetSetting(root.setting.path);
+        } else if (value !== String(root.setting.value)) {
+            root.vm.setSetting(root.setting.path, [value]);
+        }
+    }
 
     function show(v) {
         if (v === null || v === undefined)
@@ -64,7 +77,6 @@ SettingItem {
             visible: root.setting.pending
             text: I18n.tr("Running now: %1").arg(root.show(root.setting.applied))
             width: parent ? parent.width : 0
-            isMonospace: true
             font.pixelSize: Vayori.micro
             color: Theme.warning
             wrapMode: Text.WordWrap
@@ -83,8 +95,8 @@ SettingItem {
 
     TextButton {
         visible: root.setting.configured
+        variant: "ghost"
         icon: "undo"
-        implicitHeight: 26
         enabled: !root.busy
         anchors.verticalCenter: parent.verticalCenter
         onClicked: root.vm.resetSetting(root.setting.path)
@@ -98,27 +110,28 @@ SettingItem {
         onToggled: value => root.vm.setSetting(root.setting.path, [value ? "true" : "false"])
     }
 
-    Select {
-        visible: root.setting.kind === "enum"
-        width: root.below ? Math.min(parent.width, 260) : 200
+    Segmented {
+        visible: root.segmented
         enabled: !root.busy
-        readonly property string defaultLabel: I18n.tr("Default")
-        currentValue: root.setting.value === null ? defaultLabel : String(root.setting.value)
-        options: (root.setting.nullable ? [defaultLabel] : []).concat(root.setting.choices || [])
+        options: root.segmented ? root.enumOptions : []
+        current: root.enumValue
         anchors.verticalCenter: parent.verticalCenter
-        onValueChanged: value => {
-            if (value === defaultLabel) {
-                if (root.setting.value !== null)
-                    root.vm.resetSetting(root.setting.path);
-            } else if (value !== String(root.setting.value)) {
-                root.vm.setSetting(root.setting.path, [value]);
-            }
-        }
+        onPicked: value => root.pickEnum(value)
+    }
+
+    Select {
+        visible: root.setting.kind === "enum" && !root.segmented
+        width: root.below ? Math.min(parent.width, 280) : 220
+        enabled: !root.busy
+        currentValue: root.enumValue
+        options: root.segmented ? [] : root.enumOptions
+        anchors.verticalCenter: parent.verticalCenter
+        onValueChanged: value => root.pickEnum(value)
     }
 
     Field {
         visible: root.isText
-        width: root.setting.kind === "int" ? 96 : (root.below ? Math.min(parent.width, 320) : 220)
+        width: root.setting.kind === "int" ? 100 : (root.below ? Math.min(parent.width, 340) : 240)
         text: root.valueText
         placeholderText: root.isList
             ? (root.setting.choices ? root.setting.choices.join(" ") : I18n.tr("space-separated"))

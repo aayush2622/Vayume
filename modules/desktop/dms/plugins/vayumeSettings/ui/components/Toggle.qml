@@ -14,8 +14,8 @@ Item {
             root.toggled(!root.checked);
     }
 
-    implicitWidth: 36
-    implicitHeight: 20
+    implicitWidth: 52
+    implicitHeight: 32
     opacity: root.enabled ? 1 : 0.4
 
     activeFocusOnTab: root.enabled
@@ -23,27 +23,30 @@ Item {
     Keys.onReturnPressed: root.flip()
     Keys.onEnterPressed: root.flip()
 
-    FocusRing {}
-
     Rectangle {
+        id: track
         anchors.fill: parent
-        radius: Vayori.radius - 1
-        color: root.checked ? Vayori.accentSoft : (area.containsMouse ? Vayori.hover : "transparent")
-        border.width: 1
-        border.color: (root.checked ? Vayori.accentLine : (area.containsMouse ? Vayori.lineStrong : Vayori.hairline))
+        radius: height / 2
+        color: root.checked ? Theme.primary : Theme.surfaceContainerHighest
+        border.width: root.checked ? 0 : 2
+        border.color: Theme.outline
 
         Behavior on color { ColorAnimation { duration: Vayori.fast } }
+
+        FocusRing { target: root }
     }
 
     Rectangle {
-        width: 10
-        height: 10
-        radius: 1.5
-        x: root.checked ? root.width - width - 5 : 5
+        readonly property real size: root.checked || area.pressed ? 24 : 16
+        width: size
+        height: size
+        radius: size / 2
+        x: root.checked ? root.width - width - 4 : 8
         anchors.verticalCenter: parent.verticalCenter
-        color: root.checked ? Vayori.accent : Vayori.inkFaint
+        color: root.checked ? Theme.onPrimary : Theme.outline
 
         Behavior on x { NumberAnimation { duration: Vayori.normal; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: Vayori.fast } }
     }
 
     MouseArea {

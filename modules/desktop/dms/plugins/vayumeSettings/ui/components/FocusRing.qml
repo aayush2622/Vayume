@@ -6,9 +6,9 @@ Rectangle {
 
     anchors.fill: parent
     anchors.margins: -3
-    radius: Vayori.radius + 2
+    radius: (parent && parent.radius !== undefined ? parent.radius : Vayori.radiusSmall) + 3
     color: "transparent"
-    border.width: 1
+    border.width: 2
     border.color: Vayori.focus
     visible: target && target.activeFocus
 }

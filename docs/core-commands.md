@@ -52,7 +52,7 @@ commands - `gc`, the Waydroid reset - ask before running. Run without a
 terminal, it prints the list instead of opening a menu.
 
 **Panel buttons.** A command with `panel` set becomes a button under
-Vayume Settings, System, Maintenance (see [DMS](desktop-dms.md)). Only
+Vayume Settings, Maintenance (see [DMS](desktop-dms.md)). Only
 commands that need no typed arguments qualify; `args` covers the fixed
 ones (`check-plugin-updates` runs with `--report-only`, `config` with
 `validate`). Shipped: `gc`, `config validate`, `check-plugin-updates`,
