@@ -155,6 +155,26 @@ grep -q '^  config ' <<<"$help_out" || { echo "vayume help has no config" >&2; e
 "$vc" --json | jq -e 'any(.[]; .name == "gc" and .confirm and .panel.label != null) and all(.[]; .panel == null or (.panel.label | length) > 0)' >/dev/null
 "$vc" --has config
 
+step "vayume clean removes only regenerable output and refuses without a terminal"
+"$vc" --json | jq -e 'any(.[]; .name == "disk" and .panel != null) and any(.[]; .name == "clean" and .confirm)' >/dev/null
+clean_home=$(mktemp -d)
+mkdir -p "$clean_home/.cache/vscode-cpptools" "$clean_home/.cache/keep" "$clean_home/Development/web/node_modules" "$clean_home/Development/other/build" "$clean_home/Development/other2/node_modules" "$clean_home/Development/py/.venv"
+echo data > "$clean_home/.cache/vscode-cpptools/f"
+echo data > "$clean_home/.cache/keep/f"
+echo data > "$clean_home/Development/web/node_modules/dep"
+echo data > "$clean_home/Development/py/.venv/pyvenv.cfg"
+echo '{}' > "$clean_home/Development/web/package.json"
+echo data > "$clean_home/Development/other/build/keep.txt"
+if HOME="$clean_home" "$vc" clean artifacts </dev/null >/dev/null 2>&1; then echo "vayume clean ran without a terminal or --yes" >&2; exit 1; fi
+HOME="$clean_home" "$vc" clean caches --yes >/dev/null
+HOME="$clean_home" "$vc" clean artifacts --yes >/dev/null
+[ ! -e "$clean_home/.cache/vscode-cpptools" ] && [ -e "$clean_home/.cache/keep/f" ] || { echo "vayume clean caches touched the wrong directories" >&2; exit 1; }
+[ ! -e "$clean_home/Development/web/node_modules" ] && [ ! -e "$clean_home/Development/py/.venv" ] || { echo "vayume clean artifacts left regenerable output" >&2; exit 1; }
+[ -e "$clean_home/Development/other/build/keep.txt" ] && [ -e "$clean_home/Development/other2/node_modules" ] || { echo "vayume clean artifacts deleted a folder with no project file beside it" >&2; exit 1; }
+HOME="$clean_home" "$vc" disk >/dev/null
+rm -rf "$clean_home"
+echo "ok"
+
 step "vayume config against the example _config.nix"
 vc_home=$(mktemp -d)
 ln -s "$work" "$vc_home/vayume"

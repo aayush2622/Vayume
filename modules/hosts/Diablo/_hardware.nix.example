@@ -24,7 +24,7 @@
   fileSystems."/" =
     { device = "/dev/disk/by-uuid/REPLACE-WITH-ROOT-UUID";
       fsType = "btrfs";
-      options = [ "subvol=@" "compress=zstd" ];
+      options = [ "subvol=@" "compress=zstd" "noatime" ];
     };
 
   fileSystems."/home" =
