@@ -77,6 +77,19 @@ just starts fresh.
   locations, not guesses, but worth a quick check against the real
   thing.
 
+**`~/.config/vayume/cache` is the same idea for regenerable caches.**
+`home.activation.linkCacheState` moves the Gradle/Kotlin/Dart/Flutter
+(`.pub-cache`), Cargo, npm, NVIDIA, Android Studio, browser, Wine/Lutris
+and shader caches (`cachePaths`) under that one folder and leaves a
+symlink behind, so they can be inspected with one `du` and deleted
+together. It only links directories that already exist, so a cache
+created later is picked up on the next rebuild. A path that already has
+data in both places is left alone. It is kept out of `session/` on
+purpose so `app-state backup` never archives gigabytes of cache. The
+linked paths are listed in `cache/.links`, which `vayume clean caches`
+and `vayume disk` read: for a symlinked cache the clean empties its
+contents instead of `rm -rf`-ing the link.
+
 **`vayume app-state backup <file>` / `restore <file>`** turns that same
 folder into a single password-encrypted archive and back - AES-256-CBC,
 keyed via PBKDF2 (SHA-256, 10000 iterations) from a passphrase typed at

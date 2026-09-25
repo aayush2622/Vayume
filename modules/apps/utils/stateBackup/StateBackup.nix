@@ -32,6 +32,48 @@
         ".local/share/keyrings"
       ];
 
+      cachePaths = [
+        ".gradle/caches"
+        ".gradle/wrapper"
+        ".gradle/daemon"
+        ".gradle/native"
+        ".gradle/jdks"
+        ".gradle/kotlin-profile"
+        ".local/share/kotlin"
+        ".pub-cache"
+        ".dartServer"
+        ".dart-tool"
+        ".cargo/registry"
+        ".cargo/git"
+        ".npm/_cacache"
+        ".nv"
+        ".cache/Google"
+        ".cache/JetBrains"
+        ".cache/zed"
+        ".cache/Microsoft"
+        ".cache/BraveSoftware"
+        ".cache/zen"
+        ".cache/spotify"
+        ".cache/mpv"
+        ".cache/lutris"
+        ".cache/wine"
+        ".cache/webkitgtk"
+        ".cache/webkitgtk-4.1"
+        ".cache/gstreamer-1.0"
+        ".cache/mesa_shader_cache"
+        ".cache/qtshadercache-x86_64-little_endian-lp64"
+        ".cache/vscode-cpptools"
+        ".cache/appimage-run"
+        ".cache/thumbnails"
+        ".cache/pip"
+        ".cache/uv"
+        ".cache/pnpm"
+        ".cache/yarn"
+        ".cache/go-build"
+        ".cache/nix"
+        ".cache/JNA"
+      ];
+
       toBashArray = paths: builtins.concatStringsSep " " (map (p: "\"${p}\"") paths);
       pathsBashArray = toBashArray (lib.unique statePaths);
 
@@ -196,6 +238,38 @@
             for p in ${toBashArray privatePaths}; do
               if [ -d "$SESSION_DIR/$p" ]; then run chmod 700 "$SESSION_DIR/$p"; fi
             done
+          '';
+
+      home.activation.linkCacheState =
+        lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ]
+          ''
+            CACHE_DIR="$HOME/.config/vayume/cache"
+            MANIFEST="$CACHE_DIR/.links"
+            linked=""
+
+            for p in ${toBashArray cachePaths}; do
+              TARGET="$HOME/$p"
+              DEST="$CACHE_DIR/$p"
+
+              if [ "$(readlink "$TARGET" 2>/dev/null || true)" = "$DEST" ]; then
+                linked="$linked$p"$'\n'
+                continue
+              fi
+              [ -d "$TARGET" ] && [ ! -L "$TARGET" ] || continue
+              if [ -e "$DEST" ]; then
+                echo "vayume-cache: both $TARGET and $DEST exist - leaving $TARGET as-is, resolve by hand"
+                continue
+              fi
+
+              run mkdir -p "$(dirname "$DEST")"
+              run mv "$TARGET" "$DEST"
+              run ln -sfn "$DEST" "$TARGET"
+              linked="$linked$p"$'\n'
+            done
+
+            if [ -d "$CACHE_DIR" ]; then
+              printf '%s' "$linked" > "$MANIFEST"
+            fi
           '';
     };
 }
