@@ -226,6 +226,11 @@ enabling it alone isn't enough.
   (`org.mpris.MediaPlayer2.spotifast`). Music Theme does the same for any
   MPRIS player; the two would also both drive the theme at once, so only
   the new one is enabled. See [Spotifast.nix](apps-utils-spotifast.md).
+- **`mediaUseAlbumArtAccent = true` is required for `musicTheme`.** The
+  plugin themes from `MediaAccentService.accent`, which is the color
+  quantized from the cover only when that DMS setting is on; when it is
+  off (the DMS default) the accent is just `Theme.primary`, so the plugin
+  re-applied the same color for every track.
 - **Three community plugins needed icon patches to actually match the
   rest of the bar.** They hand-roll their own layout instead of using
   DMS's shared bar-pill component, so nothing forces them to agree on
