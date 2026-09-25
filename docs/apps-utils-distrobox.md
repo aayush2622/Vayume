@@ -187,6 +187,16 @@ terms.
 Anything with a nixpkgs equivalent belongs in `home.packages`. This is
 for the genuinely Ubuntu-only tail.
 
+**`x11-focus-proxy` is the X11 counterpart of the Wayland focus proxy.**
+It listens on `/tmp/.X11-unix/X99` (shared into the box) and relays to the
+host's `$DISPLAY`, forwarding client bytes untouched and dropping core
+`FocusOut` and `LeaveNotify` events from the server, so an X11 app never
+sees focus or the pointer leave. Boxed launchers get `DISPLAY=:99` next to
+the Wayland proxy socket, and `x11Apps` (started under XWayland) now go
+through it too instead of bypassing the proxies. XInput2 focus events
+(generic events) are not filtered; apps that track focus only through XI2
+would still see it change.
+
 ---
 
 [← Vesktop.nix](apps-utils-vesktop.md) · [Index](CONFIGURATION.md)
