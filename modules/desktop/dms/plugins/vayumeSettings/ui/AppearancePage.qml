@@ -7,214 +7,124 @@ Column {
 
     required property var vm
     width: parent.width
-    spacing: Theme.spacingM
+    spacing: Vayori.gap
 
-    StyledText {
-        text: I18n.tr("Appearance")
-        font.pixelSize: Theme.fontSizeLarge
-        font.weight: Font.Bold
-        color: Theme.surfaceText
-    }
-
-    StyledText {
-        text: I18n.tr("Font, cursor, and icon theme - the parts of Vayume's look shared by GTK, kitty, SDDM, and DMS itself. Dark/light mode, wallpaper, and Material You colors are DMS's own settings, not Vayume's - find those in DMS Settings directly.")
-        font.pixelSize: Theme.fontSizeSmall
-        color: Theme.surfaceVariantText
-        wrapMode: Text.WordWrap
-        width: parent.width
-    }
+    readonly property string meta: root.vm.themeLoading ? I18n.tr("reading theme...") : I18n.tr("changes apply on rebuild")
 
     SettingsCard {
         title: I18n.tr("Font")
-        icon: "text_fields"
+        meta: root.vm.themePending ? I18n.tr("saving...") : ""
 
-        Row {
-            width: parent.width
-            spacing: Theme.spacingS
-
-            Column {
-                width: parent.width - fontSizeControl.width - Theme.spacingM
-                spacing: 2
-                anchors.verticalCenter: parent.verticalCenter
-
-                Row {
-                    spacing: Theme.spacingS
-                    StyledText {
-                        text: I18n.tr("Size")
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                    }
-                    Badge { label: I18n.tr("Rebuild required"); tone: "warning" }
-                }
-                StyledText {
-                    text: I18n.tr("UI/monospace size, in points.")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
-            }
+        SettingItem {
+            title: I18n.tr("Size")
+            description: I18n.tr("UI/monospace size, in points.")
 
             Row {
-                id: fontSizeControl
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: Theme.spacingS
+                spacing: 6
 
-                DankIcon {
-                    name: "remove"
-                    size: 20
-                    color: Theme.surfaceVariantText
-                    opacity: root.vm.themeLoading ? 0.4 : 1
+                TextButton {
+                    icon: "remove"
+                    implicitHeight: 26
+                    enabled: !root.vm.themeLoading && root.vm.theme.fontSize > 8
                     anchors.verticalCenter: parent.verticalCenter
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: !root.vm.themeLoading
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.vm.setFontSize(-1)
+                    onClicked: root.vm.setFontSize(-1)
+                }
+
+                Row {
+                    width: 58
+                    spacing: 4
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    StyledText {
+                        width: 28
+                        text: root.vm.themeLoading ? "··" : String(root.vm.theme.fontSize)
+                        isMonospace: true
+                        font.pixelSize: Vayori.title + 1
+                        color: root.vm.themeLoading ? Vayori.inkFaint : Vayori.ink
+                        horizontalAlignment: Text.AlignRight
+                        wrapMode: Text.NoWrap
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    StyledText {
+                        text: "pt"
+                        isMonospace: true
+                        font.pixelSize: Vayori.micro
+                        color: Vayori.inkFaint
+                        wrapMode: Text.NoWrap
+                        anchors.verticalCenter: parent.verticalCenter
                     }
                 }
 
-                StyledText {
-                    text: root.vm.themeLoading ? "..." : String(root.vm.theme.fontSize)
-                    font.pixelSize: Theme.fontSizeMedium
-                    color: root.vm.themeLoading ? Theme.surfaceVariantText : Theme.surfaceText
+                TextButton {
+                    icon: "add"
+                    implicitHeight: 26
+                    enabled: !root.vm.themeLoading && root.vm.theme.fontSize < 24
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 24
-                    horizontalAlignment: Text.AlignHCenter
-                }
-
-                DankIcon {
-                    name: "add"
-                    size: 20
-                    color: Theme.surfaceVariantText
-                    opacity: root.vm.themeLoading ? 0.4 : 1
-                    anchors.verticalCenter: parent.verticalCenter
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: !root.vm.themeLoading
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.vm.setFontSize(1)
-                    }
-                }
-
-                StyledText {
-                    visible: root.vm.themePending
-                    text: I18n.tr("Saving...")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: root.vm.setFontSize(1)
                 }
             }
         }
 
-        Rectangle { width: parent.width; height: 1; color: Theme.outline; opacity: 0.2 }
+        SettingItem {
+            title: I18n.tr("Family")
+            description: root.vm.themeLoading
+                ? I18n.tr("Loading available families...")
+                : I18n.tr("Every family the current fontPackage actually ships.")
 
-        Row {
-            width: parent.width
-            spacing: Theme.spacingS
-
-            Column {
-                width: parent.width - 260
-                spacing: 2
-                anchors.verticalCenter: parent.verticalCenter
-
-                Row {
-                    spacing: Theme.spacingS
-                    StyledText {
-                        text: I18n.tr("Family")
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                    }
-                    Badge { label: I18n.tr("Rebuild required"); tone: "warning" }
-                }
-                StyledText {
-                    text: root.vm.themeLoading
-                        ? I18n.tr("Loading available families...")
-                        : I18n.tr("Every family the current fontPackage actually ships.")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
-            }
-
-            DankDropdown {
-                width: 250
-                popupWidth: 250
-                anchors.verticalCenter: parent.verticalCenter
+            Select {
+                width: 260
                 enabled: !root.vm.themeLoading
                 currentValue: root.vm.theme.font
                 options: root.vm.theme.fontOptions
                 enableFuzzySearch: root.vm.theme.fontOptions.length > 8
                 emptyText: I18n.tr("Loading...")
-                onValueChanged: newValue => root.vm.setFont(newValue)
+                onValueChanged: value => root.vm.setFont(value)
             }
         }
     }
 
     SettingsCard {
         title: I18n.tr("Cursor")
-        icon: "arrow_selector_tool"
 
-        Row {
-            width: parent.width
-            spacing: Theme.spacingS
+        SettingItem {
+            title: I18n.tr("Cursor Theme")
+            description: root.vm.themeLoading
+                ? I18n.tr("Loading available cursor themes...")
+                : I18n.tr("Every theme the current cursorPackage actually ships.")
 
-            Column {
-                width: parent.width - 260
-                spacing: 2
-                anchors.verticalCenter: parent.verticalCenter
-
-                Row {
-                    spacing: Theme.spacingS
-                    StyledText {
-                        text: I18n.tr("Cursor Theme")
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                    }
-                    Badge { label: I18n.tr("Rebuild required"); tone: "warning" }
-                }
-                StyledText {
-                    text: root.vm.themeLoading
-                        ? I18n.tr("Loading available cursor themes...")
-                        : I18n.tr("Every theme the current cursorPackage actually ships.")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
-            }
-
-            DankDropdown {
-                width: 250
-                popupWidth: 250
-                anchors.verticalCenter: parent.verticalCenter
+            Select {
+                width: 260
                 enabled: !root.vm.themeLoading
                 currentValue: root.vm.theme.cursorTheme
                 options: root.vm.theme.cursorOptions
                 enableFuzzySearch: root.vm.theme.cursorOptions.length > 8
                 emptyText: I18n.tr("Loading...")
-                onValueChanged: newValue => root.vm.setCursorTheme(newValue)
+                onValueChanged: value => root.vm.setCursorTheme(value)
             }
         }
     }
 
-    Row {
-        width: parent.width
-        visible: root.vm.themeStatus.length > 0
-        StyledText {
-            text: root.vm.themeStatus
-            font.pixelSize: Theme.fontSizeSmall
-            color: root.vm.themeError ? Theme.error : Theme.surfaceVariantText
-            wrapMode: Text.WordWrap
-            width: parent.width
-        }
+    Notice {
+        text: root.vm.themeStatus
+        tone: root.vm.themeError ? "error" : "neutral"
     }
 
-    SettingsCard {
-        title: I18n.tr("Not editable here")
-        icon: "info"
+    Column {
+        width: parent.width
+        spacing: 12
 
-        StyledText {
+        Eyebrow {
+            text: I18n.tr("Elsewhere")
+            font.pixelSize: Vayori.micro
+        }
+
+        Notice {
+            text: I18n.tr("Dark/light mode, wallpaper, and Material You colors are DMS's own settings, not Vayume's - find those in DMS Settings directly.")
+        }
+
+        Notice {
             text: I18n.tr("Icon theme, and the font/cursor/icon packages themselves, stay Nix-only: a package can't be safely produced from a text field, and a mismatched name/package pair would silently fail to resolve at runtime instead of erroring at build time. See docs/core-vayume-config.md.")
-            font.pixelSize: Theme.fontSizeSmall
-            color: Theme.surfaceVariantText
-            wrapMode: Text.WordWrap
-            width: parent.width
         }
     }
 }

@@ -616,9 +616,12 @@ themselves.
 Clicking the pill's expand zone doesn't open an inline popout - it opens
 a genuine separate window (`DankFloatingWindow`, the same base type
 DMS's own Settings modal uses), with a category sidebar down the left
-(Appearance, Development, Applications, Default Apps, All Settings, Users, System) and a rebuild
-button/status footer along the bottom, closer to DMS's own Settings
-screen than to a control-center card. The pricier `vayume config apps
+grouped as 01 Look (Appearance), 02 Software (Applications, Development,
+Default Apps) and 03 System (All Settings, Users, System), and a
+status bar with the rebuild button along the bottom, closer to DMS's own
+Settings screen than to a control-center card. The grouping and numbering
+are presentation only: each entry is still one page id that
+`ensurePage` knows, and the order they load in is unchanged. The pricier `vayume config apps
 list`/`theme get`/`development list`/`users list`/`defaults get` calls (real Nix
 evaluations, cached between runs) only run for the page you open, not
 continuously, and `settings list` reads a snapshot instead of evaluating -
@@ -633,16 +636,66 @@ The QML itself is split by responsibility under
 `VayumeSettingsWidget.qml` owns the control-center pill and every
 `Process` that talks to `vayume config` (the one place that reads/writes
 backend state), and `ui/` holds the presentational pieces -
-`SettingsWindow.qml` (sidebar + footer shell, including the live
-rebuild-log panel), one file per category page (`AppearancePage.qml`,
-`DevelopmentPage.qml`, `ApplicationsPage.qml`, `OptionsPage.qml`, `SettingRow.qml`, `UsersPage.qml`,
-`SystemPage.qml`), and three small reused pieces (`SettingsCard.qml` -
-the card wrapper every page's content sits in, `SidebarItem.qml`,
-`Badge.qml` - the "Rebuild required"/config-status dots). Pages receive
+`SettingsWindow.qml` (the shell: category table, page header, scrolling
+content), `Sidebar.qml`/`SidebarItem.qml`, `PageHeader.qml`,
+`StatusBar.qml` (status line, rebuild button and the live rebuild-log
+panel), one file per category page (`AppearancePage.qml`,
+`DevelopmentPage.qml`, `ApplicationsPage.qml`, `DefaultAppsPage.qml`,
+`OptionsPage.qml`, `UsersPage.qml`, `SystemPage.qml`), and the shared
+pieces described under [Vayori](#vayori-the-settings-design-language)
+below. Pages receive
 the root instance as `vm` and only ever call its functions
 (`setAppEnabled`, `setCursorTheme`, `rebuild`, ...) - they hold no
 `Process` of their own, so there is still exactly one place that
 understands the backend's shape.
+
+### Vayori, the settings design language
+
+Vayume Settings is drawn in a small design language called Vayori (see the
+[README](../README.md#vayori)): dark and editorial, hairline borders instead of
+filled Material cards, low corner radii, typography rather than colour as the
+hierarchy, and a few Japanese labels as quiet accents. It is a theme over the
+existing pages, not a separate palette: every colour is derived from DMS's
+`Theme`, so matugen wallpaper colours and the dark/light toggle keep working,
+and the user's own font (`Theme.fontFamily`) is used throughout.
+
+- **`ui/Vayori.qml` is a singleton holding every token** - radii, spacing, the
+  derived surfaces (`panel`, `field`, `well`), ink levels (`ink`, `inkMuted`,
+  `inkFaint`, `inkGhost`), lines (`hairline`, `divider`, `lineStrong`), the
+  type scale and the two animation durations. Components read these instead
+  of repeating `Theme.withAlpha(...)` expressions, so a change to, say, border
+  weight is one line.
+- **`ui/qmldir` exists because of that singleton**, and a directory with a
+  `qmldir` only exports the types it lists. A new `.qml` file under `ui/` must
+  be added there or it fails to load with "is not a type"; `tests/eval.sh`
+  checks this.
+- **Building blocks.** `SettingsCard` is the panel (uppercase section title,
+  optional subtitle and a right-aligned mono `meta` count, optional
+  collapsing). `SettingItem` is the row every page uses: title, description,
+  an optional mono `meta` line (All Settings shows the option path there,
+  Maintenance the exact `vayume` command), `tags`, `notes`, and a control slot
+  on the right that drops under the text when the row is narrower than 540px
+  or `stacked` is set. `SettingRow` and `ActionRow` are `SettingItem`s bound to
+  a settings-schema entry and a `vayume.commands` panel entry. Controls are
+  `Toggle`, `Select` (its own trigger, reusing `DankDropdown`'s searchable
+  popup through `showTrigger: false`), `Field` (a restyled `DankTextField`)
+  and `TextButton` (`outline`, `primary`, `warning`, `danger`, `ghost`; no
+  text makes it a square icon button). `Badge` is a small outlined tag,
+  `Notice` a line of text with a thin left rule for hints, statuses and
+  loading/empty/error states, `Eyebrow` the tracked uppercase label, and
+  `FocusRing` the keyboard focus outline those controls share.
+- **Japanese is used sparingly and only where it is real vocabulary**: one
+  label per sidebar entry (外観 appearance, アプリ apps, 開発 development, 既定
+  default, 設定 settings, ユーザー users, システム system), repeated in the page
+  eyebrow, 設定 next to the wordmark, and 夜 (night) as the mark. They are
+  drawn in Noto Sans/Serif CJK JP so the glyphs take their Japanese forms;
+  both are installed by `Fonts.nix`.
+- **Behaviour kept from before**: every page still only calls functions on
+  `vm`; the sidebar keeps Tab/Enter and adds Up/Down between entries; Tab
+  focus now scrolls the focused control into view; the page header stays
+  pinned when the content area is at least 600px tall and scrolls with the
+  page below that; the sidebar narrows below an 880px-wide window; an app's
+  own options are only instantiated when expanded.
 
 **The settings window is behind a `Loader`, not instantiated directly,
 because a closed `FloatingWindow` never comes back.** Once the
@@ -698,15 +751,15 @@ optimistically show ahead of the real one.
 
 **Extra packages, per user, found by searching rather than typed in.**
 "Add a Package" (its own top-level card, not nested per-user - one
-search box, a `DankDropdown` to pick which user gets the result) runs
+search box, a `Select` to pick which user gets the result) runs
 `vayume config packages search` against this flake's own pinned
 nixpkgs. Searching is explicit (Enter or the Search button), never
 per-keystroke - `nix search` takes several seconds even warm, up to a
 minute stone-cold, so searching on every keystroke would queue up
 several-second subprocess calls behind each other rather than firing
 one. Clicking "Add" on a result calls `users set-package`; each user's
-own card then shows every package they've ever added as a `DankToggle`
-row (`checked` = currently enabled) - turning one off disables it
+own card then shows every package they've ever added as a toggle
+(`checked` = currently enabled) - turning one off disables it
 without forgetting it, so getting it back is a click, not a re-search.
 This is the one part of the page that reads from a *different* backend
 option than it looks like at first: `packages` (`attrsOf bool`, keyed
@@ -715,24 +768,22 @@ still Nix-only) - see [core-vayume-config.md](core-vayume-config.md)
 for why the split exists and what makes a search-driven field safe to
 expose here at all when a free-text one wouldn't be.
 
-**Each user's card can be collapsed** - `SettingsCard.qml` grew an
-opt-in `collapsible`/`collapsed` pair (both default `false`, so
-`AppearancePage`/`DevelopmentPage`/`ApplicationsPage`/`SystemPage`'s
-existing cards render exactly as before without touching either one).
+**Each user's card can be collapsed** - `SettingsCard.qml` has an
+opt-in `collapsible`/`collapsed` pair (both default `false`).
 `UsersPage.qml` is the only caller that turns it on, one bool per user
 card via the Repeater delegate's own instance - clicking anywhere in
-the title bar (a chevron shows which way) toggles that one card only.
+the title bar (a +/- marker shows which way), or Space/Enter when it
+has keyboard focus, toggles that one card only.
 Needed once removal/packages/groups/secrets/password all landed on the
 same card - with two or more users each showing every section at once,
 the page got long enough that collapsing the ones you're not currently
 editing genuinely helps.
 
-The cursor picker is a real `DankDropdown` (the same component DMS's
-own settings dropdowns use under `qs.Widgets`) fed by `theme
-get`'s live `cursorOptions` - not a hardcoded list, and not a
+The cursor picker is a `Select`, whose popup is DMS's own searchable
+`DankDropdown` menu, fed by `theme get`'s live `cursorOptions` - not a hardcoded list, and not a
 click-to-cycle button. Every setting shown is `_config.nix`, which only
-ever *persists* through the next rebuild - the sidebar's status badge
-always reads "Rebuild required" once something has changed, never
+ever *persists* through the next rebuild - the status bar always
+reads "Rebuild pending" once something has changed, never
 something that implies the write alone was the whole story.
 
 **`cursorTheme` is the one exception with an actual live-apply step,
@@ -757,17 +808,16 @@ Hyprland, just skips this step exactly as if it were never called).
 
 Every app/language/editor/tool toggle also shows the one-line
 `description` `vayume config` reads from `flake.appDescriptions` (see
-[core-vayume-config.md](core-vayume-config.md)) via `DankToggle`'s own
-`description` property - no separate description widget, and nothing
-invented in the UI layer that isn't already declared in the app's own
+[core-vayume-config.md](core-vayume-config.md)) as the row's
+description - nothing invented in the UI layer that isn't already declared in the app's own
 `.nix` file.
 
-`SettingsWindow.qml`'s footer streams `vayume rebuild`'s stdout and
+`StatusBar.qml` streams `vayume rebuild`'s stdout and
 stderr live, line by line (`Quickshell.Io`'s `SplitParser`, not a
 post-hoc `StdioCollector` read at exit) into a capped 500-line buffer
 on the root widget, so a long `nixos-rebuild switch` is visible as it
 happens rather than only as a final pass/fail line. It lives in the
-footer rather than on one settings page specifically so it's visible
+status bar rather than on one settings page specifically so it's visible
 no matter which sidebar category happens to be open when a rebuild is
 started - it auto-expands the moment a rebuild begins (a
 `Connections { target: root.vm }` on `rebuildBusy`), and can be
@@ -790,18 +840,18 @@ attribute in the module that registers the command.
 Running a button reuses the rebuild machinery: `runCommand` in the widget
 starts the process, streams stdout and stderr into the same log at the
 bottom of the window, and shows "<label> - running..." then "<label>
-finished." or "failed (exit N)" in the footer. Only one command runs at a
-time, and the buttons and the footer Rebuild button are disabled while one
+finished." or "failed (exit N)" in the status bar. Only one command runs at a
+time, and the buttons and the status bar's Rebuild button are disabled while one
 does. "Check _config.nix" is the place to catch a bad edit before a
 rebuild, since settings edits are not evaluated when saved.
 
 ### All Settings page: every other `vayume.*` option
 
-`OptionsPage.qml` renders the system-level part of `vayume config settings list` (settings that name an app go under that app instead, see below). The header shows how many settings exist and how many are customized; a banner with a "Rebuild now" button appears while any change is saved but not applied. Below it are a search box, an All/Modified filter, and one card per group (icon and one-line description from `vayume.settingsGroups`).
+`OptionsPage.qml` renders the system-level part of `vayume config settings list` (settings that name an app go under that app instead, see below). The page header shows how many settings exist and how many are customized; a warning strip with a "Rebuild now" button appears while any change is saved but not applied. Below it are a search box, an All/Modified filter, and one panel per group (title and one-line description from `vayume.settingsGroups`; the group icon is still declared but no longer drawn).
 
-Each `SettingRow.qml` has an icon chip, the label, the description, and the control: a toggle for booleans, a dropdown for enums (with a "Default" entry when the option is nullable), a text field for numbers, strings and string lists. A row whose value differs from what is running gets an amber accent, a "Pending rebuild" badge and a "Running now: ..." line; a row with a line in `_config.nix` shows "Customized" and an undo button that resets it. There is no per-option QML - a new `lib.mkOption` under `vayume.*` appears on the page after the next rebuild; how that works and how to customise the label and icon is in [Settings.nix](core-settings.md). Errors come back the same way as on the other pages (`pickError`).
+Each `SettingRow.qml` has the label, the description, the option path in small mono type, and the control: a toggle for booleans, a dropdown for enums (with a "Default" entry when the option is nullable), a text field for numbers, strings and string lists. A row whose value differs from what is running gets an amber marker on the panel edge, a "Pending rebuild" tag and a "Running now: ..." line; a row with a line in `_config.nix` shows "Customized" and an undo button that resets it. There is no per-option QML - a new `lib.mkOption` under `vayume.*` appears on the page after the next rebuild; how that works and how to customise the label and icon is in [Settings.nix](core-settings.md). Errors come back the same way as on the other pages (`pickError`).
 
-**App settings live under the app.** `AppSettings.qml` sits beneath each toggle on the Applications page and lists the settings whose `settingsMeta` names that app (Distrobox has eleven). It is a rounded bar inset under the toggle, collapsed by default: an icon chip, "<App> options", a count pill, a pending-rebuild badge when needed, and a chevron on the right. Expanded, the rows sit in their own inset panel with an accent line, and the app's buttons (see the System page section) follow the settings; it reuses `SettingRow.qml`, so the controls behave exactly as on All Settings. Apps with no settings show nothing extra. The Development page does not render them yet, since none of its apps declares options.
+**App settings live under the app.** `AppSettings.qml` sits beneath each toggle on the Applications page and lists the settings whose `settingsMeta` names that app (Distrobox has eleven). It is a small disclosure line under the app's row, collapsed by default: a +/- marker, "<App> options", the count, and a pending-rebuild tag when needed. Expanded, the rows are indented behind a thin rule, and the app's buttons (see the System page section) follow the settings; the rows are only created while it is open, and it reuses `SettingRow.qml`, so the controls behave exactly as on All Settings. Apps with no settings show nothing extra. The Development page does not render them yet, since none of its apps declares options.
 
 **Loading is lazy.** The bar widget only runs `vayume config repo` (about 60 ms) at login. Opening the window loads just the visible page's data (`ensurePage`), and each other page the first time it is opened; reopening the window reloads the active page. Combined with the read cache in [Config.nix](core-vayume-config.md), switching pages is instant unless something in the repo changed.
 
@@ -817,14 +867,16 @@ to expose:
 - **App secrets** (WakaTime API key, rbw/Bitwarden email) - already
   plain values in a gitignored file (see
   [core-vayume-config.md](core-vayume-config.md)); shown as
-  password-masked `DankTextField`s with a reveal toggle, same widget
-  DMS uses for its own secret-ish fields.
+  password-masked fields (`Field.qml`, a restyled `DankTextField`)
+  with a reveal toggle.
 - **Groups** (`extraGroups`, including `wheel`/sudo) - shown as
-  `DankToggle`s over `vayume config users list`'s live `groupOptions`
+  toggles over `vayume config users list`'s live `groupOptions`
   (curated shortlist ∩ this system's real `config.users.groups`, see
   core-vayume-config.md), never free text - a typo'd group name can't
-  reach `_config.nix` at all. "wheel" carries its own description
-  calling out that it's full admin access.
+  reach `_config.nix` at all. "wheel" carries an "admin" marker, and
+  the page opens with a warning that groups and password control real
+  access. Removing an account is the last row of that user's panel and
+  needs a second click within four seconds.
 - **Password** (`hashedPassword`) - a "new password"/"confirm
   password" pair, only enabled once they match; the plaintext is
   written over the `vayume config users set-password` `Process`'s own
@@ -882,12 +934,21 @@ Explanations that used to be comments in the source files.
 
 ### `modules/desktop/dms/plugins/vayumeSettings/ui/SettingsCard.qml`
 
-- Above `property bool collapsible: false`: Opt-in - every existing page using this card leaves both at their defaults and renders exactly as before. Only a card that sets collapsible: true gets a clickable title bar and a chevron; collapsed itself is left to the caller to own (per-instance, e.g. one bool per Repeater delegate) rather than reset here, so a page with several of these cards controls each one's default/remembered state itself.
+- Above `property bool collapsible: false`: Opt-in - only a card that sets collapsible: true gets a clickable (and keyboard-focusable) title bar and a +/- marker; collapsed itself is left to the caller to own (per-instance, e.g. one bool per Repeater delegate) rather than reset here, so a page with several of these cards controls each one's default/remembered state itself.
+- The first row's top divider doubles as the line under the title, and a card without a title shifts its content up one pixel so that divider sits on the card's own border instead of drawing a second line.
 
-### `modules/desktop/dms/plugins/vayumeSettings/ui/SettingsWindow.qml`
+### `modules/desktop/dms/plugins/vayumeSettings/ui/StatusBar.qml`
 
 - Above `Connections {`: A rebuild's real output belongs where it's visible no matter which sidebar category happens to be open when it runs, not buried on one settings page - it always shows fresh (never collapsed by default) the moment a rebuild starts, since that's exactly when someone wants to see it.
-- Above `Rectangle {`: The real nixos-rebuild switch output, streamed live - sits at the bottom of the window regardless of which sidebar category is open, so starting a rebuild from Appearance doesn't mean switching to System just to watch it happen.
+- Above the log `Rectangle {`: The real nixos-rebuild switch output, streamed live - sits at the bottom of the window regardless of which sidebar category is open, so starting a rebuild from Appearance doesn't mean switching to System just to watch it happen.
+
+### `modules/desktop/dms/plugins/vayumeSettings/ui/SettingRow.qml`
+
+- `description` joins single line breaks: option descriptions come from the Nix source, where long strings are wrapped by hand, and keeping those breaks made every description wrap at the source's column instead of the row's width. Blank lines still separate paragraphs.
+
+### `modules/desktop/dms/plugins/vayumeSettings/ui/Select.qml`
+
+- `DankDropdown` assigns its own `currentValue` when an entry is picked, which breaks the binding to the value shown on the trigger; the handler puts the binding back so the popup's highlight keeps following the real value.
 
 ### `modules/desktop/dms/plugins/vayumeSettings/ui/UsersPage.qml`
 
