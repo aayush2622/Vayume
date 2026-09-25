@@ -1,4 +1,9 @@
-# Vayume
+<div align="center">
+
+# 夜 Vayume
+
+**A quiet, personal NixOS.**
+niri and Hyprland side by side, one config file, one settings app, and a desktop that takes its colours from your wallpaper.
 
 <p>
   <a href="https://github.com/aayush2622/Vayume/stargazers">
@@ -10,7 +15,9 @@
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
-A NixOS flake configuration built around **niri** and **Hyprland** side-by-side — same keybinds, picked at the login screen — both driving [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell), with a wallpaper-matching color theme that extends to editors, the browser, Discord, Spotify, Steam, Wine dialogs, GTK and Qt apps.
+</div>
+
+Vayume is a NixOS flake built around **niri** and **Hyprland** side by side — same keybinds, picked at the login screen — both driving [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell). A wallpaper-matching colour theme reaches editors, the browser, Discord, Spotify, Steam, Wine dialogs, GTK and Qt apps. Everything you change day to day lives in one gitignored file, `_config.nix`, and **Vayume Settings** edits that same file from the desktop.
 
 Written with [flake-parts](https://flake.parts/) + [import-tree](https://github.com/vic/import-tree), so every `.nix` file under `modules/` is picked up automatically — no import list to maintain.
 
@@ -31,53 +38,61 @@ If this saves you an evening, a star costs nothing. ⭐
 
 ## Table of Contents
 
+- [Vayori](#vayori)
 - [What's Included](#whats-included)
+- [Vayume Settings](#vayume-settings)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [Keybinds](#keybinds)
 - [Project Layout](#project-layout)
 - [Documentation](#documentation)
-- [Vayori](#vayori)
 - [Credits](#credits)
 - [License](#license)
 - [Known Caveats](#known-caveats)
 
 ---
 
+## Vayori
+
+Vayume's look has a name of its own: **Vayori**. It is an invented word, not Japanese vocabulary; the two characters below shaped its mood and are not a spelling of it.
+
+- **Va** — the personal part: one person's machine, configured by hand
+- **夜** (*yoru*, night) — dark, calm and a little reflective
+- **頼** (*tayoru*, to rely on) — dependable: every change goes through Nix and can be rolled back
+
+On screen that means calm and soft: rounded cards tinted from the wallpaper's own colours, pill-shaped controls, generous spacing, and the 夜 mark as a small signature — in the settings app and on the login screen. How it is built: [docs/desktop-dms.md](docs/desktop-dms.md#vayori-the-settings-design-language).
+
+---
+
 ## What's Included
 
-### Desktop
-- **niri** and **Hyprland** — both always available, swappable at the greeter, with identical keybinds so muscle memory carries over
-- **DankMaterialShell** — bar, launcher, notifications, lock screen, and a themed control center
-- **Themed SDDM greeter** + **GRUB** — fixed themes (they run before any wallpaper colors exist); the greeter follows your `vayume.theme` cursor
-- **kitty + zsh** with fastfetch, starship, and a curated plugin set
+| | |
+|---|---|
+| **Desktop** | niri + Hyprland with identical keybinds · DankMaterialShell bar, launcher, notifications and lock screen · Vayori login screen · themed GRUB · kitty + zsh with fastfetch and starship |
+| **Settings** | Vayume Settings in the DMS control center — apps, languages, default apps, users, every `vayume.*` option, maintenance commands, live rebuild log |
+| **Development** | VS Code, Android Studio, Zed with language-aware extension sets · one toggle each for C++, Rust, Kotlin, Flutter/Dart, Nix, Qt, Python · cc-switch · ripgrep, fd, fzf, btop, nil, nixfmt |
+| **Gaming** | Steam, Lutris, Heroic, GE-Proton, MangoHud, gamemode · colour-matched Wine dialogs and Proton prefixes |
+| **Network** | Cloudflare DNS over TLS by default · network-stack hardening · a whole-machine Tor proxy behind a control-center toggle |
+| **Everything else** | Zen Browser (live matugen reload) · Nautilus + Thunar · Spicetify + Spotifast · Bitwarden + rbw · Vesktop + Vencord · ASUS control widget · Waydroid · AppImage · Distrobox · `vayume app-state backup/restore` |
 
-### Development
-- **Editors:** VS Code, Android Studio, Zed — pre-configured with language-aware extension sets
-- **Languages (one toggle each):** C++, Rust, Kotlin, Flutter/Dart, Nix, Qt, Python — each installs the toolchain *and* tells all enabled editors what to load
-- **cc-switch** — switch Claude Code between API providers without hand-editing config
-- **Dev tools:** ripgrep, fd, fzf, btop, nil, nixfmt, and more
+---
 
-### Gaming
-- Steam, Lutris, Heroic Games Launcher, GE-Proton, MangoHud, gamemode
-- Color-matched Wine dialogs and Proton prefixes
+## Vayume Settings
 
-### Network
-- **Cloudflare DNS over TLS** by default (opportunistic DoT)
-- Network-stack hardening sysctls
-- **Tor transparent proxy** behind a DMS control-center toggle — routes the whole machine, not just a browser
+Open it from the DMS control center (**Vayume Settings**). It reads and writes the real `_config.nix` through `vayume config`, so the repo stays the single source of truth and a terminal edit and a click are the same thing.
 
-### Everything Else
-- **Zen Browser** — chrome-scripted so its theme reloads live with matugen
-- **File managers:** Nautilus + Thunar
-- **Music:** Spicetify (Spotify) + Spotifast
-- **Password management:** Bitwarden (desktop + rbw CLI)
-- **Discord:** Vesktop + Vencord
-- **ASUS hardware control:** DankAsusControlCenter widget
-- **Waydroid** — Android apps with signature spoofing and microG
-- **AppImage** support (`programs.appimage` with binfmt, so `.AppImage` files run directly)
-- **Distrobox** — isolated Ubuntu escape hatch for the one-off proprietary tool
-- **State backup CLI:** `vayume app-state backup|restore` — encrypted, portable `~/.config/vayume/session`
+| Page | What it does |
+|---|---|
+| **Overview** | Host, git and rebuild status at a glance, counts that jump to their page, and every saved change still waiting for a rebuild (undo any of them in place) |
+| **Appearance** | Font size and family, cursor theme |
+| **Applications** / **Development** | Turn apps, languages, editors and tools on or off; an app's own options open inside its card |
+| **Default Apps** | Which app opens links, folders and code, and which one the keybinds start |
+| **System Options** | Every `vayume.*` option a module declares, found automatically, with search and a Modified filter |
+| **Users** | Accounts, groups, per-user packages from a nixpkgs search, app secrets, passwords |
+| **Maintenance** | Rebuild, read-only checks and reports, and cleanup commands that ask twice |
+| **About** | Host, repository, branch and config file, with copy and open buttons |
+
+Search from the sidebar finds options, apps and commands across every page, and you can change them straight from the results. Shortcuts: `Ctrl+F` search · `Ctrl+1`–`Ctrl+9` pages · `Ctrl+R` reload · `Ctrl+B` rebuild · `Ctrl+L` log · `Esc` clear search. Changes are saved instantly and applied by the next rebuild.
 
 ---
 
@@ -203,6 +218,8 @@ modules/
   lib/              shared helper values/functions
   hosts/<name>/     one machine: Host.nix + _hardware.nix (gitignored) + _config.nix (gitignored)
   desktop/          DE stack — compositor, shell, login theme, fonts, portals, GTK/Qt baseline
+    dms/plugins/vayumeSettings/   the Vayume Settings app (ui/components, ui/pages)
+    sddm/Theme/                   the Vayori login screen
   system/           system-level infra unrelated to the desktop (Docker, GRUB, zram, network, Waydroid, VM harness)
   apps/             per-user opt-in modules (vayume.apps), one folder each
     development/      editors, languages, dev-tools, cc-switch
@@ -224,18 +241,6 @@ modules/
 [**docs/CONFIGURATION.md**](docs/CONFIGURATION.md) is the index — one page per module, in the order you'd meet them, each linking to the next so it reads straight through. Start with **[Getting Started](docs/getting-started.md)**.
 
 The `.nix` files stay comment-free; all the "why" lives in those pages.
-
----
-
-## Vayori
-
-The look of Vayume Settings has a name of its own: **Vayori**. It is an invented word, not Japanese vocabulary; the two characters below shaped its mood and are not a spelling of it:
-
-- **Va**: the personal part, one person's machine configured by hand
-- **夜** (*yoru*, night): dark, calm and a little reflective
-- **頼** (*tayoru*, to rely on): dependable, since every change goes through Nix and can be rolled back
-
-In practice that means quiet, nocturnal and precise: hairline panels instead of big rounded cards, typography instead of colour for hierarchy, colours still taken from the wallpaper theme, and a few small Japanese labels (外観, 設定) next to the English ones. How it is built is in [docs/desktop-dms.md](docs/desktop-dms.md#vayori-the-settings-design-language).
 
 ---
 
