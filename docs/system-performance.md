@@ -104,4 +104,4 @@ Looked at and left alone:
 
 ---
 
-[← Misc.nix](system-misc.md) · [Index](CONFIGURATION.md) · [Network.nix →](system-network.md)
+[← Misc.nix](system-misc.md) · [Index](CONFIGURATION.md) · [Storage.nix →](system-storage.md)

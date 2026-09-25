@@ -40,6 +40,8 @@ let
     set -eu
     nix-env -p /nix/var/nix/profiles/system --delete-generations +${toString keepGenerations}
     nix-collect-garbage
+    ${pkgs.findutils}/bin/find /var/lib/systemd/coredump -type f -mtime +7 -delete
+    ${pkgs.systemd}/bin/journalctl --vacuum-size=300M
     exec /nix/var/nix/profiles/system/bin/switch-to-configuration boot
   '';
 

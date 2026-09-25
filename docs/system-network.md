@@ -215,4 +215,4 @@ Explanations that used to be comments in the source files.
 
 ---
 
-[← Performance.nix](system-performance.md) · [Index](CONFIGURATION.md) · [Waydroid.nix →](system-waydroid.md)
+[← Storage.nix](system-storage.md) · [Index](CONFIGURATION.md) · [Waydroid.nix →](system-waydroid.md)

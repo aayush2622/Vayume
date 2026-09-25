@@ -41,6 +41,7 @@ in
       self.nixosModules.DevTooling
       self.nixosModules.Zram
       self.nixosModules.Performance
+      self.nixosModules.Storage
       self.nixosModules.DistroboxSettings
       self.nixosModules.Network
       self.nixosModules.Waydroid
@@ -77,7 +78,7 @@ in
             nix.gc = {
               automatic = true;
               dates = "weekly";
-              options = "--delete-older-than 30d";
+              options = "--delete-older-than 14d";
             };
             documentation.nixos.enable = false;
 

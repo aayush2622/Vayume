@@ -81,6 +81,10 @@
           icon = "lan";
           description = "DNS, Tor and network-stack hardening for the whole machine.";
         };
+        Storage = {
+          icon = "storage";
+          description = "Where vayume clean looks for build output to reclaim.";
+        };
         Performance = {
           icon = "speed";
           description = "Memory, disk, kernel and gaming tuning.";
@@ -103,6 +107,7 @@
           "network.randomizeMac" = entry "Randomize Wi-Fi MAC" "shuffle";
           "network.tor.enable" = entry "Route everything through Tor" "vpn_lock";
           "network.tor.includeContainers" = entry "Include containers in Tor" "deployed_code";
+          "storage.projectDirs" = entry "Project folders" "folder_open";
           "performance.enable" = entry "System tuning" "speed";
           "performance.gaming" = entry "Gaming tuning" "sports_esports";
           "performance.kernel" = entry "Kernel" "memory";
