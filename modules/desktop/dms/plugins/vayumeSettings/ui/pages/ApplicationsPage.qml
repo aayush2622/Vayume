@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../components"
 
 Column {
     id: root
@@ -10,6 +11,7 @@ Column {
     spacing: Vayori.gap
 
     property string searchQuery: ""
+    property string show: "all"
 
     readonly property var categoryLabels: ({
         "gaming": I18n.tr("Gaming"),
@@ -26,6 +28,8 @@ Column {
         for (const a of root.appsHere) {
             if (q.length > 0 && !(a.name + " " + a.description).toLowerCase().includes(q))
                 continue;
+            if ((root.show === "on" && !a.enabled) || (root.show === "off" && a.enabled))
+                continue;
             (byCategory[a.category] = byCategory[a.category] || []).push(a);
         }
         return Object.keys(byCategory)
@@ -41,18 +45,33 @@ Column {
         ? ""
         : I18n.tr("%1 of %2 enabled").arg(root.appsHere.filter(a => a.enabled).length).arg(root.appsHere.length)
 
-    Field {
-        id: searchField
+    Item {
         width: parent.width
-        leftIconName: "search"
-        showClearButton: true
-        placeholderText: I18n.tr("Search applications...")
-        onTextChanged: searchDebounce.restart()
+        height: searchField.height
 
-        Timer {
-            id: searchDebounce
-            interval: 80
-            onTriggered: root.searchQuery = searchField.text
+        Field {
+            id: searchField
+            width: parent.width - showFilter.width - 12
+            leftIconName: "search"
+            showClearButton: true
+            placeholderText: I18n.tr("Search applications...")
+            onTextChanged: searchDebounce.restart()
+
+            Timer {
+                id: searchDebounce
+                interval: 80
+                onTriggered: root.searchQuery = searchField.text
+            }
+        }
+
+        Segmented {
+            id: showFilter
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            readonly property var labels: ({ all: I18n.tr("All"), on: I18n.tr("On"), off: I18n.tr("Off") })
+            options: [labels.all, labels.on, labels.off]
+            current: labels[root.show]
+            onPicked: value => root.show = Object.keys(labels).find(k => labels[k] === value)
         }
     }
 
@@ -64,13 +83,13 @@ Column {
 
     Notice {
         visible: !root.vm.appsLoading && root.sections.length === 0
-        text: I18n.tr("No applications match \"%1\".").arg(root.searchQuery)
+        text: root.searchQuery.length > 0 ? I18n.tr("No applications match \"%1\".").arg(root.searchQuery) : I18n.tr("Nothing to show with this filter.")
     }
 
     Repeater {
         model: root.vm.appsLoading ? [] : root.sections
 
-        SettingsCard {
+        Section {
             id: section
             required property var modelData
             title: modelData.label
@@ -79,24 +98,20 @@ Column {
             Repeater {
                 model: section.modelData.items
 
-                Column {
+                SettingItem {
                     id: appEntry
                     required property var modelData
-                    width: parent.width
+                    title: modelData.name
+                    description: modelData.description
 
-                    SettingItem {
-                        title: appEntry.modelData.name
-                        description: appEntry.modelData.description
-
-                        Toggle {
-                            checked: appEntry.modelData.enabled
-                            onToggled: value => root.vm.setAppEnabled(appEntry.modelData.name, value)
-                        }
-                    }
-
-                    AppSettings {
+                    footer: AppOptions {
                         vm: root.vm
                         appName: appEntry.modelData.name
+                    }
+
+                    Toggle {
+                        checked: appEntry.modelData.enabled
+                        onToggled: value => root.vm.setAppEnabled(appEntry.modelData.name, value)
                     }
                 }
             }

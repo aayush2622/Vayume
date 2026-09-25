@@ -8,10 +8,10 @@ The unglamorous plumbing that makes screen sharing, file pickers, and one shared
 
 - One font package for terminal/bar glyphs, one for DMS's icon font.
 - **Noto Sans CJK and Noto Serif CJK are installed explicitly** because Vayume
-  Settings draws its small Japanese labels in them (`Vayori.jp` and
-  `Vayori.jpSerif`, see [DMS](desktop-dms.md#vayori-the-settings-design-language)).
-  They used to arrive only as a side effect of other packages; without them
-  those labels render as empty boxes. They are fallbacks only, never a default
+  Settings draws its 夜 mark in Noto Serif CJK JP (`Vayori.jpSerif`, see
+  [DMS](desktop-dms.md#vayori-the-settings-design-language)), and CJK text
+  anywhere else needs a fallback too. They used to arrive only as a side effect
+  of other packages; without them the mark renders as an empty box. They are fallbacks only, never a default
   family, so the theme font still wins for everything else.
 - **`ui-monospace`, `SFMono-Regular` and `Consolas` are mapped straight to the
   theme font in `localConf`.** Fontconfig sorts Noto Color Emoji first for any

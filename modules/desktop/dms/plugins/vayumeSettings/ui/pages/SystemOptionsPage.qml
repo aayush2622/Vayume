@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../components"
 
 Column {
     id: root
@@ -44,11 +45,9 @@ Column {
     Rectangle {
         visible: root.pendingCount > 0
         width: parent.width
-        height: pendingRow.height + 24
+        height: pendingRow.height + 32
         radius: Vayori.radius
-        color: Theme.withAlpha(Theme.warning, 0.07)
-        border.width: 1
-        border.color: Theme.withAlpha(Theme.warning, 0.35)
+        color: Theme.withAlpha(Theme.warning, 0.12)
 
         Item {
             id: pendingRow
@@ -57,20 +56,34 @@ Column {
             height: Math.max(pendingText.height, rebuildNow.height)
             anchors.verticalCenter: parent.verticalCenter
 
+            DankIcon {
+                id: pendingIcon
+                name: "pending_actions"
+                size: 22
+                color: Theme.warning
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
             Column {
                 id: pendingText
-                width: parent.width - rebuildNow.width - 20
+                anchors.left: pendingIcon.right
+                anchors.leftMargin: 14
+                anchors.right: rebuildNow.left
+                anchors.rightMargin: 16
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 3
+                spacing: 2
 
-                Eyebrow {
-                    text: I18n.tr("%1 pending").arg(String(root.pendingCount).padStart(2, "0"))
-                    color: Theme.warning
+                StyledText {
+                    text: I18n.tr("%1 change(s) pending").arg(root.pendingCount)
+                    font.pixelSize: Vayori.title
+                    font.weight: Font.DemiBold
+                    color: Vayori.ink
+                    wrapMode: Text.NoWrap
                 }
 
                 StyledText {
                     width: parent.width
-                    text: I18n.tr("%1 change(s) saved but not applied yet. Rebuild to apply them - the configuration is checked then.").arg(root.pendingCount)
+                    text: I18n.tr("Saved but not applied yet. Rebuild to apply them - the configuration is checked then.")
                     font.pixelSize: Vayori.body
                     color: Vayori.inkMuted
                     wrapMode: Text.WordWrap
@@ -82,7 +95,7 @@ Column {
                 id: rebuildNow
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                variant: "warning"
+                variant: "primary"
                 icon: "sync"
                 text: root.vm.rebuildBusy ? I18n.tr("Rebuilding") : I18n.tr("Rebuild now")
                 busy: root.vm.rebuildBusy
@@ -97,7 +110,7 @@ Column {
 
         Field {
             id: searchField
-            width: parent.width - filter.width - 10
+            width: parent.width - filter.width - 12
             leftIconName: "search"
             showClearButton: true
             placeholderText: I18n.tr("Search settings...")
@@ -110,54 +123,15 @@ Column {
             }
         }
 
-        Row {
+        Segmented {
             id: filter
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 4
-
-            Repeater {
-                model: [
-                    { label: I18n.tr("All"), modified: false },
-                    { label: I18n.tr("Modified"), modified: true }
-                ]
-
-                Rectangle {
-                    id: chip
-                    required property var modelData
-                    readonly property bool active: root.modifiedOnly === modelData.modified
-                    width: Math.max(64, chipText.implicitWidth + 22)
-                    height: searchField.height - 4
-                    radius: Vayori.radius
-                    color: chip.active ? Vayori.selected : (chipArea.containsMouse ? Vayori.hover : "transparent")
-                    border.width: 1
-                    border.color: chip.activeFocus ? Vayori.focus : (chip.active ? Vayori.lineStrong : Vayori.hairline)
-
-                    activeFocusOnTab: true
-                    Keys.onSpacePressed: root.modifiedOnly = chip.modelData.modified
-                    Keys.onReturnPressed: root.modifiedOnly = chip.modelData.modified
-
-                    StyledText {
-                        id: chipText
-                        anchors.centerIn: parent
-                        text: chip.modelData.label
-                        font.pixelSize: Vayori.caption
-                        font.capitalization: Font.AllUppercase
-                        font.letterSpacing: Vayori.track
-                        font.weight: Font.Medium
-                        color: chip.active ? Vayori.ink : Vayori.inkFaint
-                        wrapMode: Text.NoWrap
-                    }
-
-                    MouseArea {
-                        id: chipArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.modifiedOnly = chip.modelData.modified
-                    }
-                }
-            }
+            readonly property string allLabel: I18n.tr("All")
+            readonly property string modifiedLabel: I18n.tr("Modified")
+            options: [allLabel, modifiedLabel]
+            current: root.modifiedOnly ? modifiedLabel : allLabel
+            onPicked: value => root.modifiedOnly = value === modifiedLabel
         }
     }
 
@@ -170,17 +144,17 @@ Column {
     Repeater {
         model: root.groups
 
-        SettingsCard {
+        Section {
             id: groupCard
             required property var modelData
             title: modelData.name
             subtitle: modelData.description
-            meta: String(modelData.items.length).padStart(2, "0")
+            meta: String(modelData.items.length)
 
             Repeater {
                 model: groupCard.modelData.items
 
-                SettingRow {
+                OptionRow {
                     required property var modelData
                     vm: root.vm
                     setting: modelData

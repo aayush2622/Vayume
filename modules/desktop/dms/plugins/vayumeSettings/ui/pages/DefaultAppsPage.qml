@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../components"
 
 Column {
     id: root
@@ -28,7 +29,7 @@ Column {
         busy: true
     }
 
-    SettingsCard {
+    Section {
         visible: root.vm.defaultApps.length > 0
         title: I18n.tr("Handlers")
         meta: I18n.tr("%1 roles").arg(root.vm.defaultApps.length)

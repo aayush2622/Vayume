@@ -33,7 +33,7 @@ SettingItem {
     tags: Badge {
         visible: root.needsConfirm
         label: I18n.tr("Confirm")
-        tone: "neutral"
+        tone: "warning"
         anchors.verticalCenter: parent ? parent.verticalCenter : undefined
     }
 
@@ -52,10 +52,10 @@ SettingItem {
     }
 
     TextButton {
-        width: 104
+        width: 112
         icon: root.armed ? "priority_high" : "play_arrow"
         text: root.armed ? I18n.tr("Confirm") : I18n.tr("Run")
-        variant: root.armed ? "warning" : "outline"
+        variant: root.armed ? "warning" : "tonal"
         busy: root.busy
         anchors.verticalCenter: parent.verticalCenter
         onClicked: root.activate()

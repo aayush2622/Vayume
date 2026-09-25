@@ -1,6 +1,9 @@
 import QtQuick
+import QtQml
 import qs.Common
 import qs.Widgets
+import "components"
+import "pages"
 
 DankFloatingWindow {
     id: root
@@ -8,16 +11,53 @@ DankFloatingWindow {
     required property var vm
 
     title: I18n.tr("Vayume Settings")
-    implicitWidth: 1080
-    implicitHeight: 720
+    implicitWidth: 1120
+    implicitHeight: 760
     minimumSize: Qt.size(720, 480)
     surfaceColor: Vayori.base
 
-    property string activeCategory: "appearance"
-    onActiveCategoryChanged: {
-        root.vm.ensurePage(root.activeCategory);
-        contentFlick.contentY = 0;
+    property string activeCategory: root.categories.some(c => c.id === root.vm.activePage) ? root.vm.activePage : "overview"
+    property bool logOpen: false
+    property string searchQuery: ""
+    readonly property bool searching: root.searchQuery.trim().length > 0
+    readonly property string shownPage: root.searching ? "search" : root.activeCategory
+
+    onShownPageChanged: contentFlick.contentY = 0
+    onSearchingChanged: if (root.searching) root.vm.ensurePage("search")
+
+    function go(id) {
+        root.searchQuery = "";
+        root.activeCategory = id;
     }
+
+    Shortcut { sequence: "Ctrl+F"; onActivated: sidebar.focusSearch() }
+    Shortcut { sequence: "Ctrl+R"; onActivated: root.vm.refreshAll() }
+    Shortcut { sequence: "Ctrl+B"; onActivated: root.vm.rebuild() }
+    Shortcut { sequence: "Ctrl+L"; onActivated: root.logOpen = !root.logOpen }
+    Shortcut { sequence: "Escape"; enabled: root.searching; onActivated: root.searchQuery = "" }
+    Instantiator {
+        model: 9
+        delegate: Shortcut {
+            required property int index
+            sequence: "Ctrl+" + (index + 1)
+            enabled: index < root.categories.length
+            onActivated: root.go(root.categories[index].id)
+        }
+    }
+
+    Connections {
+        target: pageLoader.item
+        ignoreUnknownSignals: true
+        function onNavigate(id) { root.go(id); }
+    }
+
+    Connections {
+        target: root.vm
+        function onRebuildBusyChanged() {
+            if (root.vm.rebuildBusy) root.logOpen = true;
+        }
+    }
+    onActiveCategoryChanged: root.vm.ensurePage(root.activeCategory)
     Component.onCompleted: root.vm.ensurePage(root.activeCategory)
 
     function reveal(item) {
@@ -42,37 +82,46 @@ DankFloatingWindow {
 
     readonly property var groups: [
         {
-            index: "01", label: I18n.tr("Look"),
+            label: "",
             items: [
-                { id: "appearance", label: I18n.tr("Appearance"), jp: "外観",
+                { id: "overview", label: I18n.tr("Overview"), icon: "home",
+                  subtitle: I18n.tr("How this machine stands right now, and what is waiting to be applied.") }
+            ]
+        },
+        {
+            label: I18n.tr("Look"),
+            items: [
+                { id: "appearance", label: I18n.tr("Appearance"), icon: "palette",
                   subtitle: I18n.tr("Font, cursor, and icon theme - the parts of Vayume's look shared by GTK, kitty, SDDM, and DMS itself.") }
             ]
         },
         {
-            index: "02", label: I18n.tr("Software"),
+            label: I18n.tr("Software"),
             items: [
-                { id: "applications", label: I18n.tr("Applications"), jp: "アプリ",
+                { id: "applications", label: I18n.tr("Applications"), icon: "apps",
                   subtitle: I18n.tr("Every app Vayume can install and configure. An app's own options open underneath it.") },
-                { id: "development", label: I18n.tr("Development"), jp: "開発",
+                { id: "development", label: I18n.tr("Development"), icon: "code",
                   subtitle: I18n.tr("Languages, editors and developer tools. Each language lists the enabled editors it integrates with.") },
-                { id: "defaults", label: I18n.tr("Default Apps"), jp: "既定",
+                { id: "defaults", label: I18n.tr("Default Apps"), icon: "open_in_new",
                   subtitle: I18n.tr("Which app opens links, folders and code files, and which one the Super+Return / Super+E / Super+C / Super+B keybinds start.") }
             ]
         },
         {
-            index: "03", label: I18n.tr("System"),
+            label: I18n.tr("System"),
             items: [
-                { id: "options", label: I18n.tr("All Settings"), jp: "設定",
+                { id: "systemOptions", label: I18n.tr("System Options"), icon: "tune",
                   subtitle: I18n.tr("System-level options a Vayume module declares - new ones show up here automatically.") },
-                { id: "users", label: I18n.tr("Users"), jp: "ユーザー",
+                { id: "users", label: I18n.tr("Users"), icon: "group",
                   subtitle: I18n.tr("Every person configured on this machine (vayume.users).") },
-                { id: "system", label: I18n.tr("System"), jp: "システム",
-                  subtitle: I18n.tr("Read-only information about this host and its Vayume repository, plus one-click maintenance.") }
+                { id: "maintenance", label: I18n.tr("Maintenance"), icon: "build",
+                  subtitle: I18n.tr("Rebuild, checks and cleanup - one-click versions of vayume commands.") },
+                { id: "about", label: I18n.tr("About"), icon: "info",
+                  subtitle: I18n.tr("This host, its Vayume repository, and the configuration file every change is written to.") }
             ]
         }
     ]
 
-    readonly property var categories: root.groups.reduce((all, g) => all.concat(g.items.map(i => Object.assign({ group: g.label, index: g.index }, i))), [])
+    readonly property var categories: root.groups.reduce((all, g) => all.concat(g.items), [])
     readonly property var current: root.categories.find(c => c.id === root.activeCategory) || root.categories[0]
 
     Item {
@@ -81,105 +130,120 @@ DankFloatingWindow {
         Sidebar {
             id: sidebar
             width: Vayori.sidebarWidth
-            height: parent.height - statusBar.height
+            height: parent.height
             vm: root.vm
             groups: root.groups
             categories: root.categories
-            activeCategory: root.activeCategory
-            onSelect: id => root.activeCategory = id
+            activeCategory: root.searching ? "" : root.activeCategory
+            logOpen: root.logOpen
+            searchQuery: root.searchQuery
+            onSearchEdited: text => root.searchQuery = text
+            onSelect: id => root.go(id)
+            onToggleLog: root.logOpen = !root.logOpen
         }
 
-        Item {
-            id: main
+        Rectangle {
+            id: canvas
             anchors.left: sidebar.right
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.bottom: statusBar.top
+            anchors.bottom: parent.bottom
+            anchors.margins: 12
+            anchors.leftMargin: 0
+            radius: Vayori.radiusLarge
+            color: Vayori.canvas
+            clip: true
 
-            readonly property real margin: width > 900 ? 44 : 28
-            readonly property real columnWidth: Math.min(width - margin * 2, Vayori.contentMaxWidth)
-
-            readonly property bool pinHeader: height >= 600
-            readonly property Item focusItem: main.Window.activeFocusItem
-            onFocusItemChanged: root.reveal(main.focusItem)
-
-            Loader {
-                id: pinnedHeader
-                x: main.margin
-                y: 26
-                width: main.columnWidth
-                active: main.pinHeader
-                sourceComponent: headerComponent
-            }
-
-            DankFlickable {
-                id: contentFlick
+            Item {
+                id: main
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.top: main.pinHeader ? pinnedHeader.bottom : parent.top
-                anchors.topMargin: main.pinHeader ? 22 : 0
-                anchors.bottom: parent.bottom
-                contentWidth: width
-                contentHeight: pageLoader.y + (pageLoader.item ? pageLoader.item.implicitHeight : 0) + 36
-                clip: true
+                anchors.top: parent.top
+                anchors.bottom: logPanel.visible ? logPanel.top : parent.bottom
+                anchors.bottomMargin: logPanel.visible ? 12 : 0
+
+                readonly property real margin: width > 900 ? 48 : 28
+                readonly property real columnWidth: Math.min(width - margin * 2, Vayori.contentMaxWidth)
+
+                readonly property bool pinHeader: height >= 560
+                readonly property Item focusItem: main.Window.activeFocusItem
+                onFocusItemChanged: root.reveal(main.focusItem)
 
                 Loader {
-                    id: flowingHeader
+                    id: pinnedHeader
                     x: main.margin
-                    y: 22
-                    width: main.columnWidth
-                    active: !main.pinHeader
+                    y: 32
+                    width: main.width - main.margin - 20
+                    active: main.pinHeader
                     sourceComponent: headerComponent
                 }
 
-                Loader {
-                    id: pageLoader
-                    x: main.margin
-                    y: flowingHeader.active ? flowingHeader.y + flowingHeader.height + 22 : 0
-                    width: main.columnWidth
+                DankFlickable {
+                    id: contentFlick
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: main.pinHeader ? pinnedHeader.bottom : parent.top
+                    anchors.topMargin: main.pinHeader ? 20 : 0
+                    anchors.bottom: parent.bottom
+                    contentWidth: width
+                    contentHeight: pageLoader.y + (pageLoader.item ? pageLoader.item.implicitHeight : 0) + 32
+                    clip: true
 
-                    transform: Translate { id: pageShift }
+                    Loader {
+                        id: flowingHeader
+                        x: main.margin
+                        y: 28
+                        width: main.width - main.margin - 20
+                        active: !main.pinHeader
+                        sourceComponent: headerComponent
+                    }
 
-                    onLoaded: pageIn.restart()
+                    Loader {
+                        id: pageLoader
+                        x: main.margin
+                        y: flowingHeader.active ? flowingHeader.y + flowingHeader.height + 20 : 8
+                        width: main.columnWidth
 
-                    sourceComponent: {
-                        switch (root.activeCategory) {
-                        case "appearance": return appearancePageComponent;
-                        case "development": return developmentPageComponent;
-                        case "applications": return applicationsPageComponent;
-                        case "defaults": return defaultAppsPageComponent;
-                        case "options": return optionsPageComponent;
-                        case "users": return usersPageComponent;
-                        case "system": return systemPageComponent;
-                        default: return null;
+                        transform: Translate { id: pageShift }
+
+                        onLoaded: pageIn.restart()
+
+                        sourceComponent: {
+                            switch (root.shownPage) {
+                            case "overview": return overviewPageComponent;
+                            case "search": return searchPageComponent;
+                            case "maintenance": return maintenancePageComponent;
+                            case "about": return aboutPageComponent;
+                            case "appearance": return appearancePageComponent;
+                            case "development": return developmentPageComponent;
+                            case "applications": return applicationsPageComponent;
+                            case "defaults": return defaultAppsPageComponent;
+                            case "systemOptions": return systemOptionsPageComponent;
+                            case "users": return usersPageComponent;
+                            default: return null;
+                            }
                         }
                     }
-                }
 
-                Rectangle {
-                    parent: contentFlick
-                    x: main.margin
-                    width: main.columnWidth
-                    height: 1
-                    color: Vayori.hairline
-                    opacity: main.pinHeader && contentFlick.contentY > 4 ? 1 : 0
-
-                    Behavior on opacity { NumberAnimation { duration: Vayori.fast } }
-                }
-
-                ParallelAnimation {
-                    id: pageIn
-                    NumberAnimation { target: pageLoader; property: "opacity"; from: 0; to: 1; duration: Vayori.normal; easing.type: Easing.OutCubic }
-                    NumberAnimation { target: pageShift; property: "y"; from: 6; to: 0; duration: Vayori.normal; easing.type: Easing.OutCubic }
+                    ParallelAnimation {
+                        id: pageIn
+                        NumberAnimation { target: pageLoader; property: "opacity"; from: 0; to: 1; duration: Vayori.normal; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: pageShift; property: "y"; from: 8; to: 0; duration: Vayori.normal; easing.type: Easing.OutCubic }
+                    }
                 }
             }
-        }
 
-        StatusBar {
-            id: statusBar
-            anchors.bottom: parent.bottom
-            width: parent.width
-            vm: root.vm
+            LogPanel {
+                id: logPanel
+                visible: root.logOpen && root.vm.rebuildLog.length > 0
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: 12
+                height: Math.min(220, parent.height * 0.4)
+                vm: root.vm
+                onClose: root.logOpen = false
+            }
         }
     }
 
@@ -187,27 +251,32 @@ DankFloatingWindow {
         id: headerComponent
 
         PageHeader {
-            jp: root.current.jp
-            group: root.current.group
-            index: root.current.index
-            title: root.current.label
-            subtitle: root.current.subtitle
+            title: root.searching ? I18n.tr("Search") : root.current.label
+            subtitle: root.searching ? I18n.tr("Results for \"%1\" across every page.").arg(root.searchQuery.trim()) : root.current.subtitle
             meta: pageLoader.item && pageLoader.item.meta !== undefined ? pageLoader.item.meta : ""
 
             TextButton {
+                variant: "ghost"
                 icon: "refresh"
-                text: I18n.tr("Reload")
-                implicitHeight: 24
                 onClicked: root.vm.refreshAll()
+            }
+
+            TextButton {
+                variant: "ghost"
+                icon: "close"
+                onClicked: root.visible = false
             }
         }
     }
 
+    Component { id: overviewPageComponent; OverviewPage { vm: root.vm } }
+    Component { id: searchPageComponent; SearchPage { vm: root.vm; query: root.searchQuery; categories: root.categories } }
     Component { id: appearancePageComponent; AppearancePage { vm: root.vm } }
     Component { id: developmentPageComponent; DevelopmentPage { vm: root.vm } }
     Component { id: applicationsPageComponent; ApplicationsPage { vm: root.vm } }
     Component { id: defaultAppsPageComponent; DefaultAppsPage { vm: root.vm } }
-    Component { id: optionsPageComponent; OptionsPage { vm: root.vm } }
+    Component { id: systemOptionsPageComponent; SystemOptionsPage { vm: root.vm } }
     Component { id: usersPageComponent; UsersPage { vm: root.vm } }
-    Component { id: systemPageComponent; SystemPage { vm: root.vm } }
+    Component { id: maintenancePageComponent; MaintenancePage { vm: root.vm } }
+    Component { id: aboutPageComponent; AboutPage { vm: root.vm } }
 }

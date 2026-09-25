@@ -97,23 +97,36 @@ PluginComponent {
         defaultsSetProc.running = true;
     }
 
-    property string activePage: "appearance"
+    property string activePage: "overview"
     property var loadedPages: ({})
 
     function ensurePage(id) {
-        root.activePage = id;
+        if (id !== "search")
+            root.activePage = id;
         if (root.loadedPages[id])
             return;
         root.loadedPages = Object.assign({}, root.loadedPages, { [id]: true });
         switch (id) {
+        case "overview": refreshApps(); refreshDevelopment(); refreshSettings(); refreshUsers(); break;
         case "appearance": refreshTheme(); break;
         case "development": refreshDevelopment(); refreshApps(); break;
         case "applications": refreshApps(); refreshSettings(); refreshActions(); break;
         case "defaults": refreshDefaultApps(); break;
         case "users": refreshUsers(); break;
-        case "options": refreshSettings(); break;
-        case "system": refreshActions(); break;
+        case "systemOptions": refreshSettings(); break;
+        case "maintenance": refreshActions(); break;
+        case "search": refreshApps(); refreshDevelopment(); refreshSettings(); refreshActions(); break;
         }
+    }
+
+    function openPath(path) {
+        if (path.length > 0)
+            Quickshell.execDetached(["xdg-open", path]);
+    }
+
+    function copyText(text) {
+        if (text.length > 0)
+            Quickshell.execDetached(["wl-copy", "--", text]);
     }
 
     function refreshAll() {

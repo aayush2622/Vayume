@@ -9,64 +9,68 @@ Item {
     property string description: ""
     property string meta: ""
     property string marker: ""
-    property bool divider: true
+    property bool card: true
+    property bool divider: false
     property bool stacked: false
-    property real controlGap: 24
 
     default property alias control: controlSlot.data
     property alias tags: tagRow.data
     property alias notes: noteColumn.data
+    property alias footer: footerColumn.data
 
-    readonly property bool below: root.stacked || root.width < 540
+    readonly property real inset: root.card ? Vayori.pad : 0
+    readonly property bool below: root.stacked || root.width < 560
     readonly property bool hasText: root.title.length > 0 || root.description.length > 0 || root.meta.length > 0
     readonly property real controlsWidth: controlSlot.implicitWidth
 
     width: parent ? parent.width : 400
-    implicitHeight: body.height + Vayori.rowPad * 2
+    implicitHeight: body.height + Vayori.rowPad * 2 + (footerColumn.implicitHeight > 0 ? footerColumn.implicitHeight + 4 : 0)
 
     HoverHandler { id: hover }
 
     Rectangle {
-        visible: root.divider
+        visible: root.card
+        anchors.fill: parent
+        radius: Vayori.radius
+        color: hover.hovered && root.enabled ? Vayori.cardHover : Vayori.card
+
+        Behavior on color { ColorAnimation { duration: Vayori.fast } }
+    }
+
+    Rectangle {
+        visible: root.divider && !root.card
         width: parent.width
         height: 1
         color: Vayori.divider
     }
 
     Rectangle {
-        x: -10
-        y: 1
-        width: parent.width + 20
-        height: parent.height - 1
-        radius: Vayori.radiusSmall
-        color: hover.hovered && root.enabled ? Vayori.hover : "transparent"
-    }
-
-    Rectangle {
         visible: root.marker.length > 0
-        x: -Vayori.pad + 1
+        x: root.card ? 6 : -12
         y: Vayori.rowPad
-        width: 2
-        height: textColumn.height
+        width: 3
+        height: body.height
+        radius: 1.5
         color: Vayori.tone(root.marker)
     }
 
     Item {
         id: body
+        x: root.inset
         y: Vayori.rowPad
-        width: parent.width
+        width: parent.width - root.inset * 2
         height: root.below
-            ? (root.hasText ? textColumn.height + (controlSlot.implicitHeight > 0 ? 10 : 0) : 0) + controlSlot.implicitHeight
+            ? (root.hasText ? textColumn.height + (controlSlot.implicitHeight > 0 ? 12 : 0) : 0) + controlSlot.implicitHeight
             : Math.max(textColumn.height, controlSlot.implicitHeight)
         opacity: root.enabled ? 1 : 0.5
 
         Column {
             id: textColumn
             visible: root.hasText
-            width: root.below ? parent.width : parent.width - root.controlsWidth - (root.controlsWidth > 0 ? root.controlGap : 0)
+            width: root.below ? parent.width : parent.width - root.controlsWidth - (root.controlsWidth > 0 ? 24 : 0)
             height: root.hasText ? implicitHeight : 0
             anchors.verticalCenter: root.below ? undefined : parent.verticalCenter
-            spacing: 3
+            spacing: 4
 
             Flow {
                 width: parent.width
@@ -77,6 +81,7 @@ Item {
                     text: root.title
                     visible: root.title.length > 0
                     font.pixelSize: Vayori.title
+                    font.weight: Font.Medium
                     color: Vayori.ink
                     wrapMode: Text.NoWrap
                     height: 20
@@ -97,7 +102,7 @@ Item {
                 color: Vayori.inkMuted
                 wrapMode: Text.WordWrap
                 elide: Text.ElideNone
-                lineHeight: 1.12
+                lineHeight: 1.15
             }
 
             StyledText {
@@ -114,16 +119,23 @@ Item {
             Column {
                 id: noteColumn
                 width: parent.width
-                spacing: 3
+                spacing: 4
             }
         }
 
         Row {
             id: controlSlot
             width: root.below ? parent.width : root.controlsWidth
-            y: root.below ? (root.hasText ? textColumn.height + 10 : 0) : (parent.height - implicitHeight) / 2
+            y: root.below ? (root.hasText ? textColumn.height + 12 : 0) : (parent.height - implicitHeight) / 2
             x: root.below ? 0 : parent.width - width
             spacing: 8
         }
+    }
+
+    Column {
+        id: footerColumn
+        x: root.inset
+        y: body.y + body.height + 12
+        width: parent.width - root.inset * 2
     }
 }

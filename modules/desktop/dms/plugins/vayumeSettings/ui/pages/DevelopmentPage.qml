@@ -1,6 +1,7 @@
 import QtQuick
 import qs.Common
 import qs.Widgets
+import "../components"
 
 Column {
     id: root
@@ -31,7 +32,7 @@ Column {
     Repeater {
         model: root.vm.developmentLoading ? [] : root.sections
 
-        SettingsCard {
+        Section {
             id: section
             required property var modelData
             visible: modelData.items.length > 0

@@ -1,0 +1,14 @@
+singleton Vayori 1.0 Vayori.qml
+AppOptions 1.0 AppOptions.qml
+Badge 1.0 Badge.qml
+CommandRow 1.0 CommandRow.qml
+Field 1.0 Field.qml
+FocusRing 1.0 FocusRing.qml
+Notice 1.0 Notice.qml
+OptionRow 1.0 OptionRow.qml
+Section 1.0 Section.qml
+Segmented 1.0 Segmented.qml
+Select 1.0 Select.qml
+SettingItem 1.0 SettingItem.qml
+TextButton 1.0 TextButton.qml
+Toggle 1.0 Toggle.qml

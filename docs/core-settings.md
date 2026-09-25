@@ -2,13 +2,13 @@
 
 ---
 
-Every option a Vayume module declares shows up in Vayume Settings without anyone maintaining a list. The **All Settings** page and `vayume config settings` read the option declarations straight out of the evaluated system, so adding a setting is adding an option - nothing else.
+Every option a Vayume module declares shows up in Vayume Settings without anyone maintaining a list. The **System Options** page and `vayume config settings` read the option declarations straight out of the evaluated system, so adding a setting is adding an option - nothing else.
 
 ## `modules/vayume/Settings.nix`, `_settings.nix`, `_setting.awk`
 
 ### What appears
 
-Every `lib.mkOption` under `vayume.*` whose type the panel can edit - on the All Settings page, or under its app in Applications when `settingsMeta` names one:
+Every `lib.mkOption` under `vayume.*` whose type the panel can edit - on the System Options page, or under its app in Applications when `settingsMeta` names one:
 
 | Type | Control | Written as |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ vayume.settingsMeta = self.vayumeLib.labels {
 };
 ```
 
-`labels` is shorthand for `{ label = ...; }`. The full form also takes `app`, the name of a `vayume.apps.<Name>` module: those settings are shown under that app in Applications, in a collapsed "<App> settings" section beneath its toggle, and left off the All Settings page (which then only holds system-level options). It also takes `group` (the card title), `icon` (a Material Symbols name) and `hidden`. A group's own icon and one-line description come from `vayume.settingsGroups.<group name> = { icon = ...; description = ...; };`. Icons are kept in the metadata but the current Vayume Settings design does not draw them; rows show the option path in small mono type instead. Without an entry the label is the path with camel-case split into words (`network.dns.overTls` becomes "Dns over tls") and the group is the first segment. The labels for the shipped options live in `Settings.nix` itself, so a new module doesn't have to touch it unless it wants a nicer name.
+`labels` is shorthand for `{ label = ...; }`. The full form also takes `app`, the name of a `vayume.apps.<Name>` module: those settings are shown under that app in Applications, in a collapsed "<App> settings" section beneath its toggle, and left off the System Options page (which then only holds system-level options). It also takes `group` (the card title), `icon` (a Material Symbols name) and `hidden`. A group's own icon and one-line description come from `vayume.settingsGroups.<group name> = { icon = ...; description = ...; };`. Icons are kept in the metadata but the current Vayume Settings design does not draw them; rows show the option path in small mono type instead. Without an entry the label is the path with camel-case split into words (`network.dns.overTls` becomes "Dns over tls") and the group is the first segment. The labels for the shipped options live in `Settings.nix` itself, so a new module doesn't have to touch it unless it wants a nicer name.
 
 ### No Nix evaluation on load or save
 
