@@ -12,6 +12,7 @@
         ./_launchers.nix
         ./_hytale.nix
         ./_proton.nix
+        ./_gamesync.nix
         ./_performance.nix
       ];
 
