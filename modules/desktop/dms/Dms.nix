@@ -178,6 +178,8 @@
 
               matugenScheme = "scheme-content";
 
+      mediaUseAlbumArtAccent = true;
+
               cornerRadius = 12;
 
               useAutoLocation = true;
