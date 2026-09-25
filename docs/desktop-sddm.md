@@ -31,6 +31,19 @@ The login screen - the one piece of this desktop that has to look right before a
   runs before any user session exists and therefore before there's a
   wallpaper to derive colors from. The login screen is the one surface
   in this whole setup that stays a fixed design.
+- **The layout follows Vayori** (see the [README](../README.md#vayori)) while
+  keeping the ink wallpaper and its composition: the clock, date and a
+  time-of-day greeting top left; the user chip, a rounded glass password
+  field with a submit button, and pill buttons for session, suspend, reboot
+  and power sitting on the character in the artwork (`bellyArea`, placed by
+  screen fraction so it lands in the same spot at any resolution); and a
+  small 夜 vayume mark bottom left. Icons are Material Symbols Rounded and
+  the mark is Noto Serif CJK JP, both installed system-wide by
+  [Fonts.nix](desktop-portals-fonts.md), so the greeter can use them before
+  anyone logs in. Clicking the name cycles users, clicking the session pill
+  cycles sessions, Enter or the arrow logs in. Checked with
+  `sddm-greeter-qt6 --test-mode` in a headless sway session; that mode
+  shows the layout but cannot log in, suspend or power off.
 - **The greeter runs on Wayland**
   (`services.displayManager.sddm.wayland.enable`), matching the two
   compositors it launches into. The X11 greeter works too, but mixing
