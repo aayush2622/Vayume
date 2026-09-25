@@ -45,7 +45,9 @@ case "$sub" in
       exit 0
     fi
     confirm "Delete these caches ($(hr "$total"))? They are rebuilt on demand."
-    rm -rf -- "${targets[@]}"
+    for t in "${targets[@]}"; do
+      wipe "$t"
+    done
     echo "Freed $(hr "$total")."
     ;;
   trash)
