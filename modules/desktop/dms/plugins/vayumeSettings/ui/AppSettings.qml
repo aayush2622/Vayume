@@ -15,61 +15,60 @@ Column {
     readonly property int totalCount: root.items.length + root.actionItems.length
     readonly property int pendingCount: root.items.filter(s => s.pending).length
 
+    function toggle() {
+        root.collapsed = !root.collapsed;
+    }
+
     visible: root.totalCount > 0
     width: parent ? parent.width : 400
-    spacing: Theme.spacingXS
+    spacing: 0
 
-    Rectangle {
-        id: header
-        x: Theme.spacingM
-        width: parent.width - Theme.spacingM
-        height: 40
-        radius: Theme.cornerRadius
-        color: headerArea.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
+    Item {
+        id: disclosure
+        width: disclosureRow.width + 16
+        height: 26
+        x: -8
+
+        activeFocusOnTab: root.visible
+        Keys.onSpacePressed: root.toggle()
+        Keys.onReturnPressed: root.toggle()
+        Keys.onEnterPressed: root.toggle()
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Vayori.radiusSmall
+            color: area.containsMouse ? Vayori.hover : "transparent"
+            border.width: disclosure.activeFocus ? 1 : 0
+            border.color: Vayori.focus
+        }
 
         Row {
-            anchors.left: parent.left
-            anchors.leftMargin: Theme.spacingS
+            id: disclosureRow
+            x: 8
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Theme.spacingS
+            spacing: 8
 
-            Rectangle {
-                width: 26
-                height: 26
-                radius: 7
-                color: Theme.primaryHoverLight
+            DankIcon {
+                name: root.collapsed ? "add" : "remove"
+                size: 12
+                color: area.containsMouse ? Vayori.ink : Vayori.inkFaint
                 anchors.verticalCenter: parent.verticalCenter
+            }
 
-                DankIcon {
-                    anchors.centerIn: parent
-                    name: "tune"
-                    size: 16
-                    color: Theme.primary
-                }
+            Eyebrow {
+                text: I18n.tr("%1 options").arg(root.appName)
+                font.pixelSize: Vayori.micro
+                color: area.containsMouse || !root.collapsed ? Vayori.ink : Vayori.inkFaint
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             StyledText {
-                text: I18n.tr("%1 options").arg(root.appName)
-                font.pixelSize: Theme.fontSizeSmall
-                font.weight: Font.Medium
-                color: Theme.surfaceText
+                text: String(root.totalCount).padStart(2, "0")
+                isMonospace: true
+                font.pixelSize: Vayori.micro
+                color: Vayori.inkGhost
+                wrapMode: Text.NoWrap
                 anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Rectangle {
-                width: countText.implicitWidth + Theme.spacingM
-                height: 20
-                radius: 10
-                color: Theme.surfaceContainerLow
-                anchors.verticalCenter: parent.verticalCenter
-
-                StyledText {
-                    id: countText
-                    anchors.centerIn: parent
-                    text: String(root.totalCount)
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
             }
 
             Badge {
@@ -80,66 +79,47 @@ Column {
             }
         }
 
-        DankIcon {
-            name: root.collapsed ? "chevron_right" : "expand_more"
-            size: 20
-            color: Theme.surfaceVariantText
-            anchors.right: parent.right
-            anchors.rightMargin: Theme.spacingS
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
         MouseArea {
-            id: headerArea
+            id: area
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: root.collapsed = !root.collapsed
+            onClicked: root.toggle()
         }
     }
 
-    Rectangle {
-        id: body
+    Item {
         visible: !root.collapsed
-        x: Theme.spacingM
-        width: parent.width - Theme.spacingM
-        height: bodyColumn.implicitHeight + Theme.spacingS * 2
-        radius: Theme.cornerRadius
-        color: Theme.surfaceContainerLow
+        width: parent.width
+        height: body.implicitHeight + 6
 
         Rectangle {
-            width: 3
-            height: parent.height - Theme.spacingM
-            radius: 1.5
-            color: Theme.primary
-            opacity: 0.6
-            anchors.left: parent.left
-            anchors.leftMargin: 4
-            anchors.verticalCenter: parent.verticalCenter
+            x: 5
+            y: 6
+            width: 1
+            height: parent.height - 12
+            color: Vayori.hairline
         }
 
         Column {
-            id: bodyColumn
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.leftMargin: Theme.spacingM
-            anchors.rightMargin: Theme.spacingXS
-            anchors.topMargin: Theme.spacingS
-            spacing: 2
+            id: body
+            x: 22
+            width: parent.width - x
 
             Repeater {
-                model: root.items
+                model: root.collapsed ? [] : root.items
 
                 SettingRow {
                     required property var modelData
+                    required property int index
                     vm: root.vm
                     setting: modelData
+                    divider: index > 0
                 }
             }
 
             Repeater {
-                model: root.actionItems
+                model: root.collapsed ? [] : root.actionItems
 
                 ActionRow {
                     required property var modelData
@@ -152,6 +132,6 @@ Column {
 
     Item {
         width: 1
-        height: Theme.spacingXS
+        height: 10
     }
 }

@@ -7,6 +7,12 @@ The unglamorous plumbing that makes screen sharing, file pickers, and one shared
 ## `modules/desktop/Fonts.nix` / `Portals.nix`
 
 - One font package for terminal/bar glyphs, one for DMS's icon font.
+- **Noto Sans CJK and Noto Serif CJK are installed explicitly** because Vayume
+  Settings draws its small Japanese labels in them (`Vayori.jp` and
+  `Vayori.jpSerif`, see [DMS](desktop-dms.md#vayori-the-settings-design-language)).
+  They used to arrive only as a side effect of other packages; without them
+  those labels render as empty boxes. They are fallbacks only, never a default
+  family, so the theme font still wins for everything else.
 - **`ui-monospace`, `SFMono-Regular` and `Consolas` are mapped straight to the
   theme font in `localConf`.** Fontconfig sorts Noto Color Emoji first for any
   family name that isn't installed, and WebKitGTK accepts that match for names

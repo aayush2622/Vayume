@@ -7,7 +7,7 @@ Column {
 
     required property var vm
     width: parent.width
-    spacing: Theme.spacingM
+    spacing: Vayori.gap
 
     property string searchQuery: ""
     property bool modifiedOnly: false
@@ -15,6 +15,10 @@ Column {
     readonly property var systemSettings: root.vm.settings.filter(s => !s.app)
     readonly property int pendingCount: root.systemSettings.filter(s => s.pending).length
     readonly property int customizedCount: root.systemSettings.filter(s => s.configured).length
+
+    readonly property string meta: root.vm.settingsLoading && root.systemSettings.length === 0
+        ? I18n.tr("loading...")
+        : I18n.tr("%1 settings · %2 customized").arg(root.systemSettings.length).arg(root.customizedCount)
 
     readonly property var groups: {
         const q = root.searchQuery.trim().toLowerCase();
@@ -28,123 +32,74 @@ Column {
         }
         return Object.keys(byGroup).sort().map(name => ({
             name: name,
-            icon: byGroup[name][0].groupIcon || "tune",
             description: byGroup[name][0].groupDescription || "",
             items: byGroup[name]
         }));
     }
 
-    Row {
-        width: parent.width
-        spacing: Theme.spacingM
-
-        Rectangle {
-            width: 44
-            height: 44
-            radius: Theme.cornerRadius
-            color: Theme.primaryHoverLight
-
-            DankIcon {
-                anchors.centerIn: parent
-                name: "tune"
-                size: 26
-                color: Theme.primary
-            }
-        }
-
-        Column {
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-
-            StyledText {
-                text: I18n.tr("All Settings")
-                font.pixelSize: Theme.fontSizeLarge
-                font.weight: Font.Bold
-                color: Theme.surfaceText
-            }
-
-            StyledText {
-                text: root.vm.settingsLoading && root.systemSettings.length === 0
-                    ? I18n.tr("Loading...")
-                    : I18n.tr("%1 settings · %2 customized").arg(root.systemSettings.length).arg(root.customizedCount)
-                font.pixelSize: Theme.fontSizeSmall
-                color: Theme.surfaceVariantText
-            }
-        }
-    }
-
-    StyledText {
-        text: I18n.tr("System-level options a Vayume module declares - new ones show up here automatically. An app's own options are under that app in Applications. Changes are written to _config.nix instantly and checked when you rebuild.")
-        font.pixelSize: Theme.fontSizeSmall
-        color: Theme.surfaceVariantText
-        wrapMode: Text.WordWrap
-        width: parent.width
+    Notice {
+        text: I18n.tr("An app's own options are under that app in Applications. Changes are written to _config.nix instantly and checked when you rebuild.")
     }
 
     Rectangle {
         visible: root.pendingCount > 0
         width: parent.width
-        height: bannerRow.implicitHeight + Theme.spacingM * 2
-        radius: Theme.cornerRadius
-        color: Theme.withAlpha(Theme.warning, 0.14)
+        height: pendingRow.height + 24
+        radius: Vayori.radius
+        color: Theme.withAlpha(Theme.warning, 0.07)
+        border.width: 1
+        border.color: Theme.withAlpha(Theme.warning, 0.35)
 
-        Row {
-            id: bannerRow
-            anchors.left: parent.left
-            anchors.right: parent.right
+        Item {
+            id: pendingRow
+            x: Vayori.pad
+            width: parent.width - Vayori.pad * 2
+            height: Math.max(pendingText.height, rebuildNow.height)
             anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: Theme.spacingM
-            anchors.rightMargin: Theme.spacingM
-            spacing: Theme.spacingM
 
-            DankIcon {
-                name: "pending_actions"
-                size: 22
-                color: Theme.warning
+            Column {
+                id: pendingText
+                width: parent.width - rebuildNow.width - 20
                 anchors.verticalCenter: parent.verticalCenter
-            }
+                spacing: 3
 
-            StyledText {
-                width: parent.width - 22 - rebuildNow.width - Theme.spacingM * 2
-                text: I18n.tr("%1 change(s) saved but not applied yet. Rebuild to apply them - the configuration is checked then.").arg(root.pendingCount)
-                font.pixelSize: Theme.fontSizeSmall
-                color: Theme.surfaceText
-                wrapMode: Text.WordWrap
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Rectangle {
-                id: rebuildNow
-                width: 110
-                height: 34
-                radius: Theme.cornerRadius
-                color: root.vm.rebuildBusy ? Theme.surfaceContainerLow : Theme.primary
-                anchors.verticalCenter: parent.verticalCenter
+                Eyebrow {
+                    text: I18n.tr("%1 pending").arg(String(root.pendingCount).padStart(2, "0"))
+                    color: Theme.warning
+                }
 
                 StyledText {
-                    anchors.centerIn: parent
-                    text: root.vm.rebuildBusy ? I18n.tr("Rebuilding...") : I18n.tr("Rebuild now")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: root.vm.rebuildBusy ? Theme.surfaceVariantText : Theme.onPrimary
+                    width: parent.width
+                    text: I18n.tr("%1 change(s) saved but not applied yet. Rebuild to apply them - the configuration is checked then.").arg(root.pendingCount)
+                    font.pixelSize: Vayori.body
+                    color: Vayori.inkMuted
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideNone
                 }
+            }
 
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: !root.vm.rebuildBusy
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.vm.rebuild()
-                }
+            TextButton {
+                id: rebuildNow
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                variant: "warning"
+                icon: "sync"
+                text: root.vm.rebuildBusy ? I18n.tr("Rebuilding") : I18n.tr("Rebuild now")
+                busy: root.vm.rebuildBusy
+                onClicked: root.vm.rebuild()
             }
         }
     }
 
-    Row {
+    Item {
         width: parent.width
-        spacing: Theme.spacingS
+        height: searchField.height
 
-        DankTextField {
+        Field {
             id: searchField
-            width: parent.width - 84 * 2 - Theme.spacingS * 2
+            width: parent.width - filter.width - 10
+            leftIconName: "search"
+            showClearButton: true
             placeholderText: I18n.tr("Search settings...")
             onTextChanged: searchDebounce.restart()
 
@@ -155,85 +110,92 @@ Column {
             }
         }
 
-        Repeater {
-            model: [
-                { label: I18n.tr("All"), modified: false },
-                { label: I18n.tr("Modified"), modified: true }
-            ]
+        Row {
+            id: filter
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
 
-            Rectangle {
-                required property var modelData
-                id: chipButton
-                width: 84
-                height: searchField.height
-                radius: Theme.cornerRadius
-                color: root.modifiedOnly === modelData.modified ? Theme.primaryHoverLight : Theme.surfaceContainerLow
+            Repeater {
+                model: [
+                    { label: I18n.tr("All"), modified: false },
+                    { label: I18n.tr("Modified"), modified: true }
+                ]
 
-                StyledText {
-                    anchors.centerIn: parent
-                    text: chipButton.modelData.label
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.weight: root.modifiedOnly === chipButton.modelData.modified ? Font.Medium : Font.Normal
-                    color: root.modifiedOnly === chipButton.modelData.modified ? Theme.primary : Theme.surfaceVariantText
-                }
+                Rectangle {
+                    id: chip
+                    required property var modelData
+                    readonly property bool active: root.modifiedOnly === modelData.modified
+                    width: Math.max(64, chipText.implicitWidth + 22)
+                    height: searchField.height - 4
+                    radius: Vayori.radius
+                    color: chip.active ? Vayori.selected : (chipArea.containsMouse ? Vayori.hover : "transparent")
+                    border.width: 1
+                    border.color: chip.activeFocus ? Vayori.focus : (chip.active ? Vayori.lineStrong : Vayori.hairline)
 
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.modifiedOnly = chipButton.modelData.modified
+                    activeFocusOnTab: true
+                    Keys.onSpacePressed: root.modifiedOnly = chip.modelData.modified
+                    Keys.onReturnPressed: root.modifiedOnly = chip.modelData.modified
+
+                    StyledText {
+                        id: chipText
+                        anchors.centerIn: parent
+                        text: chip.modelData.label
+                        font.pixelSize: Vayori.caption
+                        font.capitalization: Font.AllUppercase
+                        font.letterSpacing: Vayori.track
+                        font.weight: Font.Medium
+                        color: chip.active ? Vayori.ink : Vayori.inkFaint
+                        wrapMode: Text.NoWrap
+                    }
+
+                    MouseArea {
+                        id: chipArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.modifiedOnly = chip.modelData.modified
+                    }
                 }
             }
         }
+    }
+
+    Notice {
+        visible: root.vm.settingsLoading && root.systemSettings.length === 0
+        text: I18n.tr("Loading...")
+        busy: true
     }
 
     Repeater {
         model: root.groups
 
         SettingsCard {
+            id: groupCard
             required property var modelData
             title: modelData.name
-            icon: modelData.icon
             subtitle: modelData.description
+            meta: String(modelData.items.length).padStart(2, "0")
 
             Repeater {
-                model: modelData.items
+                model: groupCard.modelData.items
 
-                Column {
+                SettingRow {
                     required property var modelData
-                    required property int index
-                    width: parent.width
-                    spacing: 0
-
-                    Rectangle {
-                        visible: index > 0
-                        width: parent.width
-                        height: 1
-                        color: Theme.outline
-                        opacity: 0.12
-                    }
-
-                    SettingRow {
-                        vm: root.vm
-                        setting: modelData
-                    }
+                    vm: root.vm
+                    setting: modelData
                 }
             }
         }
     }
 
-    StyledText {
+    Notice {
         visible: !root.vm.settingsLoading && root.groups.length === 0
         text: root.modifiedOnly ? I18n.tr("Nothing has been customized yet.") : I18n.tr("No settings match your search.")
-        font.pixelSize: Theme.fontSizeSmall
-        color: Theme.surfaceVariantText
     }
 
-    StyledText {
-        visible: root.vm.settingsStatus.length > 0
+    Notice {
         text: root.vm.settingsStatus
-        font.pixelSize: Theme.fontSizeSmall
-        color: root.vm.settingsError ? Theme.error : Theme.surfaceVariantText
-        wrapMode: Text.WordWrap
-        width: parent.width
+        tone: root.vm.settingsError ? "error" : "neutral"
     }
 }

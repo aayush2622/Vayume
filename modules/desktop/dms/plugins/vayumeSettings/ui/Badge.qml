@@ -2,35 +2,30 @@ import QtQuick
 import qs.Common
 import qs.Widgets
 
-Row {
+Rectangle {
     id: root
 
     property string label: ""
     property string tone: "neutral"
-    spacing: Theme.spacingXS
 
-    readonly property color dotColor: {
-        switch (root.tone) {
-        case "warning": return Theme.warning;
-        case "error": return Theme.error;
-        case "success": return Theme.success;
-        case "info": return Theme.primary;
-        default: return Theme.surfaceVariantText;
-        }
-    }
+    readonly property color toneColor: Vayori.tone(root.tone)
 
-    Rectangle {
-        width: 6
-        height: 6
-        radius: 3
-        anchors.verticalCenter: parent.verticalCenter
-        color: root.dotColor
-    }
+    implicitWidth: labelText.implicitWidth + 12
+    implicitHeight: 17
+    radius: Vayori.radiusSmall
+    color: root.tone === "neutral" ? "transparent" : Theme.withAlpha(root.toneColor, 0.1)
+    border.width: 1
+    border.color: root.tone === "neutral" ? Vayori.hairline : Theme.withAlpha(root.toneColor, 0.42)
 
     StyledText {
+        id: labelText
+        anchors.centerIn: parent
         text: root.label
-        font.pixelSize: Theme.fontSizeSmall
-        color: root.tone === "neutral" ? Theme.surfaceVariantText : root.dotColor
-        anchors.verticalCenter: parent.verticalCenter
+        isMonospace: true
+        font.pixelSize: Vayori.micro
+        font.capitalization: Font.AllUppercase
+        font.letterSpacing: 0.8
+        color: root.toneColor
+        wrapMode: Text.NoWrap
     }
 }

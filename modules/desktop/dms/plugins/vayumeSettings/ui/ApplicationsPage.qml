@@ -7,7 +7,7 @@ Column {
 
     required property var vm
     width: parent.width
-    spacing: Theme.spacingM
+    spacing: Vayori.gap
 
     property string searchQuery: ""
 
@@ -18,28 +18,34 @@ Column {
 
     readonly property var categoryOrder: ({ "gaming": 0, "utils": 1 })
 
-    readonly property var filteredApps: {
+    readonly property var appsHere: root.vm.apps.filter(a => a.category !== "development")
+
+    readonly property var sections: {
         const q = root.searchQuery.trim().toLowerCase();
-        const list = root.vm.apps.filter(a => a.category !== "development"
-            && (q.length === 0 || a.name.toLowerCase().includes(q)));
-        return list.slice().sort((a, b) => {
-            const ca = root.categoryOrder[a.category] ?? 99;
-            const cb = root.categoryOrder[b.category] ?? 99;
-            if (ca !== cb) return ca - cb;
-            return a.name.localeCompare(b.name);
-        });
+        const byCategory = {};
+        for (const a of root.appsHere) {
+            if (q.length > 0 && !(a.name + " " + a.description).toLowerCase().includes(q))
+                continue;
+            (byCategory[a.category] = byCategory[a.category] || []).push(a);
+        }
+        return Object.keys(byCategory)
+            .sort((a, b) => (root.categoryOrder[a] ?? 99) - (root.categoryOrder[b] ?? 99) || a.localeCompare(b))
+            .map(key => ({
+                key: key,
+                label: root.categoryLabels[key] ?? key,
+                items: byCategory[key].slice().sort((a, b) => a.name.localeCompare(b.name))
+            }));
     }
 
-    StyledText {
-        text: I18n.tr("Applications")
-        font.pixelSize: Theme.fontSizeLarge
-        font.weight: Font.Bold
-        color: Theme.surfaceText
-    }
+    readonly property string meta: root.vm.appsLoading
+        ? ""
+        : I18n.tr("%1 of %2 enabled").arg(root.appsHere.filter(a => a.enabled).length).arg(root.appsHere.length)
 
-    DankTextField {
+    Field {
         id: searchField
         width: parent.width
+        leftIconName: "search"
+        showClearButton: true
         placeholderText: I18n.tr("Search applications...")
         onTextChanged: searchDebounce.restart()
 
@@ -50,64 +56,48 @@ Column {
         }
     }
 
-    SettingsCard {
-        width: parent.width
+    Notice {
+        visible: root.vm.appsLoading
+        text: I18n.tr("Loading applications...")
+        busy: true
+    }
 
-        StyledText {
-            visible: root.vm.appsLoading
-            text: I18n.tr("Loading applications...")
-            font.pixelSize: Theme.fontSizeSmall
-            color: Theme.surfaceVariantText
-        }
+    Notice {
+        visible: !root.vm.appsLoading && root.sections.length === 0
+        text: I18n.tr("No applications match \"%1\".").arg(root.searchQuery)
+    }
 
-        StyledText {
-            visible: !root.vm.appsLoading && root.filteredApps.length === 0
-            text: I18n.tr("No applications match \"%1\".").arg(root.searchQuery)
-            font.pixelSize: Theme.fontSizeSmall
-            color: Theme.surfaceVariantText
-        }
+    Repeater {
+        model: root.vm.appsLoading ? [] : root.sections
 
-        ListView {
-            id: appsListView
-            width: parent.width
-            height: contentHeight
-            clip: true
-            spacing: 6
-            visible: !root.vm.appsLoading && root.filteredApps.length > 0
-            model: root.filteredApps
+        SettingsCard {
+            id: section
+            required property var modelData
+            title: modelData.label
+            meta: I18n.tr("%1 / %2").arg(modelData.items.filter(a => a.enabled).length).arg(modelData.items.length)
 
-            section.property: "category"
-            section.criteria: ViewSection.FullString
-            section.delegate: Item {
-                width: appsListView.width
-                height: 28
+            Repeater {
+                model: section.modelData.items
 
-                StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.categoryLabels[section] ?? section
-                    font.pixelSize: Theme.fontSizeMedium
-                    font.weight: Font.Bold
-                    color: Theme.surfaceVariantText
-                }
-            }
-
-            delegate: Column {
-                id: appEntry
-                required property var modelData
-                width: appsListView.width
-                spacing: Theme.spacingXS
-
-                DankToggle {
+                Column {
+                    id: appEntry
+                    required property var modelData
                     width: parent.width
-                    text: appEntry.modelData.name
-                    description: appEntry.modelData.description
-                    checked: appEntry.modelData.enabled
-                    onToggled: isChecked => root.vm.setAppEnabled(appEntry.modelData.name, isChecked)
-                }
 
-                AppSettings {
-                    vm: root.vm
-                    appName: appEntry.modelData.name
+                    SettingItem {
+                        title: appEntry.modelData.name
+                        description: appEntry.modelData.description
+
+                        Toggle {
+                            checked: appEntry.modelData.enabled
+                            onToggled: value => root.vm.setAppEnabled(appEntry.modelData.name, value)
+                        }
+                    }
+
+                    AppSettings {
+                        vm: root.vm
+                        appName: appEntry.modelData.name
+                    }
                 }
             }
         }

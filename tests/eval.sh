@@ -48,6 +48,11 @@ comments=$(
 )
 [ -z "$comments" ] || { printf '%s\n' "$comments" >&2; exit 1; }
 
+step "vayumeSettings ui/qmldir lists every component"
+ui="$work/modules/desktop/dms/plugins/vayumeSettings/ui"
+missing=$(for f in "$ui"/*.qml; do n=$(basename "$f" .qml); grep -qE "^(singleton )?$n [0-9.]+ $n\.qml$" "$ui/qmldir" || echo "$n"; done)
+[ -z "$missing" ] || { echo "missing from ui/qmldir, so unavailable as a type: $missing" >&2; exit 1; }
+
 step "markdown links"
 broken=0
 while IFS= read -r -d '' f; do

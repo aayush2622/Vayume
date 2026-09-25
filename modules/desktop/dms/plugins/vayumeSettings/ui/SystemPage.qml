@@ -8,128 +8,148 @@ Column {
     required property var vm
     readonly property var systemActions: root.vm.actions.filter(a => !a.panel.app)
     width: parent.width
-    spacing: Theme.spacingM
+    spacing: Vayori.gap
 
-    StyledText {
-        text: I18n.tr("System")
-        font.pixelSize: Theme.fontSizeLarge
-        font.weight: Font.Bold
-        color: Theme.surfaceText
-    }
+    readonly property var stats: [
+        {
+            label: I18n.tr("Git status"),
+            value: root.vm.repoKnown ? (root.vm.repo.dirty ? I18n.tr("Uncommitted changes") : I18n.tr("Clean")) : "···",
+            tone: root.vm.repoKnown && root.vm.repo.dirty ? "warning" : "neutral"
+        },
+        {
+            label: I18n.tr("Running system"),
+            value: root.vm.repoKnown ? (root.vm.repo.rebuildPending ? I18n.tr("Rebuild pending") : I18n.tr("Up to date")) : "···",
+            tone: root.vm.repoKnown ? (root.vm.repo.rebuildPending ? "warning" : "success") : "neutral"
+        }
+    ]
 
-    StyledText {
-        text: I18n.tr("Read-only information about this host and its Vayume repository.")
-        font.pixelSize: Theme.fontSizeSmall
-        color: Theme.surfaceVariantText
-        wrapMode: Text.WordWrap
+    Rectangle {
         width: parent.width
+        height: 76
+        radius: Vayori.radius
+        color: Vayori.panel
+        border.width: 1
+        border.color: Vayori.hairline
+
+        Row {
+            anchors.fill: parent
+
+            Repeater {
+                model: root.stats
+
+                Item {
+                    id: stat
+                    required property var modelData
+                    required property int index
+                    width: parent.width / root.stats.length
+                    height: parent.height
+
+                    Rectangle {
+                        visible: stat.index > 0
+                        width: 1
+                        height: parent.height - 24
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: Vayori.divider
+                    }
+
+                    Column {
+                        x: Vayori.pad
+                        width: parent.width - Vayori.pad * 2
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 6
+
+                        Eyebrow {
+                            text: stat.modelData.label
+                            font.pixelSize: Vayori.micro
+                        }
+
+                        Row {
+                            spacing: 9
+
+                            Rectangle {
+                                width: 6
+                                height: 6
+                                color: Vayori.tone(stat.modelData.tone)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            StyledText {
+                                text: stat.modelData.value
+                                font.pixelSize: Vayori.title + 1
+                                color: stat.modelData.tone === "warning" ? Theme.warning : Vayori.ink
+                                wrapMode: Text.NoWrap
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     SettingsCard {
         title: I18n.tr("Repository")
-        icon: "folder_code"
-        width: parent.width
 
         Repeater {
             model: [
-                { label: I18n.tr("Hostname"), value: root.vm.repoKnown ? root.vm.repo.hostName : "..." },
+                { label: I18n.tr("Hostname"), value: root.vm.repoKnown ? root.vm.repo.hostName : "···" },
                 { label: I18n.tr("Repository"), value: root.vm.repoKnown ? root.vm.repo.path : I18n.tr("Locating...") },
-                { label: I18n.tr("Branch"), value: root.vm.repoKnown ? root.vm.repo.branch : "..." },
-                { label: I18n.tr("Configuration file"), value: root.vm.repoKnown ? root.vm.repo.configFile : "..." }
+                { label: I18n.tr("Branch"), value: root.vm.repoKnown ? root.vm.repo.branch : "···" },
+                { label: I18n.tr("Configuration file"), value: root.vm.repoKnown ? root.vm.repo.configFile : "···" }
             ]
 
-            Row {
+            Item {
+                id: fact
                 required property var modelData
                 width: parent.width
-                spacing: Theme.spacingS
+                height: 40
+
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: Vayori.divider
+                }
 
                 StyledText {
-                    text: modelData.label
-                    font.pixelSize: Theme.fontSizeMedium
-                    color: Theme.surfaceVariantText
-                    width: 150
+                    id: factLabel
+                    width: Math.min(170, parent.width * 0.35)
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: fact.modelData.label
+                    font.pixelSize: Vayori.body + 1
+                    color: Vayori.inkMuted
+                    wrapMode: Text.NoWrap
                 }
+
                 StyledText {
-                    text: modelData.value
-                    font.pixelSize: Theme.fontSizeMedium
-                    color: Theme.surfaceText
+                    anchors.left: factLabel.right
+                    anchors.leftMargin: 12
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    horizontalAlignment: Text.AlignRight
+                    text: fact.modelData.value
+                    isMonospace: true
+                    font.pixelSize: Vayori.body
+                    color: Vayori.ink
+                    wrapMode: Text.NoWrap
                     elide: Text.ElideMiddle
-                    width: parent.width - 150 - Theme.spacingS
                 }
             }
         }
     }
 
-    Row {
-        width: parent.width
-        spacing: Theme.spacingM
-
-        SettingsCard {
-            width: (parent.width - Theme.spacingM) / 2
-
-            Column {
-                width: parent.width
-                spacing: 2
-                StyledText {
-                    text: root.vm.repoKnown ? (root.vm.repo.dirty ? I18n.tr("Uncommitted changes") : I18n.tr("Clean")) : "..."
-                    font.pixelSize: Theme.fontSizeMedium
-                    color: root.vm.repoKnown && root.vm.repo.dirty ? Theme.warning : Theme.surfaceText
-                }
-                StyledText {
-                    text: I18n.tr("Git status")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
-            }
-        }
-
-        SettingsCard {
-            width: (parent.width - Theme.spacingM) / 2
-
-            Column {
-                width: parent.width
-                spacing: 2
-                StyledText {
-                    text: root.vm.repoKnown ? (root.vm.repo.rebuildPending ? I18n.tr("Rebuild pending") : I18n.tr("Up to date")) : "..."
-                    font.pixelSize: Theme.fontSizeMedium
-                    color: root.vm.repoKnown && root.vm.repo.rebuildPending ? Theme.warning : Theme.success
-                }
-                StyledText {
-                    text: I18n.tr("Running system")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
-            }
-        }
-    }
     SettingsCard {
         title: I18n.tr("Maintenance")
-        icon: "build_circle"
         subtitle: I18n.tr("One-click versions of vayume commands. Output streams into the log at the bottom.")
-        width: parent.width
+        meta: String(root.systemActions.length).padStart(2, "0")
         visible: root.systemActions.length > 0
 
         Repeater {
             model: root.systemActions
 
-            Column {
+            ActionRow {
                 required property var modelData
-                required property int index
-                width: parent.width
-                spacing: 0
-
-                Rectangle {
-                    visible: index > 0
-                    width: parent.width
-                    height: 1
-                    color: Theme.outline
-                    opacity: 0.12
-                }
-
-                ActionRow {
-                    vm: root.vm
-                    action: modelData
-                }
+                vm: root.vm
+                action: modelData
             }
         }
     }

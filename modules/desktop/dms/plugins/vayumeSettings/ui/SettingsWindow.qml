@@ -8,143 +8,139 @@ DankFloatingWindow {
     required property var vm
 
     title: I18n.tr("Vayume Settings")
-    implicitWidth: 820
-    implicitHeight: 620
-    minimumSize: Qt.size(600, 440)
+    implicitWidth: 1080
+    implicitHeight: 720
+    minimumSize: Qt.size(720, 480)
+    surfaceColor: Vayori.base
 
     property string activeCategory: "appearance"
-    onActiveCategoryChanged: root.vm.ensurePage(root.activeCategory)
+    onActiveCategoryChanged: {
+        root.vm.ensurePage(root.activeCategory);
+        contentFlick.contentY = 0;
+    }
     Component.onCompleted: root.vm.ensurePage(root.activeCategory)
-    property bool logCollapsed: false
-    readonly property bool logVisible: root.vm.rebuildLog.length > 0 && !root.logCollapsed
-    readonly property var categories: [
-        { id: "appearance", label: I18n.tr("Appearance"), icon: "palette" },
-        { id: "development", label: I18n.tr("Development"), icon: "code" },
-        { id: "applications", label: I18n.tr("Applications"), icon: "apps" },
-        { id: "defaults", label: I18n.tr("Default Apps"), icon: "open_in_new" },
-        { id: "options", label: I18n.tr("All Settings"), icon: "tune" },
-        { id: "users", label: I18n.tr("Users"), icon: "person" },
-        { id: "system", label: I18n.tr("System"), icon: "info" }
-    ]
 
-    Connections {
-        target: root.vm
-        function onRebuildBusyChanged() {
-            if (root.vm.rebuildBusy) root.logCollapsed = false;
-        }
+    function reveal(item) {
+        if (!item || !contentFlick.contentItem)
+            return;
+        let p = item;
+        while (p && p !== contentFlick.contentItem)
+            p = p.parent;
+        if (!p)
+            return;
+        const top = item.mapToItem(contentFlick.contentItem, 0, 0).y;
+        const bottom = top + item.height;
+        if (top < contentFlick.contentY + 12)
+            root.scrollTo(top - 24);
+        else if (bottom > contentFlick.contentY + contentFlick.height - 12)
+            root.scrollTo(bottom - contentFlick.height + 24);
     }
 
-    Column {
+    function scrollTo(y) {
+        contentFlick.contentY = Math.max(0, Math.min(y, contentFlick.contentHeight - contentFlick.height));
+    }
+
+    readonly property var groups: [
+        {
+            index: "01", label: I18n.tr("Look"),
+            items: [
+                { id: "appearance", label: I18n.tr("Appearance"), jp: "外観",
+                  subtitle: I18n.tr("Font, cursor, and icon theme - the parts of Vayume's look shared by GTK, kitty, SDDM, and DMS itself.") }
+            ]
+        },
+        {
+            index: "02", label: I18n.tr("Software"),
+            items: [
+                { id: "applications", label: I18n.tr("Applications"), jp: "アプリ",
+                  subtitle: I18n.tr("Every app Vayume can install and configure. An app's own options open underneath it.") },
+                { id: "development", label: I18n.tr("Development"), jp: "開発",
+                  subtitle: I18n.tr("Languages, editors and developer tools. Each language lists the enabled editors it integrates with.") },
+                { id: "defaults", label: I18n.tr("Default Apps"), jp: "既定",
+                  subtitle: I18n.tr("Which app opens links, folders and code files, and which one the Super+Return / Super+E / Super+C / Super+B keybinds start.") }
+            ]
+        },
+        {
+            index: "03", label: I18n.tr("System"),
+            items: [
+                { id: "options", label: I18n.tr("All Settings"), jp: "設定",
+                  subtitle: I18n.tr("System-level options a Vayume module declares - new ones show up here automatically.") },
+                { id: "users", label: I18n.tr("Users"), jp: "ユーザー",
+                  subtitle: I18n.tr("Every person configured on this machine (vayume.users).") },
+                { id: "system", label: I18n.tr("System"), jp: "システム",
+                  subtitle: I18n.tr("Read-only information about this host and its Vayume repository, plus one-click maintenance.") }
+            ]
+        }
+    ]
+
+    readonly property var categories: root.groups.reduce((all, g) => all.concat(g.items.map(i => Object.assign({ group: g.label, index: g.index }, i))), [])
+    readonly property var current: root.categories.find(c => c.id === root.activeCategory) || root.categories[0]
+
+    Item {
         anchors.fill: parent
-        spacing: 0
 
-        Row {
-            width: parent.width
-            height: parent.height - footer.height
-            spacing: 0
+        Sidebar {
+            id: sidebar
+            width: Vayori.sidebarWidth
+            height: parent.height - statusBar.height
+            vm: root.vm
+            groups: root.groups
+            categories: root.categories
+            activeCategory: root.activeCategory
+            onSelect: id => root.activeCategory = id
+        }
 
-            Item {
-                id: sidebar
-                width: 200
-                height: parent.height
+        Item {
+            id: main
+            anchors.left: sidebar.right
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: statusBar.top
 
-                Rectangle {
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    width: 1
-                    color: Theme.outline
-                    opacity: 0.2
-                }
+            readonly property real margin: width > 900 ? 44 : 28
+            readonly property real columnWidth: Math.min(width - margin * 2, Vayori.contentMaxWidth)
 
-                Column {
-                    width: parent.width - Theme.spacingS * 2
-                    anchors.top: parent.top
-                    anchors.topMargin: Theme.spacingM
-                    anchors.left: parent.left
-                    anchors.leftMargin: Theme.spacingS
-                    spacing: 2
+            readonly property bool pinHeader: height >= 600
+            readonly property Item focusItem: main.Window.activeFocusItem
+            onFocusItemChanged: root.reveal(main.focusItem)
 
-                    Column {
-                        width: parent.width
-                        spacing: 2
-
-                        StyledText {
-                            x: Theme.spacingM
-                            text: I18n.tr("Vayume")
-                            font.pixelSize: Theme.fontSizeLarge
-                            font.weight: Font.Bold
-                            color: Theme.surfaceText
-                        }
-
-                        StyledText {
-                            x: Theme.spacingM
-                            text: I18n.tr("NixOS control")
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceVariantText
-                        }
-                    }
-
-                    Item { width: 1; height: Theme.spacingS }
-
-                    Repeater {
-                        model: root.categories
-
-                        SidebarItem {
-                            required property var modelData
-                            label: modelData.label
-                            icon: modelData.icon
-                            active: root.activeCategory === modelData.id
-                            badgeCount: {
-                                if (modelData.id === "applications" && !root.vm.appsLoading)
-                                    return root.vm.apps.filter(a => a.enabled && a.category !== "development").length;
-                                if (modelData.id === "users" && !root.vm.usersLoading)
-                                    return Object.keys(root.vm.users).length;
-                                return 0;
-                            }
-                            onActivated: root.activeCategory = modelData.id
-                        }
-                    }
-                }
-
-                Column {
-                    width: parent.width - Theme.spacingS * 2
-                    anchors.left: parent.left
-                    anchors.leftMargin: Theme.spacingS
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: Theme.spacingS
-                    spacing: Theme.spacingXS
-
-                    Badge {
-                        label: {
-                            if (root.vm.saving) return I18n.tr("Saving...");
-                            if (root.vm.lastError) return I18n.tr("Error");
-                            if (!root.vm.repoKnown) return I18n.tr("Loading...");
-                            return root.vm.repo.rebuildPending ? I18n.tr("Rebuild required") : I18n.tr("Saved");
-                        }
-                        tone: {
-                            if (root.vm.saving) return "info";
-                            if (root.vm.lastError) return "error";
-                            if (!root.vm.repoKnown) return "neutral";
-                            return root.vm.repo.rebuildPending ? "warning" : "success";
-                        }
-                    }
-                }
+            Loader {
+                id: pinnedHeader
+                x: main.margin
+                y: 26
+                width: main.columnWidth
+                active: main.pinHeader
+                sourceComponent: headerComponent
             }
 
-            Flickable {
+            DankFlickable {
                 id: contentFlick
-                width: parent.width - sidebar.width
-                height: parent.height
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: main.pinHeader ? pinnedHeader.bottom : parent.top
+                anchors.topMargin: main.pinHeader ? 22 : 0
+                anchors.bottom: parent.bottom
                 contentWidth: width
-                contentHeight: pageLoader.item ? pageLoader.item.implicitHeight + Theme.spacingL * 2 : 0
+                contentHeight: pageLoader.y + (pageLoader.item ? pageLoader.item.implicitHeight : 0) + 36
                 clip: true
 
                 Loader {
+                    id: flowingHeader
+                    x: main.margin
+                    y: 22
+                    width: main.columnWidth
+                    active: !main.pinHeader
+                    sourceComponent: headerComponent
+                }
+
+                Loader {
                     id: pageLoader
-                    x: Theme.spacingL
-                    y: Theme.spacingL
-                    width: contentFlick.width - Theme.spacingL * 2
+                    x: main.margin
+                    y: flowingHeader.active ? flowingHeader.y + flowingHeader.height + 22 : 0
+                    width: main.columnWidth
+
+                    transform: Translate { id: pageShift }
+
+                    onLoaded: pageIn.restart()
 
                     sourceComponent: {
                         switch (root.activeCategory) {
@@ -159,140 +155,50 @@ DankFloatingWindow {
                         }
                     }
                 }
+
+                Rectangle {
+                    parent: contentFlick
+                    x: main.margin
+                    width: main.columnWidth
+                    height: 1
+                    color: Vayori.hairline
+                    opacity: main.pinHeader && contentFlick.contentY > 4 ? 1 : 0
+
+                    Behavior on opacity { NumberAnimation { duration: Vayori.fast } }
+                }
+
+                ParallelAnimation {
+                    id: pageIn
+                    NumberAnimation { target: pageLoader; property: "opacity"; from: 0; to: 1; duration: Vayori.normal; easing.type: Easing.OutCubic }
+                    NumberAnimation { target: pageShift; property: "y"; from: 6; to: 0; duration: Vayori.normal; easing.type: Easing.OutCubic }
+                }
             }
         }
 
-        Column {
-            id: footer
+        StatusBar {
+            id: statusBar
+            anchors.bottom: parent.bottom
             width: parent.width
-            spacing: 0
+            vm: root.vm
+        }
+    }
 
-            Rectangle {
-                width: parent.width
-                height: 1
-                color: Theme.outline
-                opacity: 0.2
-            }
+    Component {
+        id: headerComponent
 
-            Rectangle {
-                width: parent.width
-                height: root.logVisible ? 180 : 0
-                clip: true
-                color: Theme.surfaceContainerHighest
-                visible: height > 0
+        PageHeader {
+            jp: root.current.jp
+            group: root.current.group
+            index: root.current.index
+            title: root.current.label
+            subtitle: root.current.subtitle
+            meta: pageLoader.item && pageLoader.item.meta !== undefined ? pageLoader.item.meta : ""
 
-                Behavior on height { NumberAnimation { duration: 120 } }
-
-                Column {
-                    anchors.fill: parent
-                    anchors.margins: Theme.spacingS
-                    spacing: Theme.spacingXS
-
-                    Row {
-                        width: parent.width
-                        StyledText {
-                            width: parent.width - clearLogText.width - Theme.spacingS
-                            text: root.vm.rebuildBusy ? I18n.tr("Live output") : I18n.tr("Last output")
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceVariantText
-                        }
-                        StyledText {
-                            id: clearLogText
-                            text: I18n.tr("Clear")
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.primary
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.vm.clearRebuildLog()
-                            }
-                        }
-                    }
-
-                    ListView {
-                        id: rebuildLogView
-                        width: parent.width
-                        height: parent.height - Theme.fontSizeSmall * 1.6 - Theme.spacingXS
-                        clip: true
-                        model: root.vm.rebuildLog
-                        onCountChanged: positionViewAtEnd()
-
-                        delegate: StyledText {
-                            required property var modelData
-                            width: rebuildLogView.width
-                            text: modelData
-                            font.family: Theme.monoFontFamily
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceText
-                            wrapMode: Text.Wrap
-                        }
-                    }
-                }
-            }
-
-            Item {
-                width: parent.width
-                height: 56
-
-                StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left
-                    anchors.leftMargin: Theme.spacingM
-                    anchors.right: logToggle.left
-                    anchors.rightMargin: Theme.spacingM
-                    text: {
-                        if (root.vm.lastError) return I18n.tr("Last change failed - see the page where it happened, or run `vayume config validate` in a terminal.");
-                        if (root.vm.saving) return I18n.tr("Saving changes...");
-                        if (root.vm.rebuildBusy) return root.vm.rebuildStatus;
-                        if (root.vm.repoKnown && root.vm.repo.rebuildPending) return I18n.tr("Changes saved - rebuild to apply them.");
-                        if (root.vm.rebuildStatus.length > 0) return root.vm.rebuildStatus;
-                        return I18n.tr("Everything up to date.");
-                    }
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                    elide: Text.ElideRight
-                }
-
-                StyledText {
-                    id: logToggle
-                    visible: root.vm.rebuildLog.length > 0
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.right: rebuildButton.left
-                    anchors.rightMargin: Theme.spacingM
-                    text: root.logCollapsed ? I18n.tr("Show Log") : I18n.tr("Hide Log")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.primary
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.logCollapsed = !root.logCollapsed
-                    }
-                }
-
-                StyledRect {
-                    id: rebuildButton
-                    width: 140
-                    height: 36
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.right: parent.right
-                    anchors.rightMargin: Theme.spacingM
-                    radius: Theme.cornerRadius
-                    color: root.vm.rebuildBusy ? Theme.surfaceContainerLow : Theme.primary
-
-                    StyledText {
-                        anchors.centerIn: parent
-                        text: root.vm.rebuildBusy ? I18n.tr("Rebuilding...") : I18n.tr("Rebuild Now")
-                        color: root.vm.rebuildBusy ? Theme.surfaceVariantText : Theme.onPrimary
-                        font.pixelSize: Theme.fontSizeSmall
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: !root.vm.rebuildBusy
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.vm.rebuild()
-                    }
-                }
+            TextButton {
+                icon: "refresh"
+                text: I18n.tr("Reload")
+                implicitHeight: 24
+                onClicked: root.vm.refreshAll()
             }
         }
     }

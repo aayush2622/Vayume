@@ -37,6 +37,7 @@ If this saves you an evening, a star costs nothing. ⭐
 - [Keybinds](#keybinds)
 - [Project Layout](#project-layout)
 - [Documentation](#documentation)
+- [Vayori](#vayori)
 - [Credits](#credits)
 - [License](#license)
 - [Known Caveats](#known-caveats)
@@ -223,6 +224,18 @@ modules/
 [**docs/CONFIGURATION.md**](docs/CONFIGURATION.md) is the index — one page per module, in the order you'd meet them, each linking to the next so it reads straight through. Start with **[Getting Started](docs/getting-started.md)**.
 
 The `.nix` files stay comment-free; all the "why" lives in those pages.
+
+---
+
+## Vayori
+
+The look of Vayume Settings has a name of its own: **Vayori**. It is an invented word, not Japanese vocabulary; the two characters below shaped its mood and are not a spelling of it:
+
+- **Va**: the personal part, one person's machine configured by hand
+- **夜** (*yoru*, night): dark, calm and a little reflective
+- **頼** (*tayoru*, to rely on): dependable, since every change goes through Nix and can be rolled back
+
+In practice that means quiet, nocturnal and precise: hairline panels instead of big rounded cards, typography instead of colour for hierarchy, colours still taken from the wallpaper theme, and a few small Japanese labels (外観, 設定) next to the English ones. How it is built is in [docs/desktop-dms.md](docs/desktop-dms.md#vayori-the-settings-design-language).
 
 ---
 
