@@ -75,3 +75,7 @@ grew enough config to earn its own module.
 ---
 
 [← AndroidStudio.nix](apps-dev-androidstudio.md) · [Index](CONFIGURATION.md) · [Zed.nix →](apps-dev-zed.md)
+
+## Settings are written as Nix attributes
+
+The base VS Code settings in `Vscode.nix` are plain nested Nix attributes (`editor.fontSize = 15;`) instead of quoted strings (`"editor.fontSize" = 15;`). `flattenSettings` joins the nesting back into the dotted keys VS Code expects. A setting whose value is itself a JSON object (`workbench.editorAssociations`, `github.copilot.enable`, `editor.tokenColorCustomizations`, `editor.semanticTokenColorCustomizations`) is wrapped in `object { ... }` so it is kept whole instead of being flattened. Language modules still contribute their own dotted string keys and are merged on top unchanged. The generated `settings.json` was compared before and after the change and is identical.
