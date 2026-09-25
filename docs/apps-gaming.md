@@ -102,6 +102,30 @@ declared `force = true`, so a manual tweak through Lutris's own
 Preferences UI gets reset on the next rebuild - same trade-off as DMS's
 `settings.json`.
 
+**One games layout shared by every launcher.** Steam's library is
+`~/Games/Steam` (a `steamLibrary` activation step links the default
+`steamapps` there on a fresh install), Heroic installs to
+`~/Games/Heroic`, and all of them share `~/Games/.wineprefix` and the
+shader cache. GE-Proton comes from nixpkgs and is linked into
+`~/.local/share/Steam/compatibilitytools.d`, the one folder Steam and
+Heroic both scan (Lutris/umu can point `PROTONPATH` at it), and Heroic's
+`downloadProtonToSteam` is on so anything it fetches lands there too.
+Heroic's real settings are `~/.config/heroic/config.json`
+(`defaultSettings`), not `store/config.json`; `heroicSettings` writes
+both.
+
+**Steam games appear in Heroic on their own**: a user path unit watches
+both `steamapps` folders and, with a run at login, `steam-heroic-sync`
+adds every installed Steam game (all library
+folders, minus Proton/runtime entries) to Heroic as a sideloaded game
+that launches through `steam steam://rungameid/<id>`, with Steam
+artwork. If Heroic is open at that moment the run is skipped (it rewrites its library on exit) and happens on the next Steam change or login.
+Lutris imports installed Steam games itself, but only after the
+owned-games sync succeeds: `do_reload` calls `load()` before
+`add_installed_games()`, so "Failed to load games" also blocks the local
+import. That sync needs the Steam profile *and* "Game details" set to
+public (Steam → Profile → Edit → Privacy Settings).
+
 **`~/Games` shows up in the file picker sidebar** via a GTK bookmarks
 file, appended to rather than replacing whatever else lives there
 already - no reason to nuke someone's other bookmarks for one entry.

@@ -48,8 +48,18 @@
     grep -qxF "$GAMES_URI" "$BOOKMARKS" 2>/dev/null || run sh -c "printf '%s\n' \"$GAMES_URI\" >> \"$BOOKMARKS\""
   '';
 
+  home.activation.steamLibrary = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    STEAMAPPS="$HOME/.local/share/Steam/steamapps"
+    GAMES_STEAM=${lib.escapeShellArg "${gamesDir}/Steam/steamapps"}
+    if [ ! -e "$STEAMAPPS" ] && [ ! -L "$STEAMAPPS" ]; then
+      run mkdir -p "$GAMES_STEAM" "$(dirname "$STEAMAPPS")"
+      run ln -s "$GAMES_STEAM" "$STEAMAPPS"
+    fi
+  '';
+
   home.activation.heroicSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     HEROIC_CONFIG="$HOME/.config/heroic/store/config.json"
+    HEROIC_MAIN_CONFIG="$HOME/.config/heroic/config.json"
     HEROIC_PREFIX=${lib.escapeShellArg "${gamesDir}/.wineprefix"}
     run mkdir -p "$(dirname "$HEROIC_CONFIG")" "$HEROIC_PREFIX"
 
@@ -73,6 +83,23 @@
     else
       echo "heroicSettings: jq merge failed, leaving $HEROIC_CONFIG untouched" >&2
       rm -f "$HEROIC_CONFIG_TMP"
+    fi
+
+    if [ -s "$HEROIC_MAIN_CONFIG" ] && ${pkgs.jq}/bin/jq -e . "$HEROIC_MAIN_CONFIG" > /dev/null 2>&1; then
+      HEROIC_MAIN_TMP="$HEROIC_MAIN_CONFIG.vayume-tmp"
+      if ${pkgs.jq}/bin/jq \
+        --arg installPath ${lib.escapeShellArg "${gamesDir}/Heroic"} \
+        --arg winePrefix "$HEROIC_PREFIX" \
+        --arg steamPath "$HOME/.local/share/Steam" \
+        '.defaultSettings.defaultInstallPath = $installPath
+         | .defaultSettings.winePrefix = $winePrefix
+         | .defaultSettings.defaultSteamPath = $steamPath
+         | .defaultSettings.downloadProtonToSteam = true' \
+        "$HEROIC_MAIN_CONFIG" > "$HEROIC_MAIN_TMP" && [ -s "$HEROIC_MAIN_TMP" ]; then
+        run mv -f "$HEROIC_MAIN_TMP" "$HEROIC_MAIN_CONFIG"
+      else
+        rm -f "$HEROIC_MAIN_TMP"
+      fi
     fi
   '';
 }
