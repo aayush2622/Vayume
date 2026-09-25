@@ -151,8 +151,8 @@
           description = ''
             Command basenames (shell globs) that `vayume box run` starts
             under XWayland instead of Wayland, for apps that only go
-            fullscreen or resize correctly on X11. They bypass the focus
-            proxy.
+            fullscreen or resize correctly on X11. They go through the
+            X11 focus proxy instead of the Wayland one.
           '';
         };
 
@@ -235,9 +235,11 @@
       ];
 
       proxySocket = "wayland-focus-proxy";
+      x11ProxyDisplay = ":99";
 
       guiEnv = lib.concatStringsSep " " [
         "WAYLAND_DISPLAY=${proxySocket}"
+        "DISPLAY=${x11ProxyDisplay}"
         "ELECTRON_OZONE_PLATFORM_HINT=auto"
         "MOZ_ENABLE_WAYLAND=1"
       ];
@@ -302,7 +304,7 @@
           enterCmd = ''${pkgs.coreutils}/bin/env ${guiEnv} ${pkgs.distrobox}/bin/distrobox enter "${boxName}"'';
           boxEnter = "${enterCmd} --";
 
-          x11Enter = ''${pkgs.coreutils}/bin/env -u WAYLAND_DISPLAY ELECTRON_OZONE_PLATFORM_HINT=x11 GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb ${pkgs.distrobox}/bin/distrobox enter "${boxName}" --'';
+          x11Enter = ''${pkgs.coreutils}/bin/env -u WAYLAND_DISPLAY DISPLAY=${x11ProxyDisplay} ELECTRON_OZONE_PLATFORM_HINT=x11 GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb ${pkgs.distrobox}/bin/distrobox enter "${boxName}" --'';
 
           mkEnsureDeps = deps: ''
             ${boxEnter} sh -c '
@@ -678,6 +680,19 @@
         meta.description = "Generic Wayland relay that spoofs perpetual keyboard/pointer focus";
       };
 
+      x11FocusProxy = pkgs.stdenv.mkDerivation {
+        pname = "x11-focus-proxy";
+        version = "0.1.0";
+        src = ./x11-focus-proxy;
+
+        installPhase = ''
+          mkdir -p $out/bin
+          cp x11-focus-proxy $out/bin/
+        '';
+
+        meta.description = "X11 relay that hides FocusOut/LeaveNotify from the client";
+      };
+
       wlFocusProxyWrapper = pkgs.writeShellScriptBin "wl-focus-proxy-wrapper" ''
         set -u
 
@@ -727,6 +742,7 @@
         home.packages = [
           pkgs.distrobox
           wlFocusProxy
+          x11FocusProxy
         ];
 
         vayume.commands = boxCommands;
@@ -743,6 +759,23 @@
           ];
           Service = {
             ExecStart = "${wlFocusProxyWrapper}/bin/wl-focus-proxy-wrapper";
+            Restart = "always";
+            RestartSec = 2;
+          };
+        };
+
+        systemd.user.services.x11-focus-proxy = {
+          Unit = {
+            Description = "X11 relay that hides focus loss from Distrobox apps";
+            After = [ "graphical-session.target" ];
+            PartOf = [ "graphical-session.target" ];
+          };
+          Install.WantedBy = [
+            "graphical-session.target"
+            "default.target"
+          ];
+          Service = {
+            ExecStart = "${x11FocusProxy}/bin/x11-focus-proxy --listen ${lib.removePrefix ":" x11ProxyDisplay}";
             Restart = "always";
             RestartSec = 2;
           };
