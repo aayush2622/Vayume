@@ -114,9 +114,6 @@
           };
 
           gtk4.theme = null;
-          gtk3.extraConfig = {
-            gtk-application-prefer-dark-theme = true;
-          };
 
           iconTheme = {
             name = theme.iconTheme;
