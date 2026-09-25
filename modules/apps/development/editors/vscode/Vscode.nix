@@ -109,62 +109,85 @@ in
       );
       marketplaceExtensions = manualMarketplaceExtensions ++ autoMarketplaceExtensions;
 
-      vscodeSettings = lib.recursiveUpdate ({
-        "security.workspace.trust.untrustedFiles" = "open";
-        "files.autoSave" = "onWindowChange";
+      object = value: {
+        _vscodeObject = value;
+      };
 
-        "editor.fontFamily" = vayumeTheme.font;
-        "terminal.integrated.fontFamily" = vayumeTheme.font;
-        "debug.console.fontFamily" = vayumeTheme.font;
-        "markdown.preview.fontFamily" = vayumeTheme.font;
-        "scm.inputFontFamily" = vayumeTheme.font;
-        "editor.codeLensFontFamily" = vayumeTheme.font;
-        "editor.inlayHints.fontFamily" = vayumeTheme.font;
-        "editor.fontLigatures" = true;
-        "editor.fontSize" = 15;
-        "editor.fontWeight" = "normal";
-        "editor.smoothScrolling" = true;
-        "editor.hover.delay" = 300;
-        "editor.parameterHints.enabled" = true;
-        "editor.renderWhitespace" = "boundary";
-        "editor.renderControlCharacters" = false;
-        "editor.guides.indentation" = true;
-        "editor.unicodeHighlight.nonBasicASCII" = false;
+      flattenSettings =
+        let
+          go =
+            prefix: attrs:
+            lib.concatMapAttrs (
+              name: value:
+              if value ? _vscodeObject then
+                { ${prefix + name} = value._vscodeObject; }
+              else if lib.isAttrs value then
+                go "${prefix}${name}." value
+              else
+                { ${prefix + name} = value; }
+            ) attrs;
+        in
+        go "";
 
-        "editor.gotoLocation.multipleDefinitions" = "goto";
-        "editor.gotoLocation.multipleDeclarations" = "goto";
-        "editor.foldingStrategy" = "indentation";
-        "editor.showFoldingControls" = "always";
+      vscodeSettings = lib.recursiveUpdate (flattenSettings {
+        security.workspace.trust.untrustedFiles = "open";
+        files.autoSave = "onWindowChange";
 
-        "workbench.colorTheme" = "Dynamic Base16 DankShell";
-        "workbench.iconTheme" = "vscode-jetbrains-icon-theme-2023-dark";
-        "workbench.editor.showIcons" = true;
-        "workbench.editor.enablePreview" = false;
-        "workbench.editor.tabSizing" = "shrink";
-        "workbench.editor.tabCloseButton" = "right";
-        "workbench.editor.highlightModifiedTabs" = true;
-        "workbench.editor.tabActionLocation" = "right";
-        "workbench.secondarySideBar.defaultVisibility" = "hidden";
-        "workbench.list.smoothScrolling" = true;
-        "workbench.editorAssociations" = {
+        editor.fontFamily = vayumeTheme.font;
+        terminal.integrated.fontFamily = vayumeTheme.font;
+        debug.console.fontFamily = vayumeTheme.font;
+        markdown.preview.fontFamily = vayumeTheme.font;
+        scm.inputFontFamily = vayumeTheme.font;
+        editor.codeLensFontFamily = vayumeTheme.font;
+        editor.inlayHints.fontFamily = vayumeTheme.font;
+        editor.fontLigatures = true;
+        editor.fontSize = 15;
+        editor.fontWeight = "normal";
+        editor.smoothScrolling = true;
+        editor.hover.delay = 300;
+        editor.parameterHints.enabled = true;
+        editor.renderWhitespace = "boundary";
+        editor.renderControlCharacters = false;
+        editor.guides.indentation = true;
+        editor.unicodeHighlight.nonBasicASCII = false;
+
+        editor.gotoLocation.multipleDefinitions = "goto";
+        editor.gotoLocation.multipleDeclarations = "goto";
+        editor.foldingStrategy = "indentation";
+        editor.showFoldingControls = "always";
+
+        window.autoDetectColorScheme = true;
+        workbench.preferredDarkColorTheme = "Dynamic Base16 DankShell (Dark)";
+        workbench.preferredLightColorTheme = "Dynamic Base16 DankShell (Light)";
+        workbench.colorTheme = "Dynamic Base16 DankShell";
+        workbench.iconTheme = "vscode-jetbrains-icon-theme-2023-dark";
+        workbench.editor.showIcons = true;
+        workbench.editor.enablePreview = false;
+        workbench.editor.tabSizing = "shrink";
+        workbench.editor.tabCloseButton = "right";
+        workbench.editor.highlightModifiedTabs = true;
+        workbench.editor.tabActionLocation = "right";
+        workbench.secondarySideBar.defaultVisibility = "hidden";
+        workbench.list.smoothScrolling = true;
+        workbench.editorAssociations = object {
           "*.copilotmd" = "vscode.markdown.preview.editor";
           "{git,gitlens,chat-editing-snapshot-text-model,copilot,git-graph,git-graph-3}:/**/*.qrc" =
             "default";
           "*.qrc" = "qt-core.qrcEditor";
         };
 
-        "qt-core.showWelcomePageOnActivation" = false;
+        qt-core.showWelcomePageOnActivation = false;
 
-        "explorer.compactFolders" = false;
-        "explorer.confirmDelete" = false;
-        "explorer.confirmDragAndDrop" = false;
+        explorer.compactFolders = false;
+        explorer.confirmDelete = false;
+        explorer.confirmDragAndDrop = false;
 
-        "errorLens.enabled" = true;
-        "errorLens.fontWeight" = "bold";
-        "errorLens.messageBackgroundMode" = "message";
+        errorLens.enabled = true;
+        errorLens.fontWeight = "bold";
+        errorLens.messageBackgroundMode = "message";
 
-        "github.copilot.nextEditSuggestions.enabled" = true;
-        "github.copilot.enable" = {
+        github.copilot.nextEditSuggestions.enabled = true;
+        github.copilot.enable = object {
           "*" = true;
           plaintext = false;
           markdown = false;
@@ -178,7 +201,7 @@ in
           c = false;
         };
 
-        "editor.tokenColorCustomizations" = {
+        editor.tokenColorCustomizations = object {
           textMateRules = [
             {
               scope = "comment";
@@ -306,7 +329,7 @@ in
           ];
         };
 
-        "editor.semanticTokenColorCustomizations" = {
+        editor.semanticTokenColorCustomizations = object {
           enabled = true;
           rules = {
             enumMember = "#d19a66";
@@ -315,15 +338,15 @@ in
           };
         };
 
-        "database-client.autoSync" = true;
+        database-client.autoSync = true;
 
-        "code-runner.runInTerminal" = true;
+        code-runner.runInTerminal = true;
 
-        "claudeCode.preferredLocation" = "panel";
+        claudeCode.preferredLocation = "panel";
 
-        "git.enableSmartCommit" = true;
-        "git.autofetch" = true;
-        "git.confirmSync" = false;
+        git.enableSmartCommit = true;
+        git.autofetch = true;
+        git.confirmSync = false;
       }) languageSettings;
 
       vscodeKeybindings = [
