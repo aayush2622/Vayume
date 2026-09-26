@@ -32,7 +32,7 @@ So there is no system setting that frees 20 GB; most of it is your data and your
 
 ### `vayume disk`
 
-Read-only, about half a second. Shows the filesystem, the regenerable caches with sizes, the biggest other caches (managed by their apps and never touched), the size of the trash and the largest downloads, coredumps, journal size and how many system generations exist. `--full` also scans your project folders for build output and counts the Nix garbage `gc` would delete (slower). It is also a button, Maintenance, in Vayume Settings.
+Read-only, about half a second. Shows the filesystem, the regenerable caches with sizes, the biggest other caches (managed by their apps and never touched), the size of the trash and the largest downloads, coredumps, journal size and how many system generations exist. `--full` also scans your project folders for build output and counts the Nix garbage `gc` would delete (slower). Each section is sorted largest first, and paths too long for the column are shortened in the middle so the sizes stay aligned. It is also a button on the Storage page in Vayume Settings, next to a bar showing how full the disk is.
 
 ### `vayume clean`
 
