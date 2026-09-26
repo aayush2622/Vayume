@@ -96,6 +96,19 @@
             };
             Install.WantedBy = [ "graphical-session.target" ];
           };
+
+          systemd.user.services.vayume-media-inhibit = {
+            Unit = {
+              Description = "Hold an idle inhibitor while audio or video is playing";
+              After = [ "graphical-session.target" ];
+              PartOf = [ "graphical-session.target" ];
+            };
+            Service = {
+              ExecStart = "${pkgs.wayland-pipewire-idle-inhibit}/bin/wayland-pipewire-idle-inhibit";
+              Restart = "on-failure";
+            };
+            Install.WantedBy = [ "graphical-session.target" ];
+          };
           xdg.configFile = {
             "DankMaterialShell/settings.json".force = true;
             "DankMaterialShell/plugin_settings.json".force = true;
