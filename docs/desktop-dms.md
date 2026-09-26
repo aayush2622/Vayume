@@ -966,6 +966,14 @@ built package in a headless sway window with live DMS services and a stub
 PAM object (typing, busy spinner, failed attempt); the real
 `WlSessionLock` path was not exercised there.
 
+**Typing goes straight to the password field.** `LockSurface` is a
+`FocusScope` whose content item has `focus: true`; `VayoriLockContent` was a
+plain `Item`, so its `focus: true` and the scene's competed in that one scope
+and the field never got active focus until clicked. It is a `FocusScope` now,
+the scene focuses the field when it appears and whenever the field is enabled
+again after a failed attempt, and a key typed while something else has focus
+is moved into the field.
+
 ### Overview, search and shortcuts
 
 The window opens on **Overview** (or on whichever page was open last in
