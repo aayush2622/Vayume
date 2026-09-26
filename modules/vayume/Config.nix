@@ -499,11 +499,12 @@
           }
 
           cmd_apps_list() {
-            local data available descriptions configured categories cat dir name
+            local data available descriptions meta configured categories cat dir name
             data=$(nix eval --impure --json --expr \
-              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; descriptions = self.appDescriptions; }")
+              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; descriptions = self.appDescriptions; meta = self.appMeta or { }; }")
             available=$(jq '.available' <<<"$data")
             descriptions=$(jq '.descriptions' <<<"$data")
+            meta=$(jq '.meta' <<<"$data")
             configured=$(awk -v mode=list -f ${appsAwk} "$config_file" \
               | jq -R -s '
                   split("\n") | map(select(length > 0) | split(" ")) |
@@ -519,19 +520,23 @@
             )
 
             jq -n --argjson available "$available" --argjson configured "$configured" \
-              --argjson categories "$categories" --argjson descriptions "$descriptions" '
+              --argjson categories "$categories" --argjson descriptions "$descriptions" --argjson meta "$meta" '
               $available | map(. as $n | {
                 name: $n,
                 enabled: ($configured[$n] // false),
                 configured: ($configured | has($n)),
                 category: ($categories[$n] // "utils"),
-                description: ($descriptions[$n] // "")
+                description: ($descriptions[$n] // ""),
+                label: ($meta[$n].label // $n),
+                icon: ($meta[$n].icon // ""),
+                symbol: ($meta[$n].symbol // "apps"),
+                section: ($meta[$n].section // "Other")
               })
             '
           }
 
           cmd_development_list() {
-            local configured available descriptions data languages editors tools integrations
+            local configured available descriptions meta data languages editors tools integrations
             configured=$(awk -v mode=list -f ${appsAwk} "$config_file" \
               | jq -R -s '
                   split("\n") | map(select(length > 0) | split(" ")) |
@@ -539,10 +544,11 @@
                 ')
 
             data=$(nix eval --impure --json --expr \
-              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; integrations = builtins.mapAttrs (_: v: builtins.attrNames v) self.devLanguages; descriptions = self.appDescriptions; }")
+              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; integrations = builtins.mapAttrs (_: v: builtins.attrNames v) self.devLanguages; descriptions = self.appDescriptions; meta = self.appMeta or { }; }")
             available=$(jq '.available' <<<"$data")
             integrations=$(jq '.integrations' <<<"$data")
             descriptions=$(jq '.descriptions' <<<"$data")
+            meta=$(jq '.meta' <<<"$data")
 
             languages=$(find "$flake_dir/modules/apps/development/languages" -name "*.nix" -printf "%f\n" 2>/dev/null | sed -E 's/\.nix$//' | sort)
             editors=$(find "$flake_dir/modules/apps/development/editors" -name "*.nix" -printf "%f\n" 2>/dev/null | sed -E 's/\.nix$//' | sort)
@@ -554,9 +560,9 @@
               --argjson languages "$(printf '%s' "$languages" | jq -R -s 'split("\n") | map(select(length > 0))')" \
               --argjson editors "$(printf '%s' "$editors" | jq -R -s 'split("\n") | map(select(length > 0))')" \
               --argjson tools "$(printf '%s' "$tools" | jq -R -s 'split("\n") | map(select(length > 0))')" \
-              --argjson configured "$configured" --argjson integrations "$integrations" --argjson descriptions "$descriptions" '
+              --argjson configured "$configured" --argjson integrations "$integrations" --argjson descriptions "$descriptions" --argjson meta "$meta" '
                 def realAppsOnly: map(select(. as $n | $available | index($n) != null));
-                def entry: { name: ., enabled: ($configured[.] // false), description: ($descriptions[.] // "") };
+                def entry: { name: ., enabled: ($configured[.] // false), description: ($descriptions[.] // ""), label: ($meta[.].label // .), icon: ($meta[.].icon // ""), symbol: ($meta[.].symbol // "code") };
                 ($languages | realAppsOnly) as $languages |
                 ($editors | realAppsOnly) as $editors |
                 ($tools | realAppsOnly) as $tools |

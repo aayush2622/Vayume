@@ -1,5 +1,11 @@
 {
   flake.appDescriptions.CcSwitch = "cc-switch: quick-switch between Claude API provider profiles.";
+  flake.appMeta.CcSwitch = {
+    label = "CC Switch";
+    icon = "cc-switch";
+    symbol = "swap_horiz";
+    section = "Tools";
+  };
 
   flake.homeModules.apps.CcSwitch =
     { pkgs, lib, ... }:

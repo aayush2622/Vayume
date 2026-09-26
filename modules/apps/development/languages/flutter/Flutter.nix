@@ -65,6 +65,18 @@
 
   flake.appDescriptions.Flutter = "Flutter/Dart SDK and editor integrations.";
 
+  flake.appMeta.Flutter = {
+
+    label = "Flutter / Dart";
+
+    icon = "";
+
+    symbol = "flutter_dash";
+
+    section = "Languages";
+
+  };
+
   flake.homeModules.apps.Flutter =
     {
       inputs,

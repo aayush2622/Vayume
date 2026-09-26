@@ -30,6 +30,18 @@
 
   flake.appDescriptions.Qt = "Qt/QML development tools and editor integrations.";
 
+  flake.appMeta.Qt = {
+
+    label = "Qt / QML";
+
+    icon = "qtcreator";
+
+    symbol = "widgets";
+
+    section = "Languages";
+
+  };
+
   flake.homeModules.apps.Qt = { pkgs, ... }: {
     home.packages = with pkgs; [ kdePackages.qtdeclarative ];
   };

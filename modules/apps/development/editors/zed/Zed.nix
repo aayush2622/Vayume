@@ -1,5 +1,11 @@
 { self, ... }: {
   flake.appDescriptions.Zed = "Zed editor, with extensions/tasks/settings pulled in per enabled language.";
+  flake.appMeta.Zed = {
+    label = "Zed";
+    icon = "zed";
+    symbol = "code";
+    section = "Editors";
+  };
 
   flake.homeModules.apps.Zed =
     {

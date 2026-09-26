@@ -1,5 +1,11 @@
 {
   flake.appDescriptions.Bitwarden = "Bitwarden desktop app plus rbw (CLI vault, GPG-backed).";
+  flake.appMeta.Bitwarden = {
+    label = "Bitwarden";
+    icon = "bitwarden";
+    symbol = "password";
+    section = "Security";
+  };
 
   flake.homeModules.apps.Bitwarden =
     {

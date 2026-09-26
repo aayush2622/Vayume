@@ -1,5 +1,11 @@
 { self, ... }: {
   flake.appDescriptions.Terminal = "kitty terminal, zsh, starship prompt, and fastfetch on launch.";
+  flake.appMeta.Terminal = {
+    label = "Terminal (kitty)";
+    icon = "kitty";
+    symbol = "terminal";
+    section = "System";
+  };
 
   flake.homeModules.apps.Terminal =
     {

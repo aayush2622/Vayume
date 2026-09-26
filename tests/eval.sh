@@ -64,7 +64,7 @@ while IFS= read -r -d '' f; do
 done < <(find "$work" -name '*.md' -print0)
 [ "$broken" = 0 ]
 
-step "app registries agree (homeModules.apps / appDescriptions / devLanguages / pluginPins)"
+step "app registries agree (homeModules.apps / appDescriptions / appMeta / devLanguages / pluginPins)"
 nix_ eval --impure --json --expr "
   let
     f = builtins.getFlake \"path:$work\";
@@ -72,6 +72,8 @@ nix_ eval --impure --json --expr "
     problems = {
       noDescription = builtins.filter (n: !(f.appDescriptions ? \${n})) (builtins.attrNames f.homeModules.apps);
       descriptionWithoutApp = notApp f.appDescriptions;
+      noMeta = builtins.filter (n: !(f.appMeta ? \${n})) (builtins.attrNames f.homeModules.apps);
+      metaWithoutApp = notApp f.appMeta;
       languageWithoutApp = notApp f.devLanguages;
       pinsWithoutApp = notApp f.pluginPins;
     };

@@ -25,6 +25,18 @@
 
   flake.appDescriptions.Rust = "Rust toolchain and editor integrations (rust-analyzer, cargo tasks).";
 
+  flake.appMeta.Rust = {
+
+    label = "Rust";
+
+    icon = "rust";
+
+    symbol = "settings_suggest";
+
+    section = "Languages";
+
+  };
+
   flake.homeModules.apps.Rust = { pkgs, ... }: {
     home.packages = with pkgs; [
 
