@@ -66,6 +66,18 @@ in
 
   flake.appDescriptions.AndroidStudio = "Android Studio, with plugins pulled in per enabled language.";
 
+  flake.appMeta.AndroidStudio = {
+
+    label = "Android Studio";
+
+    icon = "android-studio";
+
+    symbol = "android";
+
+    section = "Editors";
+
+  };
+
   flake.homeModules.apps.AndroidStudio =
     {
       pkgs,

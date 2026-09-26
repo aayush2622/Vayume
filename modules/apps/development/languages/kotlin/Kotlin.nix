@@ -51,6 +51,18 @@
 
   flake.appDescriptions.Kotlin = "Kotlin/Kotlin-JVM toolchain and editor integrations.";
 
+  flake.appMeta.Kotlin = {
+
+    label = "Kotlin";
+
+    icon = "text-x-kotlin";
+
+    symbol = "data_object";
+
+    section = "Languages";
+
+  };
+
   flake.homeModules.apps.Kotlin = { pkgs, ... }: {
     home.packages = with pkgs; [
       kotlin

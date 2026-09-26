@@ -66,6 +66,18 @@ in
 
   flake.appDescriptions.Cpp = "C/C++ toolchain: gcc, make, and clang-tools.";
 
+  flake.appMeta.Cpp = {
+
+    label = "C / C++";
+
+    icon = "text-x-c++src";
+
+    symbol = "data_object";
+
+    section = "Languages";
+
+  };
+
   flake.homeModules.apps.Cpp = { pkgs, ... }: {
     home.packages = with pkgs; [
       gcc

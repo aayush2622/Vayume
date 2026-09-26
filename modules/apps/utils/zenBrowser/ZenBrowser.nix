@@ -107,6 +107,18 @@ in
 
   flake.appDescriptions.ZenBrowser = "Zen Browser with a curated set of extensions preinstalled.";
 
+  flake.appMeta.ZenBrowser = {
+
+    label = "Zen Browser";
+
+    icon = "zen";
+
+    symbol = "public";
+
+    section = "Internet";
+
+  };
+
   flake.homeModules.apps.ZenBrowser =
     {
       pkgs,

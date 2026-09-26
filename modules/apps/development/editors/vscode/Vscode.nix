@@ -47,6 +47,18 @@ in
 
   flake.appDescriptions.Vscode = "VS Code, with extensions pulled in per enabled language.";
 
+  flake.appMeta.Vscode = {
+
+    label = "VS Code";
+
+    icon = "vscode";
+
+    symbol = "code";
+
+    section = "Editors";
+
+  };
+
   flake.homeModules.apps.Vscode =
     {
       pkgs,

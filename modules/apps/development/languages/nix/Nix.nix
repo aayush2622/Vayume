@@ -58,6 +58,18 @@ in
 
   flake.appDescriptions.Nix = "Nix language tooling: nixd and nil language servers, nixfmt, editor integrations.";
 
+  flake.appMeta.Nix = {
+
+    label = "Nix";
+
+    icon = "nix-snowflake";
+
+    symbol = "ac_unit";
+
+    section = "Languages";
+
+  };
+
   flake.homeModules.apps.Nix = { pkgs, ... }: {
     home.packages = with pkgs; [
       nil
