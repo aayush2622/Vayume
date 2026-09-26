@@ -33,6 +33,24 @@
             "toggle"
           ];
         };
+        "Mod+H" = titled "Show or Hide the Top Bar" {
+          spawn = [
+            "dms"
+            "ipc"
+            "call"
+            "bar"
+            "toggle"
+            "index"
+            "0"
+          ];
+        };
+        "Mod+D" = titled "Show or Hide Desktop Widgets" {
+          spawn = [
+            "vayume"
+            "widgets"
+            "toggle"
+          ];
+        };
         "Mod+V" = titled "Toggle Clipboard History" {
           spawn = [
             "dms"

@@ -31,6 +31,7 @@
       imports = [
         ./_rebuild.nix
         ./_barStyle.nix
+        ./_desktopToggle.nix
         ./_shellPatch.nix
         ./plugins/_tor.nix
         ./plugins/_vayumeSettings.nix

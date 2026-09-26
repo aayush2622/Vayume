@@ -256,6 +256,8 @@
             (bindBare "ALT + V" (spawn (lib.getExe typeClipboard)) { })
             (bind "COMMA" (dms "settings toggle"))
             (bind "L" (dms "lock lock"))
+            (bind "H" (dms "bar toggle index 0"))
+            (bind "D" (spawn "vayume widgets toggle"))
             (bind "SHIFT + W" (spawn "dms ipc wallpaperCarousel open"))
 
             (bind "Q" (lua "hl.dsp.window.close()"))
