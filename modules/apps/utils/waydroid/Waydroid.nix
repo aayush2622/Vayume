@@ -1,4 +1,13 @@
 {
+  flake.appMeta.Waydroid = {
+    description = "Waydroid: Android apps in a container, with the Android 11 images and waydroid-script.";
+    label = "Android (Waydroid)";
+    icon = "waydroid";
+    symbol = "android";
+    section = "Containers";
+  };
+  flake.homeModules.apps.Waydroid = { };
+
   flake.nixosModules.Waydroid =
     {
       pkgs,
@@ -143,63 +152,63 @@
       '';
     in
     {
-      virtualisation.waydroid = {
-        enable = true;
-        package = waydroidPackage;
-      };
+      config = lib.mkIf config.vayume.apps.Waydroid.enable {
+        virtualisation.waydroid = {
+          enable = true;
+          package = waydroidPackage;
+        };
 
-      environment.etc."waydroid-extra/images".source = android11Images;
+        environment.etc."waydroid-extra/images".source = android11Images;
 
-      environment.systemPackages = [
-        waydroid-script
-        pkgs.waydroid-helper
-      ];
+        environment.systemPackages = [
+          waydroid-script
+          pkgs.waydroid-helper
+        ];
 
-      vayume.commands = {
-        waydroid-android11 = {
-          command = lib.getExe android11;
-          description = "Wipe Waydroid and reinstall it from the pinned Android 11 images with microG";
-          confirm = true;
-          panel = {
-            label = "Reinstall Android 11";
-            icon = "restart_alt";
-            page = "applications";
-            group = "Android (Waydroid)";
+        vayume.commands = {
+          waydroid-android11 = {
+            command = lib.getExe android11;
+            description = "Wipe Waydroid and reinstall it from the pinned Android 11 images with microG";
+            confirm = true;
+            panel = {
+              label = "Reinstall Android 11";
+              icon = "restart_alt";
+              app = "Waydroid";
+            };
+          };
+          waydroid-unpatch = {
+            command = lib.getExe unpatch;
+            description = "Remove a broken services.jar patch from the Waydroid overlay";
+            confirm = true;
+            panel = {
+              label = "Repair services.jar patch";
+              icon = "build";
+              app = "Waydroid";
+            };
           };
         };
-        waydroid-unpatch = {
-          command = lib.getExe unpatch;
-          description = "Remove a broken services.jar patch from the Waydroid overlay";
-          confirm = true;
-          panel = {
-            label = "Repair services.jar patch";
-            icon = "build";
-            page = "applications";
-            group = "Android (Waydroid)";
-          };
-        };
-      };
 
-      security.sudo.extraRules = lib.mkIf (config ? vayume && config.vayume ? users) (
-        map
-          (name: {
-            users = [ name ];
-            commands = [
-              {
-                command = "${unpatchPriv}";
-                options = [ "NOPASSWD" ];
-              }
-              {
-                command = "${android11Priv}";
-                options = [ "NOPASSWD" ];
-              }
-            ];
-          })
-          (
-            builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups) (
-              builtins.attrNames config.vayume.users
+        security.sudo.extraRules = lib.mkIf (config ? vayume && config.vayume ? users) (
+          map
+            (name: {
+              users = [ name ];
+              commands = [
+                {
+                  command = "${unpatchPriv}";
+                  options = [ "NOPASSWD" ];
+                }
+                {
+                  command = "${android11Priv}";
+                  options = [ "NOPASSWD" ];
+                }
+              ];
+            })
+            (
+              builtins.filter (name: builtins.elem "wheel" config.vayume.users.${name}.extraGroups) (
+                builtins.attrNames config.vayume.users
+              )
             )
-          )
-      );
+        );
+      };
     };
 }

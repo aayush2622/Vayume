@@ -215,4 +215,4 @@ Explanations that used to be comments in the source files.
 
 ---
 
-[← Storage.nix](system-storage.md) · [Index](CONFIGURATION.md) · [Waydroid.nix →](system-waydroid.md)
+[← Storage.nix](system-storage.md) · [Index](CONFIGURATION.md) · [AndroidStudio.nix →](apps-dev-androidstudio.md)

@@ -871,7 +871,7 @@ and buttons belong on, so nothing is placed by a list in the QML:
 | Appearance | font, cursor, the **Top bar** style |
 | Desktop pet | an animated preview of the chosen skin, then **Your pet**, **Behaviour**, **Placement** |
 | Users | accounts, groups, passwords, per-user packages |
-| Applications | apps by section (Internet, Music, Files, Gaming, System, Security, Containers) with their icons, each app's own options and buttons underneath it, then **Android (Waydroid)** |
+| Applications | apps by section (Internet, Music, Files, Gaming, System, Security, Containers) with their icons, each app's own options and buttons underneath it (Waydroid's reinstall and repair are under Android (Waydroid) in Containers) |
 | Development | languages, editors, tools, with icons and which editors support each language |
 | Default apps | which app opens what |
 | Network | **DNS**, **Tor**, **Privacy** |

@@ -199,4 +199,4 @@ would still see it change.
 
 ---
 
-[← Vesktop.nix](apps-utils-vesktop.md) · [Index](CONFIGURATION.md)
+[← Vesktop.nix](apps-utils-vesktop.md) · [Index](CONFIGURATION.md) · [Waydroid.nix →](apps-utils-waydroid.md)

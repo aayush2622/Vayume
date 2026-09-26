@@ -4,7 +4,15 @@
 
 Android apps in a container - and an honest admission that not everything on a NixOS machine can be declarative.
 
-## `modules/system/waydroid/Waydroid.nix`
+## `modules/apps/utils/waydroid/Waydroid.nix`
+
+- **It is an app, off unless `vayume.apps.Waydroid.enable = true;`.** It
+  used to be a system module every host got. Now it registers itself like
+  the other apps (`homeModules.apps.Waydroid`, an empty home module, plus its
+  `appMeta`) so it gets a toggle under Containers in
+  Vayume Settings, and the whole NixOS side below - the container, the
+  pinned images, the scripts, the sudo rules and the two commands - sits
+  behind that option. Its two buttons are listed under the app itself.
 
 - **The Android image is pinned to LineageOS 18.1 (Android 11).**
   `android11Images` unpacks the `20250628` system and vendor images (the
@@ -71,4 +79,4 @@ it.
 
 ---
 
-[← Network.nix](system-network.md) · [Index](CONFIGURATION.md) · [AndroidStudio.nix →](apps-dev-androidstudio.md)
+[← Distrobox.nix](apps-utils-distrobox.md) · [Index](CONFIGURATION.md)
