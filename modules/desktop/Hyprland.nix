@@ -26,6 +26,19 @@
       typeClipboard = pkgs.writeShellScriptBin "vayume-type-clipboard" ''
         set -euo pipefail
 
+        pidfile="''${XDG_RUNTIME_DIR:-/tmp}/vayume-type-clipboard.pid"
+        if [ -e "$pidfile" ]; then
+          running="$(${pkgs.coreutils}/bin/cat "$pidfile")"
+          if ${pkgs.coreutils}/bin/kill -0 "$running" 2>/dev/null; then
+            ${pkgs.procps}/bin/pkill -P "$running" || true
+            ${pkgs.coreutils}/bin/kill "$running" || true
+            ${pkgs.coreutils}/bin/rm -f "$pidfile"
+            exit 0
+          fi
+        fi
+        echo $$ > "$pidfile"
+        trap '${pkgs.coreutils}/bin/rm -f "$pidfile"' EXIT
+
         delay="''${1:-8}"
 
         export YDOTOOL_SOCKET="''${YDOTOOL_SOCKET:-/run/ydotoold/socket}"
