@@ -114,6 +114,21 @@ Field meanings:
   anything a name-based search can't express - a package with build
   overrides, `pkgs.python3.withPackages (...)`, and the like. Nix-only,
   same reasoning as `avatar`/`shell` for staying out of the CLI/UI.
+- **Polkit policies from per-user packages are registered system-wide.**
+  Both `packages` and `extraPackages` land in the user's profile, but
+  polkit only reads action files from the system profile
+  (`/run/current-system/sw/share/polkit-1/actions`). An app that asks for
+  root through its own policy then fell back to pkexec's generic action:
+  GParted still showed the password prompt, but the generic action lacks
+  its `org.freedesktop.policykit.exec.allow_gui` annotation, so pkexec
+  dropped `DISPLAY` and GParted exited as root with nowhere to draw. The
+  `user-polkit-actions` package links every `share/polkit-1/actions/*`
+  file found in any user's packages into `environment.systemPackages`.
+  It only links policy files, not the apps, so nothing else becomes
+  system-wide. The check happens in the builder, not at evaluation, so it
+  needs no import-from-derivation. A policy's `exec.path` names the exact
+  store path of the user's copy, which is the binary pkexec is asked to
+  run.
 - The list of valid app names auto-discovers from every `.nix` file under
   `modules/apps/`, at any depth - add an app by dropping a folder in,
   nothing here needs to change.
