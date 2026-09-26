@@ -208,6 +208,11 @@ starts. Run against an already-running daemon it only attaches and exits
 (checked: `discover_other_daemon: 1`, no second process, still unlocked). The
 fix itself only shows at the next login.
 
+### sudo shows `*` while typing
+
+`security.sudo.extraConfig` adds `Defaults pwfeedback`, so the password
+prompt echoes an asterisk per character instead of nothing.
+
 ---
 
 [← Getting started](getting-started.md) · [Index](CONFIGURATION.md) · [_hardware.nix →](core-hardware.md)

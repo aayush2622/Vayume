@@ -218,6 +218,7 @@ in
             security.sudo.extraConfig = ''
               Defaults timestamp_type=global
               Defaults timestamp_timeout=15
+              Defaults pwfeedback
             '';
             environment.systemPackages = with pkgs; [
               gsettings-desktop-schemas
