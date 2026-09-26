@@ -1,0 +1,12 @@
+{
+    "id": "vayumeSystem",
+    "name": "Vayume System",
+    "capabilities": ["desktop-widget"],
+    "description": "Material 3 rings for CPU, memory and battery",
+    "version": "1.0.0",
+    "author": "vayume",
+    "type": "desktop",
+    "component": "./VayumeSystem.qml",
+    "icon": "monitor_heart",
+    "permissions": ["settings_read"]
+}

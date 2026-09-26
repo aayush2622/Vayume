@@ -532,7 +532,7 @@
 
               desktopWidgetInstances = [
                 {
-                  id = "dw_1790400000002_vyclock02";
+                  id = "dw_1790600000000_vyclock04";
                   widgetType = "vayumeClock";
                   name = "Vayume Clock";
                   enabled = true;
@@ -543,15 +543,15 @@
                     syncPositionAcrossScreens = true;
                   };
                   positions._synced = {
-                    x = 0.055;
-                    y = 0.26;
+                    x = 0.035;
+                    y = 0.04;
                     width = 460;
                     height = 520;
                   };
                 }
 
                 {
-                  id = "dw_1790400000003_vymedia02";
+                  id = "dw_1790600000001_vymedia04";
                   widgetType = "vayumeMedia";
                   name = "Vayume Now Playing";
                   enabled = true;
@@ -562,10 +562,48 @@
                     syncPositionAcrossScreens = true;
                   };
                   positions._synced = {
-                    x = 0.835;
-                    y = 0.305;
-                    width = 270;
-                    height = 420;
+                    x = 0.83;
+                    y = 0.06;
+                    width = 300;
+                    height = 500;
+                  };
+                }
+
+                {
+                  id = "dw_1790600000002_vyweather02";
+                  widgetType = "vayumeWeather";
+                  name = "Vayume Weather";
+                  enabled = true;
+                  config = {
+                    displayPreferences = [ "all" ];
+                    showOnOverlay = false;
+                    showOnOverview = false;
+                    syncPositionAcrossScreens = true;
+                  };
+                  positions._synced = {
+                    x = 0.035;
+                    y = 0.5;
+                    width = 300;
+                    height = 190;
+                  };
+                }
+
+                {
+                  id = "dw_1790600000003_vysystem02";
+                  widgetType = "vayumeSystem";
+                  name = "Vayume System";
+                  enabled = true;
+                  config = {
+                    displayPreferences = [ "all" ];
+                    showOnOverlay = false;
+                    showOnOverview = false;
+                    syncPositionAcrossScreens = true;
+                  };
+                  positions._synced = {
+                    x = 0.83;
+                    y = 0.5;
+                    width = 300;
+                    height = 190;
                   };
                 }
 

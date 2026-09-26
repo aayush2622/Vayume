@@ -45,7 +45,7 @@ Everything you change day to day lives in one gitignored file per host, `_config
 <table>
   <tr>
     <td width="50%"><img src="screenshots/dev.png" alt="Development workspace"><br><sub><b>Workspace</b> — kitty with fastfetch, VS Code, synced lyrics and a visualiser, all in the wallpaper's colours</sub></td>
-    <td width="50%"><img src="screenshots/media.png" alt="Media workspace"><br><sub><b>Media</b> — the DMS media popout, now-playing widget and live lyrics</sub></td>
+    <td width="50%"><img src="screenshots/media.png" alt="Desktop widgets"><br><sub><b>Desktop</b> — clock, weather, system rings, now playing with a wavy seek bar, live lyrics and the desktop pet</sub></td>
   </tr>
   <tr>
     <td><img src="screenshots/settings-overview.jpg" alt="Vayume Settings overview"><br><sub><b>Vayume Settings</b> — overview of the machine and pending changes</sub></td>
