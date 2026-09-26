@@ -41,6 +41,11 @@
                 default = null;
                 description = "Name of a vayume.apps.<Name> module. The setting is then shown under that app in Applications instead of on the All Settings page.";
               };
+              order = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Position inside its group; lower comes first, ties keep the option path order.";
+              };
               hidden = lib.mkOption {
                 type = lib.types.bool;
                 default = false;
@@ -71,46 +76,87 @@
                 default = null;
                 description = "One line under the group's title.";
               };
+              order = lib.mkOption {
+                type = lib.types.int;
+                default = 100;
+                description = "Position of the card on its page; lower comes first, ties sort by name.";
+              };
+              page = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Vayume Settings page the group is shown on (`appearance`, `pet`, `network`, `performance`, `storage`, `updates`, ...). An unknown or unset page puts it under Updates > Other settings.";
+              };
             };
           }
         );
       };
 
       config.vayume.settingsGroups = {
-        Network = {
-          icon = "lan";
-          description = "DNS, Tor and network-stack hardening for the whole machine.";
+        DNS = {
+          order = 1;
+          icon = "dns";
+          description = "Which resolver the whole machine asks, and how.";
+          page = "network";
         };
-        Storage = {
-          icon = "storage";
-          description = "Where vayume clean looks for build output to reclaim.";
+        Tor = {
+          order = 2;
+          icon = "vpn_lock";
+          description = "Send all traffic through the Tor network.";
+          page = "network";
         };
-        Performance = {
+        Privacy = {
+          order = 3;
+          icon = "shield";
+          description = "Harden the network stack and hide the Wi-Fi hardware address.";
+          page = "network";
+        };
+        Kernel = {
+          order = 1;
+          icon = "memory";
+          description = "Which Linux kernel the system boots.";
+          page = "performance";
+        };
+        Tuning = {
+          order = 2;
           icon = "speed";
-          description = "Memory, disk, kernel and gaming tuning.";
+          description = "Memory, disk and scheduler tuning, plus extras for games.";
+          page = "performance";
+        };
+        "Build output" = {
+          order = 1;
+          icon = "cleaning_services";
+          description = "Where the cleanup looks for build folders it may delete (node_modules, target, .venv...).";
+          page = "storage";
         };
       };
 
       config.vayume.settingsMeta =
         let
-          entry = label: icon: { inherit label icon; };
+          entry = group: label: icon: order: {
+            inherit
+              group
+              label
+              icon
+              order
+              ;
+          };
           box = label: icon: {
             inherit label icon;
             app = "Distrobox";
           };
         in
         {
-          "network.dns.provider" = entry "DNS provider" "dns";
-          "network.dns.overTls" = entry "DNS over TLS" "lock";
-          "network.dns.ipv6" = entry "IPv6 DNS servers" "language";
-          "network.hardening.enable" = entry "Network hardening" "shield";
-          "network.randomizeMac" = entry "Randomize Wi-Fi MAC" "shuffle";
-          "network.tor.enable" = entry "Route everything through Tor" "vpn_lock";
-          "network.tor.includeContainers" = entry "Include containers in Tor" "deployed_code";
-          "storage.projectDirs" = entry "Project folders" "folder_open";
-          "performance.enable" = entry "System tuning" "speed";
-          "performance.gaming" = entry "Gaming tuning" "sports_esports";
-          "performance.kernel" = entry "Kernel" "memory";
+          "network.dns.provider" = entry "DNS" "DNS provider" "dns" 1;
+          "network.dns.overTls" = entry "DNS" "DNS over TLS" "lock" 2;
+          "network.dns.ipv6" = entry "DNS" "IPv6 DNS servers" "language" 3;
+          "network.hardening.enable" = entry "Privacy" "Network hardening" "shield" 1;
+          "network.randomizeMac" = entry "Privacy" "Randomize Wi-Fi MAC" "shuffle" 2;
+          "network.tor.enable" = entry "Tor" "Route everything through Tor" "vpn_lock" 1;
+          "network.tor.includeContainers" = entry "Tor" "Include containers in Tor" "deployed_code" 2;
+          "storage.projectDirs" = entry "Build output" "Project folders" "folder_open" 1;
+          "performance.enable" = entry "Tuning" "System tuning" "speed" 1;
+          "performance.gaming" = entry "Tuning" "Gaming tuning" "sports_esports" 2;
+          "performance.kernel" = entry "Kernel" "Kernel" "memory" 1;
           "ubuntuBox.count" = box "Number of boxes" "numbers";
           "ubuntuBox.name" = box "Box name" "badge";
           "ubuntuBox.image" = box "Container image" "image";

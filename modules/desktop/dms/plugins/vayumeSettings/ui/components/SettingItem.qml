@@ -12,6 +12,8 @@ Item {
     property bool card: true
     property bool divider: false
     property bool stacked: false
+    property string icon: ""
+    property string image: ""
 
     default property alias control: controlSlot.data
     property alias tags: tagRow.data
@@ -19,6 +21,8 @@ Item {
     property alias footer: footerColumn.data
 
     readonly property real inset: root.card ? Vayori.pad : 0
+    readonly property bool hasLeading: root.icon.length > 0 || root.image.length > 0
+    readonly property real lead: root.hasLeading ? 56 : 0
     readonly property bool below: root.stacked || root.width < 560
     readonly property bool hasText: root.title.length > 0 || root.description.length > 0 || root.meta.length > 0
     readonly property real controlsWidth: controlSlot.implicitWidth
@@ -54,11 +58,44 @@ Item {
         color: Vayori.tone(root.marker)
     }
 
+    Rectangle {
+        id: leading
+        visible: root.hasLeading
+        x: root.inset
+        y: root.below ? Vayori.rowPad : Vayori.rowPad + Math.max(0, (body.height - height) / 2)
+        width: 40
+        height: 40
+        radius: 12
+        color: picture.status === Image.Ready ? "transparent" : Vayori.tonal
+        opacity: root.enabled ? 1 : 0.5
+
+        Image {
+            id: picture
+            anchors.centerIn: parent
+            width: 36
+            height: 36
+            source: root.image
+            sourceSize: Qt.size(72, 72)
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            asynchronous: true
+            visible: status === Image.Ready
+        }
+
+        DankIcon {
+            anchors.centerIn: parent
+            visible: picture.status !== Image.Ready
+            name: root.icon.length > 0 ? root.icon : "apps"
+            size: 20
+            color: Vayori.ink
+        }
+    }
+
     Item {
         id: body
-        x: root.inset
+        x: root.inset + root.lead
         y: Vayori.rowPad
-        width: parent.width - root.inset * 2
+        width: parent.width - root.inset * 2 - root.lead
         height: root.below
             ? (root.hasText ? textColumn.height + (controlSlot.implicitHeight > 0 ? 12 : 0) : 0) + controlSlot.implicitHeight
             : Math.max(textColumn.height, controlSlot.implicitHeight)
@@ -134,8 +171,8 @@ Item {
 
     Column {
         id: footerColumn
-        x: root.inset
+        x: root.inset + root.lead
         y: body.y + body.height + 12
-        width: parent.width - root.inset * 2
+        width: parent.width - root.inset * 2 - root.lead
     }
 }

@@ -17,10 +17,21 @@
         tora = "1z1czkb32plq3y7jlfrj4jyrdd4hvy390zbhvl59w3vsx29lx67p";
         vaporwave = "1mk9fnf1z4nvx1xzzs9cqz8m31h5afhwnfz7ka1629xfpvq9x56f";
       };
-      skin = pkgs.fetchurl {
-        url = "https://raw.githubusercontent.com/kyrie25/Spicetify-Oneko/${skinRev}/assets/oneko/oneko-${cfg.skin}.gif";
-        sha256 = skinHashes.${cfg.skin};
-      };
+      fetchSkin =
+        name:
+        pkgs.fetchurl {
+          url = "https://raw.githubusercontent.com/kyrie25/Spicetify-Oneko/${skinRev}/assets/oneko/oneko-${name}.gif";
+          sha256 = skinHashes.${name};
+        };
+      skin = fetchSkin cfg.skin;
+
+      skinPreviews = pkgs.runCommand "pet-skin-previews" { nativeBuildInputs = [ pkgs.imagemagick ]; } ''
+        mkdir -p $out
+        ${lib.concatMapStringsSep "\n" (name: ''
+          magick ${fetchSkin name} PNG32:$out/${name}.png
+          magick ${fetchSkin name} -channel RGB -negate +channel PNG32:$out/${name}-kuroneko.png
+        '') (builtins.attrNames skinHashes)}
+      '';
 
       petConfig = pkgs.writeText "pet-config.json" (
         builtins.toJSON {
@@ -121,58 +132,96 @@
 
       config = lib.mkMerge [
         {
-          vayume.settingsGroups."Desktop pet" = {
-            icon = "pets";
-            description = "A pixel cat (or dog) living on your screen.";
+          environment.etc."vayume/pet-skins".source = skinPreviews;
+
+          vayume.settingsGroups = {
+            "Your pet" = {
+              order = 1;
+              icon = "pets";
+              description = "Who lives on your screen.";
+              page = "pet";
+            };
+            Behaviour = {
+              order = 2;
+              icon = "directions_walk";
+              description = "What it does when left alone.";
+              page = "pet";
+            };
+            Placement = {
+              order = 3;
+              icon = "layers";
+              description = "Which screen it lives on, and whether windows cover it.";
+              page = "pet";
+            };
           };
-          vayume.settingsMeta =
-            lib.mapAttrs' (n: v: lib.nameValuePair "desktop.pet.${n}" (v // { group = "Desktop pet"; }))
-              {
-                enable = {
-                  label = "Show the pet";
-                  icon = "pets";
-                };
-                skin = {
-                  label = "Skin";
-                  icon = "palette";
-                };
-                kuroneko = {
-                  label = "Kuroneko (inverted colours)";
-                  icon = "invert_colors";
-                };
-                size = {
-                  label = "Size";
-                  icon = "zoom_in";
-                };
-                speed = {
-                  label = "Speed";
-                  icon = "speed";
-                };
-                behaviour = {
-                  label = "Behaviour";
-                  icon = "directions_walk";
-                };
-                activity = {
-                  label = "Activity";
-                  icon = "bolt";
-                };
-                layer = {
-                  label = "Layer";
-                  icon = "layers";
-                };
-                name = {
-                  label = "Name";
-                  icon = "badge";
-                };
-                bubbles = {
-                  label = "Hearts and bubbles";
-                  icon = "favorite";
-                };
-                monitor = {
-                  label = "Monitor";
-                  icon = "monitor";
-                };
-              };
+          vayume.settingsMeta = lib.mapAttrs' (n: v: lib.nameValuePair "desktop.pet.${n}" v) {
+            enable = {
+              group = "Your pet";
+              order = 1;
+              label = "Show the pet";
+              icon = "pets";
+            };
+            skin = {
+              group = "Your pet";
+              order = 3;
+              label = "Skin";
+              icon = "palette";
+            };
+            kuroneko = {
+              group = "Your pet";
+              order = 4;
+              label = "Kuroneko (inverted colours)";
+              icon = "invert_colors";
+            };
+            size = {
+              group = "Your pet";
+              order = 5;
+              label = "Size";
+              icon = "zoom_in";
+            };
+            speed = {
+              group = "Behaviour";
+              order = 3;
+              label = "Speed";
+              icon = "speed";
+            };
+            behaviour = {
+              group = "Behaviour";
+              order = 1;
+              label = "Movement";
+              icon = "directions_walk";
+            };
+            activity = {
+              group = "Behaviour";
+              order = 2;
+              label = "Activity";
+              icon = "bolt";
+            };
+            layer = {
+              group = "Placement";
+              order = 1;
+              label = "Layer";
+              icon = "layers";
+            };
+            name = {
+              group = "Your pet";
+              order = 2;
+              label = "Name";
+              icon = "badge";
+            };
+            bubbles = {
+              group = "Behaviour";
+              order = 4;
+              label = "Hearts and bubbles";
+              icon = "favorite";
+            };
+            monitor = {
+              group = "Placement";
+              order = 2;
+              label = "Monitor";
+              icon = "monitor";
+            };
+          };
         }
 
         (lib.mkIf cfg.enable {

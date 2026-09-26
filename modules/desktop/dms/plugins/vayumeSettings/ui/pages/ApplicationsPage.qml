@@ -13,37 +13,46 @@ Column {
     property string searchQuery: ""
     property string show: "all"
 
-    readonly property var categoryLabels: ({
-        "gaming": I18n.tr("Gaming"),
-        "utils": I18n.tr("Utilities")
+    readonly property var sectionOrder: ["Internet", "Music", "Files", "Gaming", "System", "Security", "Containers"]
+    readonly property var sectionNotes: ({
+        "Internet": I18n.tr("Browsing and chat."),
+        "Music": I18n.tr("Spotify clients."),
+        "Files": I18n.tr("File managers. The default one is picked in Default apps."),
+        "Gaming": I18n.tr("Launchers, Proton and GPU tuning."),
+        "System": I18n.tr("The terminal and everything it starts with."),
+        "Security": I18n.tr("Passwords and backups of app logins."),
+        "Containers": I18n.tr("Other Linux distributions running beside this one.")
     })
-
-    readonly property var categoryOrder: ({ "gaming": 0, "utils": 1 })
 
     readonly property var appsHere: root.vm.apps.filter(a => a.category !== "development")
 
     readonly property var sections: {
         const q = root.searchQuery.trim().toLowerCase();
-        const byCategory = {};
+        const bySection = {};
         for (const a of root.appsHere) {
-            if (q.length > 0 && !(a.name + " " + a.description).toLowerCase().includes(q))
+            if (q.length > 0 && !((a.label || a.name) + " " + a.name + " " + a.description).toLowerCase().includes(q))
                 continue;
             if ((root.show === "on" && !a.enabled) || (root.show === "off" && a.enabled))
                 continue;
-            (byCategory[a.category] = byCategory[a.category] || []).push(a);
+            const key = a.section || "Other";
+            (bySection[key] = bySection[key] || []).push(a);
         }
-        return Object.keys(byCategory)
-            .sort((a, b) => (root.categoryOrder[a] ?? 99) - (root.categoryOrder[b] ?? 99) || a.localeCompare(b))
+        const rank = key => {
+            const i = root.sectionOrder.indexOf(key);
+            return i < 0 ? 99 : i;
+        };
+        return Object.keys(bySection)
+            .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
             .map(key => ({
                 key: key,
-                label: root.categoryLabels[key] ?? key,
-                items: byCategory[key].slice().sort((a, b) => a.name.localeCompare(b.name))
+                note: root.sectionNotes[key] ?? "",
+                items: bySection[key].slice().sort((a, b) => (a.label || a.name).localeCompare(b.label || b.name))
             }));
     }
 
     readonly property string meta: root.vm.appsLoading
         ? ""
-        : I18n.tr("%1 of %2 enabled").arg(root.appsHere.filter(a => a.enabled).length).arg(root.appsHere.length)
+        : I18n.tr("%1 of %2 installed").arg(root.appsHere.filter(a => a.enabled).length).arg(root.appsHere.length)
 
     Item {
         width: parent.width
@@ -68,7 +77,7 @@ Column {
             id: showFilter
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            readonly property var labels: ({ all: I18n.tr("All"), on: I18n.tr("On"), off: I18n.tr("Off") })
+            readonly property var labels: ({ all: I18n.tr("All"), on: I18n.tr("Installed"), off: I18n.tr("Available") })
             options: [labels.all, labels.on, labels.off]
             current: labels[root.show]
             onPicked: value => root.show = Object.keys(labels).find(k => labels[k] === value)
@@ -92,7 +101,8 @@ Column {
         Section {
             id: section
             required property var modelData
-            title: modelData.label
+            title: modelData.key
+            subtitle: modelData.note
             meta: I18n.tr("%1 / %2").arg(modelData.items.filter(a => a.enabled).length).arg(modelData.items.length)
 
             Repeater {
@@ -101,12 +111,15 @@ Column {
                 SettingItem {
                     id: appEntry
                     required property var modelData
-                    title: modelData.name
+                    title: modelData.label || modelData.name
                     description: modelData.description
+                    image: root.vm.iconUrl(modelData.icon)
+                    icon: modelData.symbol || "apps"
 
                     footer: AppOptions {
                         vm: root.vm
                         appName: appEntry.modelData.name
+                        appLabel: appEntry.modelData.label || appEntry.modelData.name
                     }
 
                     Toggle {
@@ -116,5 +129,11 @@ Column {
                 }
             }
         }
+    }
+
+    PageOptions {
+        visible: root.searchQuery.length === 0 && root.show === "all"
+        vm: root.vm
+        page: "applications"
     }
 }

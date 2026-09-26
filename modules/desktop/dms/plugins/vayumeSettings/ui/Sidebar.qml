@@ -40,7 +40,7 @@ Item {
     }
 
     function countFor(id) {
-        if (id === "overview")
+        if (id === "updates")
             return root.vm.settings.filter(s => s.pending).length;
         if (id === "applications" && !root.vm.appsLoading)
             return root.vm.apps.filter(a => a.enabled && a.category !== "development").length;
@@ -177,7 +177,7 @@ Item {
                             icon: modelData.icon
                             active: root.activeCategory === modelData.id
                             badgeCount: root.countFor(modelData.id)
-                            badgeTone: modelData.id === "overview" ? "warning" : "neutral"
+                            badgeTone: modelData.id === "updates" ? "warning" : "neutral"
                             onActivated: root.select(modelData.id)
                             onActiveChanged: {
                                 if (!active)

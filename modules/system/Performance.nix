@@ -99,6 +99,7 @@
               panel = {
                 label = "Boot time report";
                 icon = "timer";
+                page = "performance";
               };
             };
 

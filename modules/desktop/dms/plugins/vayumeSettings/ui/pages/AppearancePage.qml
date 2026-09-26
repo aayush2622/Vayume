@@ -110,15 +110,20 @@ Column {
         tone: root.vm.themeError ? "error" : "neutral"
     }
 
+    PageOptions {
+        vm: root.vm
+        page: "appearance"
+    }
+
     Section {
         title: I18n.tr("Elsewhere")
 
         Notice {
-            text: I18n.tr("Dark/light mode, wallpaper, and Material You colors are DMS's own settings, not Vayume's - find those in DMS Settings directly.")
+            text: I18n.tr("Wallpaper, dark or light mode and the colours drawn from the wallpaper are DMS's own settings - open DMS Settings for those.")
         }
 
         Notice {
-            text: I18n.tr("Icon theme, and the font/cursor/icon packages themselves, stay Nix-only: a package can't be safely produced from a text field, and a mismatched name/package pair would silently fail to resolve at runtime instead of erroring at build time. See docs/core-vayume-config.md.")
+            text: I18n.tr("The icon theme and the font, cursor and icon packages are set in Nix only. See docs/core-vayume-config.md.")
         }
     }
 }

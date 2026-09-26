@@ -7,7 +7,7 @@ Every machine starts here. `Host.nix` is the one file that says what this partic
 ## `modules/hosts/<name>/Host.nix`
 
 **The `vayume.network` values in `Host.nix` are `lib.mkDefault`.** That
-lets `_config.nix` (and the System Options page, see
+lets `_config.nix` (and the Network page in Vayume Settings, see
 [Settings.nix](core-settings.md)) override them with a plain assignment;
 a plain value here would make the same option defined twice.
 

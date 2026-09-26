@@ -10,12 +10,10 @@ Column {
     width: parent.width
     spacing: Vayori.gap
 
-    readonly property var systemActions: root.vm.actions.filter(a => !a.panel.app)
-    readonly property var safeActions: root.systemActions.filter(a => !a.confirm)
-    readonly property var riskyActions: root.systemActions.filter(a => a.confirm)
     readonly property bool pending: root.vm.repoKnown && root.vm.repo.rebuildPending
+    readonly property var pendingSettings: root.vm.settings.filter(s => s.pending)
 
-    readonly property string meta: I18n.tr("%1 commands").arg(root.systemActions.length)
+    readonly property string meta: root.pending ? I18n.tr("changes waiting") : I18n.tr("up to date")
 
     Section {
         title: I18n.tr("Rebuild")
@@ -25,7 +23,7 @@ Column {
             description: root.pending
                 ? I18n.tr("_config.nix has edits the running system doesn't have yet. Rebuilding checks the configuration and switches to it.")
                 : I18n.tr("Nothing saved since the last rebuild. Rebuilding anyway re-applies the current configuration.")
-            meta: "vayume rebuild"
+            icon: root.pending ? "pending_actions" : "task_alt"
             marker: root.pending ? "warning" : ""
 
             TextButton {
@@ -39,43 +37,27 @@ Column {
         }
     }
 
-    Notice {
-        visible: root.systemActions.length === 0
-        text: I18n.tr("Loading commands...")
-        busy: true
-    }
-
     Section {
-        title: I18n.tr("Checks and reports")
-        subtitle: I18n.tr("Read-only - safe to run any time. Output streams into the log panel.")
-        meta: String(root.safeActions.length)
-        visible: root.safeActions.length > 0
+        title: I18n.tr("Waiting for a rebuild")
+        subtitle: I18n.tr("Saved options the running system doesn't have yet. Undo one here, or rebuild to apply them all.")
+        meta: String(root.pendingSettings.length)
+        visible: root.pendingSettings.length > 0
 
         Repeater {
-            model: root.safeActions
+            model: root.pendingSettings
 
-            CommandRow {
+            OptionRow {
                 required property var modelData
                 vm: root.vm
-                action: modelData
+                setting: modelData
             }
         }
     }
 
-    Section {
-        title: I18n.tr("Cleanup and repair")
-        subtitle: I18n.tr("These change or delete something, so each asks for a second click.")
-        meta: String(root.riskyActions.length)
-        visible: root.riskyActions.length > 0
-
-        Repeater {
-            model: root.riskyActions
-
-            CommandRow {
-                required property var modelData
-                vm: root.vm
-                action: modelData
-            }
-        }
+    PageOptions {
+        vm: root.vm
+        page: "updates"
+        toolsTitle: I18n.tr("Checks")
+        toolsSubtitle: I18n.tr("Read-only reports on the configuration and pinned plugins.")
     }
 }

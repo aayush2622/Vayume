@@ -95,6 +95,7 @@ in
       panel = {
         label = "Clean up old generations";
         icon = "delete_sweep";
+        page = "storage";
       };
     };
   };

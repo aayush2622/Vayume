@@ -23,7 +23,7 @@ Column {
 
     readonly property var pages: root.q.length === 0 ? [] : root.categories.filter(c => root.hit(c.label + " " + c.subtitle))
     readonly property var options: root.q.length === 0 ? [] : root.vm.settings.filter(s => root.hit(s.label + " " + s.description + " " + s.path + " " + s.group + " " + (s.app || ""))).slice(0, root.limit)
-    readonly property var apps: root.q.length === 0 ? [] : root.vm.apps.filter(a => root.hit(a.name + " " + a.description)).slice(0, root.limit)
+    readonly property var apps: root.q.length === 0 ? [] : root.vm.apps.filter(a => root.hit((a.label || "") + " " + a.name + " " + a.description)).slice(0, root.limit)
     readonly property var commands: root.q.length === 0 ? [] : root.vm.actions.filter(a => root.hit(a.panel.label + " " + a.description + " " + a.name)).slice(0, root.limit)
     readonly property int total: root.pages.length + root.options.length + root.apps.length + root.commands.length
 
@@ -31,7 +31,7 @@ Column {
 
     Notice {
         visible: root.q.length > 0 && root.total === 0
-        text: I18n.tr("Nothing matches \"%1\". Try an option path like network.dns, or an app name.").arg(root.query.trim())
+        text: I18n.tr("Nothing matches \"%1\". Try a setting, an app or a tool name.").arg(root.query.trim())
     }
 
     Section {
@@ -46,6 +46,7 @@ Column {
                 required property var modelData
                 title: modelData.label
                 description: modelData.subtitle
+                icon: modelData.icon
 
                 TextButton {
                     variant: "tonal"
@@ -74,7 +75,7 @@ Column {
     }
 
     Section {
-        title: I18n.tr("Applications and tools")
+        title: I18n.tr("Applications")
         meta: String(root.apps.length)
         visible: root.apps.length > 0
 
@@ -84,9 +85,10 @@ Column {
             SettingItem {
                 id: appHit
                 required property var modelData
-                title: modelData.name
+                title: modelData.label || modelData.name
                 description: modelData.description
-                meta: modelData.category
+                image: root.vm.iconUrl(modelData.icon)
+                icon: modelData.symbol || "apps"
 
                 Toggle {
                     checked: appHit.modelData.enabled
@@ -98,7 +100,7 @@ Column {
     }
 
     Section {
-        title: I18n.tr("Commands")
+        title: I18n.tr("Tools")
         meta: String(root.commands.length)
         visible: root.commands.length > 0
 

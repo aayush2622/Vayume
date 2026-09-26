@@ -124,6 +124,7 @@ let
             group = null;
             icon = null;
             app = null;
+            order = 100;
             hidden = false;
           };
         groupName = if meta.group != null then meta.group else humanize (builtins.head rel);
@@ -131,6 +132,8 @@ let
           vayume.settingsGroups.${groupName} or {
             icon = null;
             description = null;
+            order = 100;
+            page = null;
           };
         shape = describe v.type;
       in
@@ -157,9 +160,12 @@ let
               if builtins.isString (v.description or null) then v.description else ""
             );
             icon = meta.icon;
+            order = meta.order;
             app = meta.app;
             groupIcon = groupMeta.icon;
             groupDescription = groupMeta.description;
+            groupPage = groupMeta.page;
+            groupOrder = groupMeta.order;
             value = safe (lib.attrByPath rel null vayume);
             base = fromOtherFiles v;
             default = if v ? default then safe v.default else null;

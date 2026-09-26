@@ -84,37 +84,43 @@ DankFloatingWindow {
         {
             label: "",
             items: [
-                { id: "overview", label: I18n.tr("Overview"), icon: "home",
+                { id: "overview", label: I18n.tr("Home"), icon: "home",
                   subtitle: I18n.tr("How this machine stands right now, and what is waiting to be applied.") }
             ]
         },
         {
-            label: I18n.tr("Look"),
+            label: I18n.tr("Personal"),
             items: [
                 { id: "appearance", label: I18n.tr("Appearance"), icon: "palette",
-                  subtitle: I18n.tr("Font, cursor, and icon theme - the parts of Vayume's look shared by GTK, kitty, SDDM, and DMS itself.") }
+                  subtitle: I18n.tr("Font, cursor and the top bar - the look shared by GTK, kitty, the login screen and DMS.") },
+                { id: "pet", label: I18n.tr("Desktop pet"), icon: "pets",
+                  subtitle: I18n.tr("The little one living on your screen.") },
+                { id: "users", label: I18n.tr("Users"), icon: "group",
+                  subtitle: I18n.tr("Everyone who can sign in to this machine, their groups and their own packages.") }
             ]
         },
         {
-            label: I18n.tr("Software"),
+            label: I18n.tr("Apps"),
             items: [
                 { id: "applications", label: I18n.tr("Applications"), icon: "apps",
-                  subtitle: I18n.tr("Every app Vayume can install and configure. An app's own options open underneath it.") },
+                  subtitle: I18n.tr("Install or remove apps. An app's own options and tools open underneath it.") },
                 { id: "development", label: I18n.tr("Development"), icon: "code",
-                  subtitle: I18n.tr("Languages, editors and developer tools. Each language lists the enabled editors it integrates with.") },
-                { id: "defaults", label: I18n.tr("Default Apps"), icon: "open_in_new",
+                  subtitle: I18n.tr("Languages, editors and developer tools. Each language shows which editors support it.") },
+                { id: "defaults", label: I18n.tr("Default apps"), icon: "open_in_new",
                   subtitle: I18n.tr("Which app opens links, folders and code files, and which one the Super+Return / Super+E / Super+C / Super+B keybinds start.") }
             ]
         },
         {
             label: I18n.tr("System"),
             items: [
-                { id: "systemOptions", label: I18n.tr("System Options"), icon: "tune",
-                  subtitle: I18n.tr("System-level options a Vayume module declares - new ones show up here automatically.") },
-                { id: "users", label: I18n.tr("Users"), icon: "group",
-                  subtitle: I18n.tr("Every person configured on this machine (vayume.users).") },
-                { id: "maintenance", label: I18n.tr("Maintenance"), icon: "build",
-                  subtitle: I18n.tr("Rebuild, checks and cleanup - one-click versions of vayume commands.") },
+                { id: "network", label: I18n.tr("Network"), icon: "lan",
+                  subtitle: I18n.tr("DNS, Tor and network privacy for the whole machine.") },
+                { id: "performance", label: I18n.tr("Performance"), icon: "speed",
+                  subtitle: I18n.tr("The kernel, system tuning and how fast the machine boots.") },
+                { id: "storage", label: I18n.tr("Storage"), icon: "hard_drive",
+                  subtitle: I18n.tr("How full the disk is, and what can safely be cleaned up.") },
+                { id: "updates", label: I18n.tr("Updates"), icon: "system_update_alt",
+                  subtitle: I18n.tr("Apply saved changes, check the configuration and pinned plugins.") },
                 { id: "about", label: I18n.tr("About"), icon: "info",
                   subtitle: I18n.tr("This host, its Vayume repository, and the configuration file every change is written to.") }
             ]
@@ -212,14 +218,17 @@ DankFloatingWindow {
                             switch (root.shownPage) {
                             case "overview": return overviewPageComponent;
                             case "search": return searchPageComponent;
-                            case "maintenance": return maintenancePageComponent;
                             case "about": return aboutPageComponent;
                             case "appearance": return appearancePageComponent;
+                            case "pet": return petPageComponent;
                             case "development": return developmentPageComponent;
                             case "applications": return applicationsPageComponent;
                             case "defaults": return defaultAppsPageComponent;
-                            case "systemOptions": return systemOptionsPageComponent;
                             case "users": return usersPageComponent;
+                            case "network": return networkPageComponent;
+                            case "performance": return performancePageComponent;
+                            case "storage": return storagePageComponent;
+                            case "updates": return updatesPageComponent;
                             default: return null;
                             }
                         }
@@ -275,8 +284,11 @@ DankFloatingWindow {
     Component { id: developmentPageComponent; DevelopmentPage { vm: root.vm } }
     Component { id: applicationsPageComponent; ApplicationsPage { vm: root.vm } }
     Component { id: defaultAppsPageComponent; DefaultAppsPage { vm: root.vm } }
-    Component { id: systemOptionsPageComponent; SystemOptionsPage { vm: root.vm } }
     Component { id: usersPageComponent; UsersPage { vm: root.vm } }
-    Component { id: maintenancePageComponent; MaintenancePage { vm: root.vm } }
+    Component { id: petPageComponent; PetPage { vm: root.vm } }
+    Component { id: networkPageComponent; SystemPage { vm: root.vm; page: "network" } }
+    Component { id: performancePageComponent; SystemPage { vm: root.vm; page: "performance" } }
+    Component { id: storagePageComponent; StoragePage { vm: root.vm } }
+    Component { id: updatesPageComponent; UpdatesPage { vm: root.vm } }
     Component { id: aboutPageComponent; AboutPage { vm: root.vm } }
 }

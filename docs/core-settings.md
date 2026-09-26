@@ -2,13 +2,13 @@
 
 ---
 
-Every option a Vayume module declares shows up in Vayume Settings without anyone maintaining a list. The **System Options** page and `vayume config settings` read the option declarations straight out of the evaluated system, so adding a setting is adding an option - nothing else.
+Every option a Vayume module declares shows up in Vayume Settings without anyone maintaining a list. Vayume Settings and `vayume config settings` read the option declarations straight out of the evaluated system, so adding a setting is adding an option - nothing else.
 
 ## `modules/vayume/Settings.nix`, `_settings.nix`, `_setting.awk`
 
 ### What appears
 
-Every `lib.mkOption` under `vayume.*` whose type the panel can edit - on the System Options page, or under its app in Applications when `settingsMeta` names one:
+Every `lib.mkOption` under `vayume.*` whose type the panel can edit - on the page its group names (see below), or under its app in Applications when `settingsMeta` names one:
 
 | Type | Control | Written as |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ Left out on purpose: read-only and `internal` options, options with `visible = f
    ```
 
 2. Use `config.vayume.audio.lowLatency` wherever it's read.
-3. Nothing else. It appears under an "Audio" card as "Low latency", with the first paragraph of the description underneath, and `vayume config settings set audio.lowLatency true` works.
+3. Nothing else. It appears under an "Audio" card as "Low latency", with the first paragraph of the description underneath, on the Updates page until the group names a page of its own, and `vayume config settings set audio.lowLatency true` works.
 
 Optional presentation overrides go in `vayume.settingsMeta`, keyed by the option path below `vayume.`:
 
@@ -44,7 +44,7 @@ vayume.settingsMeta = self.vayumeLib.labels {
 };
 ```
 
-`labels` is shorthand for `{ label = ...; }`. The full form also takes `app`, the name of a `vayume.apps.<Name>` module: those settings are shown under that app in Applications, in a collapsed "<App> settings" section beneath its toggle, and left off the System Options page (which then only holds system-level options). It also takes `group` (the card title), `icon` (a Material Symbols name) and `hidden`. A group's own icon and one-line description come from `vayume.settingsGroups.<group name> = { icon = ...; description = ...; };`. Icons are kept in the metadata but the current Vayume Settings design does not draw them; rows show the option path in small mono type instead. Without an entry the label is the path with camel-case split into words (`network.dns.overTls` becomes "Dns over tls") and the group is the first segment. The labels for the shipped options live in `Settings.nix` itself, so a new module doesn't have to touch it unless it wants a nicer name.
+`labels` is shorthand for `{ label = ...; }`. The full form also takes `app`, the name of a `vayume.apps.<Name>` module: those settings are shown under that app in Applications, in a collapsed "<App> options" section beneath its toggle. It also takes `group` (the card title), `icon` (a Material Symbols name, drawn at the start of the row), `order` (position inside the card, lower first, default 100) and `hidden`. A group's icon, one-line description, page and position come from `vayume.settingsGroups.<group name> = { icon = ...; description = ...; page = "network"; order = 1; };`. `page` is one of the sidebar pages (`appearance`, `pet`, `network`, `performance`, `storage`, `updates`, ...); a group without one, or with an unknown one, is shown on Updates so nothing disappears. The pages and what goes on each are listed in [DMS](desktop-dms.md#where-things-go). Without an entry the label is the path with camel-case split into words (`network.dns.overTls` becomes "Dns over tls") and the group is the first segment. The labels for the shipped options live in `Settings.nix` itself, so a new module doesn't have to touch it unless it wants a nicer name.
 
 ### No Nix evaluation on load or save
 
@@ -73,7 +73,7 @@ Two consequences worth knowing:
 
 ### How the list is built
 
-`_settings.nix` is a function of `lib`, `options` and `config`. The `Settings` module calls it with the system's own, so it runs during the rebuild; the fallback and the tests call it with a host's evaluated options. It walks `options.vayume`, classifies each option's type, and returns one record per option: `path`, `group`, `groupIcon`, `groupDescription`, `label`, `icon`, `description` (first paragraph), `kind`, `nullable`, `choices`, `min`, `value`, `base`, `default`. `vayume config settings list` adds `applied`, `configured`, `pending`. Because it reads the option tree rather than a hand-kept table, it can't drift from the modules. `tests/eval.sh` covers both the edit paths and a throwaway option appearing with no other change.
+`_settings.nix` is a function of `lib`, `options` and `config`. The `Settings` module calls it with the system's own, so it runs during the rebuild; the fallback and the tests call it with a host's evaluated options. It walks `options.vayume`, classifies each option's type, and returns one record per option: `path`, `group`, `groupIcon`, `groupDescription`, `groupPage`, `groupOrder`, `label`, `icon`, `order`, `description` (first paragraph), `kind`, `nullable`, `choices`, `min`, `value`, `base`, `default`. `vayume config settings list` adds `applied`, `configured`, `pending`. Because it reads the option tree rather than a hand-kept table, it can't drift from the modules. `tests/eval.sh` covers both the edit paths and a throwaway option appearing with no other change.
 
 ---
 

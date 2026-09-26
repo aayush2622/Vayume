@@ -30,7 +30,7 @@ let
           };
           panel = lib.mkOption {
             default = null;
-            description = "Show the command as a button in Vayume Settings > System > Maintenance. Only for commands that need no typed arguments; `args` are passed as given.";
+            description = "Show the command as a button in Vayume Settings, on the page named by `page` (or under an app when `app` is set). Only for commands that need no typed arguments; `args` are passed as given.";
             type = lib.types.nullOr (
               lib.types.submodule {
                 options = {
@@ -51,7 +51,17 @@ let
                   app = lib.mkOption {
                     type = lib.types.nullOr lib.types.str;
                     default = null;
-                    description = "Name of a vayume.apps.<Name> module. The button is then shown under that app in Applications instead of in System > Maintenance.";
+                    description = "Name of a vayume.apps.<Name> module. The button is then shown under that app in Applications, and `page` is ignored.";
+                  };
+                  page = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "Vayume Settings page the button goes on (`appearance`, `applications`, `network`, `performance`, `storage`, `updates`, ...). An unknown or unset page puts it under Updates > Other tools.";
+                  };
+                  group = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "Card the button is grouped in on that page. Unset uses the page's own tools card.";
                   };
                 };
               }

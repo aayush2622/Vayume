@@ -1299,6 +1299,7 @@
         panel = {
           label = "Check _config.nix";
           icon = "fact_check";
+          page = "updates";
           args = [ "validate" ];
         };
       };

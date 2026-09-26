@@ -91,6 +91,7 @@
             panel = {
               label = "Disk usage report";
               icon = "storage";
+              page = "storage";
             };
           };
           clean = {
@@ -101,6 +102,7 @@
             panel = {
               label = "Clean regenerable caches";
               icon = "cleaning_services";
+              page = "storage";
               args = [
                 "caches"
                 "--yes"

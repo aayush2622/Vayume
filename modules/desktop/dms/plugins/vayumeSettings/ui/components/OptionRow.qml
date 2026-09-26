@@ -54,7 +54,7 @@ SettingItem {
 
     title: setting.label
     description: setting.description.split(/\n\s*\n/).map(p => p.replace(/\s*\n\s*/g, " ").trim()).join("\n\n")
-    meta: setting.path
+    icon: setting.icon || ""
     marker: setting.pending ? "warning" : ""
 
     tags: [
