@@ -186,6 +186,28 @@ below.
 [Gaming.nix](apps-gaming.md) - see that page
 for why.
 
+
+### GNOME Keyring: no password prompt after login
+
+SDDM's PAM stack (`security.pam.services.sddm.enableGnomeKeyring`) starts
+`gnome-keyring-daemon --login` and unlocks the login keyring with the password
+you typed. That daemon only serves secrets once something runs
+`gnome-keyring-daemon --start` in the session; GNOME's session manager does,
+Hyprland and niri don't. Without it, the first app to ask for a secret
+(Spotify, VS Code's Claude chat, anything using libsecret) D-Bus-activated a
+second daemon, which looked for the login one through
+`$XDG_RUNTIME_DIR/keyring/control`, didn't find it ("couldn't access control
+socket ... discover_other_daemon: 0" in the journal) and came up locked, so a
+keyring password prompt appeared even though the passwords matched.
+
+`systemd.user.services.gnome-keyring-start` runs
+`gnome-keyring-daemon --start --components=secrets` before
+`graphical-session.target`, the same hook DMS's own services use, so it covers
+both compositors. It hands the unlocked login daemon over before any app
+starts. Run against an already-running daemon it only attaches and exits
+(checked: `discover_other_daemon: 1`, no second process, still unlocked). The
+fix itself only shows at the next login.
+
 ---
 
 [← Getting started](getting-started.md) · [Index](CONFIGURATION.md) · [_hardware.nix →](core-hardware.md)
