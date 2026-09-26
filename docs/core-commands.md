@@ -51,14 +51,18 @@ line editing (quotes work, so paths with spaces are fine); `confirm`
 commands - `gc`, the Waydroid reset - ask before running. Run without a
 terminal, it prints the list instead of opening a menu.
 
-**Panel buttons.** A command with `panel` set becomes a button under
-Vayume Settings, Maintenance (see [DMS](desktop-dms.md)). Only
+**Panel buttons.** A command with `panel` set becomes a button in
+Vayume Settings, on the page its `page` names and in the card its `group`
+names (see [DMS](desktop-dms.md#where-things-go)); with no page, or an
+unknown one, it goes on Updates. Only
 commands that need no typed arguments qualify; `args` covers the fixed
 ones (`check-plugin-updates` runs with `--report-only`, `config` with
-`validate`). Shipped: `gc`, `config validate`, `check-plugin-updates`,
-`zen-reload`, and the two Waydroid commands. A panel entry can also set
+`validate`). Shipped: `disk`, `clean caches` and `gc` on Storage, `boot-time` on
+Performance, `config validate` and `check-plugin-updates` on Updates, the two
+Waydroid commands in an "Android (Waydroid)" card on Applications, and
+`zen-reload` under Zen Browser. A panel entry can also set
 `app = "<Name>"`, which puts its button under that app's collapsed
-section in Applications instead of System (`zen-reload` does). `rebuild` is not in the
+section in Applications instead (`zen-reload` does). `rebuild` is not in the
 list because it has its own button in the window's footer. The panel
 reads the list with `vayume --json`, which prints the registry (name,
 description, usage, `confirm`, `panel`) from a file baked in at build

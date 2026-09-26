@@ -13,8 +13,14 @@ Column {
     readonly property var sections: [
         { title: I18n.tr("Languages"), items: root.vm.development.languages, languages: true },
         { title: I18n.tr("Editors"), items: root.vm.development.editors, languages: false },
-        { title: I18n.tr("Development Tools"), items: root.vm.development.tools, languages: false }
+        { title: I18n.tr("Tools"), items: root.vm.development.tools, languages: false }
     ]
+
+    function labelOf(name) {
+        const all = root.vm.development.editors.concat(root.vm.development.tools);
+        const hit = all.find(e => e.name === name);
+        return hit && hit.label ? hit.label : name;
+    }
 
     readonly property string meta: {
         if (root.vm.developmentLoading)
@@ -45,14 +51,16 @@ Column {
                 SettingItem {
                     id: entry
                     required property var modelData
-                    title: modelData.name
+                    title: modelData.label || modelData.name
                     description: modelData.description
+                    image: root.vm.iconUrl(modelData.icon)
+                    icon: modelData.symbol || "code"
                     meta: {
                         if (!section.modelData.languages)
                             return "";
                         return modelData.integrations.length > 0
-                            ? I18n.tr("integrates with: %1").arg(modelData.integrations.join(", "))
-                            : I18n.tr("no enabled editor integrates with this language yet");
+                            ? I18n.tr("Works in %1").arg(modelData.integrations.map(n => root.labelOf(n)).join(", "))
+                            : I18n.tr("No enabled editor supports it yet");
                     }
 
                     Toggle {

@@ -78,7 +78,7 @@ Measured with `systemd-analyze` on this machine before changing anything: 26.1 s
 - **GRUB waited 5 s.** `boot.loader.timeout` is 2 s, still enough to hold a key and pick Windows.
 - **`quiet`** on the kernel command line: less console output during boot.
 - **Docker starts on first use** (`virtualisation.docker.enableOnBoot = false`, socket-activated) instead of at boot. A container with a `--restart always` policy won't come back until something first talks to Docker.
-- **Boot time report** (`vayume boot-time`, or Maintenance in Vayume Settings) prints `systemd-analyze`, the slowest units and the critical chain to the display manager, so you can measure the effect after a reboot.
+- **Boot time report** (`vayume boot-time`, or the Performance page in Vayume Settings) prints `systemd-analyze`, the slowest units and the critical chain to the display manager, so you can measure the effect after a reboot.
 
 Expected saving is roughly 6 s (about 3 s of GRUB menu and about 3 s of curl waiting), but that is an estimate from the logs, not a measurement - reboot and run the report.
 

@@ -164,14 +164,20 @@ Open **Vayume Settings** from the DMS control center. It reads and writes the re
 
 | Page | Purpose |
 |---|---|
-| **Overview** | Host, git and rebuild status, quick counts, and every pending change with an undo button |
-| **Appearance** | Font size and family, cursor theme |
-| **Applications** / **Development** | Enable apps, languages, editors and tools; each app's own options open inside its card |
-| **Default Apps** | Which app handles links, folders and code, and which one the keybinds start |
-| **System Options** | Every `vayume.*` option declared by a module, discovered automatically, with search and a Modified filter |
+| **Home** | Host, git and rebuild status, apps, development, users and free disk space at a glance |
+| **Appearance** | Font size and family, cursor theme, top bar style |
+| **Desktop pet** | Live preview of the pet, then its skin, name, size, behaviour and placement |
 | **Users** | Accounts, groups, per-user packages from a nixpkgs search, app secrets and passwords |
-| **Maintenance** | Rebuild, read-only checks and reports, and cleanup commands that ask for confirmation |
+| **Applications** | Apps by section with their icons; each app's own options and tools open inside its card; Waydroid tools |
+| **Development** | Languages, editors and tools, and which editors support each language |
+| **Default apps** | Which app handles links, folders and code, and which one the keybinds start |
+| **Network** | DNS, Tor and network privacy |
+| **Performance** | Kernel, system and gaming tuning, boot time report |
+| **Storage** | Disk usage, cache and generation cleanup, where build output is looked for |
+| **Updates** | Rebuild, everything waiting for a rebuild, configuration and plugin checks |
 | **About** | Host, repository, branch and config file, with copy and open actions |
+
+Modules say which page their options and buttons belong on, so a new option shows up in the right place, or on Updates if it names none.
 
 The sidebar search finds options, apps and commands across every page and lets you change them in place. Shortcuts: `Ctrl+F` search · `Ctrl+1`–`Ctrl+9` pages · `Ctrl+R` reload · `Ctrl+B` rebuild · `Ctrl+L` log · `Esc` clear search.
 

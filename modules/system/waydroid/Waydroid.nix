@@ -161,8 +161,10 @@
           description = "Wipe Waydroid and reinstall it from the pinned Android 11 images with microG";
           confirm = true;
           panel = {
-            label = "Reinstall Waydroid (Android 11)";
-            icon = "android";
+            label = "Reinstall Android 11";
+            icon = "restart_alt";
+            page = "applications";
+            group = "Android (Waydroid)";
           };
         };
         waydroid-unpatch = {
@@ -170,8 +172,10 @@
           description = "Remove a broken services.jar patch from the Waydroid overlay";
           confirm = true;
           panel = {
-            label = "Repair Waydroid patch";
+            label = "Repair services.jar patch";
             icon = "build";
+            page = "applications";
+            group = "Android (Waydroid)";
           };
         };
       };

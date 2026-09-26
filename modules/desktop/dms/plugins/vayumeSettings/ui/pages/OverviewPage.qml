@@ -17,6 +17,17 @@ Column {
     readonly property var appsHere: root.vm.apps.filter(a => a.category !== "development")
     readonly property var devItems: root.vm.development.languages.concat(root.vm.development.editors, root.vm.development.tools)
 
+    function human(bytes) {
+        const units = ["B", "KB", "MB", "GB", "TB"];
+        let v = bytes;
+        let i = 0;
+        while (v >= 1024 && i < units.length - 1) {
+            v /= 1024;
+            i++;
+        }
+        return (v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + " " + units[i];
+    }
+
     readonly property string greeting: {
         const h = new Date().getHours();
         if (h < 5) return I18n.tr("Still up");
@@ -32,8 +43,8 @@ Column {
           value: root.vm.developmentLoading ? "..." : I18n.tr("%1 of %2").arg(root.devItems.filter(a => a.enabled).length).arg(root.devItems.length) },
         { id: "users", icon: "group", label: I18n.tr("Users"),
           value: root.vm.usersLoading ? "..." : String(Object.keys(root.vm.users).length) },
-        { id: "systemOptions", icon: "tune", label: I18n.tr("Customized"),
-          value: root.vm.settingsLoading && root.vm.settings.length === 0 ? "..." : String(root.vm.settings.filter(s => s.configured).length) }
+        { id: "storage", icon: "hard_drive", label: I18n.tr("Free space"),
+          value: root.vm.disk.known ? root.human(root.vm.disk.avail) : "..." }
     ]
 
     Rectangle {
@@ -47,11 +58,11 @@ Column {
             x: 28
             y: 24
             width: parent.width - 56
-            implicitHeight: Math.max(heroText.implicitHeight, heroAction.height)
+            implicitHeight: Math.max(heroText.implicitHeight, heroActions.height)
 
             Column {
                 id: heroText
-                width: parent.width - heroAction.width - 24
+                width: parent.width - heroActions.width - 24
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
 
@@ -80,15 +91,26 @@ Column {
                 }
             }
 
-            TextButton {
-                id: heroAction
+            Row {
+                id: heroActions
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                variant: root.pending ? "primary" : "tonal"
-                icon: root.pending ? "sync" : "build"
-                text: root.pending ? (root.vm.rebuildBusy ? I18n.tr("Rebuilding") : I18n.tr("Rebuild now")) : I18n.tr("Maintenance")
-                busy: root.pending && root.vm.rebuildBusy
-                onClicked: root.pending ? root.vm.rebuild() : root.navigate("maintenance")
+                spacing: 8
+
+                TextButton {
+                    visible: root.pending
+                    variant: "ghost"
+                    text: I18n.tr("Review")
+                    onClicked: root.navigate("updates")
+                }
+
+                TextButton {
+                    variant: root.pending ? "primary" : "tonal"
+                    icon: root.pending ? "sync" : "system_update_alt"
+                    text: root.pending ? (root.vm.rebuildBusy ? I18n.tr("Rebuilding") : I18n.tr("Rebuild now")) : I18n.tr("Updates")
+                    busy: root.pending && root.vm.rebuildBusy
+                    onClicked: root.pending ? root.vm.rebuild() : root.navigate("updates")
+                }
             }
         }
     }
@@ -165,23 +187,6 @@ Column {
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.navigate(tile.modelData.id)
                 }
-            }
-        }
-    }
-
-    Section {
-        title: I18n.tr("Waiting for a rebuild")
-        subtitle: I18n.tr("Saved options the running system doesn't have yet. Undo one here, or rebuild to apply them all.")
-        meta: String(root.pendingSettings.length)
-        visible: root.pendingSettings.length > 0
-
-        Repeater {
-            model: root.pendingSettings
-
-            OptionRow {
-                required property var modelData
-                vm: root.vm
-                setting: modelData
             }
         }
     }

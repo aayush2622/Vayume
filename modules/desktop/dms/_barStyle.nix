@@ -14,13 +14,16 @@
     '';
   };
 
-  config.vayume.settingsGroups.Desktop = {
-    icon = "desktop_windows";
-    description = "How the shell itself looks.";
+  config.vayume.settingsGroups."Top bar" = {
+    icon = "toolbar";
+    description = "The DMS bar across the top of every screen.";
+    page = "appearance";
   };
 
   config.vayume.settingsMeta."desktop.barStyle" = {
     label = "Bar style";
     icon = "toolbar";
+    group = "Top bar";
+    order = 1;
   };
 }

@@ -640,9 +640,9 @@ themselves.
 Clicking the pill's expand zone doesn't open an inline popout - it opens
 a genuine separate window (`DankFloatingWindow`, the same base type
 DMS's own Settings modal uses), with a category sidebar down the left
-opening on Overview, then grouped as Look (Appearance), Software
-(Applications, Development, Default Apps) and System (System Options, Users,
-Maintenance, About), with a search field at the top and the save and
+opening on Home, then grouped as Personal (Appearance, Desktop pet, Users),
+Apps (Applications, Development, Default apps) and System (Network,
+Performance, Storage, Updates, About), with a search field at the top and the save and
 rebuild status in a card at the bottom of the sidebar, closer to DMS's own
 Settings screen than to a control-center card. The grouping is
 presentation only: each entry is still one page id that
@@ -666,8 +666,9 @@ content), `Sidebar.qml`/`SidebarItem.qml`, `PageHeader.qml`,
 `StatusCard.qml` (status and rebuild button) and `LogPanel.qml` (the live
 rebuild log), one file per category page (`AppearancePage.qml`,
 `DevelopmentPage.qml`, `ApplicationsPage.qml`, `DefaultAppsPage.qml`,
-`SystemOptionsPage.qml`, `UsersPage.qml`, `MaintenancePage.qml`,
-`AboutPage.qml`, plus `OverviewPage.qml` and `SearchPage.qml`), and the shared
+`UsersPage.qml`, `PetPage.qml`, `StoragePage.qml`, `UpdatesPage.qml`,
+`AboutPage.qml`, `SystemPage.qml` for Network and Performance, plus
+`OverviewPage.qml` for Home and `SearchPage.qml`), and the shared
 pieces described under [Vayori](#vayori-the-settings-design-language)
 below. Pages receive
 the root instance as `vm` and only ever call its functions
@@ -707,8 +708,9 @@ font (`Theme.fontFamily`) is used throughout.
 - **Building blocks.** `Section` is a titled group: an accent title, optional
   subtitle, a right-aligned `meta` count, optional collapsing, and its rows
   stacked 4px apart. `SettingItem` is the row every page uses and draws its
-  own card: title, description, an optional mono `meta` line (System Options
-  shows the option path there, Maintenance the exact `vayume` command), `tags`,
+  own card: a leading 40px icon tile (`image`, a themed icon file, or `icon`,
+  a Material symbol on a tonal square when there is no image), title,
+  description, an optional mono `meta` line, `tags`,
   `notes`, a `footer` inside the same card (the Applications page puts an
   app's options there), and a control slot on the right that drops under the
   text when the row is narrower than 560px or `stacked` is set; `card: false`
@@ -858,34 +860,74 @@ started - it auto-expands the moment a rebuild begins (a
 `Connections { target: root.vm }` on `rebuildBusy`), and can be
 collapsed by hand once it's no longer needed.
 
-### Maintenance page
+### Where things go
 
-The Maintenance page starts with the rebuild itself, then splits the
-commands into read-only checks and reports and, separately, cleanup and
-repair commands (those marked `confirm`). There is one row per command that sets `panel` in the `vayume.commands` registry
-([Commands.nix](core-commands.md)): clean up old generations (`gc`), check
-`_config.nix` (`config validate`), check plugin updates, and the Waydroid
-reinstall and repair. A command whose `panel` names an app (`app =
-"ZenBrowser"` for reload Zen) is shown under that app in Applications
-instead, in the same collapsed section as its settings. `CommandRow.qml` draws each; commands
-marked `confirm` need a second click within five seconds. The list comes
-from `vayume --json`, so a button exists exactly when its command does
-(no Zen button if Zen is off), and adding a button is one `panel`
-attribute in the module that registers the command.
+Every page has one subject, and each module says which page its settings
+and buttons belong on, so nothing is placed by a list in the QML:
+
+| Page | What is on it |
+| --- | --- |
+| Home | greeting, rebuild state, counts for apps, development, users and free disk space, shortcuts |
+| Appearance | font, cursor, the **Top bar** style |
+| Desktop pet | an animated preview of the chosen skin, then **Your pet**, **Behaviour**, **Placement** |
+| Users | accounts, groups, passwords, per-user packages |
+| Applications | apps by section (Internet, Music, Files, Gaming, System, Security, Containers) with their icons, each app's own options and buttons underneath it, then **Android (Waydroid)** |
+| Development | languages, editors, tools, with icons and which editors support each language |
+| Default apps | which app opens what |
+| Network | **DNS**, **Tor**, **Privacy** |
+| Performance | **Kernel**, **Tuning**, and the boot time report |
+| Storage | a disk usage bar, **Reclaim space** (disk usage report, clean caches, old generations), **Build output** |
+| Updates | rebuild, everything waiting for a rebuild, **Checks** (`_config.nix` and plugin updates), and anything that names no page |
+| About | the host and its repository |
+
+- **Settings** are placed by their group: `vayume.settingsGroups.<name>`
+  takes `page` and `order` (the card's position on that page) besides
+  `icon` and `description`, and `vayume.settingsMeta.<path>` takes `order`
+  for the row's position inside its card. `settings.json` carries them as
+  `groupPage`, `groupOrder` and `order`.
+- **Buttons** are placed by their command: a `panel` in
+  [`vayume.commands`](core-commands.md) takes `page` and `group` (the card
+  title; unset uses the page's own tools card). A panel with `app` goes under
+  that app in Applications instead, as before.
+- **Nothing gets lost.** A setting or button whose page is unset or unknown
+  lands on Updates, so a new module's option still shows up before anyone
+  decides where it belongs. `pageOfSetting` and `pageOfAction` on the widget
+  are the one place this rule lives; `PageOptions.qml` draws a page's
+  settings cards and tool cards from it, and every page except Home, Users,
+  Development, Default apps and About is mostly that component.
+- **Apps** carry their presentation in `flake.appMeta.<Name>`, next to
+  `appDescriptions` in the app's own file: `label` (the name shown, such as
+  "Zen Browser" for `ZenBrowser`), `icon` (a freedesktop icon name),
+  `symbol` (a Material symbol used when the icon theme has no such icon) and
+  `section`. `vayume config apps list` and `development list` include them.
+  Icons are looked up with `Quickshell.iconPath(name, true)`, so they come
+  from the app itself once it is installed and from Papirus for most of the
+  rest; `tests/eval.sh` checks every app has an entry.
+- **Tool rows** show the command's icon, label and description. The
+  `vayume ...` command line is no longer printed under each one, and
+  commands marked `confirm` carry a quiet "Asks first" tag; they still need
+  a second click within five seconds.
 
 Running a button reuses the rebuild machinery: `runCommand` in the widget
 starts the process, streams stdout and stderr into the same log at the
 bottom of the window, and shows "<label> - running..." then "<label>
 finished." or "failed (exit N)" in the sidebar's status card. Only one command runs at a
 time, and the buttons and the status card's Rebuild button are disabled while one
-does. "Check _config.nix" is the place to catch a bad edit before a
+does. The disk figures on Home and Storage come from `df` and are read
+again after every command, so a cleanup shows its effect straight away.
+"Check _config.nix" is the place to catch a bad edit before a
 rebuild, since settings edits are not evaluated when saved.
+
+The pet preview draws the sprite sheets the [Pet module](desktop-pet.md)
+puts in `/etc/vayume/pet-skins` (every skin, plain and kuroneko), cycling
+through sitting, washing, walking and napping with the skin, colours and
+name that are saved, so a change shows before the rebuild.
 
 ### Bar styles
 
 `vayume.desktop.barStyle` picks between two looks for the top bar, `classic`
 (the default) and `m3`. It is an ordinary `vayume.*` option, so it shows up in
-Vayume Settings under **System Options → Desktop → Bar style** and switches on
+Vayume Settings under **Appearance → Top bar → Bar style** and switches on
 the next rebuild; in `_config.nix` it is `vayume.desktop.barStyle = "m3";`.
 
 The profiles live in `modules/desktop/dms/_barProfiles.nix` as overrides on
@@ -976,14 +1018,15 @@ is moved into the field.
 
 ### Overview, search and shortcuts
 
-The window opens on **Overview** (or on whichever page was open last in
-this session - `activePage` lives on the widget, which outlives the
+The window opens on **Home** (page id `overview`, or whichever page was open
+last in this session - `activePage` lives on the widget, which outlives the
 window). It shows the host with a time-of-day greeting, whether anything
-is waiting for a rebuild and whether the repository is clean, four counts
-that jump to their pages, and every setting that is saved but not applied
-yet as a live `OptionRow`, so a change can be undone from here. It loads
-apps, development, settings and users the first time it opens; later
-visits reuse them like every other page.
+is waiting for a rebuild and whether the repository is clean, with Rebuild
+and Review buttons while something is, and four tiles that jump to their
+pages: apps, development, users and free disk space. The list of settings
+waiting for a rebuild is on Updates, which also carries the count in the
+sidebar. Home loads apps, development, settings, users and the disk figures
+the first time it opens; later visits reuse them like every other page.
 
 **Search** is the field at the top of the sidebar. Typing shows the
 search page in place of the current one (clearing it goes back): pages
@@ -996,20 +1039,18 @@ the settings, apps, development and command lists (`ensurePage("search")`).
 **Shortcuts** (`Shortcut` items on the window): `Ctrl+F` focuses search,
 `Ctrl+1`-`Ctrl+9` open the sidebar entries in order, `Ctrl+R` reloads
 the current page from `_config.nix`, `Ctrl+B` rebuilds, `Ctrl+L` shows or
-hides the log, and `Esc` clears the search. The Overview page lists them.
+hides the log, and `Esc` clears the search. Home lists them.
 
 **About** has copy and open buttons next to the repository and config
 file paths. They run `wl-copy` and `xdg-open` through
 `Quickshell.execDetached` (`copyText`/`openPath` on the widget), so the
 copy button does nothing on a host without `wl-clipboard`.
 
-### System Options page: every other `vayume.*` option
+### Setting rows
 
-`SystemOptionsPage.qml` renders the system-level part of `vayume config settings list` (settings that name an app go under that app instead, see below). The page header shows how many settings exist and how many are customized; a tinted warning card with a "Rebuild now" button appears while any change is saved but not applied. Below it are a search box, an All/Modified filter, and one panel per group (title and one-line description from `vayume.settingsGroups`; the group icon is still declared but no longer drawn).
+Each `OptionRow.qml` has the setting's icon, label and description, and the control: a toggle for booleans, a segmented control or a dropdown for enums (with a "Default" entry when the option is nullable), a text field for numbers, strings and string lists. The option path is no longer printed under each row; search still matches it. A row whose value differs from what is running gets an amber marker inside its card, a "Pending rebuild" tag and a "Running now: ..." line; a row with a line in `_config.nix` shows "Customized" and an undo button that resets it. There is no per-option QML - a new `lib.mkOption` under `vayume.*` appears after the next rebuild, on Updates until its group names a page; how that works and how to customise the label, icon, group and order is in [Settings.nix](core-settings.md). Errors come back the same way as on the other pages (`pickError`).
 
-Each `OptionRow.qml` has the label, the description, the option path in small mono type, and the control: a toggle for booleans, a segmented control or a dropdown for enums (with a "Default" entry when the option is nullable), a text field for numbers, strings and string lists. A row whose value differs from what is running gets an amber marker inside its card, a "Pending rebuild" tag and a "Running now: ..." line; a row with a line in `_config.nix` shows "Customized" and an undo button that resets it. There is no per-option QML - a new `lib.mkOption` under `vayume.*` appears on the page after the next rebuild; how that works and how to customise the label and icon is in [Settings.nix](core-settings.md). Errors come back the same way as on the other pages (`pickError`).
-
-**App settings live under the app.** `AppOptions.qml` sits beneath each toggle on the Applications page and lists the settings whose `settingsMeta` names that app (Distrobox has eleven). It is a small pill button inside the app's card, collapsed by default: "<App> options", the count, a pending-rebuild tag when needed and a chevron. Expanded, the rows sit in a recessed panel inside the same card, and the app's buttons (see the System page section) follow the settings; the rows are only created while it is open, and it reuses `SettingRow.qml`, so the controls behave exactly as on All Settings. Apps with no settings show nothing extra. The Development page does not render them yet, since none of its apps declares options.
+**App settings live under the app.** `AppOptions.qml` sits beneath each toggle on the Applications page and lists the settings whose `settingsMeta` names that app (Distrobox has eleven). It is a small pill button inside the app's card, collapsed by default: "<App> options", the count, a pending-rebuild tag when needed and a chevron. Expanded, the rows sit in a recessed panel inside the same card, and the app's buttons (see [Where things go](#where-things-go)) follow the settings; the rows are only created while it is open, and it reuses `OptionRow.qml`, so the controls behave exactly as on the other pages. Apps with no settings show nothing extra. The Development page does not render them yet, since none of its apps declares options.
 
 **Loading is lazy.** The bar widget only runs `vayume config repo` (about 60 ms) at login. Opening the window loads just the visible page's data (`ensurePage`), and each other page the first time it is opened; reopening the window reloads the active page. Combined with the read cache in [Config.nix](core-vayume-config.md), switching pages is instant unless something in the repo changed.
 
@@ -1084,7 +1125,7 @@ Explanations that used to be comments in the source files.
 
 ### `modules/desktop/dms/plugins/vayumeSettings/ui/pages/ApplicationsPage.qml`
 
-- Above `readonly property var categoryLabels: ({`: Development-category apps get their own dedicated page (with editor integrations, etc.) - showing them here too would just be the same toggle in two places with no extra information in either.
+- `appsHere` leaves out the development apps: they have their own page (with editor integrations), and showing them here too would be the same toggle in two places. Sections come from each app's `appMeta.section`, in the fixed order of `sectionOrder`; an unknown section sorts after those.
 
 ### `modules/desktop/dms/plugins/vayumeSettings/ui/components/Badge.qml`
 

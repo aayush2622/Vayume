@@ -356,6 +356,7 @@
         panel = {
           label = "Check plugin updates";
           icon = "update";
+          page = "updates";
           args = [ "--report-only" ];
         };
       };

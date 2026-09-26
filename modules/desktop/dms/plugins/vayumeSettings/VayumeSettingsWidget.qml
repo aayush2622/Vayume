@@ -100,6 +100,29 @@ PluginComponent {
     property string activePage: "overview"
     property var loadedPages: ({})
 
+    readonly property var pageIds: ["overview", "appearance", "pet", "users", "applications", "development", "defaults", "network", "performance", "storage", "updates", "about"]
+
+    function pageOfSetting(s) {
+        if (s.app)
+            return "applications";
+        return root.pageIds.includes(s.groupPage) ? s.groupPage : "updates";
+    }
+
+    function pageOfAction(a) {
+        if (a.panel.app)
+            return "applications";
+        return root.pageIds.includes(a.panel.page) ? a.panel.page : "updates";
+    }
+
+    function iconUrl(name) {
+        if (!name || name.length === 0)
+            return "";
+        return Quickshell.iconPath(name, true);
+    }
+
+    property var disk: ({ size: 0, used: 0, avail: 0, known: false })
+    function refreshDisk() { diskProc.running = true; }
+
     function ensurePage(id) {
         if (id !== "search")
             root.activePage = id;
@@ -107,14 +130,14 @@ PluginComponent {
             return;
         root.loadedPages = Object.assign({}, root.loadedPages, { [id]: true });
         switch (id) {
-        case "overview": refreshApps(); refreshDevelopment(); refreshSettings(); refreshUsers(); break;
-        case "appearance": refreshTheme(); break;
+        case "overview": refreshApps(); refreshDevelopment(); refreshSettings(); refreshUsers(); refreshDisk(); break;
+        case "appearance": refreshTheme(); refreshSettings(); refreshActions(); break;
         case "development": refreshDevelopment(); refreshApps(); break;
         case "applications": refreshApps(); refreshSettings(); refreshActions(); break;
         case "defaults": refreshDefaultApps(); break;
         case "users": refreshUsers(); break;
-        case "systemOptions": refreshSettings(); break;
-        case "maintenance": refreshActions(); break;
+        case "pet": case "network": case "performance": case "updates": refreshSettings(); refreshActions(); break;
+        case "storage": refreshSettings(); refreshActions(); refreshDisk(); break;
         case "search": refreshApps(); refreshDevelopment(); refreshSettings(); refreshActions(); break;
         }
     }
@@ -539,6 +562,19 @@ PluginComponent {
     }
 
     Process {
+        id: diskProc
+        command: ["df", "--block-size=1", "--output=size,used,avail", "/"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const cols = text.trim().split("\n").pop().trim().split(/\s+/).map(Number);
+                if (cols.length === 3 && cols.every(n => !isNaN(n)))
+                    root.disk = { size: cols[0], used: cols[1], avail: cols[2], known: true };
+            }
+        }
+    }
+
+    Process {
         id: actionsProc
         command: ["vayume", "--json"]
         running: false
@@ -570,6 +606,7 @@ PluginComponent {
             if (root.runRefresh)
                 root.refreshApps();
             root.refreshRepo();
+            root.refreshDisk();
         }
     }
 

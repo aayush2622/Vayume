@@ -7,6 +7,7 @@ Column {
 
     required property var vm
     required property string appName
+    property string appLabel: root.appName
 
     property bool collapsed: true
 
@@ -57,7 +58,7 @@ Column {
             }
 
             StyledText {
-                text: I18n.tr("%1 options").arg(root.appName)
+                text: I18n.tr("%1 options").arg(root.appLabel)
                 font.pixelSize: Vayori.body
                 font.weight: Font.Medium
                 color: Vayori.ink

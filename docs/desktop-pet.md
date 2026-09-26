@@ -47,7 +47,13 @@ A pixel pet that lives on the screen: it naps, wanders, chases the pointer if yo
   in this mode, and runs after it like the original oneko. On niri
   there's no equivalent, so the pet just sits and does idle things.
 
-### Options (`vayume.desktop.pet`, shown in Settings under "Desktop pet")
+### Options (`vayume.desktop.pet`, the Desktop pet page in Settings)
+
+The page opens with an animated preview of the saved skin, colours and name
+(drawn from `/etc/vayume/pet-skins`, which this module fills with every skin
+plain and inverted), then the options in three cards: **Your pet** (show,
+name, skin, kuroneko, size), **Behaviour** (movement, activity, speed,
+bubbles) and **Placement** (layer, monitor).
 
 | Option | Default | |
 |---|---|---|

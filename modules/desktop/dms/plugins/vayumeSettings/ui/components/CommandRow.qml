@@ -27,13 +27,12 @@ SettingItem {
 
     title: root.action.panel.label
     description: root.action.description
-    meta: "vayume " + [root.action.name].concat(root.action.panel.args).join(" ")
+    icon: root.action.panel.icon || "play_arrow"
     marker: root.armed ? "warning" : ""
 
     tags: Badge {
         visible: root.needsConfirm
-        label: I18n.tr("Confirm")
-        tone: "warning"
+        label: I18n.tr("Asks first")
         anchors.verticalCenter: parent ? parent.verticalCenter : undefined
     }
 
