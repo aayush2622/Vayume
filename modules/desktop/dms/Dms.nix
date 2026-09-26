@@ -10,6 +10,7 @@
     }:
     let
       theme = config.vayume.theme;
+      barProfile = (import ./_barProfiles.nix).${config.vayume.desktop.barStyle};
 
       materialOSIcons = pkgs.stdenvNoCC.mkDerivation {
         pname = "materialos-icon-theme";
@@ -29,6 +30,7 @@
     {
       imports = [
         ./_rebuild.nix
+        ./_barStyle.nix
         ./_shellPatch.nix
         ./plugins/_tor.nix
         ./plugins/_vayumeSettings.nix
@@ -326,130 +328,133 @@
               osdPowerProfileEnabled = true;
 
               barConfigs = [
-                {
-                  id = "default";
-                  name = "Main Bar";
+                (
+                  {
+                    id = "default";
+                    name = "Main Bar";
 
-                  enabled = true;
-                  position = 0;
+                    enabled = true;
+                    position = 0;
 
-                  screenPreferences = [ "all" ];
-                  showOnLastDisplay = true;
+                    screenPreferences = [ "all" ];
+                    showOnLastDisplay = true;
 
-                  leftWidgets = [
-                    "launcherButton"
-                    "workspaceSwitcher"
+                    leftWidgets = [
+                      "launcherButton"
+                      "workspaceSwitcher"
 
-                    {
-                      id = "focusedWindow";
-                      enabled = true;
-                      focusedWindowSize = 1;
-                      focusedWindowCompactMode = true;
-                      focusedWindowShowIcon = true;
-                    }
-                  ];
+                      {
+                        id = "focusedWindow";
+                        enabled = true;
+                        focusedWindowSize = 1;
+                        focusedWindowCompactMode = true;
+                        focusedWindowShowIcon = true;
+                      }
+                    ];
 
-                  centerWidgets = [
-                    {
-                      id = "music";
-                      enabled = true;
-                      mediaSize = 0;
-                    }
+                    centerWidgets = [
+                      {
+                        id = "music";
+                        enabled = true;
+                        mediaSize = 0;
+                      }
 
-                    {
-                      id = "clock";
-                      enabled = true;
-                      clockCompactMode = false;
-                    }
+                      {
+                        id = "clock";
+                        enabled = true;
+                        clockCompactMode = false;
+                      }
 
-                    "weather"
-                  ];
+                      "weather"
+                    ];
 
-                  rightWidgets = [
-                    "systemTray"
-                    "cpuUsage"
-                    "memUsage"
+                    rightWidgets = [
+                      "systemTray"
+                      "cpuUsage"
+                      "memUsage"
 
-                    "notificationButton"
+                      "notificationButton"
 
-                    {
-                      id = "battery";
-                      enabled = true;
-                      showBatteryPercent = true;
-                      showBatteryPercentOnlyOnBattery = false;
-                      showBatteryTime = false;
-                      batteryPillStyle = false;
-                      batteryPillPercentSign = false;
-                    }
+                      {
+                        id = "battery";
+                        enabled = true;
+                        showBatteryPercent = true;
+                        showBatteryPercentOnlyOnBattery = false;
+                        showBatteryTime = false;
+                        batteryPillStyle = false;
+                        batteryPillPercentSign = false;
+                      }
 
-                    "controlCenterButton"
-                  ];
+                      "controlCenterButton"
+                    ];
 
-                  spacing = 4;
-                  innerPadding = 3;
+                    spacing = 4;
+                    innerPadding = 3;
 
-                  barInsetPadding = -1;
-                  bottomGap = 0;
+                    barInsetPadding = -1;
+                    bottomGap = 0;
 
-                  transparency = 0.50;
-                  widgetTransparency = 1;
+                    transparency = 0.50;
+                    widgetTransparency = 1;
 
-                  squareCorners = false;
-                  noBackground = true;
+                    squareCorners = false;
+                    noBackground = true;
 
-                  maximizeWidgetIcons = false;
-                  maximizeWidgetText = false;
+                    maximizeWidgetIcons = false;
+                    maximizeWidgetText = false;
 
-                  removeWidgetPadding = false;
-                  widgetPadding = 8;
+                    removeWidgetPadding = false;
+                    widgetPadding = 8;
 
-                  gothCornersEnabled = false;
-                  gothCornerRadiusOverride = false;
-                  gothCornerRadiusValue = 12;
+                    gothCornersEnabled = false;
+                    gothCornerRadiusOverride = false;
+                    gothCornerRadiusValue = 12;
 
-                  borderEnabled = false;
-                  borderColor = "surfaceText";
-                  borderOpacity = 1;
-                  borderThickness = 1;
+                    borderEnabled = false;
+                    borderColor = "surfaceText";
+                    borderOpacity = 1;
+                    borderThickness = 1;
 
-                  widgetOutlineEnabled = false;
-                  widgetOutlineColor = "primary";
-                  widgetOutlineOpacity = 1;
-                  widgetOutlineThickness = 1;
+                    widgetOutlineEnabled = false;
+                    widgetOutlineColor = "primary";
+                    widgetOutlineOpacity = 1;
+                    widgetOutlineThickness = 1;
 
-                  fontScale = 1;
-                  iconScale = 1;
+                    fontScale = 1;
+                    iconScale = 1;
 
-                  autoHide = false;
-                  autoHideStrict = false;
-                  autoHideDelay = 250;
+                    autoHide = false;
+                    autoHideStrict = false;
+                    autoHideDelay = 250;
 
-                  showOnWindowsOpen = false;
-                  openOnOverview = false;
+                    showOnWindowsOpen = false;
+                    openOnOverview = false;
 
-                  visible = true;
+                    visible = true;
 
-                  popupGapsAuto = true;
-                  popupGapsManual = 4;
+                    popupGapsAuto = true;
+                    popupGapsManual = 4;
 
-                  maximizeDetection = true;
+                    maximizeDetection = true;
 
-                  useOverlayLayer = false;
+                    useOverlayLayer = false;
 
-                  scrollEnabled = true;
-                  scrollXBehavior = "column";
-                  scrollYBehavior = "workspace";
+                    scrollEnabled = true;
+                    scrollXBehavior = "column";
+                    scrollYBehavior = "workspace";
 
-                  shadowIntensity = 0;
-                  shadowOpacity = 60;
-                  shadowColorMode = "default";
-                  shadowCustomColor = "#000000";
+                    shadowIntensity = 0;
+                    shadowOpacity = 60;
+                    shadowColorMode = "default";
+                    shadowCustomColor = "#000000";
 
-                  clickThrough = false;
+                    clickThrough = false;
 
-                  hoverPopouts = false;
-                  hoverPopoutDelay = 150;
-                }
+                    hoverPopouts = false;
+                    hoverPopoutDelay = 150;
+                  }
+                  // barProfile.bar
+                )
               ];
 
               desktopClockCustomColor = {
@@ -560,7 +565,8 @@
               frameEnabled = true;
               frameOpacity = 0.45;
               configVersion = 13;
-            };
+            }
+            // barProfile.shell;
           };
         }
       );

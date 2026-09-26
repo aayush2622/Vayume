@@ -52,12 +52,11 @@ Everything you change day to day lives in one gitignored file per host, `_config
     <td><img src="screenshots/settings-apps.jpg" alt="Vayume Settings applications"><br><sub><b>Applications</b> — every app is one toggle, with its own options inline</sub></td>
   </tr>
   <tr>
-    <td><img src="screenshots/settings-search.jpg" alt="Vayume Settings search"><br><sub><b>Search</b> — find and change any option from one field</sub></td>
     <td><img src="screenshots/lock.jpg" alt="Lock screen"><br><sub><b>Lock screen</b> — live wallpaper and colours, weather, media and status</sub></td>
+    <td><img src="screenshots/login.jpg" alt="Login screen"><br><sub><b>Login</b> — SDDM using the same design as the lock screen</sub></td>
   </tr>
   <tr>
-    <td><img src="screenshots/login.jpg" alt="Login screen"><br><sub><b>Login</b> — SDDM using the same design as the lock screen</sub></td>
-    <td><img src="screenshots/grub.jpg" alt="GRUB boot menu"><br><sub><b>Boot menu</b> — custom Material 3 GRUB theme</sub></td>
+    <td colspan="2"><img src="screenshots/grub.jpg" alt="GRUB boot menu"><br><sub><b>Boot menu</b> — custom Material 3 GRUB theme</sub></td>
   </tr>
 </table>
 
@@ -65,7 +64,7 @@ Everything you change day to day lives in one gitignored file per host, `_config
 
 | Area | What you get |
 |---|---|
-| **Desktop** | niri and Hyprland with identical keybinds, chosen at login · DankMaterialShell bar, launcher, notifications and control center · wallpaper-derived colours via matugen, following the dark/light toggle |
+| **Desktop** | niri and Hyprland with identical keybinds, chosen at login · DankMaterialShell bar (classic or Material 3 island style, one setting), launcher, notifications and control center · wallpaper-derived colours via matugen, following the dark/light toggle |
 | **Boot and login** | Custom Material 3 GRUB theme · SDDM login screen and DMS lock screen built from one shared QML design — fixed wallpaper at login, live wallpaper and colours when locked |
 | **Settings** | Vayume Settings: apps, languages, default apps, users, every `vayume.*` option, maintenance commands, search, live rebuild log |
 | **Development** | VS Code, Zed and Android Studio with language-aware extensions · one toggle each for C++, Rust, Kotlin, Flutter/Dart, Nix, Qt and Python · cc-switch · ripgrep, fd, fzf, btop, nil, nixfmt |
