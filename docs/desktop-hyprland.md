@@ -103,6 +103,10 @@ repo generates.
 argument is the per-keystroke delay in ms passed to `ydotool type
 --key-delay`; the second is a grace period (seconds) before typing
 starts, to give you time to refocus/click into the target field first.
+Pressing `Alt+V` again while it is still typing stops it: the script
+keeps its pid in `$XDG_RUNTIME_DIR/vayume-type-clipboard.pid`, and a
+second run that finds a live pid kills that run and its `ydotool`
+instead of starting another.
 
 **Screenshot binds are split three ways, not all hyprshot.** Plain
 `Print` goes through the `screenshotPlus` plugin instead of hyprshot -
