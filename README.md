@@ -10,8 +10,7 @@
 ![Shell](https://img.shields.io/badge/shell-DankMaterialShell-8b5cf6)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 
-<img src="screenshots/desktop.png" width="49%" alt="Desktop">
-<img src="screenshots/dev.png" width="49%" alt="Development setup">
+<img src="screenshots/desktop.png" width="100%" alt="Vayume desktop">
 
 </div>
 
@@ -26,6 +25,7 @@ Everything you change day to day lives in one gitignored file per host, `_config
 
 ## Contents
 
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -39,6 +39,27 @@ Everything you change day to day lives in one gitignored file per host, `_config
 - [Known limitations](#known-limitations)
 - [Credits](#credits)
 - [License](#license)
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="screenshots/dev.png" alt="Development workspace"><br><sub><b>Workspace</b> — kitty with fastfetch, VS Code, synced lyrics and a visualiser, all in the wallpaper's colours</sub></td>
+    <td width="50%"><img src="screenshots/media.png" alt="Media workspace"><br><sub><b>Media</b> — the DMS media popout, now-playing widget and live lyrics</sub></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/settings-overview.jpg" alt="Vayume Settings overview"><br><sub><b>Vayume Settings</b> — overview of the machine and pending changes</sub></td>
+    <td><img src="screenshots/settings-apps.jpg" alt="Vayume Settings applications"><br><sub><b>Applications</b> — every app is one toggle, with its own options inline</sub></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/settings-search.jpg" alt="Vayume Settings search"><br><sub><b>Search</b> — find and change any option from one field</sub></td>
+    <td><img src="screenshots/lock.jpg" alt="Lock screen"><br><sub><b>Lock screen</b> — live wallpaper and colours, weather, media and status</sub></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/login.jpg" alt="Login screen"><br><sub><b>Login</b> — SDDM using the same design as the lock screen</sub></td>
+    <td><img src="screenshots/grub.jpg" alt="GRUB boot menu"><br><sub><b>Boot menu</b> — custom Material 3 GRUB theme</sub></td>
+  </tr>
+</table>
 
 ## Features
 
