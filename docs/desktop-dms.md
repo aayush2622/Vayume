@@ -213,12 +213,6 @@ enabling it alone isn't enough.
   rather than needing its own bar icon, unlike the monitor plugins whose
   descriptions explicitly say "in your bar." Give it a widget slot too if
   it turns out to want one.
-- **`dankBitwarden`** talks to `rbw` (a separate CLI vault), not the
-  desktop app - it searches whatever's in `rbw`, full stop. Its default
-  actions got changed from autotype to clipboard-copy, since autotyping
-  a password into whatever window happens to have focus is a riskier
-  default than copy-to-clipboard, which is what Bitwarden's own UI
-  defaults to anyway.
 - **`spotifyMatugen` was replaced by `musicTheme`.** It locked DMS's
   dynamic color to the album art of the playing track, but only for a
   player whose MPRIS name contains "spotify" (checked in its

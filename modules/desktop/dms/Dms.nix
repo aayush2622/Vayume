@@ -198,18 +198,6 @@
                 };
               };
 
-              dankBitwarden = {
-                enable = true;
-                settings = {
-                  trigger = "[";
-                  noTrigger = false;
-                  loginAction = "copy:password";
-                  cardAction = "copy:number";
-                  identityAction = "copy:name";
-                  sshKeyAction = "copy:public_key";
-                };
-              };
-
               musicTheme.enable = true;
 
               pureLyrics.enable = true;
