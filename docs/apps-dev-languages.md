@@ -31,11 +31,32 @@ them back on rebuilt clean again.
   evaluates them: the settings give it this repo's pinned nixpkgs, the
   NixOS options of the host named in `/etc/hostname` (the first host in the
   flake if none matches, so nothing is hard-coded), and the home-manager
-  options (`options.home-manager.users.type.getSubOptions [ ]`). The flake is
-  loaded as `path:` rather than a plain path on purpose - a plain path
-  goes through git and drops the gitignored `_hardware.nix`, which makes the
-  evaluation fail. The expressions are relative to the workspace, so the
-  completions only work when VS Code is opened on this repo. Format-on-save
+  options (`options.home-manager.users.type.getSubOptions [ ]`). That
+  gives completion of option names, hover with each option's type and
+  description, and Ctrl+click (go to definition) on an option to where it
+  is declared, besides the usual jumps to `let` bindings and imported
+  files.
+- **The flake is evaluated in place, not copied.** `builtins.getFlake`
+  copies the repo into the store first, so Ctrl+click on a `vayume.*`
+  option used to open a read-only `/nix/store/...-source` copy instead of
+  the file you can edit. The expressions now load the flake through
+  `flake-compat` (already in `flake.lock`, found by its repo name) with
+  `src = { outPath = <repo>; }`, which it imports from that path directly,
+  so declarations point at the real files; nixpkgs options still open the
+  nixpkgs source. The gitignored `_config.nix` and `_hardware.nix` are
+  read in place too, which is also why a plain `getFlake` of the path would
+  not do. The repo is found the same way `vayume rebuild` finds it
+  (`vayumeLib.repoDiscovery`: `~/vayume`, `~/dotfiles`, `~/.dotfiles`,
+  `/etc/nixos`), falling back to the directory nixd runs in, so it works
+  whatever folder or single file VS Code has open. Checked by driving nixd
+  over LSP from `/tmp` with the generated settings: option completion,
+  hover, and go to definition into `_barStyle.nix` and `Users.nix` in the
+  checkout.
+- **Not everything can be followed.** Names reached through flake
+  outputs, such as `self.nixosModules.Dms` or `self.homeModules.apps.Zed`,
+  are built by `import-tree` from the file layout at evaluation time, so
+  no Nix language server can jump from them to a file; open the module by
+  its path instead (`Ctrl+P`, `Dms`). Format-on-save
   runs `nixfmt` through the `nix-forge` extension. Zed's Nix extension
   still uses `nil`, which is why both servers are installed.
 - **`fwcd.kotlin` turned out to only exist on the marketplace, not in
