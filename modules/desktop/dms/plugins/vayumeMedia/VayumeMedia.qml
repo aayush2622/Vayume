@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell.Services.Mpris
 import qs.Common
 import qs.Services
@@ -12,49 +13,158 @@ DesktopPluginComponent {
     readonly property bool hasPlayer: root.player !== null && root.player !== undefined
     readonly property bool playing: root.hasPlayer && root.player.playbackState === MprisPlaybackState.Playing
     readonly property real length: root.hasPlayer ? (MprisController.activePlayerStableLength > 0 ? MprisController.activePlayerStableLength : root.player.length) : 0
-    readonly property real pad: Math.round(width * 0.06)
+    readonly property bool canSeek: root.hasPlayer && root.player.canSeek && root.length > 0
+    readonly property real pad: Math.round(width * 0.065)
+    readonly property string artUrl: root.hasPlayer ? (root.player.trackArtUrl || "") : ""
+
+    property real position: 0
+    property bool seeking: false
+    property real seekValue: 0
+
+    readonly property real fraction: root.seeking ? root.seekValue : (root.length > 0 ? Math.min(1, root.position / root.length) : 0)
 
     function clock(seconds) {
         const s = Math.max(0, Math.floor(seconds));
-        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+        const h = Math.floor(s / 3600);
+        const m = Math.floor(s % 3600 / 60);
+        const sec = String(s % 60).padStart(2, "0");
+        return h > 0 ? h + ":" + String(m).padStart(2, "0") + ":" + sec : m + ":" + sec;
     }
 
-    implicitWidth: 270
-    implicitHeight: 420
+    function syncPosition() {
+        root.position = root.hasPlayer ? root.player.position : 0;
+    }
+
+    implicitWidth: 300
+    implicitHeight: 500
+
+    onPlayerChanged: syncPosition()
 
     Timer {
-        interval: 1000
-        running: root.playing
+        interval: 500
+        running: root.hasPlayer
         repeat: true
-        onTriggered: if (root.player) root.player.positionChanged()
+        triggeredOnStart: true
+        onTriggered: root.syncPosition()
     }
 
-    Rectangle {
+    Item {
+        id: card
         anchors.fill: parent
-        radius: 28
-        color: Theme.withAlpha(Theme.surfaceContainer, 0.78)
         opacity: root.hasPlayer ? 1 : 0
         visible: opacity > 0
+        scale: root.hasPlayer ? 1 : 0.96
 
-        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on scale { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+
+        Rectangle {
+            id: cardMask
+            anchors.fill: parent
+            radius: 32
+            visible: false
+            layer.enabled: true
+        }
+
+        Item {
+            anchors.fill: parent
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                maskEnabled: true
+                maskSource: cardMask
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color: Theme.surfaceContainer
+            }
+
+            Image {
+                id: backdrop
+                anchors.fill: parent
+                source: root.artUrl
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                sourceSize: Qt.size(160, 160)
+                visible: false
+            }
+
+            MultiEffect {
+                anchors.fill: parent
+                source: backdrop
+                visible: backdrop.status === Image.Ready
+                blurEnabled: true
+                blur: 1
+                blurMax: 64
+                saturation: 0.2
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                gradient: Gradient {
+                    GradientStop { position: 0; color: Theme.withAlpha(Theme.surfaceContainer, 0.55) }
+                    GradientStop { position: 0.55; color: Theme.withAlpha(Theme.surfaceContainer, 0.8) }
+                    GradientStop { position: 1; color: Theme.withAlpha(Theme.surfaceContainer, 0.92) }
+                }
+            }
+        }
+
+        Row {
+            id: header
+            x: root.pad
+            y: root.pad - 2
+            spacing: 6
+
+            DankIcon {
+                name: "graphic_eq"
+                size: 16
+                color: Theme.primary
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            StyledText {
+                text: root.hasPlayer && root.player.identity ? root.player.identity : I18n.tr("Now playing")
+                font.pixelSize: Theme.fontSizeSmall
+                font.weight: Font.Medium
+                color: Theme.surfaceVariantText
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
 
         Rectangle {
             id: art
             x: root.pad
-            y: root.pad
+            anchors.top: header.bottom
+            anchors.topMargin: 10
             width: parent.width - root.pad * 2
             height: width
-            radius: 20
+            radius: 24
             color: Theme.surfaceContainerHighest
-            clip: true
 
             Image {
                 id: artImage
                 anchors.fill: parent
-                source: root.hasPlayer ? (root.player.trackArtUrl || "") : ""
+                source: root.artUrl
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 sourceSize: Qt.size(width * 2, height * 2)
+                visible: false
+            }
+
+            Rectangle {
+                id: artMask
+                anchors.fill: parent
+                radius: parent.radius
+                visible: false
+                layer.enabled: true
+            }
+
+            MultiEffect {
+                anchors.fill: parent
+                source: artImage
+                visible: artImage.status === Image.Ready
+                maskEnabled: true
+                maskSource: artMask
             }
 
             DankIcon {
@@ -70,15 +180,15 @@ DesktopPluginComponent {
             id: meta
             x: root.pad
             anchors.top: art.bottom
-            anchors.topMargin: Math.round(root.pad * 0.8)
+            anchors.topMargin: 14
             width: parent.width - root.pad * 2
             spacing: 2
 
             StyledText {
                 width: parent.width
                 text: root.hasPlayer ? (root.player.trackTitle || I18n.tr("Unknown title")) : ""
-                font.pixelSize: Theme.fontSizeLarge
-                font.weight: Font.DemiBold
+                font.pixelSize: Theme.fontSizeLarge + 2
+                font.weight: Font.Bold
                 color: Theme.surfaceText
                 wrapMode: Text.NoWrap
                 elide: Text.ElideRight
@@ -87,46 +197,56 @@ DesktopPluginComponent {
             StyledText {
                 width: parent.width
                 text: root.hasPlayer ? (root.player.trackArtist || "") : ""
-                font.pixelSize: Theme.fontSizeSmall
+                font.pixelSize: Theme.fontSizeMedium
                 color: Theme.surfaceVariantText
                 wrapMode: Text.NoWrap
                 elide: Text.ElideRight
             }
         }
 
-        Item {
+        WavyBar {
             id: progress
             x: root.pad
             anchors.top: meta.bottom
-            anchors.topMargin: Math.round(root.pad * 0.7)
+            anchors.topMargin: 10
             width: parent.width - root.pad * 2
-            height: 22
+            height: 26
+            value: root.fraction
+            moving: root.playing && !root.seeking
+            activeColor: Theme.primary
+            trackColor: Theme.withAlpha(Theme.surfaceText, 0.16)
+            thickness: root.seeking ? 6 : 5
 
-            readonly property real fraction: root.length > 0 && root.hasPlayer ? Math.min(1, root.player.position / root.length) : 0
+            MouseArea {
+                anchors.fill: parent
+                anchors.topMargin: -6
+                anchors.bottomMargin: -6
+                enabled: root.canSeek
+                hoverEnabled: true
+                cursorShape: root.canSeek ? Qt.PointingHandCursor : Qt.ArrowCursor
+                preventStealing: true
 
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width
-                height: 4
-                radius: 2
-                color: Theme.surfaceContainerHighest
-            }
+                function valueAt(x) {
+                    return Math.max(0, Math.min(1, x / width));
+                }
 
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width * progress.fraction
-                height: 4
-                radius: 2
-                color: Theme.primary
-            }
-
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                x: Math.max(0, parent.width * progress.fraction - width / 2)
-                width: 4
-                height: 16
-                radius: 2
-                color: Theme.primary
+                onPressed: mouse => {
+                    root.seekValue = valueAt(mouse.x);
+                    root.seeking = true;
+                }
+                onPositionChanged: mouse => {
+                    if (pressed)
+                        root.seekValue = valueAt(mouse.x);
+                }
+                onReleased: {
+                    if (!root.seeking)
+                        return;
+                    const target = root.seekValue * root.length;
+                    root.player.position = target;
+                    root.position = target;
+                    root.seeking = false;
+                }
+                onCanceled: root.seeking = false
             }
         }
 
@@ -138,9 +258,10 @@ DesktopPluginComponent {
             height: 16
 
             StyledText {
-                text: root.hasPlayer ? root.clock(root.player.position) : ""
+                text: root.hasPlayer ? root.clock(root.fraction * root.length) : ""
                 font.pixelSize: Theme.fontSizeSmall - 1
-                color: Theme.surfaceVariantText
+                font.weight: root.seeking ? Font.Bold : Font.Normal
+                color: root.seeking ? Theme.primary : Theme.surfaceVariantText
             }
 
             StyledText {
@@ -155,7 +276,7 @@ DesktopPluginComponent {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: root.pad
-            spacing: 14
+            spacing: 8
 
             Repeater {
                 model: [
@@ -167,11 +288,13 @@ DesktopPluginComponent {
                 Rectangle {
                     id: btn
                     required property var modelData
-                    width: modelData.main ? 64 : 44
-                    height: modelData.main ? 52 : 44
-                    radius: modelData.main ? 18 : height / 2
+                    width: modelData.main ? 96 : 60
+                    height: 56
+                    radius: area.pressed ? 12 : (modelData.main ? (root.playing ? 18 : 28) : 16)
                     anchors.verticalCenter: parent.verticalCenter
-                    color: modelData.main ? Theme.primary : Theme.withAlpha(Theme.secondaryContainer, 0.9)
+                    color: modelData.main ? Theme.primary : Theme.withAlpha(Theme.secondaryContainer, 0.95)
+
+                    Behavior on radius { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
 
                     Rectangle {
                         anchors.fill: parent
@@ -183,7 +306,7 @@ DesktopPluginComponent {
                     DankIcon {
                         anchors.centerIn: parent
                         name: btn.modelData.icon
-                        size: btn.modelData.main ? 28 : 22
+                        size: btn.modelData.main ? 30 : 24
                         filled: true
                         color: btn.modelData.main ? Theme.onPrimary : Theme.surfaceText
                     }

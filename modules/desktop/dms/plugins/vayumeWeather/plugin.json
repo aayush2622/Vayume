@@ -1,0 +1,12 @@
+{
+    "id": "vayumeWeather",
+    "name": "Vayume Weather",
+    "capabilities": ["desktop-widget"],
+    "description": "Material 3 weather card with the next days",
+    "version": "1.0.0",
+    "author": "vayume",
+    "type": "desktop",
+    "component": "./VayumeWeather.qml",
+    "icon": "partly_cloudy_day",
+    "permissions": ["settings_read"]
+}

@@ -949,18 +949,36 @@ wallpaper.
 
 ### Desktop widgets
 
-Besides the Pure Lyrics and Cava Visualizer widgets, two of this repo's own
-DMS desktop-widget plugins sit on the desktop, laid out like the lock screen:
-`plugins/vayumeClock` on the left (no card; the lock screen's stacked hour and
-`primary` minutes, AM/PM chip, full date and greeting, using the lock font
-setting, with a soft shadow for contrast), `plugins/vayumeMedia` on the right
-(album art, title, artist, progress and a filled play button in a
-`surfaceContainer` card at 78% opacity, following
-`MprisController.activePlayer` and fading out when nothing is playing). The
-desktop pet is not a DMS widget; see [desktop-pet.md](desktop-pet.md). They are
-registered in
+Besides the Pure Lyrics and Cava Visualizer widgets, four of this repo's own
+DMS desktop-widget plugins make the desktop: two columns, clock over weather on
+the left and now playing over system on the right, both ending just below the
+lyrics so the bottom stays clear for the visualiser:
+
+| Widget | Place | What it shows |
+| --- | --- | --- |
+| `plugins/vayumeClock` | top left | the lock screen's stacked hour and `primary` minutes, AM/PM chip, full date and greeting, no card |
+| `plugins/vayumeWeather` | left, under the clock | current temperature, feels-like and condition in a tonal icon badge, and the next four days (`WeatherService`); the city is left out so screenshots don't give away where you are |
+| `plugins/vayumeSystem` | right, under the media card | wavy rings for CPU, memory and battery (`DgopService`, `BatteryService`); CPU and memory turn `error`-red above 90%, battery only when low and not charging |
+| `plugins/vayumeMedia` | top right | the active player (`MprisController.activePlayer`) in a card whose background is the album art blurred under a scrim, the art itself, title, artist, a wavy progress bar, times and an M3 Expressive button group |
+
+**The media progress bar can be dragged.** It follows the Material 3
+Expressive wavy style: the played part is a sine wave that moves while the
+track plays and flattens when paused, a gap and a rounded handle mark the
+position, and the rest is a flat track with an end dot. Pressing or dragging
+anywhere on it previews the new time in the time label and seeks on release
+(`player.position`, only when the player reports `canSeek` and a length).
+The position is read every half second rather than only on MPRIS signals,
+which Quickshell does not emit for a steadily advancing position. The play
+button is a wider pill that squares off while playing and springs back
+when paused; every button tightens its corners while pressed.
+
+`WavyBar.qml` and `WavyRing.qml` live in `plugins/vayumeCommon/` and are drawn
+on a `Canvas`. A DMS plugin is loaded from its own directory, so
+`_vayumeWidgets.nix` copies them into each plugin that uses them
+(`withCommon`) instead of importing across plugins. They are registered in
 `plugins/_vayumeWidgets.nix` and placed by entries in `desktopWidgetInstances`,
-and can be moved or resized from DMS as usual (right-drag).
+and can be moved or resized from DMS as usual (right-drag). The desktop pet is
+not a DMS widget; see [desktop-pet.md](desktop-pet.md).
 
 **Positions are seeded into `session.json`.** DMS keeps instance positions in
 `SessionData.desktopWidgetInstancePositions` (the machine-specific
