@@ -205,6 +205,16 @@ in
             security.pam.services.login.enableGnomeKeyring = true;
             security.pam.services.dankshell.enableGnomeKeyring = true;
 
+            systemd.user.services.gnome-keyring-start = {
+              description = "Hand the PAM-unlocked login keyring to the session";
+              wantedBy = [ "graphical-session.target" ];
+              before = [ "graphical-session.target" ];
+              serviceConfig = {
+                Type = "oneshot";
+                ExecStart = "${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=secrets";
+              };
+            };
+
             security.sudo.extraConfig = ''
               Defaults timestamp_type=global
               Defaults timestamp_timeout=15
