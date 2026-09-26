@@ -6,7 +6,13 @@
   ...
 }:
 {
-  home.packages = [ inputs.hytale-launcher.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+  home.packages = [
+    inputs.hytale-launcher.packages.${pkgs.stdenv.hostPlatform.system}.default
+    (pkgs.runCommand "hytale-launcher-icon" { } ''
+      install -Dm644 ${pkgs.papirus-icon-theme}/share/icons/Papirus/64x64/apps/applications-games.svg \
+        $out/share/icons/hicolor/scalable/apps/hytale-launcher.svg
+    '')
+  ];
   home.file."Games/Hytale/.keep".text = "";
 
   home.activation.hytaleGamesFolder = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

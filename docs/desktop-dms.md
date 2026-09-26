@@ -579,6 +579,28 @@ stable-wrapper rationale.
   first) rather than merged incrementally, since the whole tree is a
   couple megabytes - cheap enough that "always correct after packages
   change" beats "slightly faster but can go stale."
+
+  **Later extended, because `~/.nix-profile` is only one of the places
+  icons live.** System packages (Waydroid, waydroid-helper, CUPS, Vim,
+  pavucontrol, nvidia-settings, ROG Control Center) install into
+  `/run/current-system/sw/share/icons/hicolor`, home-manager packages can
+  land in `/etc/profiles/per-user/$USER`, Steam games and AppImages write
+  to `~/.local/share/icons/hicolor`, and some apps only ship a flat
+  `share/pixmaps` icon (htop, ProtonUp-Qt). The activation now copies
+  hicolor from all of those too, and every `pixmaps/*.png|svg` into
+  `scalable/apps/`, all with `cp -n` so nothing already there (MaterialOS's
+  own icons, the `~/.nix-profile` hicolor) is overwritten. It also adds
+  `Inherits=Papirus-Dark` to the merged `index.theme` and installs
+  `pkgs.papirus-icon-theme`: unlike hicolor, an inherited theme *is*
+  followed by `Quickshell.iconPath()`, which covers generic names no app
+  ships itself (`x-office-calendar` for ikhal, `wine` for Protontricks).
+  Checked with an offscreen quickshell resolving every visible app's
+  `Icon=` against a scratch copy built by the same script: 26 of 41
+  resolved before, 40 of 41 after. The last one, the Hytale launcher,
+  names an icon its package doesn't ship; `_hytale.nix` now installs
+  Papirus's game-controller icon under that name. Steam games and
+  AppImages installed after the last rebuild only get their icons on the
+  next rebuild, since the copy runs at activation.
 - **`lockBeforeSuspend = true;` and an idle-timeout lock service - the
   system had neither.** Checked DMS's own settings spec directly for
   what's actually available before building anything: `lockBeforeSuspend`
