@@ -85,4 +85,4 @@ Explanations that used to be comments in the source files.
 
 ---
 
-[← Matugen.nix](desktop-matugen.md) · [Index](CONFIGURATION.md) · [Misc.nix →](system-misc.md)
+[← Matugen.nix](desktop-matugen.md) · [Index](CONFIGURATION.md) · [Pet.nix →](desktop-pet.md)

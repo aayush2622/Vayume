@@ -38,6 +38,7 @@ in
       self.nixosModules.Portals
       self.nixosModules.SddmTheme
       self.nixosModules.GrubTheme
+      self.nixosModules.Pet
       self.nixosModules.DevTooling
       self.nixosModules.Zram
       self.nixosModules.Performance

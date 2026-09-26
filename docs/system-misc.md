@@ -88,4 +88,4 @@ countdown and key hints at the bottom. It replaced the
 
 ---
 
-[← SddmTheme.nix](desktop-sddm.md) · [Index](CONFIGURATION.md) · [Performance.nix →](system-performance.md)
+[← Pet.nix](desktop-pet.md) · [Index](CONFIGURATION.md) · [Performance.nix →](system-performance.md)
