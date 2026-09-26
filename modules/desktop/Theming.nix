@@ -109,7 +109,7 @@
           enable = true;
 
           theme = {
-            name = "adw-gtk3";
+            name = "adw-gtk3-dark";
             package = pkgs.adw-gtk3;
           };
 
@@ -141,6 +141,19 @@
           input_path = '${config.home.homeDirectory}/.config/matugen/templates/gtk4-colors.css'
           output_path = '${config.home.homeDirectory}/.config/gtk-4.0/colors.css'
           post_hook = 'gsettings set org.gnome.desktop.interface color-scheme default; gsettings set org.gnome.desktop.interface color-scheme prefer-{{mode}}'
+        '';
+
+        home.activation.restoreGtkTheme = lib.hm.dag.entryAfter [ "dconfSettings" ] ''
+          latest=$(${pkgs.findutils}/bin/find "$HOME/.local/share/themes" -maxdepth 1 -name 'vayume-dank-*' -type d 2>/dev/null | ${pkgs.coreutils}/bin/sort | ${pkgs.coreutils}/bin/tail -n 1)
+          if [ -n "$latest" ]; then
+            name=$(${pkgs.coreutils}/bin/basename "$latest")
+            if [[ -v DBUS_SESSION_BUS_ADDRESS ]]; then
+              run ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/gtk-theme "'$name'"
+            else
+              run ${pkgs.dbus}/bin/dbus-run-session --dbus-daemon=${pkgs.dbus}/bin/dbus-daemon \
+                ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/gtk-theme "'$name'"
+            fi
+          fi
         '';
 
         home.pointerCursor = {
