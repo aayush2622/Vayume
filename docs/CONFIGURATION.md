@@ -45,7 +45,7 @@ dive.
 19. [desktop/sddm/SddmTheme.nix](desktop-sddm.md)
 
 **System** - infrastructure that doesn't care what desktop you're running
-20. [system/Misc.nix](system-misc.md) (Zram, DevTooling, GrubTheme)
+20. [system/Misc.nix](system-misc.md) (Zram, DevTooling) and system/GrubTheme.nix
 21. [system/Performance.nix](system-performance.md) (`vayume.performance`)
 22. [system/Storage.nix](system-storage.md) (`vayume disk`, `vayume clean`)
 23. [system/Network.nix](system-network.md)
