@@ -38,18 +38,12 @@
     };
   };
 
-  flake.appDescriptions.Python = "Python toolchain and editor integrations (Pylance, debugpy).";
-
   flake.appMeta.Python = {
-
+    description = "Python toolchain and editor integrations (Pylance, debugpy).";
     label = "Python";
-
     icon = "python";
-
     symbol = "data_object";
-
     section = "Languages";
-
   };
 
   flake.homeModules.apps.Python = { pkgs, ... }: {

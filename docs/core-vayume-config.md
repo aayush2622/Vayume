@@ -111,15 +111,16 @@ consulted by `apps set`. It's what lets the DMS plugin group the list
 into Development/Gaming/Applications sections instead of one flat list
 of 23 names.
 
-`apps list` and `development list` both also merge in `description`,
-read from `flake.appDescriptions.<Name>` - a `lazyAttrsOf str` registered
-in [`Registry.nix`](../modules/core/Registry.nix) next to `homeModules`,
-so it merges automatically across every app's own file the same way
+`apps list` and `development list` both also merge in the app's
+presentation from `flake.appMeta.<Name>` - `description`, `label`, `icon`,
+`symbol` and `section`, one attribute set registered in
+[`Registry.nix`](../modules/core/Registry.nix) next to `homeModules`, so it
+merges automatically across every app's own file the same way
 `homeModules.apps` and `devLanguages` already do. Each app declares its
-own one-line `flake.appDescriptions.<Name>` right next to its
-`flake.homeModules.apps.<Name>` - one file owns both, so a description
-never drifts out of sync with the module it describes. Missing entries
-fall back to `""`, never an invented placeholder.
+`flake.appMeta.<Name>` right next to its `flake.homeModules.apps.<Name>` -
+one file owns both, so the description never drifts out of sync with the
+module it describes. `tests/eval.sh` fails if an app has no entry, or an
+entry has no app.
 
 Toggling an app that's already listed rewrites its one line in place,
 preserving every other line byte-for-byte. Toggling one that was never

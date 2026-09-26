@@ -64,18 +64,12 @@ in
     };
   };
 
-  flake.appDescriptions.Cpp = "C/C++ toolchain: gcc, make, and clang-tools.";
-
   flake.appMeta.Cpp = {
-
+    description = "C/C++ toolchain: gcc, make, and clang-tools.";
     label = "C / C++";
-
     icon = "text-x-c++src";
-
     symbol = "data_object";
-
     section = "Languages";
-
   };
 
   flake.homeModules.apps.Cpp = { pkgs, ... }: {

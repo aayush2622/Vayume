@@ -501,7 +501,7 @@
           cmd_apps_list() {
             local data available descriptions meta configured categories cat dir name
             data=$(nix eval --impure --json --expr \
-              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; descriptions = self.appDescriptions; meta = self.appMeta or { }; }")
+              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; descriptions = builtins.mapAttrs (_: m: m.description) self.appMeta; meta = self.appMeta or { }; }")
             available=$(jq '.available' <<<"$data")
             descriptions=$(jq '.descriptions' <<<"$data")
             meta=$(jq '.meta' <<<"$data")
@@ -544,7 +544,7 @@
                 ')
 
             data=$(nix eval --impure --json --expr \
-              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; integrations = builtins.mapAttrs (_: v: builtins.attrNames v) self.devLanguages; descriptions = self.appDescriptions; meta = self.appMeta or { }; }")
+              "let self = builtins.getFlake \"path:$flake_dir\"; in { available = builtins.attrNames self.homeModules.apps; integrations = builtins.mapAttrs (_: v: builtins.attrNames v) self.devLanguages; descriptions = builtins.mapAttrs (_: m: m.description) self.appMeta; meta = self.appMeta or { }; }")
             available=$(jq '.available' <<<"$data")
             integrations=$(jq '.integrations' <<<"$data")
             descriptions=$(jq '.descriptions' <<<"$data")

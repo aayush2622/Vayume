@@ -1,6 +1,6 @@
 {
-  flake.appDescriptions.StateBackup = "vayume app-state: backs up/restores app config dirs (browser, Discord, editors, vault).";
   flake.appMeta.StateBackup = {
+    description = "vayume app-state: backs up/restores app config dirs (browser, Discord, editors, vault).";
     label = "App state backup";
     icon = "deja-dup";
     symbol = "backup";

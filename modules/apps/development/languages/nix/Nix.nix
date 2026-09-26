@@ -56,18 +56,12 @@ in
     };
   };
 
-  flake.appDescriptions.Nix = "Nix language tooling: nixd and nil language servers, nixfmt, editor integrations.";
-
   flake.appMeta.Nix = {
-
+    description = "Nix language tooling: nixd and nil language servers, nixfmt, editor integrations.";
     label = "Nix";
-
     icon = "nix-snowflake";
-
     symbol = "ac_unit";
-
     section = "Languages";
-
   };
 
   flake.homeModules.apps.Nix = { pkgs, ... }: {

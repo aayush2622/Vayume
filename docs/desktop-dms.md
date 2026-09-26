@@ -844,7 +844,7 @@ themselves - a session with no compositor IPC up yet, or one that isn't
 Hyprland, just skips this step exactly as if it were never called).
 
 Every app/language/editor/tool toggle also shows the one-line
-`description` `vayume config` reads from `flake.appDescriptions` (see
+`description` `vayume config` reads from `flake.appMeta` (see
 [core-vayume-config.md](core-vayume-config.md)) as the row's
 description - nothing invented in the UI layer that isn't already declared in the app's own
 `.nix` file.
@@ -895,9 +895,9 @@ and buttons belong on, so nothing is placed by a list in the QML:
   are the one place this rule lives; `PageOptions.qml` draws a page's
   settings cards and tool cards from it, and every page except Home, Users,
   Development, Default apps and About is mostly that component.
-- **Apps** carry their presentation in `flake.appMeta.<Name>`, next to
-  `appDescriptions` in the app's own file: `label` (the name shown, such as
-  "Zen Browser" for `ZenBrowser`), `icon` (a freedesktop icon name),
+- **Apps** carry their presentation in `flake.appMeta.<Name>` in the app's
+  own file: `label` (the name shown, such as "Zen Browser" for
+  `ZenBrowser`), `description` (the line under it), `icon` (a freedesktop icon name),
   `symbol` (a Material symbol used when the icon theme has no such icon) and
   `section`. `vayume config apps list` and `development list` include them.
   Icons are looked up with `Quickshell.iconPath(name, true)`, so they come

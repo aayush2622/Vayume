@@ -1,6 +1,6 @@
 { self, ... }: {
-  flake.appDescriptions.Terminal = "kitty terminal, zsh, starship prompt, and fastfetch on launch.";
   flake.appMeta.Terminal = {
+    description = "kitty terminal, zsh, starship prompt, and fastfetch on launch.";
     label = "Terminal (kitty)";
     icon = "kitty";
     symbol = "terminal";

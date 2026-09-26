@@ -1,6 +1,6 @@
 {
-  flake.appDescriptions.Distrobox = "Ubuntu Distrobox container, with host app/icon integration for AppImages.";
   flake.appMeta.Distrobox = {
+    description = "Ubuntu Distrobox container, with host app/icon integration for AppImages.";
     label = "Ubuntu box (Distrobox)";
     icon = "distrobox";
     symbol = "deployed_code";

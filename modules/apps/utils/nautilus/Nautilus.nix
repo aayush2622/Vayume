@@ -1,6 +1,6 @@
 {
-  flake.appDescriptions.Nautilus = "GNOME Files (Nautilus), with an open-terminal-here plugin and file previews.";
   flake.appMeta.Nautilus = {
+    description = "GNOME Files (Nautilus), with an open-terminal-here plugin and file previews.";
     label = "Files (Nautilus)";
     icon = "org.gnome.Nautilus";
     symbol = "folder";

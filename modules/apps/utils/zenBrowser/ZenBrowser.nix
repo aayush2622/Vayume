@@ -105,18 +105,12 @@ in
     mods = zenModsSpec;
   };
 
-  flake.appDescriptions.ZenBrowser = "Zen Browser with a curated set of extensions preinstalled.";
-
   flake.appMeta.ZenBrowser = {
-
+    description = "Zen Browser with a curated set of extensions preinstalled.";
     label = "Zen Browser";
-
     icon = "zen";
-
     symbol = "public";
-
     section = "Internet";
-
   };
 
   flake.homeModules.apps.ZenBrowser =

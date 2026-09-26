@@ -63,18 +63,12 @@
     };
   };
 
-  flake.appDescriptions.Flutter = "Flutter/Dart SDK and editor integrations.";
-
   flake.appMeta.Flutter = {
-
+    description = "Flutter/Dart SDK and editor integrations.";
     label = "Flutter / Dart";
-
     icon = "";
-
     symbol = "flutter_dash";
-
     section = "Languages";
-
   };
 
   flake.homeModules.apps.Flutter =

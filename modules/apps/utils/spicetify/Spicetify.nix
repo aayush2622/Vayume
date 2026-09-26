@@ -1,6 +1,6 @@
 { inputs, ... }: {
-  flake.appDescriptions.Spicetify = "Spicetify: themes/mods for the official Spotify client.";
   flake.appMeta.Spicetify = {
+    description = "Spicetify: themes/mods for the official Spotify client.";
     label = "Spotify with Spicetify";
     icon = "spotify";
     symbol = "music_note";

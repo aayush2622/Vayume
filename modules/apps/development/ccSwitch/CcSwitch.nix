@@ -1,6 +1,6 @@
 {
-  flake.appDescriptions.CcSwitch = "cc-switch: quick-switch between Claude API provider profiles.";
   flake.appMeta.CcSwitch = {
+    description = "cc-switch: quick-switch between Claude API provider profiles.";
     label = "CC Switch";
     icon = "cc-switch";
     symbol = "swap_horiz";
