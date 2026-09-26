@@ -79,6 +79,7 @@
     Bitwarden.enable = false;
     StateBackup.enable = false;
     Distrobox.enable = false;
+    Waydroid.enable = false;
   };
 
   # Optional - which app opens folders/links/code files and starts from

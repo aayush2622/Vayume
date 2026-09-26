@@ -58,9 +58,8 @@ unknown one, it goes on Updates. Only
 commands that need no typed arguments qualify; `args` covers the fixed
 ones (`check-plugin-updates` runs with `--report-only`, `config` with
 `validate`). Shipped: `disk`, `clean caches` and `gc` on Storage, `boot-time` on
-Performance, `config validate` and `check-plugin-updates` on Updates, the two
-Waydroid commands in an "Android (Waydroid)" card on Applications, and
-`zen-reload` under Zen Browser. A panel entry can also set
+Performance, `config validate` and `check-plugin-updates` on Updates, and the two
+Waydroid commands and `zen-reload` under their apps in Applications. A panel entry can also set
 `app = "<Name>"`, which puts its button under that app's collapsed
 section in Applications instead (`zen-reload` does). `rebuild` is not in the
 list because it has its own button in the window's footer. The panel

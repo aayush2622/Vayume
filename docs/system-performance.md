@@ -68,7 +68,7 @@ The `ntsync` module and its udev rule stay in `Host.nix`, since Wine uses them o
 
 ### Kernel choice
 
-`vayume.performance.kernel` swaps `boot.kernelPackages`. Leave it `null` unless you want the change: `zen` ships desktop and gaming patches, `latest` gets new hardware support sooner, `lts` trades both for stability. The Nvidia module rebuilds against whichever you pick, but the first rebuild after switching compiles a kernel, and [Waydroid](system-waydroid.md) needs a kernel with binder support, so check it after switching.
+`vayume.performance.kernel` swaps `boot.kernelPackages`. Leave it `null` unless you want the change: `zen` ships desktop and gaming patches, `latest` gets new hardware support sooner, `lts` trades both for stability. The Nvidia module rebuilds against whichever you pick, but the first rebuild after switching compiles a kernel, and [Waydroid](apps-utils-waydroid.md) needs a kernel with binder support, so check it after switching.
 
 ### Boot time
 
