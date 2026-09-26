@@ -66,6 +66,16 @@ FocusScope {
         passwordInput.forceActiveFocus();
     }
 
+    Keys.onPressed: event => {
+        if (passwordInput.activeFocus || !passwordInput.enabled || event.text.length === 0 || event.text.charCodeAt(0) < 32)
+            return;
+        passwordInput.forceActiveFocus();
+        passwordInput.insert(passwordInput.cursorPosition, event.text);
+        event.accepted = true;
+    }
+
+    onVisibleChanged: if (visible) Qt.callLater(focusPassword)
+
     function submit() {
         if (root.inputEnabled && !root.busy && passwordInput.text.length > 0)
             root.submitted(passwordInput.text);
@@ -75,7 +85,10 @@ FocusScope {
         return Qt.rgba(Qt.color(c).r, Qt.color(c).g, Qt.color(c).b, a);
     }
 
-    Component.onCompleted: entranceAnim.start()
+    Component.onCompleted: {
+        entranceAnim.start();
+        Qt.callLater(focusPassword);
+    }
 
     NumberAnimation {
         id: entranceAnim
@@ -415,6 +428,7 @@ FocusScope {
                             focus: true
                             enabled: root.inputEnabled && !root.busy
                             onTextChanged: root.passwordEdited(text)
+                            onEnabledChanged: if (enabled) forceActiveFocus()
                             onAccepted: root.submit()
                             Keys.onEscapePressed: text = ""
                         }

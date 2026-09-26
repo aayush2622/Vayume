@@ -7,7 +7,7 @@ import qs.Common
 import qs.Services
 import "vayori"
 
-Item {
+FocusScope {
     id: root
 
     property var sessionLock: null
