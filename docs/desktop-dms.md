@@ -857,6 +857,28 @@ time, and the buttons and the status card's Rebuild button are disabled while on
 does. "Check _config.nix" is the place to catch a bad edit before a
 rebuild, since settings edits are not evaluated when saved.
 
+### Bar styles
+
+`vayume.desktop.barStyle` picks between two looks for the top bar, `classic`
+(the default) and `m3`. It is an ordinary `vayume.*` option, so it shows up in
+Vayume Settings under **System Options → Desktop → Bar style** and switches on
+the next rebuild; in `_config.nix` it is `vayume.desktop.barStyle = "m3";`.
+
+The profiles live in `modules/desktop/dms/_barProfiles.nix` as overrides on
+top of the settings in `Dms.nix`: `shell` is merged into DMS's global
+settings and `bar` into the main bar's entry in `barConfigs`. `classic` is
+empty, so it produces exactly the settings used before the option existed
+(checked by diffing the generated `settings.json`). `m3` turns the screen
+frame off (with the frame on, DMS draws the bar inside the frame surface),
+gives every widget its own `surfaceContainerHigh` pill with a transparent bar
+behind them, floats the bar 12px off the edge, makes it taller and roomier,
+and raises the shell-wide corner radius from 12 to 16. The option and its
+settings label are declared in `_barStyle.nix`.
+
+Both were checked by rendering DMS's own `Frame` and `DankBar` components in a
+headless sway session with a copy of the generated settings, over the
+wallpaper.
+
 ### Lock screen
 
 DMS's own lock screen UI is replaced by the Vayori one, the same design as
