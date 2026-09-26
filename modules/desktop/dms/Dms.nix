@@ -56,6 +56,7 @@
           ];
           home.packages = [
             materialOSIcons
+            pkgs.papirus-icon-theme
             pkgs.swayidle
           ];
           home.sessionVariables.QS_ICON_THEME = "MaterialOS";
@@ -66,7 +67,14 @@
             run mkdir -p "$iconDir"
             run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode ${materialOSIcons}/share/icons/MaterialOS/. "$iconDir/"
             run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode "$HOME/.nix-profile/share/icons/hicolor/." "$iconDir/" 2>/dev/null || true
-            run ${pkgs.gnused}/bin/sed -i -e "/^Hidden=true/d" -e "s/^Name=.*/Name=MaterialOS/" "$iconDir/index.theme" 2>/dev/null || true
+            for src in "/etc/profiles/per-user/$USER/share" /run/current-system/sw/share "$HOME/.local/share"; do
+              run ${pkgs.coreutils}/bin/cp -rLn --no-preserve=mode "$src/icons/hicolor/." "$iconDir/" 2>/dev/null || true
+            done
+            run mkdir -p "$iconDir/scalable/apps"
+            for src in "$HOME/.nix-profile/share" "/etc/profiles/per-user/$USER/share" /run/current-system/sw/share "$HOME/.local/share"; do
+              run ${pkgs.coreutils}/bin/cp -Ln --no-preserve=mode "$src"/pixmaps/*.png "$src"/pixmaps/*.svg "$iconDir/scalable/apps/" 2>/dev/null || true
+            done
+            run ${pkgs.gnused}/bin/sed -i -e "/^Hidden=true/d" -e "/^Inherits=/d" -e "s/^Name=.*/Name=MaterialOS/" -e "/^\[Icon Theme\]/a Inherits=Papirus-Dark" "$iconDir/index.theme" 2>/dev/null || true
           '';
 
           services.dankSession = {
