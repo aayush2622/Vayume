@@ -64,18 +64,12 @@ in
     androidStudioManualPluginsSpec
     ++ (lib.concatMap (l: l.androidStudio.manualPlugins or [ ]) (lib.attrValues self.devLanguages));
 
-  flake.appDescriptions.AndroidStudio = "Android Studio, with plugins pulled in per enabled language.";
-
   flake.appMeta.AndroidStudio = {
-
+    description = "Android Studio, with plugins pulled in per enabled language.";
     label = "Android Studio";
-
     icon = "android-studio";
-
     symbol = "android";
-
     section = "Editors";
-
   };
 
   flake.homeModules.apps.AndroidStudio =

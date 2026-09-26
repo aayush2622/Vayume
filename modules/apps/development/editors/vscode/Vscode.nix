@@ -45,18 +45,12 @@ in
     lib.attrValues self.devLanguages
   );
 
-  flake.appDescriptions.Vscode = "VS Code, with extensions pulled in per enabled language.";
-
   flake.appMeta.Vscode = {
-
+    description = "VS Code, with extensions pulled in per enabled language.";
     label = "VS Code";
-
     icon = "vscode";
-
     symbol = "code";
-
     section = "Editors";
-
   };
 
   flake.homeModules.apps.Vscode =

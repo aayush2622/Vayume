@@ -1,6 +1,6 @@
 { inputs, ... }: {
-  flake.appDescriptions.Spotifast = "Spotifast, a lightweight Spotify client themed to match the desktop.";
   flake.appMeta.Spotifast = {
+    description = "Spotifast, a lightweight Spotify client themed to match the desktop.";
     label = "Spotifast";
     icon = "spotifast";
     symbol = "music_note";

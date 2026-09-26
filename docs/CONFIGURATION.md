@@ -130,7 +130,7 @@ itself - if you're looking for "where do I change what a setting does,"
 this is the only place to check. **`core`** and **`lib`** are pure
 plumbing - nothing in either is itself a setting, just the mechanism
 that lets settings and apps exist and register themselves (`Registry.nix`'s
-`flake.homeModules`/`flake.appDescriptions`/`flake.pluginPins`
+`flake.homeModules`/`flake.appMeta`/`flake.pluginPins`
 namespaces, `lib/VayumeLib.nix`'s shared helper values, `lib/DmsPlugins.nix`'s
 DMS plugin-patching helpers). Neither has ever needed more than a
 handful of commits since being written - unlike `vayume/`, which grows

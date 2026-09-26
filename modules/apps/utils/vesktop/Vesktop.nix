@@ -1,6 +1,6 @@
 {
-  flake.appDescriptions.Vesktop = "Vesktop (Discord client) with Vencord mods and a matching theme.";
   flake.appMeta.Vesktop = {
+    description = "Vesktop (Discord client) with Vencord mods and a matching theme.";
     label = "Discord (Vesktop)";
     icon = "vesktop";
     symbol = "forum";

@@ -1,6 +1,6 @@
 {
-  flake.appDescriptions.DevTools = "GitHub CLI, lazygit, docker-compose, and the Claude Code CLI.";
   flake.appMeta.DevTools = {
+    description = "GitHub CLI, lazygit, docker-compose, and the Claude Code CLI.";
     label = "Developer tools";
     icon = "github-desktop";
     symbol = "build";

@@ -28,18 +28,12 @@
     };
   };
 
-  flake.appDescriptions.Qt = "Qt/QML development tools and editor integrations.";
-
   flake.appMeta.Qt = {
-
+    description = "Qt/QML development tools and editor integrations.";
     label = "Qt / QML";
-
     icon = "qtcreator";
-
     symbol = "widgets";
-
     section = "Languages";
-
   };
 
   flake.homeModules.apps.Qt = { pkgs, ... }: {

@@ -1,6 +1,6 @@
 {
-  flake.appDescriptions.Thunar = "Thunar file manager with archive, media-tags, and volume-management plugins.";
   flake.appMeta.Thunar = {
+    description = "Thunar file manager with archive, media-tags, and volume-management plugins.";
     label = "Thunar";
     icon = "org.xfce.thunar";
     symbol = "folder";

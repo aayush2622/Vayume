@@ -1,6 +1,6 @@
 {
-  flake.appDescriptions.Gaming = "Game launchers (Lutris, Heroic, Hytale), Proton/GPU tuning, and shader-cache management.";
   flake.appMeta.Gaming = {
+    description = "Game launchers (Lutris, Heroic, Hytale), Proton/GPU tuning, and shader-cache management.";
     label = "Gaming";
     icon = "steam";
     symbol = "sports_esports";

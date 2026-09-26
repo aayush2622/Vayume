@@ -9,12 +9,6 @@
     default = { };
   };
 
-  options.flake.appDescriptions = lib.mkOption {
-    type = lib.types.lazyAttrsOf lib.types.str;
-    default = { };
-    description = "One-line description per flake.homeModules.apps.<Name>, declared in that app's own file.";
-  };
-
   options.flake.appMeta = lib.mkOption {
     type = lib.types.lazyAttrsOf (
       lib.types.submodule {
@@ -22,6 +16,10 @@
           label = lib.mkOption {
             type = lib.types.str;
             description = "Name shown in Vayume Settings.";
+          };
+          description = lib.mkOption {
+            type = lib.types.str;
+            description = "One line shown under the app in Vayume Settings.";
           };
           icon = lib.mkOption {
             type = lib.types.str;
@@ -42,7 +40,7 @@
       }
     );
     default = { };
-    description = "How each flake.homeModules.apps.<Name> is presented in Vayume Settings, declared in that app's own file.";
+    description = "How each flake.homeModules.apps.<Name> is presented in Vayume Settings (name, one-line description, icon, section), declared in that app's own file.";
   };
 
   options.flake.pluginPins = lib.mkOption {
