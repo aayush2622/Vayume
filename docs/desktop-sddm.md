@@ -8,7 +8,7 @@ The login screen - the one piece of this desktop that has to look right before a
 
 - **The theme is vendored, not fetched.** `./Theme` is a real directory
   in this repo, built into a tiny derivation that drops it at
-  `share/sddm/themes/women-umbrella`. SDDM wants a filesystem path, and
+  `share/sddm/themes/vayori`. SDDM wants a filesystem path, and
   it's pointed at the store path directly rather than at
   `/run/current-system`, so switching generations can never leave the
   greeter pointing at a theme that no longer exists.
@@ -31,17 +31,30 @@ The login screen - the one piece of this desktop that has to look right before a
   runs before any user session exists and therefore before there's a
   wallpaper to derive colors from. The login screen is the one surface
   in this whole setup that stays a fixed design.
-- **The layout follows Vayori** (see the [README](../README.md#vayori)) while
-  keeping the ink wallpaper and its composition: the clock, date and a
-  time-of-day greeting top left; the user chip, a rounded glass password
-  field with a submit button, and pill buttons for session, suspend, reboot
-  and power sitting on the character in the artwork (`bellyArea`, placed by
-  screen fraction so it lands in the same spot at any resolution); and a
-  small 夜 vayume mark bottom left. Icons are Material Symbols Rounded and
-  the mark is Noto Serif CJK JP, both installed system-wide by
-  [Fonts.nix](desktop-portals-fonts.md), so the greeter can use them before
-  anyone logs in. Clicking the name cycles users, clicking the session pill
-  cycles sessions, Enter or the arrow logs in. Checked with
+- **The login screen and the DMS lock screen are one design.** Both are
+  drawn by `LockScene` from `modules/desktop/lockscreen/vayori/` (plain
+  QtQuick, no DMS imports, so the greeter can load it before anyone logs
+  in): the wallpaper blurred and tinted, a stacked clock with the date and
+  a time-of-day greeting on the left, a profile card with a rounded
+  password field on the right, status chips above it and a power toolbar
+  bottom left. It follows Material 3: colours come from a `scheme` object
+  using M3 role names (`surfaceContainer`, `primary`, `primaryContainer`,
+  `secondaryContainer`, `error`...), the password field is a filled text
+  field with a floating label and an indeterminate progress bar while
+  checking, buttons are M3 icon buttons (standard, filled, tonal, error)
+  with hover and press state layers, and the screen enters with the M3
+  emphasized-decelerate curve. The theme derivation copies that folder into the theme as
+  `vayori/`. Here it uses the scene's built-in navy scheme and a fixed wallpaper,
+  `modules/assets/wallpapers/blue-girl-among-flowers.jpg`, installed as
+  `bg.jpg` (the greeter runs before any wallpaper or matugen colours
+  exist); the lock screen maps DMS's matugen `Theme` onto the same scheme
+  and passes the live wallpaper - see [DMS](desktop-dms.md#lock-screen). Chips show the
+  session (click to switch) and the host name, Caps Lock is flagged under
+  the field, clicking the name cycles
+  users, and the power toolbar shows suspend and hibernate only when SDDM
+  says they are available. Icons are Material Symbols Rounded and the 夜
+  mark is Noto Serif CJK JP, both installed system-wide by
+  [Fonts.nix](desktop-portals-fonts.md). Checked with
   `sddm-greeter-qt6 --test-mode` in a headless sway session; that mode
   shows the layout but cannot log in, suspend or power off.
 - **The greeter runs on Wayland**

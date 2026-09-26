@@ -653,8 +653,7 @@ understands the backend's shape.
 
 ### Vayori, the settings design language
 
-Vayume Settings is drawn in a small design language called Vayori (see the
-[README](../README.md#vayori)): soft and rounded, one tinted card per setting,
+Vayume Settings is drawn in a small design language called Vayori: soft and rounded, one tinted card per setting,
 a sidebar of icon rows with a pill highlight, accent-coloured section titles and
 pill-shaped controls. Every colour is derived from DMS's `Theme` (surface
 containers, `primary`, `primaryContainer`, `secondaryContainer`), so matugen
@@ -700,7 +699,7 @@ font (`Theme.fontFamily`) is used throughout.
   pill, `Notice` an inline hint or a tinted warning/error card (with a spinner
   while loading), and `FocusRing` the keyboard focus outline those controls
   share.
-- **Identity** is deliberately small: the 夜 (night) mark next to the wordmark,
+- **Identity** is deliberately small: the 夜 mark next to the wordmark,
   drawn in Noto Serif CJK JP, which `Fonts.nix` installs.
 - **Behaviour.** Every page still only calls functions on `vm`; the sidebar
   keeps Tab/Enter and adds Up/Down between entries; Tab focus scrolls the
@@ -857,6 +856,39 @@ finished." or "failed (exit N)" in the sidebar's status card. Only one command r
 time, and the buttons and the status card's Rebuild button are disabled while one
 does. "Check _config.nix" is the place to catch a bad edit before a
 rebuild, since settings edits are not evaluated when saved.
+
+### Lock screen
+
+DMS's own lock screen UI is replaced by the Vayori one, the same design as
+the [login screen](desktop-sddm.md). `_shellPatch.nix` copies
+`modules/desktop/lockscreen/vayori/` and
+`modules/desktop/lockscreen/VayoriLockContent.qml` into the patched shell's
+`Modules/Lock/`, then swaps `LockScreenContent` for `VayoriLockContent` in
+`LockSurface.qml` (the real lock) and `LockScreenDemo.qml` (the preview in
+DMS Settings), asserting both swaps so a DMS update that moves them fails
+the build instead of silently keeping the old screen.
+
+**Only the drawing changed.** `VayoriLockContent` has the same properties,
+signals and functions `LockSurface` uses (`pam`, `passwordBuffer`,
+`passwordEdited`, `unlockRequested`, `resetLockState`,
+`focusPasswordField`, `unlocking`), sends every keystroke to DMS's shared
+password buffer, starts DMS's own `Pam` on Enter, and shows its
+`state`/`lockMessage`; the session only unlocks when that `Pam` object
+says so. The `loginctl.lockerReady` handshake is copied as-is: it is sent
+only once the compositor reports the session lock as secure, so the sleep
+inhibitor is not released while the desktop could still be on screen. The
+lock screen settings in DMS still apply - the lock wallpaper override,
+the lock font, 12/24h clock, show weather, show media player, show power
+actions, and the notification mode (off by default; count, app names, or
+full content).
+
+What it shows beyond the login screen: the current wallpaper for that
+monitor with the matugen colours, weather top left, battery, network and
+the connected Bluetooth device as chips, a media card with controls, and
+the notification card. Checked by loading `VayoriLockContent` from the
+built package in a headless sway window with live DMS services and a stub
+PAM object (typing, busy spinner, failed attempt); the real
+`WlSessionLock` path was not exercised there.
 
 ### Overview, search and shortcuts
 

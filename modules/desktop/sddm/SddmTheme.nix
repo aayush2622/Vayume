@@ -4,23 +4,24 @@
     let
       themeConf = pkgs.writeText "theme.conf" ''
         [General]
-        background=bg.png
+        background=bg.jpg
         font=Itim
         fontFamily=${config.vayume.theme.font}
-        themeMode=light
         cursorTheme=${config.vayume.theme.cursorTheme}
         cursorSize=${toString config.vayume.theme.cursorSize}
       '';
 
-      womenUmbrella = pkgs.stdenvNoCC.mkDerivation {
-        name = "women-umbrella";
+      vayoriTheme = pkgs.stdenvNoCC.mkDerivation {
+        name = "vayori";
 
         src = ./Theme;
 
         installPhase = ''
-          mkdir -p $out/share/sddm/themes/women-umbrella
-          cp -r . $out/share/sddm/themes/women-umbrella
-          install -m 644 ${themeConf} $out/share/sddm/themes/women-umbrella/theme.conf
+          mkdir -p $out/share/sddm/themes/vayori
+          cp -r . $out/share/sddm/themes/vayori
+          cp -r ${../lockscreen/vayori} $out/share/sddm/themes/vayori/vayori
+          install -m 644 ${../../assets/wallpapers/blue-girl-among-flowers.jpg} $out/share/sddm/themes/vayori/bg.jpg
+          install -m 644 ${themeConf} $out/share/sddm/themes/vayori/theme.conf
         '';
       };
     in
@@ -28,6 +29,6 @@
       services.displayManager.sddm.enable = true;
       services.displayManager.sddm.wayland.enable = true;
 
-      services.displayManager.sddm.theme = "${womenUmbrella}/share/sddm/themes/women-umbrella";
+      services.displayManager.sddm.theme = "${vayoriTheme}/share/sddm/themes/vayori";
     };
 }
