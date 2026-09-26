@@ -73,6 +73,15 @@ let
             ${lib.escapeShellArg "active: SettingsData.blurredWallpaperLayer && (CompositorService.isNiri || CompositorService.isHyprland)"}
         ${h.assertPatched "$out/share/quickshell/dms/shell.qml" "CompositorService.isHyprland"}
 
+        cp -r ${../lockscreen/vayori} $out/share/quickshell/dms/Modules/Lock/vayori
+        install -m 644 ${../lockscreen/VayoriLockContent.qml} $out/share/quickshell/dms/Modules/Lock/VayoriLockContent.qml
+        substituteInPlace $out/share/quickshell/dms/Modules/Lock/LockSurface.qml \
+          --replace-quiet "    LockScreenContent {" "    VayoriLockContent {"
+        ${h.assertPatched "$out/share/quickshell/dms/Modules/Lock/LockSurface.qml" "VayoriLockContent {"}
+        substituteInPlace $out/share/quickshell/dms/Modules/Lock/LockScreenDemo.qml \
+          --replace-quiet "sourceComponent: LockScreenContent {" "sourceComponent: VayoriLockContent {"
+        ${h.assertPatched "$out/share/quickshell/dms/Modules/Lock/LockScreenDemo.qml" "VayoriLockContent {"}
+
         substituteInPlace $out/bin/dms \
           --replace-quiet "${origDmsShell}/share/quickshell/dms" "$out/share/quickshell/dms"
         if grep -qF ${lib.escapeShellArg "${origDmsShell}/share/quickshell/dms"} "$out/bin/dms"; then

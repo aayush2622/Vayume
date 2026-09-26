@@ -1,6 +1,6 @@
 [SddmGreeterTheme]
-Name=women-umbrella
-Description=Totoro theme ~
+Name=vayori
+Description=Vayori login screen
 Author=Darkkal44
 Type=sddm-theme
 MainScript=Main.qml
