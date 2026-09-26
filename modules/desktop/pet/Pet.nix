@@ -44,6 +44,7 @@
             name
             bubbles
             monitor
+            hideInFullscreen
             ;
         }
       );
@@ -122,6 +123,11 @@
           type = lib.types.bool;
           default = true;
           description = "Draw hearts when petted, z's while asleep and a ! when startled.";
+        };
+        hideInFullscreen = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Hide the pet while a fullscreen app is showing on its screen, on every layer including `overlay`.";
         };
         monitor = lib.mkOption {
           type = lib.types.str;
@@ -214,6 +220,12 @@
               order = 4;
               label = "Hearts and bubbles";
               icon = "favorite";
+            };
+            hideInFullscreen = {
+              group = "Placement";
+              order = 3;
+              label = "Hide over fullscreen apps";
+              icon = "fullscreen_exit";
             };
             monitor = {
               group = "Placement";

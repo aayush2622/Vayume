@@ -41,6 +41,17 @@ A pixel pet that lives on the screen: it naps, wanders, chases the pointer if yo
   screen fractions, so it comes back where you left it. Not in
   `Quickshell.statePath`: that directory is keyed by the config's path,
   which is a new store path after every rebuild.
+- **It gets out of the way of fullscreen apps**, even on the `overlay`
+  layer, which would otherwise draw over a fullscreen game or video. On
+  Hyprland the pet hides while the active workspace of its monitor has a
+  fullscreen window (`Hyprland.monitorFor(screen).activeWorkspace.hasFullscreen`)
+  and a toplevel on that screen reports the real fullscreen state -
+  `hasFullscreen` alone is also true for maximized windows. Elsewhere it
+  hides while the focused toplevel on its screen is fullscreen
+  (`ToplevelManager`). Hidden, it fades out and its input mask is empty, so
+  clicks go to the app; it keeps its place and comes back when fullscreen
+  ends. Checked in headless sway by fullscreening a window; the Hyprland
+  branch was not exercised there.
 - **`follow` is Hyprland only.** Wayland gives a client the pointer only
   while it's over that client's surface, so the pet asks Hyprland for
   the cursor (`j/cursorpos` on its IPC socket) ten times a second while
@@ -53,7 +64,7 @@ The page opens with an animated preview of the saved skin, colours and name
 (drawn from `/etc/vayume/pet-skins`, which this module fills with every skin
 plain and inverted), then the options in three cards: **Your pet** (show,
 name, skin, kuroneko, size), **Behaviour** (movement, activity, speed,
-bubbles) and **Placement** (layer, monitor).
+bubbles) and **Placement** (layer, monitor, hide over fullscreen apps).
 
 | Option | Default | |
 |---|---|---|
@@ -68,6 +79,7 @@ bubbles) and **Placement** (layer, monitor).
 | `name` | `""` | name tag on hover |
 | `bubbles` | `true` | hearts, z's and ! |
 | `monitor` | `""` | output name; empty is the first one |
+| `hideInFullscreen` | `true` | fade out and stop catching clicks while a fullscreen app is on the pet's screen, on every layer |
 
 Every option is baked into the store config, so a change applies on the
 next rebuild, which restarts the service.
