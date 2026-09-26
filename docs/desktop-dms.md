@@ -870,9 +870,11 @@ settings and `bar` into the main bar's entry in `barConfigs`. `classic` is
 empty, so it produces exactly the settings used before the option existed
 (checked by diffing the generated `settings.json`). `m3` turns the screen
 frame off (with the frame on, DMS draws the bar inside the frame surface),
-gives every widget its own `surfaceContainerHigh` pill with a transparent bar
-behind them, floats the bar 12px off the edge, makes it taller and roomier,
-and raises the shell-wide corner radius from 12 to 16. The option and its
+gives every widget its own `surfaceContainerHigh` pill at 80% opacity on a
+fully transparent bar, and raises the shell-wide corner radius from 12 to 16.
+Its spacing values were read off DMS's own bar settings (Edge Spacing 0, Size 8,
+Padding 14, Bar Inset Padding 6, no exclusive-zone offset or length padding),
+with slightly larger text and icons. The option and its
 settings label are declared in `_barStyle.nix`.
 
 Both were checked by rendering DMS's own `Frame` and `DankBar` components in a

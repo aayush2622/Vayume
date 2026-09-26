@@ -13,13 +13,15 @@
     bar = {
       noBackground = false;
       transparency = 0;
-      widgetTransparency = 0.95;
-      spacing = 8;
-      innerPadding = 12;
-      barInsetPadding = 12;
+      widgetTransparency = 0.8;
+      spacing = 0;
+      innerPadding = 8;
+      barInsetPadding = 6;
       widgetPadding = 14;
       fontScale = 1.1;
       iconScale = 1.1;
+      bottomGap = 0;
+      barLengthPadding = 0;
     };
   };
 }
