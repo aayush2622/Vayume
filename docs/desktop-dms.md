@@ -626,6 +626,14 @@ stable-wrapper rationale.
   live - whether it actually fires after ten real minutes of idle needs a
   real session to watch.
 
+  swayidle only counts Wayland idle inhibitors, and music players don't
+  create one, so it locked in the middle of a song.
+  `systemd.user.services.vayume-media-inhibit` runs
+  `wayland-pipewire-idle-inhibit`, which holds a Wayland idle inhibitor
+  while any PipeWire output stream is playing (after five seconds, its
+  default), so swayidle waits until playback stops. It follows audio, not
+  MPRIS, so calls and browser video count too.
+
 **`vayumeSettings`** is this repo's own plugin, not a community one -
 see [core-vayume-config.md](core-vayume-config.md) for the backend it
 drives and why DMS talks to the real `_config.nix` through a CLI instead
