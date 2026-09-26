@@ -903,6 +903,34 @@ Both were checked by rendering DMS's own `Frame` and `DankBar` components in a
 headless sway session with a copy of the generated settings, over the
 wallpaper.
 
+### Desktop widgets
+
+Besides the Pure Lyrics and Cava Visualizer widgets, two of this repo's own
+DMS desktop-widget plugins sit on the desktop, laid out like the lock screen:
+`plugins/vayumeClock` on the left (no card; the lock screen's stacked hour and
+`primary` minutes, AM/PM chip, full date and greeting, using the lock font
+setting, with a soft shadow for contrast), `plugins/vayumeMedia` on the right
+(album art, title, artist, progress and a filled play button in a
+`surfaceContainer` card at 78% opacity, following
+`MprisController.activePlayer` and fading out when nothing is playing). The
+desktop pet is not a DMS widget; see [desktop-pet.md](desktop-pet.md). They are
+registered in
+`plugins/_vayumeWidgets.nix` and placed by entries in `desktopWidgetInstances`,
+and can be moved or resized from DMS as usual (right-drag).
+
+**Positions are seeded into `session.json`.** DMS keeps instance positions in
+`SessionData.desktopWidgetInstancePositions` (the machine-specific
+`~/.local/state/DankMaterialShell/session.json`), not in `settings.json`. It
+imports the `positions` written in `settings.json` only while that session
+key is still empty, so a widget added later would appear centred at 200x200.
+`home.activation.seedDesktopWidgetPositions` merges the positions from
+`desktopWidgetInstances` into `session.json` for IDs it doesn't have yet; the
+existing entries win in the merge, so a widget you dragged stays where you put
+it. DMS watches that file, so the change shows up without a restart.
+
+Checked by rendering DMS's `DesktopWidgetLayer` with the real plugins in a
+headless sway session over the wallpaper.
+
 ### Lock screen
 
 DMS's own lock screen UI is replaced by the Vayori one, the same design as

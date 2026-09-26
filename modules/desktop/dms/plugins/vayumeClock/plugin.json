@@ -1,0 +1,12 @@
+{
+    "id": "vayumeClock",
+    "name": "Vayume Clock",
+    "capabilities": ["desktop-widget"],
+    "description": "Lock screen style stacked clock with the date and a greeting",
+    "version": "1.0.0",
+    "author": "vayume",
+    "type": "desktop",
+    "component": "./VayumeClock.qml",
+    "icon": "schedule",
+    "permissions": ["settings_read"]
+}

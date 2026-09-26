@@ -34,6 +34,7 @@
         ./_shellPatch.nix
         ./plugins/_tor.nix
         ./plugins/_vayumeSettings.nix
+        ./plugins/_vayumeWidgets.nix
         ./plugins/dankAsusControlCenter/_dankAsusControlCenter.nix
         ./plugins/_cavaVisualizer.nix
       ];
@@ -115,6 +116,35 @@
                 run mkdir -p "$(dirname "$sessionFile")"
                 run cp "${defaultSession}" "$sessionFile"
                 run chmod u+w "$sessionFile"
+              fi
+            '';
+
+          home.activation.seedDesktopWidgetPositions =
+            let
+              positions = pkgs.writeText "dms-desktop-widget-positions.json" (
+                builtins.toJSON (
+                  builtins.listToAttrs (
+                    map
+                      (w: {
+                        name = w.id;
+                        value = w.positions;
+                      })
+                      (
+                        builtins.filter (
+                          w: w ? positions
+                        ) config.programs.dank-material-shell.settings.desktopWidgetInstances
+                      )
+                  )
+                )
+              );
+            in
+            lib.hm.dag.entryAfter [ "seedDmsSession" ] ''
+              sessionFile="$HOME/.local/state/DankMaterialShell/session.json"
+              if [ -e "$sessionFile" ]; then
+                tmp="$sessionFile.vayume-tmp"
+                run ${pkgs.jq}/bin/jq --slurpfile p ${positions} \
+                  '.desktopWidgetInstancePositions = ($p[0] + (.desktopWidgetInstancePositions // {}))' \
+                  "$sessionFile" > "$tmp" && run mv "$tmp" "$sessionFile"
               fi
             '';
 
@@ -500,6 +530,44 @@
               };
 
               desktopWidgetInstances = [
+                {
+                  id = "dw_1790400000002_vyclock02";
+                  widgetType = "vayumeClock";
+                  name = "Vayume Clock";
+                  enabled = true;
+                  config = {
+                    displayPreferences = [ "all" ];
+                    showOnOverlay = false;
+                    showOnOverview = false;
+                    syncPositionAcrossScreens = true;
+                  };
+                  positions._synced = {
+                    x = 0.055;
+                    y = 0.26;
+                    width = 460;
+                    height = 520;
+                  };
+                }
+
+                {
+                  id = "dw_1790400000003_vymedia02";
+                  widgetType = "vayumeMedia";
+                  name = "Vayume Now Playing";
+                  enabled = true;
+                  config = {
+                    displayPreferences = [ "all" ];
+                    showOnOverlay = false;
+                    showOnOverview = false;
+                    syncPositionAcrossScreens = true;
+                  };
+                  positions._synced = {
+                    x = 0.835;
+                    y = 0.305;
+                    width = 270;
+                    height = 420;
+                  };
+                }
+
                 {
                   id = "dw_1788083196111_hpk1tmarl";
                   widgetType = "pureLyrics";

@@ -1,0 +1,12 @@
+{
+    "id": "vayumeMedia",
+    "name": "Vayume Now Playing",
+    "capabilities": ["desktop-widget"],
+    "description": "Material 3 now-playing card with album art and controls",
+    "version": "1.0.0",
+    "author": "vayume",
+    "type": "desktop",
+    "component": "./VayumeMedia.qml",
+    "icon": "music_note",
+    "permissions": ["settings_read"]
+}
