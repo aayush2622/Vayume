@@ -3,7 +3,16 @@ if [ "${1:-}" = "--full" ]; then
   full=1
 fi
 
-row() { printf '  %-40s %9s   %s\n' "$1" "$(hr "$2")" "$3"; }
+fit() {
+  local text=$1 width=44
+  if [ "${#text}" -gt "$width" ]; then
+    local head=$(((width - 1) / 2)) tail=$((width - 1 - (width - 1) / 2))
+    text="${text:0:head}…${text: -tail}"
+  fi
+  printf '%s' "$text"
+}
+
+row() { printf '  %-44s %9s   %s\n' "$(fit "$1")" "$(hr "$2")" "$3"; }
 
 echo "Filesystem"
 df -h --output=source,size,used,avail,pcent / | tail -n 1 \
@@ -12,13 +21,17 @@ df -h --output=source,size,used,avail,pcent / | tail -n 1 \
 echo
 echo "Regenerable caches (vayume clean caches)"
 cache_total=0
-for rel in "${caches[@]}"; do
-  s=$(size "$HOME/$rel")
-  if [ "$s" -gt 0 ]; then
-    row "$(tilde "$HOME/$rel")" "$s" ""
-    cache_total=$((cache_total + s))
-  fi
-done
+while IFS=$'\t' read -r s d; do
+  row "$(tilde "$d")" "$s" ""
+  cache_total=$((cache_total + s))
+done < <(
+  for rel in "${caches[@]}"; do
+    s=$(size "$HOME/$rel")
+    if [ "$s" -gt 0 ]; then
+      printf '%s\t%s\n' "$s" "$HOME/$rel"
+    fi
+  done | sort -rn
+)
 row "total" "$cache_total" ""
 
 echo
