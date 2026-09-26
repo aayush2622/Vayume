@@ -241,6 +241,19 @@ opt-in pick, it's just part of what this desktop *is*.
     was), a different, genuinely-watched code path - real, and does
     force a re-render, confirmed against dms-theme-sync's own stated
     limits for what that channel can and can't do.
+  - **A rebuild used to turn GTK3 apps white.** `gtk.theme.name` makes
+    home-manager write `gtk-theme` into dconf (and `settings.ini`) on
+    every activation, which replaced the live `vayume-dank-*` theme the
+    matugen hook had set. With the name `adw-gtk3` that is the *light*
+    variant, and GTK3 ignores `color-scheme`, so an open Thunar repainted
+    white until the next wallpaper change. Two fixes: the fallback is now
+    `adw-gtk3-dark`, so the worst case is dark and uncoloured, and
+    `home.activation.restoreGtkTheme` runs after home-manager's
+    `dconfSettings` step and writes the newest `vayume-dank-*` theme
+    (the names sort by their nanosecond timestamp) back into dconf. It
+    writes through the live session bus when the activation has one, so
+    open apps switch back straight away, and through `dbus-run-session`
+    otherwise, the same way home-manager's own dconf step does.
 - **Qt theming deliberately has no separate style override set.** An
   earlier version forced every Qt app onto a totally different theming
   engine regardless of the palette settings below, and matugen has no
