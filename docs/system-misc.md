@@ -44,45 +44,47 @@ anymore, it's basically a fossil.
 
 ### GrubTheme
 
-The first thing this machine shows you, before Linux itself has even
-loaded. `elegant-grub2-themes`
-([vinceliuice/Elegant-grub2-themes](https://github.com/vinceliuice/Elegant-grub2-themes))
-is the one flake input here that does its own homework - it ships a real
-NixOS module (`nixosModules.default`, `boot.loader.elegant-grub2-theme.*`),
-so this is just an `imports` line plus a handful of options. No
-hand-rolled packaging like the old theme needed.
+`modules/system/GrubTheme.nix` builds its own GRUB theme
+(`_grubTheme.nix`) instead of pulling one in, so the boot menu matches the
+login and lock screens: a centred Material 3 surface card over a blurred
+copy of `blue-girl-among-flowers.jpg`, the Vayume title and a 夜 mark, menu
+entries in Roboto with the selected one on a rounded tonal pill, and the
+countdown and key hints at the bottom. It replaced the
+`vinceliuice/Elegant-grub2-themes` flake input, which is gone from
+`flake.nix` and `flake.lock`.
 
-- **`theme = "wave"`** is the exact design from
-  [gnome-look.org/p/2206122](https://www.gnome-look.org/p/2206122)
-  ("Elegant-wave-grub-themes") - that listing turns out to just be a
-  re-upload of this same repo. Confirmed by cloning it directly, since
-  gnome-look.org blocks bots behind an "are you human" wall and wouldn't
-  load. `type`/`side`/`color`/`screen` are the other knobs (window/float/
-  sharp/blur, left/right, dark/light, 1080p/2k/4k) if you want to tweak
-  the look.
-- **The theme gets built, not downloaded pre-made.** Upstream's module
-  runs its own `generate.sh` against the source art with whatever options
-  are set, using imagemagick, and points GRUB at the result. Checked this
-  by actually building the system and pulling the real theme folder out
-  of the store - background image, fonts, icons, all there.
-- **The flake input uses `git+https://` instead of the usual `github:`
-  shorthand.** GitHub's API was rate-limiting this repo mid-setup (`403`,
-  cheers), and `git+https://` talks to git directly instead of going
-  through that API, so it just works regardless. Had to override
-  upstream's own nested source input the same way for the same reason.
-- **`gfxmodeBios` is force-set to match `screen = "1080p"` explicitly**,
-  duplicating a value the theme module already derives internally - not
-  cosmetic. `screen` sets `boot.loader.grub.gfxmodeBios` to
-  `1920x1080,auto` under the hood, but `virtualisation.vmVariant` (the
-  machinery behind `nixos-rebuild build-vm` and
-  [Vm.nix](core-vm.md)) sets its own plain `1024x768` default for the
-  *same* option - two plain-priority definitions, genuinely conflicting,
-  and `config.system.build.vm` flat out failed to evaluate because of
-  it. Not a hypothetical: hit this for real trying to build a VM to
-  verify a different fix, confirmed it had nothing to do with that fix,
-  and confirmed the `mkForce` here resolves it cleanly via the real
-  option's resolved value. Harmless inside a VM too - QEMU's virtual
-  display has no trouble with 1920x1080.
+- **Everything is rendered at build time.** GRUB can't blur, round
+  corners or draw CJK text, so ImageMagick bakes the blurred wallpaper,
+  the card and the 夜 into `background.png`, and draws the selection pill
+  and scrollbar as GRUB's nine-slice pixmaps (`select_*.png`, `item_*.png`,
+  `scrollframe_*.png`, `scrollthumb_*.png`). Slices are written as
+  `PNG32`: ImageMagick otherwise saves fully transparent corners as
+  palette PNGs, which GRUB draws as black squares.
+- **Fonts are converted with `grub-mkfont`** from `pkgs.roboto` at the
+  sizes the layout uses. GRUB matches `font = "..."` against the name
+  stored inside each `.pf2`, so the build reads those names back out of
+  the files and substitutes them into `theme.txt` rather than guessing
+  them; the medium weight gets its own family name (`-n "Roboto Medium"`)
+  because grub-mkfont names every weight "Regular". The build fails if a
+  placeholder is left unresolved.
+- **Unselected entries use a transparent pixmap the same size as the
+  selected one**, so entries don't shift when the selection moves (GRUB
+  only pads an item by its pixmap's borders).
+- **There is no countdown bar**, only the "Starting the highlighted entry
+  in N s" text: GRUB's progress bar ignored the requested height and drew
+  a thick block.
+- **Checked by booting it**: the theme was put on a `grub-mkrescue` ISO
+  with sample NixOS, Windows and firmware entries and booted in QEMU at
+  1920x1080, including moving the selection. Not yet seen on the real
+  firmware.
+- **`gfxmodeEfi` and `gfxmodeBios` are set to `1920x1080,auto`**; the
+  background is made at 1920x1080 and GRUB scales it on other modes. The
+  `mkForce` on `gfxmodeBios` stays for the reason below.
+- **Why `gfxmodeBios` is forced:** `virtualisation.vmVariant` (the
+  machinery behind `nixos-rebuild build-vm` and [Vm.nix](core-vm.md)) sets
+  its own plain `1024x768` default for the same option, and two
+  plain-priority definitions made `config.system.build.vm` fail to
+  evaluate.
 
 ---
 

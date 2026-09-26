@@ -81,43 +81,6 @@
         "type": "github"
       }
     },
-    "elegant-grub2-theme-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1782202092,
-        "narHash": "sha256-4yPldMZ7g6FrGGvoF2oxvS6cGlM2X/ALX0mfq/Dax8c=",
-        "ref": "refs/heads/main",
-        "rev": "f8a8d41c8f306f8bdfae41db1a425cf0a2451477",
-        "revCount": 32,
-        "type": "git",
-        "url": "https://github.com/vinceliuice/Elegant-grub2-themes"
-      },
-      "original": {
-        "type": "git",
-        "url": "https://github.com/vinceliuice/Elegant-grub2-themes"
-      }
-    },
-    "elegant-grub2-themes": {
-      "inputs": {
-        "elegant-grub2-theme-src": "elegant-grub2-theme-src",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1782202092,
-        "narHash": "sha256-4yPldMZ7g6FrGGvoF2oxvS6cGlM2X/ALX0mfq/Dax8c=",
-        "ref": "refs/heads/main",
-        "rev": "f8a8d41c8f306f8bdfae41db1a425cf0a2451477",
-        "revCount": 32,
-        "type": "git",
-        "url": "https://github.com/vinceliuice/Elegant-grub2-themes"
-      },
-      "original": {
-        "type": "git",
-        "url": "https://github.com/vinceliuice/Elegant-grub2-themes"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -356,7 +319,6 @@
         "danksession": "danksession",
         "dms": "dms",
         "dms-plugin-registry": "dms-plugin-registry",
-        "elegant-grub2-themes": "elegant-grub2-themes",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "hytale-launcher": "hytale-launcher",
