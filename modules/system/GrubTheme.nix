@@ -8,7 +8,7 @@
           wallpaper = ../assets/wallpapers/blue-girl-among-flowers.jpg;
         };
         splashImage = null;
-        gfxmodeEfi = "1920x1080,auto";
+        gfxmodeEfi = "auto";
         gfxmodeBios = lib.mkForce "1920x1080,auto";
       };
     };
