@@ -1,6 +1,22 @@
-{ ... }:
+{ config, lib, ... }:
 let
-  flakeExpr = ''(builtins.getFlake ("path:" + builtins.toString ./.))'';
+  discovery = config.flake.vayumeLib.repoDiscovery;
+
+  repoExpr = ''
+    (let
+      home = builtins.getEnv "HOME";
+      candidates = map (d: home + "/" + d) [ ${
+        lib.concatMapStringsSep " " (d: ''"${d}"'') discovery.relativeDirs
+      } ] ++ [ ${lib.concatMapStringsSep " " (d: ''"${d}"'') discovery.absoluteDirs} ];
+      found = builtins.filter (d: builtins.pathExists (d + "/flake.nix")) candidates;
+    in if found == [ ] then builtins.toString ./. else builtins.head found)'';
+
+  flakeExpr = ''
+    (let
+      repo = ${repoExpr};
+      lock = builtins.fromJSON (builtins.readFile (repo + "/flake.lock"));
+      compat = builtins.head (builtins.filter (n: (n.locked.repo or "") == "flake-compat") (builtins.attrValues lock.nodes));
+    in (import (builtins.fetchTree compat.locked) { src = { outPath = repo; }; }).defaultNix)'';
 
   hostExpr = ''
     (let
