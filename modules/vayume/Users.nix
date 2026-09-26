@@ -115,6 +115,22 @@
         lib.attrByPath (lib.splitString "." path)
           (throw "vayume: unknown package \"${path}\" in vayume.users.*.packages")
           pkgs;
+
+      userPackages =
+        u:
+        u.extraPackages
+        ++ (lib.mapAttrsToList (path: _: resolvePackagePath path) (
+          lib.filterAttrs (_: enabled: enabled) u.packages
+        ));
+
+      userPolkitActions = pkgs.runCommand "user-polkit-actions" { } ''
+        mkdir -p $out/share/polkit-1/actions
+        for p in ${lib.escapeShellArgs (lib.unique (lib.concatMap userPackages (builtins.attrValues cfg)))}; do
+          if [ -d "$p/share/polkit-1/actions" ]; then
+            ln -sf "$p"/share/polkit-1/actions/* $out/share/polkit-1/actions/
+          fi
+        done
+      '';
     in
     {
       options.vayume.users = lib.mkOption {
@@ -192,6 +208,8 @@
           )
         ) cfg;
 
+        environment.systemPackages = [ userPolkitActions ];
+
         programs.zsh.enable = true;
         programs.zsh.enableGlobalCompInit = !(config.vayume.apps.Terminal.enable or false);
 
@@ -215,11 +233,7 @@
           ++ (map (app: self.homeModules.apps.${app}) enabledAppNames);
 
           home.stateVersion = config.system.stateVersion;
-          home.packages =
-            u.extraPackages
-            ++ (lib.mapAttrsToList (path: _: resolvePackagePath path) (
-              lib.filterAttrs (_: enabled: enabled) u.packages
-            ));
+          home.packages = userPackages u;
           home.file = lib.mkIf (u.avatar != null) {
             ".face".source = u.avatar;
           };
