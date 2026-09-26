@@ -208,6 +208,7 @@ Same on both compositors. `Mod` = Super.
 | `Mod+Comma` | Settings | `Mod+Shift+1–0` | Send to workspace |
 | `Mod+L` | Lock | `Mod+Shift+P` | Color picker |
 | `Mod+Shift+W` | Wallpapers | `Print` / `Shift+Print` | Screenshot |
+| `Mod+H` | Hide/show the top bar | `Mod+D` | Hide/show desktop widgets |
 
 **Hyprland extras:** mouse-drag move/resize (`Mod`+left/right click), scratchpad on `Mod+S`, silent workspace moves on `Mod+Alt+1–0`.
 

@@ -961,6 +961,23 @@ lyrics so the bottom stays clear for the visualiser:
 | `plugins/vayumeSystem` | right, under the media card | wavy rings for CPU, memory and battery (`DgopService`, `BatteryService`); CPU and memory turn `error`-red above 90%, battery only when low and not charging |
 | `plugins/vayumeMedia` | top right | the active player (`MprisController.activePlayer`) in a card whose background is the album art blurred under a scrim, the art itself, title, artist, a wavy progress bar, times and an M3 Expressive button group |
 
+**Hiding them.** `Mod+D` (both compositors) runs `vayume widgets toggle`,
+which is also a button on the Appearance page of Vayume Settings. It
+disables every enabled desktop widget through DMS's own
+`desktopWidget disable <id>` IPC and stops the `vayume-pet` service,
+writing what it turned off to `$XDG_RUNTIME_DIR/vayume-hidden-widgets`; the
+next press turns exactly those back on, so a widget you had switched off
+yourself stays off. `hide`, `show` and `status` do what they say. Whether
+they count as hidden is checked against DMS's current list rather than
+trusted from the file, so after DMS restarts (which brings every widget
+back) one press hides them again instead of doing nothing. `Mod+H` hides
+and shows the top bar with `dms ipc call bar toggle index 0`.
+
+Both only last until DMS restarts or the next rebuild: `settings.json` is a
+read-only link into the store, so DMS keeps the change in memory and its
+save fails quietly. That is the intended behaviour for a quick clean
+screen, and nothing needs undoing afterwards.
+
 **The media progress bar can be dragged.** It follows the Material 3
 Expressive wavy style: the played part is a sine wave that moves while the
 track plays and flattens when paused, a gap and a rounded handle mark the
