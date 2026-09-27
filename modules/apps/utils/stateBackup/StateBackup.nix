@@ -246,36 +246,34 @@
             done
           '';
 
-      home.activation.linkCacheState =
-        lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ]
-          ''
-            CACHE_DIR="$HOME/.config/vayume/cache"
-            MANIFEST="$CACHE_DIR/.links"
-            linked=""
+      home.activation.linkCacheState = lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
+        CACHE_DIR="$HOME/.config/vayume/cache"
+        MANIFEST="$CACHE_DIR/.links"
+        linked=""
 
-            for p in ${toBashArray cachePaths}; do
-              TARGET="$HOME/$p"
-              DEST="$CACHE_DIR/$p"
+        for p in ${toBashArray cachePaths}; do
+          TARGET="$HOME/$p"
+          DEST="$CACHE_DIR/$p"
 
-              if [ "$(readlink "$TARGET" 2>/dev/null || true)" = "$DEST" ]; then
-                linked="$linked$p"$'\n'
-                continue
-              fi
-              [ -d "$TARGET" ] && [ ! -L "$TARGET" ] || continue
-              if [ -e "$DEST" ]; then
-                echo "vayume-cache: both $TARGET and $DEST exist - leaving $TARGET as-is, resolve by hand"
-                continue
-              fi
+          if [ "$(readlink "$TARGET" 2>/dev/null || true)" = "$DEST" ]; then
+            linked="$linked$p"$'\n'
+            continue
+          fi
+          [ -d "$TARGET" ] && [ ! -L "$TARGET" ] || continue
+          if [ -e "$DEST" ]; then
+            echo "vayume-cache: both $TARGET and $DEST exist - leaving $TARGET as-is, resolve by hand"
+            continue
+          fi
 
-              run mkdir -p "$(dirname "$DEST")"
-              run mv "$TARGET" "$DEST"
-              run ln -sfn "$DEST" "$TARGET"
-              linked="$linked$p"$'\n'
-            done
+          run mkdir -p "$(dirname "$DEST")"
+          run mv "$TARGET" "$DEST"
+          run ln -sfn "$DEST" "$TARGET"
+          linked="$linked$p"$'\n'
+        done
 
-            if [ -d "$CACHE_DIR" ]; then
-              printf '%s' "$linked" > "$MANIFEST"
-            fi
-          '';
+        if [ -d "$CACHE_DIR" ]; then
+          printf '%s' "$linked" > "$MANIFEST"
+        fi
+      '';
     };
 }
