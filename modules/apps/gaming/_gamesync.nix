@@ -42,8 +42,6 @@ in
     Install.WantedBy = [ "default.target" ];
   };
 
-  # One Proton for every launcher: Steam and Heroic scan this folder, and
-  # Lutris/umu can point PROTONPATH at it.
   home.file.".local/share/Steam/compatibilitytools.d/GE-Proton-nix".source =
     pkgs.proton-ge-bin.steamcompattool;
 }
