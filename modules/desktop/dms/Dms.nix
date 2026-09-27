@@ -66,7 +66,7 @@
           home.activation.materialOSIconFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             iconDir="$HOME/.local/share/icons/MaterialOS"
             stamp="$iconDir/.vayume-stamp"
-            key="${materialOSIcons} $(readlink -f "$HOME/.nix-profile") $(readlink -f "/etc/profiles/per-user/$USER") $(readlink -f /run/current-system/sw) $(${pkgs.coreutils}/bin/stat -c %Y "$HOME/.local/share/icons/hicolor" "$HOME/.local/share/pixmaps" 2>/dev/null | ${pkgs.coreutils}/bin/tr '\n' ' ')"
+            key="${materialOSIcons} $(readlink -f "$HOME/.nix-profile") $(readlink -f "/etc/profiles/per-user/$USER") $(readlink -f /run/current-system/sw) $(${pkgs.coreutils}/bin/stat -c %Y "$HOME/.local/share/icons/hicolor" "$HOME/.local/share/pixmaps" 2>/dev/null | ${pkgs.coreutils}/bin/tr '\n' ' ' || true)"
             if [ -f "$stamp" ] && [ "$(${pkgs.coreutils}/bin/cat "$stamp")" = "$key" ]; then
               verboseEcho "MaterialOS icon fallback is up to date"
             else
