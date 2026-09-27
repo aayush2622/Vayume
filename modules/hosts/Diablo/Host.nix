@@ -48,6 +48,7 @@ in
       self.nixosModules.Waydroid
       self.nixosModules.VmTesting
       self.nixosModules.PluginUpdateCheck
+      self.nixosModules.AutoUpdate
 
       (requireLocalFile ./_hardware.nix "_hardware.nix")
       (requireLocalFile ./_config.nix "_config.nix")

@@ -12,6 +12,7 @@
         import hashlib
         import json
         import os
+        import re
         import sys
         import time
         import urllib.error
@@ -277,8 +278,65 @@
 
         USAGE = (
             "usage: vayume check-plugin-updates"
-            " [--report-only | --resolve-hashes]"
+            " [--report-only | --resolve-hashes | --apply REPO]"
         )
+
+        PIN_RE = r'version = "{}";(\s*)hash = "sha256-[^"]*";'
+
+
+        def pin_markers(item):
+            if item.get("kind") == "vscode":
+                return [
+                    'publisher = "{}";'.format(item["publisher"]),
+                    'name = "{}";'.format(item["pkg_name"]),
+                ]
+            if item.get("kind") == "jetbrains":
+                return ['id = "{}";'.format(item["id"])]
+            return None
+
+
+        def bump_pin(files, item):
+            markers = pin_markers(item)
+            if not markers or not item.get("hash"):
+                return None
+            pattern = re.compile(PIN_RE.format(re.escape(item["pinned"])))
+            for path in files:
+                text = path.read_text()
+                for match in pattern.finditer(text):
+                    block = text[max(0, match.start() - 300):match.start()]
+                    block = block[block.rfind("{") + 1:]
+                    if all(m in block for m in markers):
+                        new = 'version = "{}";{}hash = "{}";'.format(
+                            item["latest"], match.group(1), item["hash"]
+                        )
+                        path.write_text(
+                            text[:match.start()] + new + text[match.end():]
+                        )
+                        return path
+            return None
+
+
+        def apply_updates(repo):
+            if not PINS_PATH.exists():
+                return
+            pins = json.loads(PINS_PATH.read_text())
+            outdated, attempted, skipped = run_checks(pins)
+            if attempted and skipped == attempted:
+                print("plugin check failed: offline?", file=sys.stderr)
+                sys.exit(1)
+            resolve_hashes(outdated)
+            files = sorted(Path(repo, "modules").rglob("*.nix"))
+            remaining = []
+            for item in outdated:
+                path = bump_pin(files, item)
+                if path:
+                    print("{} {} {} -> {}".format(
+                        item["app"], item["name"], item["pinned"],
+                        item["latest"],
+                    ))
+                else:
+                    remaining.append(item)
+            write_cache(time.time(), remaining)
 
 
         def load_cache():
@@ -299,6 +357,9 @@
 
         def main():
             args = sys.argv[1:]
+            if len(args) == 2 and args[0] == "--apply":
+                apply_updates(args[1])
+                return
             if args not in ([], ["--report-only"], ["--resolve-hashes"]):
                 print(USAGE, file=sys.stderr)
                 sys.exit(2)
@@ -352,7 +413,7 @@
       vayume.commands.check-plugin-updates = {
         command = lib.getExe checkerScript;
         description = "Compare pinned editor/browser plugins against upstream, with hashes for bumps";
-        usage = "[--report-only | --resolve-hashes]";
+        usage = "[--report-only | --resolve-hashes | --apply REPO]";
         panel = {
           label = "Check plugin updates";
           icon = "update";

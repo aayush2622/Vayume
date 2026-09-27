@@ -80,7 +80,17 @@ outdated so you can bump it by hand.
   into the cache and the next report shows it. Running
   `vayume check-plugin-updates` with no arguments still does everything
   in one go and prints the hashes directly.
+- **`--apply REPO` writes the bumps into the repo.** It always checks
+  fresh, downloads each new artifact for its hash, then rewrites the
+  `version = ...; hash = ...;` pair in place. A pin is matched by its
+  pinned version plus its identifier inside the same `{ }` block
+  (`publisher` and `name` for VS Code, `id` for JetBrains), so two
+  plugins that happen to share a version string can't be mixed up. It
+  prints one line per bump and leaves anything it couldn't match in the
+  cache, so the zsh hook still reports it. Zen entries have no version to
+  bump and are left alone. This is what the automatic updater in
+  [AutoUpdate.nix](core-autoupdate.md) runs.
 
 ---
 
-[← DevLanguages.nix](core-devlanguages.md) · [Index](CONFIGURATION.md) · [Dms.nix →](desktop-dms.md)
+[← DevLanguages.nix](core-devlanguages.md) · [Index](CONFIGURATION.md) · [AutoUpdate.nix →](core-autoupdate.md)
