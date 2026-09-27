@@ -33,6 +33,15 @@
           defaultText = lib.literalExpression "config.vayume.apps.Gaming.enable";
           description = "Gaming-only tuning: split-lock mitigation off, a smaller CFS bandwidth slice, gamemode renice and gamescope.";
         };
+        scheduler = lib.mkOption {
+          type = lib.types.enum [
+            "default"
+            "lavd"
+            "bpfland"
+          ];
+          default = "lavd";
+          description = "CPU scheduler loaded through sched_ext. `lavd` favours interactive tasks and follows the power profile (`--autopower`), `bpfland` favours interactive tasks without power awareness, `default` keeps the kernel's own scheduler.";
+        };
         kernel = lib.mkOption {
           type = lib.types.nullOr (
             lib.types.enum [
@@ -154,6 +163,14 @@
               capSysNice = d true;
             };
             programs.steam.gamescopeSession.enable = d true;
+          })
+
+          (lib.mkIf (cfg.scheduler != "default") {
+            services.scx = {
+              enable = d true;
+              scheduler = d "scx_${cfg.scheduler}";
+              extraArgs = d (lib.optionals (cfg.scheduler == "lavd") [ "--autopower" ]);
+            };
           })
 
           (lib.mkIf (cfg.kernel != null) {

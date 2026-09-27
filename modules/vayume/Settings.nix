@@ -157,6 +157,7 @@
           "performance.enable" = entry "Tuning" "System tuning" "speed" 1;
           "performance.gaming" = entry "Tuning" "Gaming tuning" "sports_esports" 2;
           "performance.kernel" = entry "Kernel" "Kernel" "memory" 1;
+          "performance.scheduler" = entry "Kernel" "CPU scheduler" "schedule" 2;
           "ubuntuBox.count" = box "Number of boxes" "numbers";
           "ubuntuBox.name" = box "Box name" "badge";
           "ubuntuBox.image" = box "Container image" "image";

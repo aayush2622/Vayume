@@ -75,7 +75,10 @@ in
             nixpkgs.config.allowUnfree = true;
             nixpkgs.overlays = [ inputs.nix-vscode-extensions.overlays.default ];
 
-            nix.settings.auto-optimise-store = true;
+            nix.optimise = {
+              automatic = true;
+              dates = [ "weekly" ];
+            };
             nix.gc = {
               automatic = true;
               dates = "weekly";

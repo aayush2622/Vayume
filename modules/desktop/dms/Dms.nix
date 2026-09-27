@@ -65,6 +65,11 @@
 
           home.activation.materialOSIconFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             iconDir="$HOME/.local/share/icons/MaterialOS"
+            stamp="$iconDir/.vayume-stamp"
+            key="${materialOSIcons} $(readlink -f "$HOME/.nix-profile") $(readlink -f "/etc/profiles/per-user/$USER") $(readlink -f /run/current-system/sw) $(${pkgs.coreutils}/bin/stat -c %Y "$HOME/.local/share/icons/hicolor" "$HOME/.local/share/pixmaps" 2>/dev/null | ${pkgs.coreutils}/bin/tr '\n' ' ')"
+            if [ -f "$stamp" ] && [ "$(${pkgs.coreutils}/bin/cat "$stamp")" = "$key" ]; then
+              verboseEcho "MaterialOS icon fallback is up to date"
+            else
             run rm -rf "$iconDir"
             run mkdir -p "$iconDir"
             run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode ${materialOSIcons}/share/icons/MaterialOS/. "$iconDir/"
@@ -77,6 +82,8 @@
               run ${pkgs.coreutils}/bin/cp -Ln --no-preserve=mode "$src"/pixmaps/*.png "$src"/pixmaps/*.svg "$iconDir/scalable/apps/" 2>/dev/null || true
             done
             run ${pkgs.gnused}/bin/sed -i -e "/^Hidden=true/d" -e "/^Inherits=/d" -e "s/^Name=.*/Name=MaterialOS/" -e "/^\[Icon Theme\]/a Inherits=Papirus-Dark" "$iconDir/index.theme" 2>/dev/null || true
+            if [ -z "''${DRY_RUN:-}" ]; then printf '%s' "$key" > "$stamp"; fi
+            fi
           '';
 
           services.dankSession = {

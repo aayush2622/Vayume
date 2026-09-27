@@ -569,10 +569,12 @@ stable-wrapper rationale.
   index doesn't declare is a real file sitting in a bucket the theme
   spec says to ignore. Both copies use `--no-preserve=mode`, since both
   source trees are read-only Nix store paths and the second copy needs
-  to write into what the first one created. Re-derived fresh on every activation (`rm -rf`
-  first) rather than merged incrementally, since the whole tree is a
-  couple megabytes - cheap enough that "always correct after packages
-  change" beats "slightly faster but can go stale."
+  to write into what the first one created. It is re-derived from
+  scratch (`rm -rf` first) rather than merged incrementally, but only when
+  something it copies from changed: a stamp file inside the theme holds the
+  icon package, the three profile paths and the modification times of the
+  local `hicolor` and `pixmaps` folders, and matching activations skip the
+  copy (0.31 s at boot, where home-manager holds up the login screen).
 
   **Later extended, because `~/.nix-profile` is only one of the places
   icons live.** System packages (Waydroid, waydroid-helper, CUPS, Vim,
