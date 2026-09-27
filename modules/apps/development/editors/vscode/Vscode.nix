@@ -157,6 +157,27 @@ in
         editor.guides.indentation = true;
         editor.unicodeHighlight.nonBasicASCII = false;
 
+        files.watcherExclude = object {
+          "**/.git/objects/**" = true;
+          "**/.git/subtree-cache/**" = true;
+          "**/node_modules/**" = true;
+          "**/.direnv/**" = true;
+          "**/result" = true;
+          "**/result-*" = true;
+          "**/target/**" = true;
+          "**/build/**" = true;
+          "**/.dart_tool/**" = true;
+          "**/.gradle/**" = true;
+          "**/.venv/**" = true;
+        };
+        search.followSymlinks = false;
+        telemetry.telemetryLevel = "off";
+        update.mode = "none";
+        extensions.autoCheckUpdates = false;
+        extensions.autoUpdate = false;
+        workbench.enableExperiments = false;
+        workbench.settings.enableNaturalLanguageSearch = false;
+
         editor.gotoLocation.multipleDefinitions = "goto";
         editor.gotoLocation.multipleDeclarations = "goto";
         editor.foldingStrategy = "indentation";

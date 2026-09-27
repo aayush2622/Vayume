@@ -53,6 +53,10 @@ BBR congestion control with the `fq` qdisc (the module is loaded explicitly), TC
 
 ### Nix daemon
 
+Store deduplication runs weekly (`nix.optimise.automatic`) instead of
+`auto-optimise-store`, which hard-linked every file of every build while the
+build ran and slowed each rebuild; the space saved ends up the same.
+
 The daemon runs with the `batch` CPU policy and `idle` I/O class, so a rebuild in the background doesn't make the desktop stutter. `download-buffer-size` is 256 MiB (avoids the "download buffer is full" stall on fast links), `connect-timeout` is 5 s, and `min-free` / `max-free` (5 GiB / 20 GiB) make a build collect garbage itself rather than fail on a full disk. `documentation.man.cache.enable = false` skips regenerating the man-page index on every rebuild, which is a noticeable share of activation time; `apropos` and `man -k` no longer work.
 
 ### Gaming block
@@ -65,6 +69,23 @@ Applied when `vayume.performance.gaming` is true:
 - `programs.gamescope` with `capSysNice`, and Steam's gamescope session.
 
 The `ntsync` module and its udev rule stay in `Host.nix`, since Wine uses them outside Steam too.
+
+### CPU scheduler (sched_ext)
+
+`vayume.performance.scheduler` loads a BPF scheduler through the kernel's
+sched_ext class with `services.scx` (on by default as `lavd`; the zen kernel
+here has sched_ext built in, `/sys/kernel/sched_ext` exists). `scx_lavd`
+("latency-aware virtual deadline") is the one CachyOS points desktop and
+gaming users to: it spots latency-critical tasks, such as the compositor,
+input handling and audio, and runs them first, so the desktop stays
+responsive while something compiles. `--autopower` makes it follow the
+power profile the laptop is in (asusd/power-profiles-daemon), trading
+latency for battery in power-saver mode. `bpfland` is the simpler
+interactive scheduler without the power handling, and `default` goes back
+to the kernel's EEVDF. A sched_ext scheduler that misbehaves is ejected by
+the kernel, which falls back to EEVDF on its own. ananicy-cpp is still left
+out (see below): CachyOS users report it fighting scx schedulers, which make
+the same kind of priority decisions themselves.
 
 ### Kernel choice
 
@@ -89,6 +110,42 @@ Looked at and left alone:
 - **systemd-boot instead of GRUB** loads in tens of milliseconds where GRUB takes seconds, but this host relies on a fixed GRUB chainload entry for Windows and a GRUB theme, so switching is a change of bootloader, not a tweak.
 - **`boot.initrd.systemd.enable`** parallelises the initrd and is often faster, but this root is Btrfs with a `resume=` swap device, and I can't test hibernation here; it is a one-line experiment if you want to try it.
 - **`mitigations=off`** speeds boot slightly and weakens CPU vulnerability protections.
+
+### Measured in September 2026
+
+On the running desktop, before this round: 24.3 s boot (firmware 5.4 s,
+GRUB 12.5 s, kernel 0.6 s, initrd 2.3 s, userspace 3.4 s) and about 4.3 GB of
+proportional memory (PSS) in processes, of which VS Code was 1.7 GB, nixd's
+three option evaluators 0.84 GB, DMS 0.39 GB and Zen about 0.8 GB. The "40%
+used" figure also counts 1 GB of shared memory (window and GPU buffers)
+and not the 6 GB of file cache, which the kernel hands back when asked; 8.6 GB
+was available. What changed:
+
+- **GRUB's background is a 640x360 PNG (73 KB)**, blurred and cropped to
+  the screen by GRUB, instead of 1920x1080. GRUB decodes PNG slowly and reads
+  it through the firmware's file access, and it is only ever seen blurred.
+- **The MaterialOS icon fallback copies only when something changed.** It
+  rebuilt `~/.local/share/icons/MaterialOS` on every activation, 0.31 s of
+  the 1.4 s that home-manager holds up the login screen at boot. A stamp
+  file records the icon package, the three profile paths and the
+  modification times of `~/.local/share/icons/hicolor` and `pixmaps`; the
+  copy runs when any of them differs.
+- **VS Code does less in the background**: file watching skips
+  `node_modules`, `.direnv`, `result`, `target`, `build`, `.dart_tool`,
+  `.gradle`, `.venv` and git objects; search doesn't follow symlinks (a
+  `result` link reaches the whole store); telemetry, experiments, update
+  checks and extension update checks are off, since Nix installs both.
+- **sched_ext `lavd`** as above.
+
+Left in place and why: nixd's 0.84 GB is what option completion and
+go-to-definition cost (NixOS 366 MB, home-manager 285 MB, nixpkgs 190 MB) and
+only runs while a Nix file is open in VS Code. `waydroid-container` stays
+enabled; its daemon is about 40 MB, and starting it on demand would need
+D-Bus activation that can't be tested without breaking Android apps.
+Electron apps were already native Wayland (`hyprctl clients` shows no
+XWayland windows), so `NIXOS_OZONE_WL` would change nothing.
+`preload` only helps spinning disks, and `profile-sync-daemon` moves the
+browser profile into RAM, which is the opposite of the goal here.
 
 ### Left out on purpose
 

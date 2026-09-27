@@ -131,9 +131,9 @@ pkgs.runCommand "vayume-grub-theme"
     mkdir -p $out
     cd $out
 
-    magick ${wallpaper} -resize 1920x1080^ -gravity center -extent 1920x1080 \
-      -blur 0x22 -modulate 100,80 \
-      \( -size 1920x1080 xc:'${c.surface}' -alpha set -channel A -evaluate set 42% +channel \) -composite \
+    magick ${wallpaper} -resize 640x360^ -gravity center -extent 640x360 \
+      -blur 0x8 -modulate 100,80 \
+      \( -size 640x360 xc:'${c.surface}' -alpha set -channel A -evaluate set 42% +channel \) -composite \
       -strip PNG24:background.png
 
     slice() {

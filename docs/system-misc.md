@@ -58,7 +58,9 @@ countdown and key hints at the bottom. It replaced the
   every element in absolute pixels from the top. On this 1920x1200 panel,
   or whenever the firmware picked another mode, the stretched background
   and the menu no longer lined up, and moving the selection could look as
-  if the keys did nothing. Now the background is only the blurred wallpaper
+  if the keys did nothing. Now the background is only the blurred wallpaper,
+  made at 640x360 (73 KB) since GRUB decodes PNG slowly and it is only seen
+  blurred, and scaled to the screen by GRUB
   (`desktop-image-scale-method: "crop"`), the card is the boot menu's own
   nine-slice box (`menu_pixmap_style = "card_*.png"`, with tall top and
   bottom slices that reserve room for the title and the hints), and every
