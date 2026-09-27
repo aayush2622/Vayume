@@ -1191,7 +1191,7 @@ Explanations that used to be comments in the source files.
 
 ---
 
-[← PluginUpdateCheck.nix](core-pluginupdatecheck.md) · [Index](CONFIGURATION.md) · [Niri.nix →](desktop-niri.md)
+[← AutoUpdate.nix](core-autoupdate.md) · [Index](CONFIGURATION.md) · [Niri.nix →](desktop-niri.md)
 
 ## Light mode
 
