@@ -291,16 +291,14 @@ in
         CHROME_EXECUTABLE = "zen";
       };
 
-      home.file =
-        pluginFiles
-        // optionFiles
-        // matugenFiles
-        // themePluginFiles
-        // {
-          "${optionsDir}/../studio64.vmoptions".text = ''
-            -Dide.browser.jcef.clipboard.enabled=true
-          '';
-        };
+      home.file = pluginFiles // optionFiles // matugenFiles // themePluginFiles;
+
+      home.activation.androidStudioVmoptions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        vmopt="$HOME/.config/Google/${configDataDir}/studio64.vmoptions"
+        if ! grep -qF 'ide.browser.jcef.clipboard.enabled' "$vmopt" 2>/dev/null; then
+          run printf -- '-Dide.browser.jcef.clipboard.enabled=true\n' >> "$vmopt"
+        fi
+      '';
 
       home.activation.androidStudioWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (
         lib.optionalString hasWakatime ''
