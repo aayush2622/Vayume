@@ -38,6 +38,30 @@
         "type": "github"
       }
     },
+    "dartotsu": {
+      "inputs": {
+        "nix-wpe-webkit-bin": [
+          "nix-wpe-webkit-bin"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790541174,
+        "narHash": "sha256-btGRRZn2gLAKFbJtsSaWfKkWI+eK4HzFhYjSFAtoNz8=",
+        "owner": "aayush2622",
+        "repo": "Dartotsu",
+        "rev": "c5c9993e2e0e45f639a6c70445597b60a9c8a9b3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "aayush2622",
+        "ref": "rewrite-re",
+        "repo": "Dartotsu",
+        "type": "github"
+      }
+    },
     "dms": {
       "inputs": {
         "dank-qml-common": "dank-qml-common",
@@ -253,17 +277,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1789788481,
-        "narHash": "sha256-KAddig6W6JykZOTEiYwkC992iteZEeKr5r1hsuFLw1c=",
+        "lastModified": 1790538283,
+        "narHash": "sha256-VFpF/xnviryhN4i0gmhh95ZnUJagS2ZEchjK+akGtVE=",
         "owner": "aayush2622",
         "repo": "nix-wpe-webkit-bin",
-        "rev": "dfcf2acea1d5d21069c7c50b0f534ed297144eeb",
+        "rev": "60484b22f066b447617b6abfa5b0caa666bc2d29",
         "type": "github"
       },
       "original": {
         "owner": "aayush2622",
         "repo": "nix-wpe-webkit-bin",
-        "rev": "dfcf2acea1d5d21069c7c50b0f534ed297144eeb",
+        "rev": "60484b22f066b447617b6abfa5b0caa666bc2d29",
         "type": "github"
       }
     },
@@ -317,6 +341,7 @@
     "root": {
       "inputs": {
         "danksession": "danksession",
+        "dartotsu": "dartotsu",
         "dms": "dms",
         "dms-plugin-registry": "dms-plugin-registry",
         "flake-parts": "flake-parts",
@@ -327,6 +352,7 @@
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nix-wpe-webkit-bin": "nix-wpe-webkit-bin",
         "nixpkgs": "nixpkgs",
+        "sonora": "sonora",
         "spicetify-nix": "spicetify-nix",
         "wrapper-modules": "wrapper-modules",
         "zen-browser": "zen-browser",
@@ -334,6 +360,48 @@
         "zsh-autosuggestions": "zsh-autosuggestions",
         "zsh-syntax-highlighting": "zsh-syntax-highlighting",
         "zsh-you-should-use": "zsh-you-should-use"
+      }
+    },
+    "rust-overlay": {
+      "inputs": {
+        "nixpkgs": [
+          "sonora",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789196581,
+        "narHash": "sha256-yJr1Bt4fKkKIpPYbsKGqJ0VFdoDnURgRwuffmBQ2WzY=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "228ecefb6329d5a531b77b46b581a2f0c26ee056",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "sonora": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "lastModified": 1790687361,
+        "narHash": "sha256-S5JBAwQD+7O6EpUfoLKPBG8YX1lMHW8xks3TO6ocb5s=",
+        "owner": "sonorahq",
+        "repo": "sonora",
+        "rev": "de9b44cc38cd92dafb2ac2ee3c4523b469f97dd7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sonorahq",
+        "repo": "sonora",
+        "type": "github"
       }
     },
     "spicetify-nix": {

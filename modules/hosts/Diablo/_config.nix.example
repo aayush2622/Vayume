@@ -76,6 +76,8 @@
     Vesktop.enable = false;
     Spicetify.enable = false;
     Spotifast.enable = false;
+    Sonora.enable = false;
+    Motrix.enable = false;
     Bitwarden.enable = false;
     StateBackup.enable = false;
     Distrobox.enable = false;
