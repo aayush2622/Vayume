@@ -8,31 +8,50 @@
   };
 
   flake.homeModules.apps.Motrix =
-    { pkgs, lib, ... }:
     {
-      home.packages = [ pkgs.motrix ];
-
-      systemd.user.services.motrix = {
-        Unit = {
-          Description = "Motrix download manager";
-          After = [ "graphical-session.target" ];
-          PartOf = [ "graphical-session.target" ];
-        };
-        Service = {
-          ExecStart = "${lib.getExe pkgs.motrix}";
-          Restart = "on-failure";
-          Environment = [
-            "ELECTRON_OZONE_PLATFORM_HINT=auto"
-          ];
-        };
-        Install.WantedBy = [ "graphical-session.target" ];
+      pkgs,
+      lib,
+      config,
+      ...
+    }:
+    let
+      cfg = config.vayume.motrix;
+    in
+    {
+      options.vayume.motrix.rpcSecret = lib.mkOption {
+        type = lib.types.str;
+        default = "vayume";
+        description = "RPC secret shared between Motrix and the browser extension.";
       };
 
-      home.activation.motrixConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        cfg="$HOME/.config/Motrix/user.json"
-        if [ -f "$cfg" ]; then
-          run ${lib.getExe pkgs.jq} '. + {"run-mode": 2, "open-at-login": false}' "$cfg" > "$cfg.tmp" && mv "$cfg.tmp" "$cfg"
-        fi
-      '';
+      config = {
+        home.packages = [ pkgs.motrix ];
+
+        systemd.user.services.motrix = {
+          Unit = {
+            Description = "Motrix download manager";
+            After = [ "graphical-session.target" ];
+            PartOf = [ "graphical-session.target" ];
+          };
+          Service = {
+            ExecStart = "${lib.getExe pkgs.motrix}";
+            Restart = "on-failure";
+            Environment = [
+              "ELECTRON_OZONE_PLATFORM_HINT=auto"
+            ];
+          };
+          Install.WantedBy = [ "graphical-session.target" ];
+        };
+
+        home.activation.motrixConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          configFile="$HOME/.config/Motrix/user.json"
+          if [ -f "$configFile" ]; then
+            run ${lib.getExe pkgs.jq} \
+              --arg secret ${lib.escapeShellArg cfg.rpcSecret} \
+              '. + {"run-mode": 2, "open-at-login": false, "rpc-secret": $secret}' \
+              "$configFile" > "$configFile.tmp" && mv "$configFile.tmp" "$configFile"
+          fi
+        '';
+      };
     };
 }
