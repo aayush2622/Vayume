@@ -124,6 +124,7 @@ in
       lib,
       config,
       vayumeTheme,
+      vayumeApps,
       ...
     }:
     let
@@ -143,7 +144,7 @@ in
 
       zenExtensions =
         zenExtensionsSpec
-        ++ lib.optional (config.vayume.apps.Motrix.enable or false) {
+        ++ lib.optional (builtins.elem "Motrix" vayumeApps) {
           name = "Motrix WebExtension";
           slug = "motrixwebextension";
           guid = "{9ce99d37-4a5e-409a-a04b-0f3f50491bc7}";
