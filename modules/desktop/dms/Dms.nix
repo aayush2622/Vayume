@@ -11,6 +11,7 @@
     let
       theme = config.vayume.theme;
       barProfile = (import ./_barProfiles.nix).${config.vayume.desktop.barStyle};
+      power = config.vayume.power;
 
       materialOSIcons = pkgs.stdenvNoCC.mkDerivation {
         pname = "materialos-icon-theme";
@@ -92,18 +93,49 @@
             autoStart = true;
           };
 
-          systemd.user.services.vayume-idle-lock = {
-            Unit = {
-              Description = "Lock the screen after 10 minutes idle";
-              After = [ "graphical-session.target" ];
-              PartOf = [ "graphical-session.target" ];
+          systemd.user.services.vayume-idle-lock =
+            let
+              dms = "${config.programs.dank-material-shell.package}/bin/dms";
+              niri = "${pkgs.niri}/bin/niri";
+              systemctl = "${pkgs.systemd}/bin/systemctl";
+              lockArgs = lib.optionals (power.idleLock > 0) [
+                "timeout"
+                (toString power.idleLock)
+                "${dms} ipc call lock lock"
+              ];
+              screenOffArgs = lib.optionals (power.idleScreenOff > 0) [
+                "timeout"
+                (toString power.idleScreenOff)
+                "${niri} msg action power-off-monitors"
+                "resume"
+                "${niri} msg action power-on-monitors"
+              ];
+              suspendArgs = lib.optionals (power.idleSuspend > 0) [
+                "timeout"
+                (toString power.idleSuspend)
+                "${systemctl} suspend"
+              ];
+              args = lockArgs ++ screenOffArgs ++ suspendArgs;
+              enabled = args != [ ];
+            in
+            lib.mkIf enabled {
+              Unit = {
+                Description = "Lock screen and manage display power on idle";
+                After = [ "graphical-session.target" ];
+                PartOf = [ "graphical-session.target" ];
+              };
+              Service = {
+                ExecStart = lib.escapeShellArgs (
+                  [
+                    "${pkgs.swayidle}/bin/swayidle"
+                    "-w"
+                  ]
+                  ++ args
+                );
+                Restart = "on-failure";
+              };
+              Install.WantedBy = [ "graphical-session.target" ];
             };
-            Service = {
-              ExecStart = "${pkgs.swayidle}/bin/swayidle -w timeout 600 '${config.programs.dank-material-shell.package}/bin/dms ipc call lock lock'";
-              Restart = "on-failure";
-            };
-            Install.WantedBy = [ "graphical-session.target" ];
-          };
 
           systemd.user.services.vayume-media-inhibit = {
             Unit = {
