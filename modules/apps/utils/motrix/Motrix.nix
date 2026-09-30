@@ -45,11 +45,17 @@
 
         home.activation.motrixConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           configFile="$HOME/.config/Motrix/user.json"
+          mkdir -p "$(dirname "$configFile")"
           if [ -f "$configFile" ]; then
             run ${lib.getExe pkgs.jq} \
               --arg secret ${lib.escapeShellArg cfg.rpcSecret} \
               '. + {"run-mode": 2, "open-at-login": false, "rpc-secret": $secret}' \
               "$configFile" > "$configFile.tmp" && mv "$configFile.tmp" "$configFile"
+          else
+            run ${lib.getExe pkgs.jq} -n \
+              --arg secret ${lib.escapeShellArg cfg.rpcSecret} \
+              '{"run-mode": 2, "open-at-login": false, "rpc-secret": $secret}' \
+              > "$configFile"
           fi
         '';
       };
