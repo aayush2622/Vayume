@@ -222,6 +222,14 @@ in
           </application>
         '';
 
+        "sdk.xml" = ''
+          <application>
+            <component name="DefaultSdkLocationProvider">
+              <option name="usedPath" value="${config.home.homeDirectory}/Android/Sdk" />
+            </component>
+          </application>
+        '';
+
         "vim_settings.xml" = ''
           <application>
             <component name="VimSettings">
