@@ -42,6 +42,7 @@ in
       self.nixosModules.DevTooling
       self.nixosModules.Zram
       self.nixosModules.Performance
+      self.nixosModules.Power
       self.nixosModules.Storage
       self.nixosModules.DistroboxSettings
       self.nixosModules.Network

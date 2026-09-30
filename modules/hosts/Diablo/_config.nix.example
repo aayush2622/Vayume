@@ -84,6 +84,16 @@
     Waydroid.enable = false;
   };
 
+  # Optional - power / idle behaviour. Defaults shown, times in seconds.
+  # See docs/system-power.md or Vayume Settings -> Power.
+  # vayume.power = {
+  #   idleLock = 600;       # lock after 10 min idle (0 = never)
+  #   idleScreenOff = 660;  # screen off after 11 min idle (0 = never)
+  #   idleSuspend = 0;      # sleep after N seconds idle (0 = never)
+  #   powerButton = "suspend";   # suspend | hibernate | poweroff | lock | ignore
+  #   lidClose = "suspend";      # suspend | hibernate | lock | ignore
+  # };
+
   # Optional - which app opens folders/links/code files and starts from
   # its keybind; leave a role out (or null) for the first enabled one.
   # See docs/desktop-default-apps.md, or Vayume Settings -> Default Apps.
