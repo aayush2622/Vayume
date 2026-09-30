@@ -99,4 +99,4 @@ A second Spotify client, next to Spicetify - not a replacement for it, a complet
 
 ---
 
-[← Spicetify.nix](apps-utils-spicetify.md) · [Index](CONFIGURATION.md) · [Nautilus.nix →](apps-utils-nautilus.md)
+[← Spicetify.nix](apps-utils-spicetify.md) · [Index](CONFIGURATION.md) · [Sonora.nix →](apps-utils-sonora.md)

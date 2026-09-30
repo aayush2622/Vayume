@@ -95,6 +95,30 @@ them back on rebuilt clean again.
   for root-level editing - left as-is on purpose, since the Nix store
   dedups the actual files regardless and the two lists serve genuinely
   different scopes.
+- **`wpewebkit` is re-patched before being passed to the Flutter/CMake
+  build.** The prebuilt from `nix-wpe-webkit-bin` ships no usable rpath for
+  its own transitive `.so` needs (libseccomp, gstreamer, icu, …). A
+  consumer's CMake/pkg-config rpath generation never covers them either, since
+  those libraries don't appear in any `.pc` `Requires:`. Forcing a global
+  `-rpath` via `NIX_LDFLAGS` also doesn't reach this deep: `DT_RUNPATH` does
+  not propagate to a dependency's own dependencies — only `DT_RPATH` on the
+  very object that needs them does. So the module runs `autoPatchelfHook` on
+  the raw prebuilt before handing it to the build, the same way Dartotsu's own
+  Nix package does via `autoPatchelfHook`. The copied `.pc` files are also
+  rewritten: they hardcode the original store path in `prefix=`/`libdir=`/
+  `includedir=`, so without the rewrite `pkg-config` would redirect CMake
+  straight back to the unpatched library, bypassing `autoPatchelfHook` entirely.
+- **Flutter sets `FLUTTER_NIX_LIB_DIRS` and `NIX_LDFLAGS` for Dartotsu
+  builds.** `media_kit_libs_linux` vendors its own prebuilt `libmpv.so.2`
+  via the Dart pub package rather than from nixpkgs. That vendored binary
+  carries no rpath and sits behind `libmedia_kit_video_plugin.so`, which is
+  far enough down the dependency chain that the top-level binary's own
+  runtime search path never reaches it. `FLUTTER_NIX_LIB_DIRS` carries the
+  correct library paths; Dartotsu's `linux/CMakeLists.txt` reads it and calls
+  `patchelf --set-rpath` on the copied `libmpv.so.2` itself. `NIX_LDFLAGS`
+  uses `--disable-new-dtags` (the older `DT_RPATH` tag applies across the
+  whole process, unlike `DT_RUNPATH`) so that transitive plugin dependencies
+  two levels down — libseccomp, gstreamer, icu — are still found.
 
 ---
 

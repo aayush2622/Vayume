@@ -205,8 +205,9 @@ It gets reused and re-synced on every rebuild.
   script can't route around - but it does mean the file itself is
   always correct by the next restart, not stuck until the next
   `nixos-rebuild`.
+- **Motrix WebExtension** is installed alongside the Motrix utility app when `vayume.apps.Motrix.enable = true`, so browser downloads can be handed off to Motrix. It is the maintained Firefox add-on at [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/motrixwebextension/); after the first launch, set its RPC secret in the extension's options to match Motrix's Preferences > Advanced > Security setting. Motrix must already be running because the add-on cannot launch it programmatically.
+- **ClearURLs** strips tracking parameters from URLs automatically. It is installed unconditionally alongside the other curated extensions.
 - **Zen Mods** live in the same activation script (theming, `user.js`,
-  and mods all need the same resolved profile path), traced through
   Zen's own source rather than guessed at:
   - The mods file is a JSON object keyed by mod ID, each entry carrying
     its metadata plus `enabled`.

@@ -22,6 +22,11 @@ let
       guid = "chrome-mask@overengineer.dev";
     }
     {
+      name = "ClearURLs";
+      slug = "clearurls";
+      guid = "{74145f27-f039-47ce-a470-a662b129930a}";
+    }
+    {
       name = "Claude Counter";
       slug = "claude-counter";
       guid = "{cf7799c8-d878-41ff-8005-167bee7ab3d6}";
@@ -136,7 +141,13 @@ in
         "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
       };
 
-      zenExtensions = zenExtensionsSpec;
+      zenExtensions =
+        zenExtensionsSpec
+        ++ lib.optional (config.vayume.apps.Motrix.enable or false) {
+          name = "Motrix WebExtension";
+          slug = "motrixwebextension";
+          guid = "{9ce99d37-4a5e-409a-a04b-0f3f50491bc7}";
+        };
 
       guidOf =
         name:
