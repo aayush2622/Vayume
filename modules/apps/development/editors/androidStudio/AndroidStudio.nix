@@ -15,12 +15,20 @@ let
       id = "com.anthropic.code.plugin";
     }
     {
+      dirName = "swttch";
+      id = "com.github.yhk1038.claude-code-gui";
+    }
+    {
       dirName = "git-worktree-manager";
       id = "com.purringlabs.gitworktree.git-worktree-manager";
     }
     {
       dirName = "JetBrains-Discord-Integration";
       id = "dev.azn9.plugins.discord";
+    }
+    {
+      dirName = "intellij-marketplace";
+      id = "com.intellij.marketplace";
     }
     {
       dirName = "lsp4ij";
@@ -275,7 +283,16 @@ in
         CHROME_EXECUTABLE = "zen";
       };
 
-      home.file = pluginFiles // optionFiles // matugenFiles // themePluginFiles;
+      home.file =
+        pluginFiles
+        // optionFiles
+        // matugenFiles
+        // themePluginFiles
+        // {
+          "${optionsDir}/../studio64.vmoptions".text = ''
+            -Dide.browser.jcef.clipboard.enabled=true
+          '';
+        };
 
       home.activation.androidStudioWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (
         lib.optionalString hasWakatime ''
