@@ -54,12 +54,12 @@
       };
 
       config = {
-        services.logind.extraConfig = ''
-          HandlePowerKey=${cfg.powerButton}
-          HandleLidSwitch=${cfg.lidClose}
-          HandleLidSwitchExternalPower=${cfg.lidClose}
-          HandleLidSwitchDocked=ignore
-        '';
+        services.logind.settings.Login = {
+          HandlePowerKey = cfg.powerButton;
+          HandleLidSwitch = cfg.lidClose;
+          HandleLidSwitchExternalPower = cfg.lidClose;
+          HandleLidSwitchDocked = "ignore";
+        };
 
         vayume.settingsGroups."Screen & sleep" = {
           order = 1;
