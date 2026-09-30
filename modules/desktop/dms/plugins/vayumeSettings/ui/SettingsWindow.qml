@@ -117,6 +117,8 @@ DankFloatingWindow {
                   subtitle: I18n.tr("DNS, Tor and network privacy for the whole machine.") },
                 { id: "performance", label: I18n.tr("Performance"), icon: "speed",
                   subtitle: I18n.tr("The kernel, system tuning and how fast the machine boots.") },
+                { id: "power", label: I18n.tr("Power"), icon: "power_settings_new",
+                  subtitle: I18n.tr("Idle timeouts, screen-off delay, suspend, and what the power button does.") },
                 { id: "storage", label: I18n.tr("Storage"), icon: "hard_drive",
                   subtitle: I18n.tr("How full the disk is, and what can safely be cleaned up.") },
                 { id: "updates", label: I18n.tr("Updates"), icon: "system_update_alt",
@@ -227,6 +229,7 @@ DankFloatingWindow {
                             case "users": return usersPageComponent;
                             case "network": return networkPageComponent;
                             case "performance": return performancePageComponent;
+                            case "power": return powerPageComponent;
                             case "storage": return storagePageComponent;
                             case "updates": return updatesPageComponent;
                             default: return null;
@@ -288,6 +291,7 @@ DankFloatingWindow {
     Component { id: petPageComponent; PetPage { vm: root.vm } }
     Component { id: networkPageComponent; SystemPage { vm: root.vm; page: "network" } }
     Component { id: performancePageComponent; SystemPage { vm: root.vm; page: "performance" } }
+    Component { id: powerPageComponent; SystemPage { vm: root.vm; page: "power" } }
     Component { id: storagePageComponent; StoragePage { vm: root.vm } }
     Component { id: updatesPageComponent; UpdatesPage { vm: root.vm } }
     Component { id: aboutPageComponent; AboutPage { vm: root.vm } }
