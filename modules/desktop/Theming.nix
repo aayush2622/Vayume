@@ -103,7 +103,6 @@
           font-name = lib.mkDefault "${theme.font} ${toString theme.fontSize}";
           monospace-font-name = "${theme.font} ${toString theme.fontSize}";
           document-font-name = "${theme.font} ${toString theme.fontSize}";
-          gtk-decoration-layout = ":";
         };
 
         dconf.settings."org/gnome/desktop/wm/preferences" = {
@@ -118,7 +117,11 @@
             package = pkgs.adw-gtk3;
           };
 
-          gtk4.theme = null;
+          gtk3.extraConfig.gtk-decoration-layout = ":";
+          gtk4 = {
+            theme = null;
+            extraConfig.gtk-decoration-layout = ":";
+          };
 
           iconTheme = {
             name = theme.iconTheme;
