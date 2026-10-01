@@ -103,6 +103,11 @@
           font-name = lib.mkDefault "${theme.font} ${toString theme.fontSize}";
           monospace-font-name = "${theme.font} ${toString theme.fontSize}";
           document-font-name = "${theme.font} ${toString theme.fontSize}";
+          gtk-decoration-layout = ":";
+        };
+
+        dconf.settings."org/gnome/desktop/wm/preferences" = {
+          button-layout = ":";
         };
 
         gtk = {
