@@ -155,7 +155,15 @@ in
       });
       androidStudioWithJcef = pkgs.androidStudioPackages.stable.overrideAttrs (old: {
         startScript =
-          builtins.replaceStrings [ "${androidStudioUnwrapped}" ] [ "${androidStudioJcef}" ]
+          builtins.replaceStrings
+            [
+              "${androidStudioUnwrapped}"
+              "export JAVA_HOME="
+            ]
+            [
+              "${androidStudioJcef}"
+              "unset WAYLAND_DISPLAY\nexport JAVA_HOME="
+            ]
             old.startScript;
         passthru = old.passthru // {
           unwrapped = androidStudioJcef;
