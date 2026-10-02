@@ -151,7 +151,6 @@ in
         postFixup = (old.postFixup or "") + ''
           rm -rf $out/jbr
           ln -s ${pkgs.jetbrains.jdk}/lib/openjdk $out/jbr
-          sed -i '1a unset WAYLAND_DISPLAY' $out/bin/studio
         '';
       });
       androidStudioWithJcef = pkgs.androidStudioPackages.stable.overrideAttrs (old: {

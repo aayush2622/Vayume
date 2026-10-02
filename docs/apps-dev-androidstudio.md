@@ -106,20 +106,6 @@ machine, pinned as real Nix packages instead of fetched live every time:
   launcher's `startScript` also has the unpatched store path hardcoded
   into it at eval time, so overriding `unwrapped` alone doesn't reach
   it - the reference gets rewritten too.
-- **`startScript` also unsets `WAYLAND_DISPLAY` before launch, to fix
-  clipboard sync for JCEF-backed panels (e.g. the Claude GUI plugin's
-  browser view).** Android Studio runs in a bwrap sandbox (via nixpkgs'
-  `buildFHSEnv`) that only binds the X11 socket
-  (`/tmp/.X11-unix/X0`) - it never bind-mounts `$XDG_RUNTIME_DIR`, so the
-  Wayland socket itself is unreachable from inside it, even though the
-  env var pointing at it is inherited unchanged. JCEF's embedded
-  Chromium still auto-detects that `WAYLAND_DISPLAY` is set and launches
-  its renderer/GPU processes with `--ozone-platform=wayland` regardless,
-  which can't actually connect to anything and leaves the Wayland
-  clipboard (data-device) protocol non-functional, while the main Swing
-  IDE window still renders fine over the bound X11 socket. Unsetting the
-  var forces JCEF's ozone auto-detection onto X11 too, which XWayland
-  already bridges to the compositor's clipboard correctly.
 - **`nodejs` is in `home.packages` for the Claude Code plugin
   (`claude-code-jetbrains-plugin`) specifically** - it runs its own Node
   backend (`backend.mjs`) in-process and just shells out to whatever
