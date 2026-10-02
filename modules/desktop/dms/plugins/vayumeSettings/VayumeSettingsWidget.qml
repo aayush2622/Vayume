@@ -100,7 +100,7 @@ PluginComponent {
     property string activePage: "overview"
     property var loadedPages: ({})
 
-    readonly property var pageIds: ["overview", "appearance", "pet", "users", "applications", "development", "defaults", "network", "performance", "storage", "updates", "about"]
+    readonly property var pageIds: ["overview", "appearance", "pet", "users", "applications", "development", "defaults", "network", "performance", "power", "storage", "updates", "about"]
 
     function pageOfSetting(s) {
         if (s.app)
