@@ -116,6 +116,8 @@
         webp-pixbuf-loader
         xfconf
 
+        file-roller
+
         wl-clipboard
       ];
 
