@@ -25,6 +25,8 @@
 
     wine = builtins.readFile ./matugen/wine/wine.reg.template;
 
+    dartotsu = builtins.readFile ./matugen/dartotsu/theme.json.template;
+
     androidStudio =
       schemeName:
       builtins.replaceStrings [ "VAYUME_SCHEME_TOKEN" ] [ schemeName ] (
