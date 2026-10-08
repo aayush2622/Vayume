@@ -1,0 +1,21 @@
+@import "VAYUME_BASE_TOKEN"
+
+textbox-header-icon {
+    str: "content_paste";
+}
+
+textbox-header-title {
+    str: "Clipboard";
+}
+
+entry {
+    placeholder: "Search clipboard...";
+}
+
+mode-switcher {
+    enabled: false;
+}
+
+textbox-hints {
+    str: "↑↓ nav     ↵ copy";
+}

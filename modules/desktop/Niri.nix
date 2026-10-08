@@ -24,15 +24,7 @@
         "Mod+Shift+B" = titled "Reload Zen (apply new theme)" { spawn = actions.browserReload; };
         "Control+Shift+Escape" = titled "Open System Monitor" { spawn = actions.systemMonitor; };
 
-        "Mod+S" = titled "Toggle App Launcher" {
-          spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "spotlight"
-            "toggle"
-          ];
-        };
+        "Mod+S" = titled "Toggle App Launcher" { spawn = [ "vayume-launcher" ]; };
         "Mod+H" = titled "Show or Hide the Top Bar" {
           spawn = [
             "dms"
@@ -51,15 +43,7 @@
             "toggle"
           ];
         };
-        "Mod+V" = titled "Toggle Clipboard History" {
-          spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "clipboard"
-            "toggle"
-          ];
-        };
+        "Mod+V" = titled "Toggle Clipboard History" { spawn = [ "vayume-clipboard" ]; };
         "Mod+Comma" = titled "Open Settings" {
           spawn = [
             "dms"
@@ -81,15 +65,7 @@
         "Mod+G".consume-window-into-column = _: { };
         "Mod+Shift+G".expel-window-from-column = _: { };
         "Mod+K".switch-layout = "next";
-        "Mod+L" = titled "Lock Screen" {
-          spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "lock"
-            "lock"
-          ];
-        };
+        "Mod+L" = titled "Lock Screen" { spawn = [ "vayume-lock" ]; };
 
         "Mod+Shift+W" = titled "Open Wallpaper Carousel" {
           spawn = [
@@ -99,15 +75,7 @@
             "open"
           ];
         };
-        "Mod+A" = titled "Toggle App Launcher" {
-          spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "spotlight"
-            "toggle"
-          ];
-        };
+        "Mod+A" = titled "Toggle App Launcher" { spawn = [ "vayume-launcher" ]; };
 
         "Mod+Left".focus-column-left = _: { };
         "Mod+Right".focus-column-right = _: { };
@@ -139,52 +107,38 @@
           spawn-sh = "mkdir -p \"$HOME/Pictures/Screenshots\" && grim \"$HOME/Pictures/Screenshots/$(date +%Y-%m-%d_%H-%M-%S).png\"";
         };
 
-        "Mod+Escape" = titled "Power Menu" {
-          spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "fullscreenPowerMenu"
-            "toggle"
-          ];
-        };
+        "Mod+Escape" = titled "Power Menu" { spawn = [ "vayume-powermenu" ]; };
 
         "XF86AudioMute" = titled "Mute Audio" {
           spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "audio"
-            "mute"
+            "wpctl"
+            "set-mute"
+            "@DEFAULT_AUDIO_SINK@"
+            "toggle"
           ];
         };
         "XF86AudioLowerVolume" = titled "Volume Down" {
           spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "audio"
-            "decrement"
-            "5"
+            "wpctl"
+            "set-volume"
+            "@DEFAULT_AUDIO_SINK@"
+            "5%-"
           ];
         };
         "XF86AudioRaiseVolume" = titled "Volume Up" {
           spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "audio"
-            "increment"
-            "5"
+            "wpctl"
+            "set-volume"
+            "@DEFAULT_AUDIO_SINK@"
+            "5%+"
           ];
         };
         "XF86AudioMicMute" = titled "Mute Microphone" {
           spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "mic"
-            "mute"
+            "wpctl"
+            "set-mute"
+            "@DEFAULT_AUDIO_SOURCE@"
+            "toggle"
           ];
         };
         "XF86AudioPlay" = titled "Play/Pause Media" {
@@ -212,10 +166,18 @@
           ];
         };
         "XF86MonBrightnessUp" = titled "Brightness Up" {
-          spawn-sh = ''dms ipc call brightness increment 5 "$(dms ipc call brightness list | awk '$1 ~ /^backlight:/ {print $1; exit}')" '';
+          spawn = [
+            "brightnessctl"
+            "set"
+            "5%+"
+          ];
         };
         "XF86MonBrightnessDown" = titled "Brightness Down" {
-          spawn-sh = ''dms ipc call brightness decrement 5 "$(dms ipc call brightness list | awk '$1 ~ /^backlight:/ {print $1; exit}')" '';
+          spawn = [
+            "brightnessctl"
+            "set"
+            "5%-"
+          ];
         };
         "Mod+1".focus-workspace = 1;
         "Mod+2".focus-workspace = 2;

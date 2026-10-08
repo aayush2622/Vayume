@@ -1,0 +1,35 @@
+* {
+    background-image: none;
+    transition: 60ms;
+    font-size: 16px;
+}
+
+window {
+    background-color: {{colors.scrim.default.hex}};
+}
+
+button {
+    color: {{colors.on_surface.default.hex}};
+    background-color: {{colors.surface_container.default.hex}};
+    border-style: solid;
+    border-width: 2px;
+    border-color: {{colors.outline.default.hex}};
+    border-radius: 24px;
+    margin: 10px;
+    padding: 24px;
+}
+
+button:focus,
+button:active,
+button:hover {
+    background-color: {{colors.primary_container.default.hex}};
+    color: {{colors.on_primary_container.default.hex}};
+    border-color: {{colors.primary.default.hex}};
+}
+
+#shutdown:hover,
+#reboot:hover {
+    background-color: {{colors.error_container.default.hex}};
+    color: {{colors.on_error_container.default.hex}};
+    border-color: {{colors.error.default.hex}};
+}

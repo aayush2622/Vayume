@@ -229,6 +229,7 @@
           imports = [
             self.homeModules.Theming
             self.homeModules.Hyprland
+            self.homeModules.DesktopTools
           ]
           ++ (map (app: self.homeModules.apps.${app}) enabledAppNames);
 

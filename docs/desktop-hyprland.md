@@ -64,17 +64,11 @@ concepts don't translate:
   `set-column-width` proportions - dwindle has no column-proportion
   concept to resize against.
 
-**The brightness binds needed the same device-resolution logic niri's
-own already has, not a bare `dms ipc call brightness increment 5`.**
-Checked DMS's own default keybind list
-(`Common/KeybindActions.js`) rather than assume the device argument was
-optional - its own defaults always pass a third argument, even if empty
-(`brightness increment 5 ""`). Matched niri's existing, more robust
-approach instead of DMS's bare default: resolve the actual backlight
-device name via `dms ipc call brightness list | awk '$1 ~
-/^backlight:/ {print $1; exit}'`, same shell substitution as
-[Niri.nix](desktop-niri.md)'s own binds, verified against the
-real rendered `hyprland.conf` line for line.
+**Audio and brightness binds call `wpctl` and `brightnessctl`, not DMS.**
+They used to go through `dms ipc call audio` / `brightness`, which meant
+resolving the backlight device name by parsing `dms ipc call brightness
+list`. `brightnessctl` picks the default backlight itself, and `wpctl`
+talks to PipeWire directly, so none of it depends on DMS being up.
 
 Verified against a real build, not just eval: the generated
 `hyprland.conf` has 70 `bind*` lines including all 20 workspace binds

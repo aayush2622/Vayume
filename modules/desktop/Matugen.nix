@@ -33,6 +33,16 @@
         builtins.readFile ./matugen/androidstudio/scheme.xml.template
       );
 
+    rofi =
+      { font, iconTheme }:
+      builtins.replaceStrings [ "VAYUME_FONT_TOKEN" "VAYUME_ICON_THEME_TOKEN" ] [ font iconTheme ] (
+        builtins.readFile ./matugen/rofi/config.rasi.template
+      );
+
+    swaylock = builtins.readFile ./matugen/swaylock/swaylock.conf.template;
+
+    wlogout = builtins.readFile ./matugen/wlogout/style.css.template;
+
     androidStudioTheme =
       schemeName: colorSchemeName:
       builtins.replaceStrings

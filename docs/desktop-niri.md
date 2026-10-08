@@ -26,8 +26,10 @@ pass roughly doubles the render cost, and this runs on the Intel iGPU,
 not a dGPU. Looks basically identical, costs noticeably less.
 
 **Two ways to spawn a command**: one execs directly, the other forks a
-shell first. Most binds use the direct one; the brightness binds need the
-shell version since they pipe one command's output through `awk`.
+shell first. Nearly every bind uses the direct one; only the plain
+screenshot bind needs the shell version, for its `mkdir -p ... && grim`
+chain. Audio and brightness keys call `wpctl` / `brightnessctl` directly,
+so they work whichever shell is running.
 
 **The startup hotkey overlay used to just say "dms" for every DMS bind** -
 spotlight, clipboard, settings, lock, wallpaper carousel, screenshot, all

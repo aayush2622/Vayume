@@ -76,9 +76,7 @@
         ];
       };
 
-      brightness =
-        dir:
-        spawn ''dms ipc call brightness ${dir} 5 \"$(dms ipc call brightness list | awk '$1 ~ /^backlight:/ {print $1; exit}')\"'';
+      brightness = step: spawn "brightnessctl set ${step}";
 
       directions = {
         Left = "left";
@@ -240,6 +238,14 @@
               xray = true;
               ignore_alpha = 0.2;
             }
+            {
+              name = "rofi-blur";
+              match = {
+                namespace = "^rofi$";
+              };
+              blur = true;
+              ignore_alpha = 0.2;
+            }
           ];
 
           bind = [
@@ -251,11 +257,11 @@
             (bindBare "CTRL + SHIFT + ESCAPE" (spawn actions.systemMonitor) { })
 
             (bind "S" (lua "hl.dsp.workspace.toggle_special()"))
-            (bind "A" (dms "spotlight toggle"))
-            (bind "V" (dms "clipboard toggle"))
+            (bind "A" (spawn "vayume-launcher"))
+            (bind "V" (spawn "vayume-clipboard"))
             (bindBare "ALT + V" (spawn (lib.getExe typeClipboard)) { })
             (bind "COMMA" (dms "settings toggle"))
-            (bind "L" (dms "lock lock"))
+            (bind "L" (spawn "vayume-lock"))
             (bind "H" (dms "bar toggle index 0"))
             (bind "D" (spawn "vayume widgets toggle"))
             (bind "SHIFT + W" (spawn "dms ipc wallpaperCarousel open"))
@@ -271,7 +277,7 @@
             (bind "CTRL + H" (lua "hl.dsp.group.prev()"))
             (bind "CTRL + L" (lua "hl.dsp.group.next()"))
             (bind "DELETE" (lua "hl.dsp.exit()"))
-            (bind "ESCAPE" (dms "fullscreenPowerMenu toggle"))
+            (bind "ESCAPE" (spawn "vayume-powermenu"))
             (bind "R" (lua "hl.dsp.window.pseudo()"))
             (bind "TAB" (lua "hl.dsp.window.cycle_next()"))
 
@@ -303,26 +309,28 @@
             (bind "SHIFT + CTRL + Up" (lua "hl.dsp.window.resize({ x = 0, y = -40, relative = true })"))
             (bind "SHIFT + CTRL + Down" (lua "hl.dsp.window.resize({ x = 0, y = 40, relative = true })"))
 
-            (bindBare "XF86AudioMute" (dms "audio mute") { locked = true; })
-            (bindBare "XF86AudioMicMute" (dms "mic mute") { locked = true; })
+            (bindBare "XF86AudioMute" (spawn "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle") { locked = true; })
+            (bindBare "XF86AudioMicMute" (spawn "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle") {
+              locked = true;
+            })
             (bindBare "XF86AudioPlay" (spawn "playerctl play-pause") { locked = true; })
             (bindBare "XF86AudioPause" (spawn "playerctl play-pause") { locked = true; })
             (bindBare "XF86AudioNext" (spawn "playerctl next") { locked = true; })
             (bindBare "XF86AudioPrev" (spawn "playerctl previous") { locked = true; })
 
-            (bindBare "XF86AudioRaiseVolume" (dms "audio increment 5") {
+            (bindBare "XF86AudioRaiseVolume" (spawn "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+") {
               locked = true;
               repeating = true;
             })
-            (bindBare "XF86AudioLowerVolume" (dms "audio decrement 5") {
+            (bindBare "XF86AudioLowerVolume" (spawn "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-") {
               locked = true;
               repeating = true;
             })
-            (bindBare "XF86MonBrightnessUp" (brightness "increment") {
+            (bindBare "XF86MonBrightnessUp" (brightness "5%+") {
               locked = true;
               repeating = true;
             })
-            (bindBare "XF86MonBrightnessDown" (brightness "decrement") {
+            (bindBare "XF86MonBrightnessDown" (brightness "5%-") {
               locked = true;
               repeating = true;
             })
