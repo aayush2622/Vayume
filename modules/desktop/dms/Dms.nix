@@ -64,6 +64,10 @@
           ];
           home.sessionVariables.QS_ICON_THEME = "MaterialOS";
 
+          home.activation.screenshotPlusCacheDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            run mkdir -p "$HOME/.cache/screenshot-plus"
+          '';
+
           home.activation.materialOSIconFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             iconDir="$HOME/.local/share/icons/MaterialOS"
             stamp="$iconDir/.vayume-stamp"
@@ -249,7 +253,32 @@
                 settings.runSourceMode = "latest_unstable";
               };
 
-              screenshotPlus.enable = true;
+              screenshotPlus = {
+                enable = true;
+                # Upstream writes captures to /tmp and deletes them 10s after the
+                # clipboard copy. Point them at ~/.cache and keep them so pastes
+                # from clipboard history still resolve.
+                src = lib.mkForce (
+                  pkgs.runCommand "dms-plugin-screenshot-plus-cache" { } ''
+                    cp -r ${
+                      (import "${inputs.dms-plugin-registry}/nix/default.nix" { inherit pkgs; }).screenshotPlus
+                    } $out
+                    chmod -R u+w $out
+                    cd $out
+                    substituteInPlace CaptureOverlay.qml \
+                      --replace-fail 'const path = "/tmp/screenshot-plus-" + Date.now()' \
+                        'const path = Quickshell.env("HOME") + "/.cache/screenshot-plus/screenshot-plus-" + Date.now()'
+                    substituteInPlace ScreenshotPlusDaemon.qml \
+                      --replace-fail 'const path = `/tmp/screenshot-plus-freeze-''${name}-''${stamp}.png`' \
+                        'const dir = Quickshell.env("HOME") + "/.cache/screenshot-plus"
+                            const path = `''${dir}/screenshot-plus-freeze-''${name}-''${stamp}.png`' \
+                      --replace-fail '"--dir", "/tmp", "--filename", path.slice(5)' \
+                        '"--dir", dir, "--filename", path.slice(dir.length + 1)' \
+                      --replace-fail 'Quickshell.execDetached(["sh", "-c", '"'"'sleep 10; rm -f -- "$1"'"'"', "sh", png])' \
+                        '// kept in ~/.cache so the clipboard entry stays valid'
+                  ''
+                );
+              };
             };
 
             settings = {
