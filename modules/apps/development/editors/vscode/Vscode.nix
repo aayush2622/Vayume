@@ -6,6 +6,11 @@
 }:
 let
   vscodeAutoExtensions = [
+    # marketplace, not nixpkgs - see docs/apps-dev-vscode.md
+    {
+      publisher = "anthropic";
+      name = "claude-code";
+    }
     {
       publisher = "chadalen";
       name = "vscode-jetbrains-icon-theme";
@@ -93,7 +98,6 @@ in
       nixpkgsExtensions =
         with pkgs.vscode-extensions;
         [
-          anthropic.claude-code
           catppuccin.catppuccin-vsc
           eamodio.gitlens
           formulahendry.code-runner

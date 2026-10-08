@@ -18,6 +18,18 @@ right here and language-specific stuff this file only pulls in:
   trade-off being its idea of "latest" can lag the real marketplace by a
   version or two, since it's a heuristic scrape, not strict semver
   tracking. Worth it to never touch a hash again.
+- **The Claude Code extension comes from the marketplace overlay, not
+  nixpkgs**, for the same reason the CLI is handled separately (see
+  [DevTools](apps-dev-devtools.md)): nixpkgs' copy trails by weeks. The
+  overlay is only as fresh as its flake input, so a stale
+  `nix-vscode-extensions` lock means a stale extension - bump it with
+  `nix flake update nix-vscode-extensions`.
+- **A stale mutable copy can shadow the Nix-managed one.** VS Code keeps
+  its own registry (`~/.vscode/extensions/extensions.json`) and loads
+  whatever it lists, regardless of the symlink Nix puts in the same
+  directory. If an extension still reports an old version after a rebuild,
+  look for a versioned directory (`publisher.name-1.2.3-linux-x64`) next
+  to the Nix symlink and uninstall that copy from the Extensions panel.
 - **Every language-specific extension lives in its own language module
   instead** - C/C++'s tooling, Rust's analyzer, Kotlin's extensions plus
   Gradle support, Dart/Flutter's extensions, Nix's tooling, Qt's
