@@ -52,12 +52,21 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    noctalia-shell = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    caelestia-shell = {
+      url = "github:caelestia-dots/shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     hytale-launcher = {
       url = "github:JPyke3/hytale-launcher-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-wpe-webkit-bin = {
-      url = "github:aayush2622/nix-wpe-webkit-bin/60484b22f066b447617b6abfa5b0caa666bc2d29";
+      url = "github:aayush2622/nix-wpe-webkit-bin/915358b46fbf84a80ea97d3b964293f94cc4a1bc";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     dartotsu = {
