@@ -73,7 +73,6 @@
 
   flake.homeModules.apps.Flutter =
     {
-      inputs,
       self,
       pkgs,
       lib,
@@ -83,7 +82,7 @@
 
       harfbuzzIcu = pkgs.harfbuzz.override { withIcu = true; };
 
-      wpeTransitiveDeps = with pkgs; [
+      webviewTransitiveDeps = with pkgs; [
         libseccomp
         gst_all_1.gstreamer
         gst_all_1.gst-plugins-base
@@ -121,47 +120,9 @@
         libXv
       ];
 
-      wpewebkitUnpatched = inputs.nix-wpe-webkit-bin.packages.${pkgs.stdenv.hostPlatform.system}.default;
-
-      wpewebkit = pkgs.stdenvNoCC.mkDerivation {
-        pname = "wpewebkit-patched";
-        version = wpewebkitUnpatched.version;
-        dontUnpack = true;
-        nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-        buildInputs =
-          wpeTransitiveDeps
-          ++ [ harfbuzzIcu ]
-          ++ (with pkgs; [
-            libwpe
-            libwpe-fdo
-            libsoup_3
-            at-spi2-core
-            gtk3
-            libepoxy
-            libsecret
-            wayland
-            libxkbcommon
-            libglvnd
-            libgbm
-            libdrm
-            mesa
-          ])
-          ++ otherPluginDeps;
-        installPhase = ''
-          mkdir -p $out
-          cp -r ${wpewebkitUnpatched}/* $out/
-          chmod -R u+w $out
-
-          for f in $out/lib/pkgconfig/*.pc; do
-            sed -i "s|${wpewebkitUnpatched}|$out|g" "$f"
-          done
-        '';
-      };
-
-      wpeDeps = with pkgs; [
-        wpewebkit
-        libwpe
-        libwpe-fdo
+      webviewDeps = with pkgs; [
+        webkitgtk_4_1
+        libsoup_3
         gtk3
         libepoxy
         libsecret
@@ -179,7 +140,7 @@
         patchelf
       ];
 
-      allDeps = wpeDeps ++ wpeTransitiveDeps ++ otherPluginDeps;
+      allDeps = webviewDeps ++ webviewTransitiveDeps ++ otherPluginDeps;
 
       envDeps = allDeps ++ [ harfbuzzIcu ];
       libPath = lib.makeLibraryPath envDeps;
