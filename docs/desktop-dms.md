@@ -6,6 +6,12 @@ The bar, the launcher, the lock screen, the notification center - one shell, Dan
 
 ## `modules/desktop/dms/`
 
+**Only built when `vayume.desktop.shell` is `dms`.** The whole module and every plugin and patch file under it sit behind that check, so choosing Noctalia or Caelestia drops DMS, its plugins and its patched package from the build. See [Shell.nix](desktop-shell.md).
+
+**The idle lock and the media inhibitor are no longer here.** They were DMS-only for no reason and moved to `Shell.nix`, where they serve every shell. DMS's own `lockBeforeSuspend` stays on; the idle service also locks before sleep, which is harmless when both fire.
+
+**screenshotPlus captures are kept in `~/.cache/screenshot-plus`.** Upstream writes each capture to `/tmp` and deletes it ten seconds after copying it to the clipboard, so a clipboard-history entry pasted later pointed at a file that no longer existed. The plugin source is copied and patched to use the cache directory and to skip the delete; the folder is created on activation and is not pruned.
+
 **Applies to every user, not just one hardcoded account** - an earlier
 version had this hardcoded, and the bug it caused was exactly what you'd
 expect: a second account logged into a niri session with no shell

@@ -24,16 +24,17 @@
         "Mod+Shift+B" = titled "Reload Zen (apply new theme)" { spawn = actions.browserReload; };
         "Control+Shift+Escape" = titled "Open System Monitor" { spawn = actions.systemMonitor; };
 
-        "Mod+S" = titled "Toggle App Launcher" { spawn = [ "vayume-launcher" ]; };
+        "Mod+S" = titled "Toggle App Launcher" {
+          spawn = [
+            "vayume"
+            "launcher"
+          ];
+        };
         "Mod+H" = titled "Show or Hide the Top Bar" {
           spawn = [
-            "dms"
-            "ipc"
-            "call"
+            "vayume"
+            "shell"
             "bar"
-            "toggle"
-            "index"
-            "0"
           ];
         };
         "Mod+D" = titled "Show or Hide Desktop Widgets" {
@@ -43,14 +44,17 @@
             "toggle"
           ];
         };
-        "Mod+V" = titled "Toggle Clipboard History" { spawn = [ "vayume-clipboard" ]; };
+        "Mod+V" = titled "Toggle Clipboard History" {
+          spawn = [
+            "vayume"
+            "clipboard"
+          ];
+        };
         "Mod+Comma" = titled "Open Settings" {
           spawn = [
-            "dms"
-            "ipc"
-            "call"
+            "vayume"
+            "shell"
             "settings"
-            "toggle"
           ];
         };
         "Mod+Tab".toggle-overview = _: { };
@@ -65,17 +69,26 @@
         "Mod+G".consume-window-into-column = _: { };
         "Mod+Shift+G".expel-window-from-column = _: { };
         "Mod+K".switch-layout = "next";
-        "Mod+L" = titled "Lock Screen" { spawn = [ "vayume-lock" ]; };
-
-        "Mod+Shift+W" = titled "Open Wallpaper Carousel" {
+        "Mod+L" = titled "Lock Screen" {
           spawn = [
-            "dms"
-            "ipc"
-            "wallpaperCarousel"
-            "open"
+            "vayume"
+            "lock"
           ];
         };
-        "Mod+A" = titled "Toggle App Launcher" { spawn = [ "vayume-launcher" ]; };
+
+        "Mod+Shift+W" = titled "Open Wallpaper Picker" {
+          spawn = [
+            "vayume"
+            "shell"
+            "wallpaper"
+          ];
+        };
+        "Mod+A" = titled "Toggle App Launcher" {
+          spawn = [
+            "vayume"
+            "launcher"
+          ];
+        };
 
         "Mod+Left".focus-column-left = _: { };
         "Mod+Right".focus-column-right = _: { };
@@ -96,18 +109,21 @@
         "Mod+Shift+P" = titled "Pick Color" { spawn = actions.colorPicker; };
         "Print" = titled "Screenshot (region)" {
           spawn = [
-            "dms"
-            "ipc"
-            "call"
-            "screenshotPlus"
-            "capture"
+            "vayume"
+            "shell"
+            "screenshot"
           ];
         };
         "Shift+Print" = titled "Screenshot (save)" {
           spawn-sh = "mkdir -p \"$HOME/Pictures/Screenshots\" && grim \"$HOME/Pictures/Screenshots/$(date +%Y-%m-%d_%H-%M-%S).png\"";
         };
 
-        "Mod+Escape" = titled "Power Menu" { spawn = [ "vayume-powermenu" ]; };
+        "Mod+Escape" = titled "Power Menu" {
+          spawn = [
+            "vayume"
+            "powermenu"
+          ];
+        };
 
         "XF86AudioMute" = titled "Mute Audio" {
           spawn = [

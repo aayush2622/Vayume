@@ -33,7 +33,10 @@ in
       self.nixosModules.DefaultApps
       self.nixosModules.Niri
       self.nixosModules.Hyprland
+      self.nixosModules.Shell
       self.nixosModules.Dms
+      self.nixosModules.Noctalia
+      self.nixosModules.Caelestia
       self.nixosModules.Fonts
       self.nixosModules.Portals
       self.nixosModules.SddmTheme

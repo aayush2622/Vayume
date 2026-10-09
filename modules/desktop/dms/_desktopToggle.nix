@@ -1,4 +1,9 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   widgetsToggle = pkgs.writeShellApplication {
     name = "vayume-widgets";
@@ -71,7 +76,7 @@ let
     '';
   };
 in
-{
+lib.mkIf (config.vayume.desktop.shell == "dms") {
   vayume.commands.widgets = {
     command = lib.getExe widgetsToggle;
     description = "Hide or show every desktop widget and the desktop pet";

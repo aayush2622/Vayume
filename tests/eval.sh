@@ -84,6 +84,30 @@ for host in $hosts; do
   eval_drv "path:$work#nixosConfigurations.$host.config.system.build.toplevel.drvPath"
 done
 
+step "each desktop shell builds only itself and keeps launcher, lock and theme sync"
+for shell in dms noctalia caelestia; do
+  out=$(nix_ eval --impure --json --expr "
+    let
+      f = builtins.getFlake \"path:$work\";
+      sys = f.nixosConfigurations.$host0.extendModules { modules = [ { vayume.desktop.shell = \"$shell\"; } ]; };
+      hm = sys.config.home-manager.users.$user1;
+      has = n: hm.systemd.user.services ? \${n};
+      cmds = hm.vayume.commands;
+    in {
+      noctalia = has \"noctalia\";
+      caelestia = has \"caelestia\";
+      init = has \"vayume-shell-init\";
+      idle = has \"vayume-idle-lock\";
+      commands = cmds ? launcher && cmds ? clipboard && cmds ? powermenu && cmds ? lock && sys.config.vayume.commands ? theme;
+    }")
+  case $shell in
+  noctalia) expect='{"caelestia":false,"commands":true,"idle":true,"init":true,"noctalia":true}' ;;
+  caelestia) expect='{"caelestia":true,"commands":true,"idle":true,"init":true,"noctalia":false}' ;;
+  *) expect='{"caelestia":false,"commands":true,"idle":true,"init":false,"noctalia":false}' ;;
+  esac
+  [ "$out" = "$expect" ] || { echo "shell $shell: got $out, expected $expect" >&2; exit 1; }
+done
+
 for state in true false; do
   step "$host0 with every app enable = $state"
   eval_drv --impure --expr "

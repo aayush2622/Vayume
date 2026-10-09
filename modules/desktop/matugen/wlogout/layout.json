@@ -1,13 +1,13 @@
 [
   {
     "label": "lock",
-    "action": "vayume-lock",
+    "action": "vayume lock",
     "text": "Lock",
     "keybind": "l"
   },
   {
     "label": "logout",
-    "action": "vayume-logout",
+    "action": "vayume logout",
     "text": "Logout",
     "keybind": "e"
   },

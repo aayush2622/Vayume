@@ -90,7 +90,7 @@ let
         fi
       '';
 in
-{
+lib.mkIf (config.vayume.desktop.shell == "dms") {
   home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {
     programs.dank-material-shell.package = lib.mkForce dmsShellPatched;
   });

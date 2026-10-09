@@ -219,6 +219,8 @@
           inherit inputs self;
           vayumeTheme = config.vayume.theme;
           vayumeApps = enabledAppNames;
+          vayumeShell = config.vayume.desktop.shell;
+          vayumeShellCommands = config.vayume.desktop.shellCommands;
         };
         home-manager.backupFileExtension = "backup";
         home-manager.overwriteBackup = true;

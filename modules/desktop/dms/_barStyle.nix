@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, config, ... }:
 {
   options.vayume.desktop.barStyle = lib.mkOption {
     type = lib.types.enum [
@@ -25,5 +25,6 @@
     icon = "toolbar";
     group = "Top bar";
     order = 1;
+    hidden = config.vayume.desktop.shell != "dms";
   };
 }

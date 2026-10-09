@@ -53,7 +53,6 @@
       bareKeys = k: k;
 
       spawn = cmd: lua ''hl.dsp.exec_cmd("${cmd}")'';
-      dms = cmd: spawn "dms ipc call ${cmd}";
 
       bind = k: dispatcher: {
         _args = [
@@ -257,14 +256,14 @@
             (bindBare "CTRL + SHIFT + ESCAPE" (spawn actions.systemMonitor) { })
 
             (bind "S" (lua "hl.dsp.workspace.toggle_special()"))
-            (bind "A" (spawn "vayume-launcher"))
-            (bind "V" (spawn "vayume-clipboard"))
+            (bind "A" (spawn "vayume launcher"))
+            (bind "V" (spawn "vayume clipboard"))
             (bindBare "ALT + V" (spawn (lib.getExe typeClipboard)) { })
-            (bind "COMMA" (dms "settings toggle"))
-            (bind "L" (spawn "vayume-lock"))
-            (bind "H" (dms "bar toggle index 0"))
+            (bind "COMMA" (spawn "vayume shell settings"))
+            (bind "L" (spawn "vayume lock"))
+            (bind "H" (spawn "vayume shell bar"))
             (bind "D" (spawn "vayume widgets toggle"))
-            (bind "SHIFT + W" (spawn "dms ipc wallpaperCarousel open"))
+            (bind "SHIFT + W" (spawn "vayume shell wallpaper"))
 
             (bind "Q" (lua "hl.dsp.window.close()"))
             (bindBare "ALT + F4" (lua "hl.dsp.window.close()") { })
@@ -277,13 +276,13 @@
             (bind "CTRL + H" (lua "hl.dsp.group.prev()"))
             (bind "CTRL + L" (lua "hl.dsp.group.next()"))
             (bind "DELETE" (lua "hl.dsp.exit()"))
-            (bind "ESCAPE" (spawn "vayume-powermenu"))
+            (bind "ESCAPE" (spawn "vayume powermenu"))
             (bind "R" (lua "hl.dsp.window.pseudo()"))
             (bind "TAB" (lua "hl.dsp.window.cycle_next()"))
 
             (bind "SHIFT + P" (spawn actions.colorPicker))
 
-            (bindBare "PRINT" (dms "screenshotPlus capture") { })
+            (bindBare "PRINT" (spawn "vayume shell screenshot") { })
             (bindBare "SHIFT + PRINT" (spawn "hyprshot -m output") { })
             (bind "PRINT" (spawn "hyprshot -m window -z --clipboard-only"))
 
@@ -296,8 +295,8 @@
             (bind "CTRL + ALT + Left" (lua ''hl.dsp.window.move({ workspace = "r-1" })''))
             (bind "ALT + S" (lua ''hl.dsp.window.move({ workspace = "special" })''))
 
-            (bind "ALT + Right" (dms "wallpaper next"))
-            (bind "ALT + Left" (dms "wallpaper prev"))
+            (bind "ALT + Right" (spawn "vayume shell wallpaper-next"))
+            (bind "ALT + Left" (spawn "vayume shell wallpaper-prev"))
 
             (bindOpt "mouse:272" (lua "hl.dsp.window.drag()") { mouse = true; })
             (bindOpt "mouse:273" (lua "hl.dsp.window.resize()") { mouse = true; })

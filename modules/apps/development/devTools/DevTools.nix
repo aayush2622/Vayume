@@ -10,7 +10,6 @@
   flake.homeModules.apps.DevTools =
     { pkgs, lib, ... }:
     let
-      # release manifest kept in this repo, not nixpkgs' pin - see docs/apps-dev-devtools.md
       claude-code = pkgs.claude-code.override {
         manifest = lib.importJSON ./claude-code-manifest.json;
       };

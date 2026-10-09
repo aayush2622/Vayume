@@ -6,7 +6,6 @@
 }:
 let
   vscodeAutoExtensions = [
-    # marketplace, not nixpkgs - see docs/apps-dev-vscode.md
     {
       publisher = "anthropic";
       name = "claude-code";
@@ -65,9 +64,11 @@ in
       vayumeTheme,
       vayumeApps,
       vayumeSecrets,
+      vayumeShell,
       ...
     }:
     let
+      isDms = vayumeShell == "dms";
       hasWakatime = vayumeSecrets.WAKATIME_API_KEY != "REPLACE_ME";
 
       languageVscode = lib.mapAttrsToList (_: l: l.vscode or { }) (self.enabledDevLanguages vayumeApps);
@@ -188,9 +189,11 @@ in
         editor.showFoldingControls = "always";
 
         window.autoDetectColorScheme = true;
-        workbench.preferredDarkColorTheme = "Dynamic Base16 DankShell (Dark)";
-        workbench.preferredLightColorTheme = "Dynamic Base16 DankShell (Light)";
-        workbench.colorTheme = "Dynamic Base16 DankShell";
+        workbench.preferredDarkColorTheme =
+          if isDms then "Dynamic Base16 DankShell (Dark)" else "Catppuccin Mocha";
+        workbench.preferredLightColorTheme =
+          if isDms then "Dynamic Base16 DankShell (Light)" else "Catppuccin Latte";
+        workbench.colorTheme = if isDms then "Dynamic Base16 DankShell" else "Catppuccin Mocha";
         workbench.iconTheme = "vscode-jetbrains-icon-theme-2023-dark";
         workbench.editor.showIcons = true;
         workbench.editor.enablePreview = false;
@@ -410,15 +413,17 @@ in
         };
       };
 
-      home.activation.installDmsVscodeTheme = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        extDir="$HOME/.vscode/extensions/${dmsVscodeThemeExtId}"
-        if [ ! -f "$extDir/package.json" ]; then
-          run rm -rf "$extDir"
-          run mkdir -p "$extDir"
-          run cp -rL "${dmsVscodeThemeSrc}/extension/." "$extDir/"
-          run chmod -R u+w "$extDir"
-        fi
-      '';
+      home.activation.installDmsVscodeTheme = lib.mkIf isDms (
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          extDir="$HOME/.vscode/extensions/${dmsVscodeThemeExtId}"
+          if [ ! -f "$extDir/package.json" ]; then
+            run rm -rf "$extDir"
+            run mkdir -p "$extDir"
+            run cp -rL "${dmsVscodeThemeSrc}/extension/." "$extDir/"
+            run chmod -R u+w "$extDir"
+          fi
+        ''
+      );
 
       home.activation.vscodeWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (
         lib.optionalString hasWakatime ''

@@ -28,7 +28,7 @@ let
     ${h.assertPatched "$out/plugin.json" "control-center"}
   '';
 in
-{
+lib.mkIf (config.vayume.desktop.shell == "dms") {
   home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {
     programs.dank-material-shell.plugins.dankAsusControlCenter = {
       enable = true;

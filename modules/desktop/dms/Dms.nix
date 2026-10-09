@@ -11,7 +11,6 @@
     let
       theme = config.vayume.theme;
       barProfile = (import ./_barProfiles.nix).${config.vayume.desktop.barStyle};
-      power = config.vayume.power;
 
       materialOSIcons = pkgs.stdenvNoCC.mkDerivation {
         pname = "materialos-icon-theme";
@@ -41,718 +40,735 @@
         ./plugins/_cavaVisualizer.nix
       ];
 
-      services.accounts-daemon.enable = true;
+      config = lib.mkIf (config.vayume.desktop.shell == "dms") {
+        services.accounts-daemon.enable = true;
 
-      home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (
-        name:
-        {
-          pkgs,
-          lib,
-          config,
-          ...
-        }:
-        {
-          imports = [
-            inputs.dms.homeModules.dank-material-shell
-            inputs.dms-plugin-registry.nixosModules.default
-            inputs.danksession.homeManagerModules.default
+        vayume.desktop.shellCommands = {
+          bar = [
+            "dms"
+            "ipc"
+            "call"
+            "bar"
+            "toggle"
+            "index"
+            "0"
           ];
-          home.packages = [
-            materialOSIcons
-            pkgs.papirus-icon-theme
-            pkgs.swayidle
+          settings = [
+            "dms"
+            "ipc"
+            "call"
+            "settings"
+            "toggle"
           ];
-          home.sessionVariables.QS_ICON_THEME = "MaterialOS";
+          wallpaper = [
+            "dms"
+            "ipc"
+            "wallpaperCarousel"
+            "open"
+          ];
+          wallpaper-next = [
+            "dms"
+            "ipc"
+            "call"
+            "wallpaper"
+            "next"
+          ];
+          wallpaper-prev = [
+            "dms"
+            "ipc"
+            "call"
+            "wallpaper"
+            "prev"
+          ];
+          screenshot = [
+            "dms"
+            "ipc"
+            "call"
+            "screenshotPlus"
+            "capture"
+          ];
+          launcher = [
+            "dms"
+            "ipc"
+            "call"
+            "spotlight"
+            "toggle"
+          ];
+          clipboard = [
+            "dms"
+            "ipc"
+            "call"
+            "clipboard"
+            "toggle"
+          ];
+          powermenu = [
+            "dms"
+            "ipc"
+            "call"
+            "fullscreenPowerMenu"
+            "toggle"
+          ];
+          lock = [
+            "dms"
+            "ipc"
+            "call"
+            "lock"
+            "lock"
+          ];
+        };
 
-          home.activation.screenshotPlusCacheDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            run mkdir -p "$HOME/.cache/screenshot-plus"
-          '';
+        home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (
+          name:
+          {
+            pkgs,
+            lib,
+            config,
+            ...
+          }:
+          {
+            imports = [
+              inputs.dms.homeModules.dank-material-shell
+              inputs.dms-plugin-registry.nixosModules.default
+              inputs.danksession.homeManagerModules.default
+            ];
+            home.packages = [
+              materialOSIcons
+              pkgs.papirus-icon-theme
+              pkgs.swayidle
+            ];
+            home.sessionVariables.QS_ICON_THEME = "MaterialOS";
 
-          home.activation.materialOSIconFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            iconDir="$HOME/.local/share/icons/MaterialOS"
-            stamp="$iconDir/.vayume-stamp"
-            key="${materialOSIcons} $(readlink -f "$HOME/.nix-profile") $(readlink -f "/etc/profiles/per-user/$USER") $(readlink -f /run/current-system/sw) $(${pkgs.coreutils}/bin/stat -c %Y "$HOME/.local/share/icons/hicolor" "$HOME/.local/share/pixmaps" 2>/dev/null | ${pkgs.coreutils}/bin/tr '\n' ' ' || true)"
-            if [ -f "$stamp" ] && [ "$(${pkgs.coreutils}/bin/cat "$stamp")" = "$key" ]; then
-              verboseEcho "MaterialOS icon fallback is up to date"
-            else
-            run rm -rf "$iconDir"
-            run mkdir -p "$iconDir"
-            run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode ${materialOSIcons}/share/icons/MaterialOS/. "$iconDir/"
-            run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode "$HOME/.nix-profile/share/icons/hicolor/." "$iconDir/" 2>/dev/null || true
-            for src in "/etc/profiles/per-user/$USER/share" /run/current-system/sw/share "$HOME/.local/share"; do
-              run ${pkgs.coreutils}/bin/cp -rLn --no-preserve=mode "$src/icons/hicolor/." "$iconDir/" 2>/dev/null || true
-            done
-            run mkdir -p "$iconDir/scalable/apps"
-            for src in "$HOME/.nix-profile/share" "/etc/profiles/per-user/$USER/share" /run/current-system/sw/share "$HOME/.local/share"; do
-              run ${pkgs.coreutils}/bin/cp -Ln --no-preserve=mode "$src"/pixmaps/*.png "$src"/pixmaps/*.svg "$iconDir/scalable/apps/" 2>/dev/null || true
-            done
-            run ${pkgs.gnused}/bin/sed -i -e "/^Hidden=true/d" -e "/^Inherits=/d" -e "s/^Name=.*/Name=MaterialOS/" -e "/^\[Icon Theme\]/a Inherits=Papirus-Dark" "$iconDir/index.theme" 2>/dev/null || true
-            if [ -z "''${DRY_RUN:-}" ]; then printf '%s' "$key" > "$stamp"; fi
-            fi
-          '';
+            home.activation.screenshotPlusCacheDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              run mkdir -p "$HOME/.cache/screenshot-plus"
+            '';
 
-          services.dankSession = {
-            enable = true;
-            package = inputs.danksession.packages.${pkgs.stdenv.hostPlatform.system}.default;
-            autoStart = true;
-          };
-
-          systemd.user.services.vayume-idle-lock =
-            let
-              dms = "${config.programs.dank-material-shell.package}/bin/dms";
-              niri = "${pkgs.niri}/bin/niri";
-              systemctl = "${pkgs.systemd}/bin/systemctl";
-              lockArgs = lib.optionals (power.idleLock > 0) [
-                "timeout"
-                (toString power.idleLock)
-                "${dms} ipc call lock lock"
-              ];
-              screenOffArgs = lib.optionals (power.idleScreenOff > 0) [
-                "timeout"
-                (toString power.idleScreenOff)
-                "${niri} msg action power-off-monitors"
-                "resume"
-                "${niri} msg action power-on-monitors"
-              ];
-              suspendArgs = lib.optionals (power.idleSuspend > 0) [
-                "timeout"
-                (toString power.idleSuspend)
-                "${systemctl} suspend"
-              ];
-              args = lockArgs ++ screenOffArgs ++ suspendArgs;
-              enabled = args != [ ];
-            in
-            lib.mkIf enabled {
-              Unit = {
-                Description = "Lock screen and manage display power on idle";
-                After = [ "graphical-session.target" ];
-                PartOf = [ "graphical-session.target" ];
-              };
-              Service = {
-                ExecStart = lib.escapeShellArgs (
-                  [
-                    "${pkgs.swayidle}/bin/swayidle"
-                    "-w"
-                  ]
-                  ++ args
-                );
-                Restart = "on-failure";
-              };
-              Install.WantedBy = [ "graphical-session.target" ];
-            };
-
-          systemd.user.services.vayume-media-inhibit = {
-            Unit = {
-              Description = "Hold an idle inhibitor while audio or video is playing";
-              After = [ "graphical-session.target" ];
-              PartOf = [ "graphical-session.target" ];
-            };
-            Service = {
-              ExecStart = "${pkgs.wayland-pipewire-idle-inhibit}/bin/wayland-pipewire-idle-inhibit";
-              Restart = "on-failure";
-            };
-            Install.WantedBy = [ "graphical-session.target" ];
-          };
-          xdg.configFile = {
-            "DankMaterialShell/settings.json".force = true;
-            "DankMaterialShell/plugin_settings.json".force = true;
-          };
-          home.activation.seedDmsSession =
-            let
-              defaultSession = pkgs.writeText "dms-default-session.json" (
-                builtins.toJSON {
-                  configVersion = 4;
-                  wallpaperPath = "${./../../assets/wallpapers}/wallhaven-w5xdzx.jpg";
-                  wallpaperCyclingFolderPath = "${./../../assets/wallpapers}";
-                }
-              );
-            in
-            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-              sessionFile="$HOME/.local/state/DankMaterialShell/session.json"
-              if [ ! -e "$sessionFile" ]; then
-                run mkdir -p "$(dirname "$sessionFile")"
-                run cp "${defaultSession}" "$sessionFile"
-                run chmod u+w "$sessionFile"
+            home.activation.materialOSIconFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              iconDir="$HOME/.local/share/icons/MaterialOS"
+              stamp="$iconDir/.vayume-stamp"
+              key="${materialOSIcons} $(readlink -f "$HOME/.nix-profile") $(readlink -f "/etc/profiles/per-user/$USER") $(readlink -f /run/current-system/sw) $(${pkgs.coreutils}/bin/stat -c %Y "$HOME/.local/share/icons/hicolor" "$HOME/.local/share/pixmaps" 2>/dev/null | ${pkgs.coreutils}/bin/tr '\n' ' ' || true)"
+              if [ -f "$stamp" ] && [ "$(${pkgs.coreutils}/bin/cat "$stamp")" = "$key" ]; then
+                verboseEcho "MaterialOS icon fallback is up to date"
+              else
+              run rm -rf "$iconDir"
+              run mkdir -p "$iconDir"
+              run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode ${materialOSIcons}/share/icons/MaterialOS/. "$iconDir/"
+              run ${pkgs.coreutils}/bin/cp -rL --no-preserve=mode "$HOME/.nix-profile/share/icons/hicolor/." "$iconDir/" 2>/dev/null || true
+              for src in "/etc/profiles/per-user/$USER/share" /run/current-system/sw/share "$HOME/.local/share"; do
+                run ${pkgs.coreutils}/bin/cp -rLn --no-preserve=mode "$src/icons/hicolor/." "$iconDir/" 2>/dev/null || true
+              done
+              run mkdir -p "$iconDir/scalable/apps"
+              for src in "$HOME/.nix-profile/share" "/etc/profiles/per-user/$USER/share" /run/current-system/sw/share "$HOME/.local/share"; do
+                run ${pkgs.coreutils}/bin/cp -Ln --no-preserve=mode "$src"/pixmaps/*.png "$src"/pixmaps/*.svg "$iconDir/scalable/apps/" 2>/dev/null || true
+              done
+              run ${pkgs.gnused}/bin/sed -i -e "/^Hidden=true/d" -e "/^Inherits=/d" -e "s/^Name=.*/Name=MaterialOS/" -e "/^\[Icon Theme\]/a Inherits=Papirus-Dark" "$iconDir/index.theme" 2>/dev/null || true
+              if [ -z "''${DRY_RUN:-}" ]; then printf '%s' "$key" > "$stamp"; fi
               fi
             '';
 
-          home.activation.seedDesktopWidgetPositions =
-            let
-              positions = pkgs.writeText "dms-desktop-widget-positions.json" (
-                builtins.toJSON (
-                  builtins.listToAttrs (
-                    map
-                      (w: {
-                        name = w.id;
-                        value = w.positions;
-                      })
-                      (
-                        builtins.filter (
-                          w: w ? positions
-                        ) config.programs.dank-material-shell.settings.desktopWidgetInstances
-                      )
-                  )
-                )
-              );
-            in
-            lib.hm.dag.entryAfter [ "seedDmsSession" ] ''
-              sessionFile="$HOME/.local/state/DankMaterialShell/session.json"
-              if [ -e "$sessionFile" ]; then
-                tmp="$sessionFile.vayume-tmp"
-                run ${pkgs.jq}/bin/jq --slurpfile p ${positions} \
-                  '.desktopWidgetInstancePositions = ($p[0] + (.desktopWidgetInstancePositions // {}))' \
-                  "$sessionFile" > "$tmp" && run mv "$tmp" "$sessionFile"
-              fi
-            '';
-
-          programs.dank-material-shell = {
-            enable = true;
-
-            systemd = {
+            services.dankSession = {
               enable = true;
-              restartIfChanged = true;
+              package = inputs.danksession.packages.${pkgs.stdenv.hostPlatform.system}.default;
+              autoStart = true;
             };
 
-            enableSystemMonitoring = true;
-            enableDynamicTheming = true;
-            enableAudioWavelength = true;
-
-            plugins = {
-              wallpaperCarousel = {
-                enable = true;
-
-                settings = {
-                  enabled = true;
-                  wallpaperDirectory = "${./../../assets/wallpapers}";
-
-                  borderWidth = 0;
-                  itemHeight = 472;
-                  selectedScale = 106;
-                  expandMultiplier = 118;
-                  cornerRadius = 3;
-                  overlayOpacity = 84;
-                };
-              };
-
-              dankQuickSearch = {
-                enable = true;
-                settings = {
-                  trigger = "!";
-                  defaultEngine = "duckduckgo";
-                };
-              };
-
-              musicTheme.enable = true;
-
-              pureLyrics.enable = true;
-
-              fullscreenPowerMenu.enable = true;
-
-              nixPackageRunner = {
-                enable = true;
-                settings.runSourceMode = "latest_unstable";
-              };
-
-              screenshotPlus = {
-                enable = true;
-                # Upstream writes captures to /tmp and deletes them 10s after the
-                # clipboard copy. Point them at ~/.cache and keep them so pastes
-                # from clipboard history still resolve.
-                src = lib.mkForce (
-                  pkgs.runCommand "dms-plugin-screenshot-plus-cache" { } ''
-                    cp -r ${
-                      (import "${inputs.dms-plugin-registry}/nix/default.nix" { inherit pkgs; }).screenshotPlus
-                    } $out
-                    chmod -R u+w $out
-                    cd $out
-                    substituteInPlace CaptureOverlay.qml \
-                      --replace-fail 'const path = "/tmp/screenshot-plus-" + Date.now()' \
-                        'const path = Quickshell.env("HOME") + "/.cache/screenshot-plus/screenshot-plus-" + Date.now()'
-                    substituteInPlace ScreenshotPlusDaemon.qml \
-                      --replace-fail 'const path = `/tmp/screenshot-plus-freeze-''${name}-''${stamp}.png`' \
-                        'const dir = Quickshell.env("HOME") + "/.cache/screenshot-plus"
-                            const path = `''${dir}/screenshot-plus-freeze-''${name}-''${stamp}.png`' \
-                      --replace-fail '"--dir", "/tmp", "--filename", path.slice(5)' \
-                        '"--dir", dir, "--filename", path.slice(dir.length + 1)' \
-                      --replace-fail 'Quickshell.execDetached(["sh", "-c", '"'"'sleep 10; rm -f -- "$1"'"'"', "sh", png])' \
-                        '// kept in ~/.cache so the clipboard entry stays valid'
-                  ''
-                );
-              };
+            xdg.configFile = {
+              "DankMaterialShell/settings.json".force = true;
+              "DankMaterialShell/plugin_settings.json".force = true;
             };
-
-            settings = {
-
-              currentThemeName = "dynamic";
-              currentThemeCategory = "dynamic";
-
-              matugenScheme = "scheme-content";
-
-              mediaUseAlbumArtAccent = true;
-
-              cornerRadius = 12;
-
-              useAutoLocation = true;
-
-              lockBeforeSuspend = true;
-
-              matugenTemplateZenBrowser = false;
-              matugenTemplateZed = false;
-
-              blurEnabled = true;
-
-              blurredWallpaperLayer = true;
-              blurWallpaperOnOverview = true;
-
-              controlCenterShowMicPercent = true;
-
-              controlCenterWidgets = [
-                {
-                  id = "volumeSlider";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "brightnessSlider";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "wifi";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "bluetooth";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "audioOutput";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "audioInput";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "nightMode";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "darkMode";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "idleInhibitor";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "plugin_tor";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "diskUsage";
-                  enabled = true;
-                  width = 50;
-                  mountPath = "/";
-                  showMountPath = true;
-                }
-                {
-                  id = "plugin_dankAsusControlCenter";
-                  enabled = true;
-                  width = 50;
-                }
-                {
-                  id = "plugin_vayumeSettings";
-                  enabled = true;
-                  width = 50;
-                }
-              ];
-
-              showWorkspaceIndex = true;
-
-              appIdSubstitutions = [ ];
-
-              filePickerUsageHistory = {
-                code = {
-                  count = 1;
-                  lastUsed = 1787340048369;
-                  name = "Visual Studio Code";
-                };
-              };
-
-              appDrawerSectionViewModes = {
-                apps = "list";
-              };
-
-              cursorSettings = {
-                theme = "System Default";
-                size = 24;
-
-                niri = {
-                  hideWhenTyping = false;
-                  hideAfterInactiveMs = 0;
-                };
-
-                hyprland = {
-                  hideOnKeyPress = true;
-                  hideOnTouch = false;
-                  inactiveTimeout = 0;
-                };
-
-                mango = {
-                  cursorHideTimeout = 0;
-                };
-              };
-
-              fontFamily = theme.font;
-              monoFontFamily = theme.font;
-
-              gtkThemingEnabled = true;
-              qtThemingEnabled = true;
-
-              terminalsAlwaysDark = false;
-
-              showDock = true;
-              dockAutoHide = true;
-
-              dockPosition = 3;
-
-              dockSpacing = 12;
-              dockMargin = 10;
-
-              dockBorderEnabled = true;
-              dockBorderColor = "secondary";
-
-              dockLauncherEnabled = true;
-
-              osdPowerProfileEnabled = true;
-
-              barConfigs = [
-                (
-                  {
-                    id = "default";
-                    name = "Main Bar";
-
-                    enabled = true;
-                    position = 0;
-
-                    screenPreferences = [ "all" ];
-                    showOnLastDisplay = true;
-
-                    leftWidgets = [
-                      "launcherButton"
-                      "workspaceSwitcher"
-
-                      {
-                        id = "focusedWindow";
-                        enabled = true;
-                        focusedWindowSize = 1;
-                        focusedWindowCompactMode = true;
-                        focusedWindowShowIcon = true;
-                      }
-                    ];
-
-                    centerWidgets = [
-                      {
-                        id = "music";
-                        enabled = true;
-                        mediaSize = 0;
-                      }
-
-                      {
-                        id = "clock";
-                        enabled = true;
-                        clockCompactMode = false;
-                      }
-
-                      "weather"
-                    ];
-
-                    rightWidgets = [
-                      "systemTray"
-                      "cpuUsage"
-                      "memUsage"
-
-                      "notificationButton"
-
-                      {
-                        id = "battery";
-                        enabled = true;
-                        showBatteryPercent = true;
-                        showBatteryPercentOnlyOnBattery = false;
-                        showBatteryTime = false;
-                        batteryPillStyle = false;
-                        batteryPillPercentSign = false;
-                      }
-
-                      "controlCenterButton"
-                    ];
-
-                    spacing = 4;
-                    innerPadding = 3;
-
-                    barInsetPadding = -1;
-                    bottomGap = 0;
-
-                    transparency = 0.50;
-                    widgetTransparency = 1;
-
-                    squareCorners = false;
-                    noBackground = true;
-
-                    maximizeWidgetIcons = false;
-                    maximizeWidgetText = false;
-
-                    removeWidgetPadding = false;
-                    widgetPadding = 8;
-
-                    gothCornersEnabled = false;
-                    gothCornerRadiusOverride = false;
-                    gothCornerRadiusValue = 12;
-
-                    borderEnabled = false;
-                    borderColor = "surfaceText";
-                    borderOpacity = 1;
-                    borderThickness = 1;
-
-                    widgetOutlineEnabled = false;
-                    widgetOutlineColor = "primary";
-                    widgetOutlineOpacity = 1;
-                    widgetOutlineThickness = 1;
-
-                    fontScale = 1;
-                    iconScale = 1;
-
-                    autoHide = false;
-                    autoHideStrict = false;
-                    autoHideDelay = 250;
-
-                    showOnWindowsOpen = false;
-                    openOnOverview = false;
-
-                    visible = true;
-
-                    popupGapsAuto = true;
-                    popupGapsManual = 4;
-
-                    maximizeDetection = true;
-
-                    useOverlayLayer = false;
-
-                    scrollEnabled = true;
-                    scrollXBehavior = "column";
-                    scrollYBehavior = "workspace";
-
-                    shadowIntensity = 0;
-                    shadowOpacity = 60;
-                    shadowColorMode = "default";
-                    shadowCustomColor = "#000000";
-
-                    clickThrough = false;
-
-                    hoverPopouts = false;
-                    hoverPopoutDelay = 150;
+            home.activation.seedDmsSession =
+              let
+                defaultSession = pkgs.writeText "dms-default-session.json" (
+                  builtins.toJSON {
+                    configVersion = 4;
+                    wallpaperPath = "${./../../assets/wallpapers}/wallhaven-w5xdzx.jpg";
+                    wallpaperCyclingFolderPath = "${./../../assets/wallpapers}";
                   }
-                  // barProfile.bar
-                )
-              ];
+                );
+              in
+              lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                sessionFile="$HOME/.local/state/DankMaterialShell/session.json"
+                if [ ! -e "$sessionFile" ]; then
+                  run mkdir -p "$(dirname "$sessionFile")"
+                  run cp "${defaultSession}" "$sessionFile"
+                  run chmod u+w "$sessionFile"
+                fi
+              '';
 
-              desktopClockCustomColor = {
-                r = 1;
-                g = 1;
-                b = 1;
-                a = 1;
+            home.activation.seedDesktopWidgetPositions =
+              let
+                positions = pkgs.writeText "dms-desktop-widget-positions.json" (
+                  builtins.toJSON (
+                    builtins.listToAttrs (
+                      map
+                        (w: {
+                          name = w.id;
+                          value = w.positions;
+                        })
+                        (
+                          builtins.filter (
+                            w: w ? positions
+                          ) config.programs.dank-material-shell.settings.desktopWidgetInstances
+                        )
+                    )
+                  )
+                );
+              in
+              lib.hm.dag.entryAfter [ "seedDmsSession" ] ''
+                sessionFile="$HOME/.local/state/DankMaterialShell/session.json"
+                if [ -e "$sessionFile" ]; then
+                  tmp="$sessionFile.vayume-tmp"
+                  run ${pkgs.jq}/bin/jq --slurpfile p ${positions} \
+                    '.desktopWidgetInstancePositions = ($p[0] + (.desktopWidgetInstancePositions // {}))' \
+                    "$sessionFile" > "$tmp" && run mv "$tmp" "$sessionFile"
+                fi
+              '';
 
-                hsvHue = -1;
-                hsvSaturation = 0;
-                hsvValue = 1;
+            programs.dank-material-shell = {
+              enable = true;
 
-                hslHue = -1;
-                hslSaturation = 0;
-                hslLightness = 1;
-
-                valid = true;
+              systemd = {
+                enable = true;
+                restartIfChanged = true;
               };
 
-              systemMonitorCustomColor = {
-                r = 1;
-                g = 1;
-                b = 1;
-                a = 1;
+              enableSystemMonitoring = true;
+              enableDynamicTheming = true;
+              enableAudioWavelength = true;
 
-                hsvHue = -1;
-                hsvSaturation = 0;
-                hsvValue = 1;
+              plugins = {
+                wallpaperCarousel = {
+                  enable = true;
 
-                hslHue = -1;
-                hslSaturation = 0;
-                hslLightness = 1;
+                  settings = {
+                    enabled = true;
+                    wallpaperDirectory = "${./../../assets/wallpapers}";
 
-                valid = true;
-              };
-
-              desktopWidgetInstances = [
-                {
-                  id = "dw_1790600000000_vyclock04";
-                  widgetType = "vayumeClock";
-                  name = "Vayume Clock";
-                  enabled = true;
-                  config = {
-                    displayPreferences = [ "all" ];
-                    showOnOverlay = false;
-                    showOnOverview = false;
-                    syncPositionAcrossScreens = true;
+                    borderWidth = 0;
+                    itemHeight = 472;
+                    selectedScale = 106;
+                    expandMultiplier = 118;
+                    cornerRadius = 3;
+                    overlayOpacity = 84;
                   };
-                  positions._synced = {
-                    x = 0.035;
-                    y = 0.04;
-                    width = 460;
-                    height = 520;
-                  };
-                }
-
-                {
-                  id = "dw_1790600000001_vymedia04";
-                  widgetType = "vayumeMedia";
-                  name = "Vayume Now Playing";
-                  enabled = true;
-                  config = {
-                    displayPreferences = [ "all" ];
-                    showOnOverlay = false;
-                    showOnOverview = false;
-                    syncPositionAcrossScreens = true;
-                  };
-                  positions._synced = {
-                    x = 0.83;
-                    y = 0.06;
-                    width = 300;
-                    height = 500;
-                  };
-                }
-
-                {
-                  id = "dw_1790600000002_vyweather02";
-                  widgetType = "vayumeWeather";
-                  name = "Vayume Weather";
-                  enabled = true;
-                  config = {
-                    displayPreferences = [ "all" ];
-                    showOnOverlay = false;
-                    showOnOverview = false;
-                    syncPositionAcrossScreens = true;
-                  };
-                  positions._synced = {
-                    x = 0.035;
-                    y = 0.5;
-                    width = 300;
-                    height = 190;
-                  };
-                }
-
-                {
-                  id = "dw_1790600000003_vysystem02";
-                  widgetType = "vayumeSystem";
-                  name = "Vayume System";
-                  enabled = true;
-                  config = {
-                    displayPreferences = [ "all" ];
-                    showOnOverlay = false;
-                    showOnOverview = false;
-                    syncPositionAcrossScreens = true;
-                  };
-                  positions._synced = {
-                    x = 0.83;
-                    y = 0.5;
-                    width = 300;
-                    height = 190;
-                  };
-                }
-
-                {
-                  id = "dw_1788083196111_hpk1tmarl";
-                  widgetType = "pureLyrics";
-                  name = "Pure Lyrics";
-                  enabled = true;
-
-                  config = {
-                    displayPreferences = [ "all" ];
-                    showOnOverlay = false;
-                    showOnOverview = false;
-                    clickThrough = true;
-                    borderOpacity = 0;
-                    backgroundOpacity = 0;
-                    colorMode = "primary";
-                    lineCount = "5";
-                    fontSize = 35;
-                    textAlign = "center";
-                    showOnOverviewOnly = false;
-                    syncPositionAcrossScreens = true;
-                  };
-
-                  positions._synced = {
-                    x = 0;
-                    width = 9999;
-                    height = 253;
-                  };
-                }
-
-                {
-                  id = "dw_1789200000000_cavaviz01";
-                  widgetType = "cavaVisualizer";
-                  name = "Cava Visualizer";
-                  enabled = true;
-
-                  config = {
-                    vizMode = "curve-outline";
-                    curvePoints = 24;
-                    curveLineWidth = 3;
-                    barCount = 20;
-                    barSpacing = 4;
-                    barWidth = 0;
-                    orientation = "bottom";
-                    sensitivity = 100;
-                    channels = "mono";
-                    colorChoice = "primary";
-                    silenceTimeout = 5;
-                    bgOpacity = 0;
-                    opacity = 100;
-                    syncPositionAcrossScreens = true;
-                  };
-                  positions._synced = {
-                    x = 0;
-                    y = 0.9;
-                    width = 9999;
-                    height = 120;
-                  };
-                }
-              ];
-
-              builtInPluginSettings = {
-                dms_settings_search = {
-                  trigger = "?";
                 };
 
-                dms_clipboard_search = {
-                  trigger = "cb";
+                dankQuickSearch = {
+                  enable = true;
+                  settings = {
+                    trigger = "!";
+                    defaultEngine = "duckduckgo";
+                  };
+                };
+
+                musicTheme.enable = true;
+
+                pureLyrics.enable = true;
+
+                fullscreenPowerMenu.enable = true;
+
+                nixPackageRunner = {
+                  enable = true;
+                  settings.runSourceMode = "latest_unstable";
+                };
+
+                screenshotPlus = {
+                  enable = true;
+                  src = lib.mkForce (
+                    pkgs.runCommand "dms-plugin-screenshot-plus-cache" { } ''
+                      cp -r ${
+                        (import "${inputs.dms-plugin-registry}/nix/default.nix" { inherit pkgs; }).screenshotPlus
+                      } $out
+                      chmod -R u+w $out
+                      cd $out
+                      substituteInPlace CaptureOverlay.qml \
+                        --replace-fail 'const path = "/tmp/screenshot-plus-" + Date.now()' \
+                          'const path = Quickshell.env("HOME") + "/.cache/screenshot-plus/screenshot-plus-" + Date.now()'
+                      substituteInPlace ScreenshotPlusDaemon.qml \
+                        --replace-fail 'const path = `/tmp/screenshot-plus-freeze-''${name}-''${stamp}.png`' \
+                          'const dir = Quickshell.env("HOME") + "/.cache/screenshot-plus"
+                              const path = `''${dir}/screenshot-plus-freeze-''${name}-''${stamp}.png`' \
+                        --replace-fail '"--dir", "/tmp", "--filename", path.slice(5)' \
+                          '"--dir", dir, "--filename", path.slice(dir.length + 1)' \
+                        --replace-fail 'Quickshell.execDetached(["sh", "-c", '"'"'sleep 10; rm -f -- "$1"'"'"', "sh", png])' \
+                          '// kept in ~/.cache so the clipboard entry stays valid'
+                    ''
+                  );
                 };
               };
 
-              clipboardClickToPaste = true;
-              frameEnabled = true;
-              frameOpacity = 0.45;
-              configVersion = 13;
-            }
-            // barProfile.shell;
-          };
-        }
-      );
+              settings = {
+
+                currentThemeName = "dynamic";
+                currentThemeCategory = "dynamic";
+
+                matugenScheme = "scheme-content";
+
+                mediaUseAlbumArtAccent = true;
+
+                cornerRadius = 12;
+
+                useAutoLocation = true;
+
+                lockBeforeSuspend = true;
+
+                matugenTemplateZenBrowser = false;
+                matugenTemplateZed = false;
+
+                blurEnabled = true;
+
+                blurredWallpaperLayer = true;
+                blurWallpaperOnOverview = true;
+
+                controlCenterShowMicPercent = true;
+
+                controlCenterWidgets = [
+                  {
+                    id = "volumeSlider";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "brightnessSlider";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "wifi";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "bluetooth";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "audioOutput";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "audioInput";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "nightMode";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "darkMode";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "idleInhibitor";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "plugin_tor";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "diskUsage";
+                    enabled = true;
+                    width = 50;
+                    mountPath = "/";
+                    showMountPath = true;
+                  }
+                  {
+                    id = "plugin_dankAsusControlCenter";
+                    enabled = true;
+                    width = 50;
+                  }
+                  {
+                    id = "plugin_vayumeSettings";
+                    enabled = true;
+                    width = 50;
+                  }
+                ];
+
+                showWorkspaceIndex = true;
+
+                appIdSubstitutions = [ ];
+
+                filePickerUsageHistory = {
+                  code = {
+                    count = 1;
+                    lastUsed = 1787340048369;
+                    name = "Visual Studio Code";
+                  };
+                };
+
+                appDrawerSectionViewModes = {
+                  apps = "list";
+                };
+
+                cursorSettings = {
+                  theme = "System Default";
+                  size = 24;
+
+                  niri = {
+                    hideWhenTyping = false;
+                    hideAfterInactiveMs = 0;
+                  };
+
+                  hyprland = {
+                    hideOnKeyPress = true;
+                    hideOnTouch = false;
+                    inactiveTimeout = 0;
+                  };
+
+                  mango = {
+                    cursorHideTimeout = 0;
+                  };
+                };
+
+                fontFamily = theme.font;
+                monoFontFamily = theme.font;
+
+                gtkThemingEnabled = true;
+                qtThemingEnabled = true;
+
+                terminalsAlwaysDark = false;
+
+                showDock = true;
+                dockAutoHide = true;
+
+                dockPosition = 3;
+
+                dockSpacing = 12;
+                dockMargin = 10;
+
+                dockBorderEnabled = true;
+                dockBorderColor = "secondary";
+
+                dockLauncherEnabled = true;
+
+                osdPowerProfileEnabled = true;
+
+                barConfigs = [
+                  (
+                    {
+                      id = "default";
+                      name = "Main Bar";
+
+                      enabled = true;
+                      position = 0;
+
+                      screenPreferences = [ "all" ];
+                      showOnLastDisplay = true;
+
+                      leftWidgets = [
+                        "launcherButton"
+                        "workspaceSwitcher"
+
+                        {
+                          id = "focusedWindow";
+                          enabled = true;
+                          focusedWindowSize = 1;
+                          focusedWindowCompactMode = true;
+                          focusedWindowShowIcon = true;
+                        }
+                      ];
+
+                      centerWidgets = [
+                        {
+                          id = "music";
+                          enabled = true;
+                          mediaSize = 0;
+                        }
+
+                        {
+                          id = "clock";
+                          enabled = true;
+                          clockCompactMode = false;
+                        }
+
+                        "weather"
+                      ];
+
+                      rightWidgets = [
+                        "systemTray"
+                        "cpuUsage"
+                        "memUsage"
+
+                        "notificationButton"
+
+                        {
+                          id = "battery";
+                          enabled = true;
+                          showBatteryPercent = true;
+                          showBatteryPercentOnlyOnBattery = false;
+                          showBatteryTime = false;
+                          batteryPillStyle = false;
+                          batteryPillPercentSign = false;
+                        }
+
+                        "controlCenterButton"
+                      ];
+
+                      spacing = 4;
+                      innerPadding = 3;
+
+                      barInsetPadding = -1;
+                      bottomGap = 0;
+
+                      transparency = 0.50;
+                      widgetTransparency = 1;
+
+                      squareCorners = false;
+                      noBackground = true;
+
+                      maximizeWidgetIcons = false;
+                      maximizeWidgetText = false;
+
+                      removeWidgetPadding = false;
+                      widgetPadding = 8;
+
+                      gothCornersEnabled = false;
+                      gothCornerRadiusOverride = false;
+                      gothCornerRadiusValue = 12;
+
+                      borderEnabled = false;
+                      borderColor = "surfaceText";
+                      borderOpacity = 1;
+                      borderThickness = 1;
+
+                      widgetOutlineEnabled = false;
+                      widgetOutlineColor = "primary";
+                      widgetOutlineOpacity = 1;
+                      widgetOutlineThickness = 1;
+
+                      fontScale = 1;
+                      iconScale = 1;
+
+                      autoHide = false;
+                      autoHideStrict = false;
+                      autoHideDelay = 250;
+
+                      showOnWindowsOpen = false;
+                      openOnOverview = false;
+
+                      visible = true;
+
+                      popupGapsAuto = true;
+                      popupGapsManual = 4;
+
+                      maximizeDetection = true;
+
+                      useOverlayLayer = false;
+
+                      scrollEnabled = true;
+                      scrollXBehavior = "column";
+                      scrollYBehavior = "workspace";
+
+                      shadowIntensity = 0;
+                      shadowOpacity = 60;
+                      shadowColorMode = "default";
+                      shadowCustomColor = "#000000";
+
+                      clickThrough = false;
+
+                      hoverPopouts = false;
+                      hoverPopoutDelay = 150;
+                    }
+                    // barProfile.bar
+                  )
+                ];
+
+                desktopClockCustomColor = {
+                  r = 1;
+                  g = 1;
+                  b = 1;
+                  a = 1;
+
+                  hsvHue = -1;
+                  hsvSaturation = 0;
+                  hsvValue = 1;
+
+                  hslHue = -1;
+                  hslSaturation = 0;
+                  hslLightness = 1;
+
+                  valid = true;
+                };
+
+                systemMonitorCustomColor = {
+                  r = 1;
+                  g = 1;
+                  b = 1;
+                  a = 1;
+
+                  hsvHue = -1;
+                  hsvSaturation = 0;
+                  hsvValue = 1;
+
+                  hslHue = -1;
+                  hslSaturation = 0;
+                  hslLightness = 1;
+
+                  valid = true;
+                };
+
+                desktopWidgetInstances = [
+                  {
+                    id = "dw_1790600000000_vyclock04";
+                    widgetType = "vayumeClock";
+                    name = "Vayume Clock";
+                    enabled = true;
+                    config = {
+                      displayPreferences = [ "all" ];
+                      showOnOverlay = false;
+                      showOnOverview = false;
+                      syncPositionAcrossScreens = true;
+                    };
+                    positions._synced = {
+                      x = 0.035;
+                      y = 0.04;
+                      width = 460;
+                      height = 520;
+                    };
+                  }
+
+                  {
+                    id = "dw_1790600000001_vymedia04";
+                    widgetType = "vayumeMedia";
+                    name = "Vayume Now Playing";
+                    enabled = true;
+                    config = {
+                      displayPreferences = [ "all" ];
+                      showOnOverlay = false;
+                      showOnOverview = false;
+                      syncPositionAcrossScreens = true;
+                    };
+                    positions._synced = {
+                      x = 0.83;
+                      y = 0.06;
+                      width = 300;
+                      height = 500;
+                    };
+                  }
+
+                  {
+                    id = "dw_1790600000002_vyweather02";
+                    widgetType = "vayumeWeather";
+                    name = "Vayume Weather";
+                    enabled = true;
+                    config = {
+                      displayPreferences = [ "all" ];
+                      showOnOverlay = false;
+                      showOnOverview = false;
+                      syncPositionAcrossScreens = true;
+                    };
+                    positions._synced = {
+                      x = 0.035;
+                      y = 0.5;
+                      width = 300;
+                      height = 190;
+                    };
+                  }
+
+                  {
+                    id = "dw_1790600000003_vysystem02";
+                    widgetType = "vayumeSystem";
+                    name = "Vayume System";
+                    enabled = true;
+                    config = {
+                      displayPreferences = [ "all" ];
+                      showOnOverlay = false;
+                      showOnOverview = false;
+                      syncPositionAcrossScreens = true;
+                    };
+                    positions._synced = {
+                      x = 0.83;
+                      y = 0.5;
+                      width = 300;
+                      height = 190;
+                    };
+                  }
+
+                  {
+                    id = "dw_1788083196111_hpk1tmarl";
+                    widgetType = "pureLyrics";
+                    name = "Pure Lyrics";
+                    enabled = true;
+
+                    config = {
+                      displayPreferences = [ "all" ];
+                      showOnOverlay = false;
+                      showOnOverview = false;
+                      clickThrough = true;
+                      borderOpacity = 0;
+                      backgroundOpacity = 0;
+                      colorMode = "primary";
+                      lineCount = "5";
+                      fontSize = 35;
+                      textAlign = "center";
+                      showOnOverviewOnly = false;
+                      syncPositionAcrossScreens = true;
+                    };
+
+                    positions._synced = {
+                      x = 0;
+                      width = 9999;
+                      height = 253;
+                    };
+                  }
+
+                  {
+                    id = "dw_1789200000000_cavaviz01";
+                    widgetType = "cavaVisualizer";
+                    name = "Cava Visualizer";
+                    enabled = true;
+
+                    config = {
+                      vizMode = "curve-outline";
+                      curvePoints = 24;
+                      curveLineWidth = 3;
+                      barCount = 20;
+                      barSpacing = 4;
+                      barWidth = 0;
+                      orientation = "bottom";
+                      sensitivity = 100;
+                      channels = "mono";
+                      colorChoice = "primary";
+                      silenceTimeout = 5;
+                      bgOpacity = 0;
+                      opacity = 100;
+                      syncPositionAcrossScreens = true;
+                    };
+                    positions._synced = {
+                      x = 0;
+                      y = 0.9;
+                      width = 9999;
+                      height = 120;
+                    };
+                  }
+                ];
+
+                builtInPluginSettings = {
+                  dms_settings_search = {
+                    trigger = "?";
+                  };
+
+                  dms_clipboard_search = {
+                    trigger = "cb";
+                  };
+                };
+
+                clipboardClickToPaste = true;
+                frameEnabled = true;
+                frameOpacity = 0.45;
+                configVersion = 13;
+              }
+              // barProfile.shell;
+            };
+          }
+        );
+      };
     };
 }

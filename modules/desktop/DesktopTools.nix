@@ -1,6 +1,3 @@
-# Launcher, lock screen, clipboard history and power menu, independent of
-# DMS. Themed through the same matugen pipeline as everything else in
-# modules/desktop/matugen (see Theming.nix for the pattern this follows).
 { self, ... }:
 {
   flake.homeModules.DesktopTools =
@@ -9,22 +6,34 @@
       lib,
       config,
       vayumeTheme,
+      vayumeShellCommands,
       ...
     }:
     let
+      native = name: vayumeShellCommands.${name} or null;
+      falls = name: native name == null;
+      fallsAny = names: lib.any falls names;
+
       rofi = lib.getExe pkgs.rofi;
       cliphist = lib.getExe' pkgs.cliphist "cliphist";
       pkill = "${pkgs.procps}/bin/pkill";
       rofiDir = "${config.xdg.configHome}/rofi";
+
+      nativeScript =
+        name:
+        pkgs.writeShellScript "vayume-${name}-native" ''
+          exec ${lib.escapeShellArgs (native name)}
+        '';
+
+      pick = name: fallback: if falls name then lib.getExe fallback else "${nativeScript name}";
 
       launcher = pkgs.writeShellScriptBin "vayume-launcher" ''
         ${pkill} -x rofi && exit 0
         exec ${rofi} -show combi
       '';
 
-      # DMS's own lock screen - swaylock was tried and dropped.
       lock = pkgs.writeShellScriptBin "vayume-lock" ''
-        exec dms ipc call lock lock
+        exec ${pkgs.swaylock}/bin/swaylock -f
       '';
 
       powerMenu = pkgs.writeShellScriptBin "vayume-powermenu" ''
@@ -66,48 +75,104 @@
         [ -n "$sel" ] || exit 0
         printf '%s' "$sel" | ${cliphist} decode | ${pkgs.wl-clipboard}/bin/wl-copy
       '';
+
+      home = config.home.homeDirectory;
+
+      templateBlocks =
+        lib.optional
+          (fallsAny [
+            "launcher"
+            "clipboard"
+          ])
+          ''
+            [templates.rofi]
+            input_path = '${home}/.config/matugen/templates/rofi.rasi'
+            output_path = '${rofiDir}/config.rasi'
+          ''
+        ++ lib.optional (falls "lock") ''
+          [templates.swaylock]
+          input_path = '${home}/.config/matugen/templates/swaylock.conf'
+          output_path = '${home}/.config/swaylock/config'
+        ''
+        ++ lib.optional (falls "powermenu") ''
+          [templates.wlogout]
+          input_path = '${home}/.config/matugen/templates/wlogout-style.css'
+          output_path = '${home}/.config/wlogout/style.css'
+        '';
     in
     {
-      home.packages = [
-        pkgs.rofi
-        pkgs.cliphist
-        pkgs.wlogout
-        pkgs.wl-clipboard
-        launcher
-        lock
-        powerMenu
-        logout
-        clipboardPicker
-      ];
+      home.packages =
+        lib.optional (fallsAny [
+          "launcher"
+          "clipboard"
+        ]) pkgs.rofi
+        ++ lib.optionals (falls "clipboard") [
+          pkgs.cliphist
+          pkgs.wl-clipboard
+        ]
+        ++ lib.optional (falls "powermenu") pkgs.wlogout
+        ++ lib.optional (falls "lock") pkgs.swaylock;
 
-      home.file = {
-        ".config/matugen/templates/rofi.rasi".text = self.matugenTemplates.rofi {
-          font = vayumeTheme.font;
-          iconTheme = vayumeTheme.iconTheme;
+      vayume.commands = {
+        launcher = {
+          command = pick "launcher" launcher;
+          description = "Open the app launcher";
         };
-        ".config/rofi/clipboard.rasi".text =
-          builtins.replaceStrings [ "VAYUME_BASE_TOKEN" ] [ "${rofiDir}/config.rasi" ]
-            (builtins.readFile ./matugen/rofi/clipboard.rasi);
-        ".config/matugen/templates/wlogout-style.css".text = self.matugenTemplates.wlogout;
-
-        ".config/wlogout/layout".source = ./matugen/wlogout/layout.json;
+        clipboard = {
+          command = pick "clipboard" clipboardPicker;
+          description = "Open the clipboard history";
+        };
+        powermenu = {
+          command = pick "powermenu" powerMenu;
+          description = "Open the power menu";
+        };
+        lock = {
+          command = pick "lock" lock;
+          description = "Lock the screen";
+        };
+      }
+      // lib.optionalAttrs (falls "powermenu") {
+        logout = {
+          command = lib.getExe logout;
+          description = "End the session";
+          confirm = true;
+        };
       };
 
-      vayume.matugenTemplates.desktopTools = ''
-        [templates.rofi]
-        input_path = '${config.home.homeDirectory}/.config/matugen/templates/rofi.rasi'
-        output_path = '${rofiDir}/config.rasi'
+      home.file =
+        lib.optionalAttrs
+          (fallsAny [
+            "launcher"
+            "clipboard"
+          ])
+          {
+            ".config/matugen/templates/rofi.rasi".text = self.matugenTemplates.rofi {
+              font = vayumeTheme.font;
+              iconTheme = vayumeTheme.iconTheme;
+            };
+          }
+        // lib.optionalAttrs (falls "clipboard") {
+          ".config/rofi/clipboard.rasi".text =
+            builtins.replaceStrings [ "VAYUME_BASE_TOKEN" ] [ "${rofiDir}/config.rasi" ]
+              (builtins.readFile ./matugen/rofi/clipboard.rasi);
+        }
+        // lib.optionalAttrs (falls "lock") {
+          ".config/matugen/templates/swaylock.conf".text = self.matugenTemplates.swaylock;
+        }
+        // lib.optionalAttrs (falls "powermenu") {
+          ".config/matugen/templates/wlogout-style.css".text = self.matugenTemplates.wlogout;
+          ".config/wlogout/layout".source = ./matugen/wlogout/layout.json;
+        };
 
-        [templates.wlogout]
-        input_path = '${config.home.homeDirectory}/.config/matugen/templates/wlogout-style.css'
-        output_path = '${config.home.homeDirectory}/.config/wlogout/style.css'
-      '';
+      vayume.matugenTemplates.desktopTools = lib.mkIf (templateBlocks != [ ]) (
+        lib.concatStringsSep "\n" templateBlocks
+      );
 
-      systemd.user.services.vayume-cliphist = {
+      systemd.user.services.vayume-cliphist = lib.mkIf (falls "clipboard") {
         Unit.Description = "Clipboard history watcher (cliphist)";
         Install.WantedBy = [ "graphical-session.target" ];
         Service = {
-          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${lib.getExe' pkgs.cliphist "cliphist"} store & ${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${lib.getExe' pkgs.cliphist "cliphist"} store & wait'";
+          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${cliphist} store & ${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${cliphist} store & wait'";
           Restart = "on-failure";
         };
       };
