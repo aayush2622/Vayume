@@ -189,6 +189,9 @@
           confirm_os_window_close = 0;
           window_padding_width = 10;
           hide_window_decorations = "yes";
+          remember_window_size = "no";
+          initial_window_width = "100c";
+          initial_window_height = "30c";
           cursor_trail = 1;
 
           background_opacity = "0.65";
