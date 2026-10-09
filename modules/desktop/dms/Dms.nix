@@ -34,7 +34,6 @@
         ./_desktopToggle.nix
         ./_shellPatch.nix
         ./plugins/_tor.nix
-        ./plugins/_vayumeSettings.nix
         ./plugins/_vayumeWidgets.nix
         ./plugins/dankAsusControlCenter/_dankAsusControlCenter.nix
         ./plugins/_cavaVisualizer.nix
@@ -381,11 +380,6 @@
                   }
                   {
                     id = "plugin_dankAsusControlCenter";
-                    enabled = true;
-                    width = 50;
-                  }
-                  {
-                    id = "plugin_vayumeSettings";
                     enabled = true;
                     width = 50;
                   }

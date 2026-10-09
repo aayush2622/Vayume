@@ -42,6 +42,7 @@
     dms = {
       url = "github:AvengeMedia/DankMaterialShell/stable";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.dank-qml-common.follows = "dank-qml-common";
     };
     dms-plugin-registry = {
       url = "github:AvengeMedia/dms-plugin-registry";
@@ -50,6 +51,11 @@
     danksession = {
       url = "github:alcxyz/DankSession/v0.3.5";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    dank-qml-common = {
+      url = "github:AvengeMedia/dank-qml-common/26396ce432d6c71c3f5367438f96f4a8d667e160";
+      flake = false;
     };
 
     noctalia-shell = {

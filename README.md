@@ -224,7 +224,7 @@ modules/
   lib/              shared helper values/functions
   hosts/<name>/     one machine: Host.nix + _hardware.nix (gitignored) + _config.nix (gitignored)
   desktop/          DE stack — compositor, shell, login theme, fonts, portals, GTK/Qt baseline
-    dms/plugins/vayumeSettings/   the Vayume Settings app (ui/components, ui/pages)
+    settings/qml/                 the Vayume Settings app (standalone Quickshell; ui/components, ui/pages)
     lockscreen/                   login/lock screen UI, shared by SDDM and the DMS lock
     sddm/Theme/                   the SDDM theme around it
   system/           system-level infra (GRUB theme, Docker, zram, network, Waydroid, VM harness)

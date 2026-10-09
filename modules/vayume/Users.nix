@@ -232,6 +232,7 @@
             self.homeModules.Theming
             self.homeModules.Hyprland
             self.homeModules.DesktopTools
+            self.homeModules.VayumeSettings
           ]
           ++ (map (app: self.homeModules.apps.${app}) enabledAppNames);
 

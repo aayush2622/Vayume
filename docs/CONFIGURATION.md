@@ -47,38 +47,39 @@ dive.
 21. [desktop/pet/Pet.nix](desktop-pet.md) (`vayume.desktop.pet`)
 22. [desktop/DesktopTools.nix](desktop-tools.md) (`vayume launcher`, `vayume clipboard`, `vayume powermenu`, `vayume lock`)
 23. [desktop/Shell.nix](desktop-shell.md) (`vayume.desktop.shell`, `vayume shell`; also noctalia/Noctalia.nix and caelestia/Caelestia.nix)
+24. [desktop/settings/Settings.nix](desktop-settings.md) (`vayume settings`, the standalone Vayume Settings app)
 
 **System** - infrastructure that doesn't care what desktop you're running
-24. [system/Misc.nix](system-misc.md) (Zram, DevTooling) and system/GrubTheme.nix
-25. [system/Performance.nix](system-performance.md) (`vayume.performance`)
-26. [system/Storage.nix](system-storage.md) (`vayume disk`, `vayume clean`)
-27. [system/Network.nix](system-network.md)
+25. [system/Misc.nix](system-misc.md) (Zram, DevTooling) and system/GrubTheme.nix
+26. [system/Performance.nix](system-performance.md) (`vayume.performance`)
+27. [system/Storage.nix](system-storage.md) (`vayume disk`, `vayume clean`)
+28. [system/Network.nix](system-network.md)
 
 **Apps - development**
-28. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
-29. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
-30. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
-31. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt, Python)
-32. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
-33. [apps/development/ccSwitch/CcSwitch.nix](apps-dev-ccswitch.md)
+29. [apps/development/editors/androidStudio/AndroidStudio.nix](apps-dev-androidstudio.md)
+30. [apps/development/editors/vscode/Vscode.nix](apps-dev-vscode.md)
+31. [apps/development/editors/zed/Zed.nix](apps-dev-zed.md)
+32. [apps/development/languages/\*/\*.nix](apps-dev-languages.md) (Cpp, Rust, Kotlin, Flutter [+Dart], Nix, Qt, Python)
+33. [apps/development/devTools/DevTools.nix](apps-dev-devtools.md)
+34. [apps/development/ccSwitch/CcSwitch.nix](apps-dev-ccswitch.md)
 
 **Apps - gaming**
-34. [apps/gaming/Gaming.nix](apps-gaming.md)
+35. [apps/gaming/Gaming.nix](apps-gaming.md)
 
 **Apps - utils**
-35. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
-36. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
-37. [apps/utils/spotifast/Spotifast.nix](apps-utils-spotifast.md)
-38. [apps/utils/sonora/Sonora.nix](apps-utils-sonora.md)
-39. [apps/utils/motrix/Motrix.nix](apps-utils-motrix.md)
-40. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
-41. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
-42. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
-43. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
-44. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
-45. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
-46. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
-47. [apps/utils/waydroid/Waydroid.nix](apps-utils-waydroid.md) (`vayume.apps.Waydroid`)
+36. [apps/utils/zenBrowser/ZenBrowser.nix](apps-utils-zenbrowser.md)
+37. [apps/utils/spicetify/Spicetify.nix](apps-utils-spicetify.md)
+38. [apps/utils/spotifast/Spotifast.nix](apps-utils-spotifast.md)
+39. [apps/utils/sonora/Sonora.nix](apps-utils-sonora.md)
+40. [apps/utils/motrix/Motrix.nix](apps-utils-motrix.md)
+41. [apps/utils/nautilus/Nautilus.nix](apps-utils-nautilus.md)
+42. [apps/utils/thunar/Thunar.nix](apps-utils-thunar.md)
+43. [apps/utils/bitwarden/Bitwarden.nix](apps-utils-bitwarden.md)
+44. [apps/utils/stateBackup/StateBackup.nix](apps-utils-statebackup.md)
+45. [apps/utils/terminal/Terminal.nix](apps-utils-terminal.md)
+46. [apps/utils/vesktop/Vesktop.nix](apps-utils-vesktop.md)
+47. [apps/utils/distrobox/Distrobox.nix](apps-utils-distrobox.md)
+48. [apps/utils/waydroid/Waydroid.nix](apps-utils-waydroid.md) (`vayume.apps.Waydroid`)
 
 ---
 

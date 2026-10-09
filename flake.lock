@@ -60,6 +60,7 @@
       "original": {
         "owner": "AvengeMedia",
         "repo": "dank-qml-common",
+        "rev": "26396ce432d6c71c3f5367438f96f4a8d667e160",
         "type": "github"
       }
     },
@@ -111,7 +112,9 @@
     },
     "dms": {
       "inputs": {
-        "dank-qml-common": "dank-qml-common",
+        "dank-qml-common": [
+          "dank-qml-common"
+        ],
         "flake-compat": "flake-compat",
         "nixpkgs": [
           "nixpkgs"
@@ -451,6 +454,7 @@
     "root": {
       "inputs": {
         "caelestia-shell": "caelestia-shell",
+        "dank-qml-common": "dank-qml-common",
         "danksession": "danksession",
         "dartotsu": "dartotsu",
         "dms": "dms",

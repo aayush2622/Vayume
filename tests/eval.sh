@@ -44,12 +44,12 @@ comments=$(
   cd "$work"
   find modules install.sh tests -type f \( -name '*.nix' -o -name '*.sh' \) ! -name '*.example' ! -name '_config.nix' ! -name '_hardware.nix' -print0 \
     | xargs -0 grep -nE '^[[:space:]]*#[^!]' | grep -v '#compdef' || true
-  find modules -type f -name '*.qml' -print0 | xargs -0 grep -nE '^[[:space:]]*//' || true
+  find modules -type f -name '*.qml' -print0 | xargs -0 grep -nE '^[[:space:]]*//[^@]' || true
 )
 [ -z "$comments" ] || { printf '%s\n' "$comments" >&2; exit 1; }
 
-step "vayumeSettings ui/components/qmldir lists every component"
-ui="$work/modules/desktop/dms/plugins/vayumeSettings/ui/components"
+step "Vayume Settings ui/components/qmldir lists every component"
+ui="$work/modules/desktop/settings/qml/ui/components"
 missing=$(for f in "$ui"/*.qml; do n=$(basename "$f" .qml); grep -qE "^(singleton )?$n [0-9.]+ $n\.qml$" "$ui/qmldir" || echo "$n"; done)
 [ -z "$missing" ] || { echo "missing from ui/components/qmldir, so unavailable as a type: $missing" >&2; exit 1; }
 

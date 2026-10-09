@@ -2,7 +2,7 @@
 
 ---
 
-How a DMS toggle turns into a line changed in the real `_config.nix` - the backend both the `vayumeSettings` DMS plugin and a terminal share, so there is exactly one place that understands the file's shape.
+How a DMS toggle turns into a line changed in the real `_config.nix` - the backend both Vayume Settings ([desktop-settings.md](desktop-settings.md)) and a terminal share, so there is exactly one place that understands the file's shape.
 
 ## `modules/vayume/Config.nix`
 
