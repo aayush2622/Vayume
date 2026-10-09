@@ -251,6 +251,7 @@
             (bind "RETURN" (spawn actions.terminal))
             (bind "E" (spawn actions.fileManager))
             (bind "C" (spawn actions.editor))
+            (bind "grave" (spawn "vayume settings"))
             (bind "B" (spawn actions.browser))
             (bind "SHIFT + B" (spawn actions.browserReload))
             (bindBare "CTRL + SHIFT + ESCAPE" (spawn actions.systemMonitor) { })
