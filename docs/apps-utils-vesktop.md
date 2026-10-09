@@ -34,24 +34,13 @@ opaque `.json` files, so it reads like everything else in this repo.
   force-overwrite, so a leftover file from an earlier manual Vesktop
   launch can collide with it on the very first switch - a one-time
   delete of those two files clears that up.
-- **QuickCSS imports DMS's own theme rather than shipping a custom
-  one.** This repo used to carry its own hand-recolored DiscordRecolor
-  theme via a dedicated matugen template; DMS ships its own
-  matugen-themed Vesktop CSS too (the well-known
-  [midnight-discord](https://github.com/refact0r/midnight-discord)
-  theme, recolored), at `~/.config/vesktop/themes/dank-discord.css` -
-  running both was pure duplicated work for the same result, so the
-  custom template was dropped and DMS's own is used directly.
-  Vesktop only auto-loads QuickCSS, not the `themes/` folder DMS writes
-  to (same "needs a manual toggle" gap as GTK's own Apply button, just
-  for Vesktop's Settings > Themes tab), so
-  `home.activation.applyDmsVesktopTheme` writes
-  `~/.config/vesktop/settings/quickCss.css` as a plain `@import
-  url("../themes/dank-discord.css");` on every rebuild - a real file via
-  `install`, not a `home.file` symlink, so the relative import resolves
-  against Vesktop's own real config directory rather than wherever a
-  Nix store symlink's target happens to sit (same reasoning as the GTK4
-  `@import` fix in [desktop.md](desktop-dms.md)).
+- **The theme is written into QuickCSS itself.** The matugen template
+  (a recolored [midnight-discord](https://github.com/refact0r/midnight-discord))
+  renders straight to `~/.config/vesktop/settings/quickCss.css`, which
+  Vesktop always loads, instead of to a file in `themes/` that
+  QuickCSS had to `@import` and Settings > Themes had to switch on.
+  `enabledThemes` is empty, and no relative import depends on where a
+  symlink points. Older `themes/*.css` files are left alone and unused.
 - **The shared font still reaches Discord's own chrome, not just
   colors** - Discord/Vencord's UI reads its font off a `--font` custom
   property, appended after the `@import` in the same generated

@@ -40,7 +40,7 @@
         useQuickCss = true;
         themeLinks = [ ];
         eagerPatches = false;
-        enabledThemes = [ "vayume-discord.css" ];
+        enabledThemes = [ ];
         enableReactDevtools = false;
         frameless = false;
         transparent = false;
@@ -363,7 +363,7 @@
       vayume.matugenTemplates.vesktop = ''
         [templates.vesktop]
         input_path = '${config.home.homeDirectory}/.config/matugen/templates/vayume-discord.css'
-        output_path = '${config.home.homeDirectory}/.config/vesktop/themes/vayume-discord.css'
+        output_path = '${config.home.homeDirectory}/.config/vesktop/settings/quickCss.css'
       '';
 
     };
