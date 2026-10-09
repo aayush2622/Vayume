@@ -60,8 +60,8 @@ let
     {
       dirName = "github-copilot-intellij";
       id = "com.github.copilot";
-      version = "1.17.0-251";
-      hash = "sha256-pyWPca0k8wUDq7XmKw84bqNs8RlKcII3ZpeRpcavNMQ=";
+      version = "1.18.0-251";
+      hash = "sha256-DL2ELi6WEaw6xUiwnEMPf8sCdBG6LJJ4CIZ8YHim+Wg=";
     }
   ];
 

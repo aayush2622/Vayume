@@ -123,6 +123,7 @@
       webviewDeps = with pkgs; [
         webkitgtk_4_1
         libsoup_3
+        glib-networking
         gtk3
         libepoxy
         libsecret
@@ -163,6 +164,16 @@
       home.sessionVariables.LD_LIBRARY_PATH = "${pkgs.addDriverRunpath.driverLink}/lib:${libPath}:$LD_LIBRARY_PATH";
 
       home.sessionVariables.FLUTTER_NIX_LIB_DIRS = libPath;
+
+      home.sessionVariables.GIO_EXTRA_MODULES = "${pkgs.glib-networking}/lib/gio/modules:$GIO_EXTRA_MODULES";
+
+      home.sessionVariablesExtra = ''
+        unset NIX_CFLAGS_LINK
+        NIX_LDFLAGS="''${NIX_LDFLAGS//-L\/usr\/lib32/}"
+        NIX_LDFLAGS="''${NIX_LDFLAGS//-L\/usr\/lib/}"
+        PKG_CONFIG_PATH="''${PKG_CONFIG_PATH//\/usr\/lib\/pkgconfig:/}"
+        export NIX_LDFLAGS PKG_CONFIG_PATH
+      '';
 
       home.file.".local/share/dart-sdk".source = "${pkgs.flutter}/bin/cache/dart-sdk";
       home.file.".local/share/flutter-sdk".source = "${pkgs.flutter}";
