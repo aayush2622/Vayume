@@ -100,6 +100,17 @@
 
             services.fstrim.enable = d true;
 
+            services.earlyoom = {
+              enable = d true;
+              freeMemThreshold = d 5;
+              freeSwapThreshold = d 10;
+              enableNotifications = d true;
+              extraArgs = d [
+                "--avoid"
+                "(^|/)(niri|Hyprland|quickshell|dms|sddm|systemd|pipewire|wireplumber)$"
+              ];
+            };
+
             virtualisation.docker.enableOnBoot = d false;
 
             vayume.commands.boot-time = {
@@ -124,11 +135,7 @@
                 DefaultLimitNOFILE = d "1024:1048576";
               };
               user.settings.Manager.DefaultTimeoutStopSec = d "10s";
-              oomd = {
-                enable = d true;
-                enableRootSlice = d true;
-                enableUserSlices = d true;
-              };
+              oomd.enable = d false;
             };
 
             services.journald.settings.Journal = {

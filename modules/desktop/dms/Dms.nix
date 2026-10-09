@@ -222,6 +222,11 @@
                 fi
               '';
 
+            systemd.user.services.dms = {
+              Unit.StartLimitIntervalSec = 0;
+              Service.RestartSec = 2;
+            };
+
             programs.dank-material-shell = {
               enable = true;
 

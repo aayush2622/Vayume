@@ -32,7 +32,7 @@ vayume.performance = {
 | `vm.vfs_cache_pressure` | 50 | Keeps directory and inode caches longer |
 | `vm.dirty_bytes` / `vm.dirty_background_bytes` | 256 MiB / 64 MiB | Caps write-back bursts in absolute terms; the default ratio scales with RAM and can stall the desktop on a big copy |
 | `vm.max_map_count` | 2147483642 | SteamOS's value; Proton games and some JVM tools exhaust the 1048576 default |
-| `systemd.oomd` | on, root and user slices | Kills the runaway cgroup on memory *pressure* before the machine freezes |
+| `services.earlyoom` | on | Kills the single biggest process when free memory or swap runs low, never the compositor or shell. `systemd-oomd` is off: it killed the whole login scope, taking the desktop with it |
 
 ### Disk
 
