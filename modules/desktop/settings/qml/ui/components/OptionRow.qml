@@ -65,6 +65,12 @@ SettingItem {
             anchors.verticalCenter: parent ? parent.verticalCenter : undefined
         },
         Badge {
+            visible: root.setting.live === true
+            label: I18n.tr("Applies now")
+            tone: "info"
+            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+        },
+        Badge {
             visible: root.setting.configured && !root.setting.pending
             label: I18n.tr("Customized")
             tone: "info"

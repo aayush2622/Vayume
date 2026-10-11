@@ -236,7 +236,7 @@
           };
         }
 
-        (lib.mkIf cfg.enable {
+        (lib.mkIf (cfg.enable && !config.vayume.power.ultraSaver) {
           home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (name: {
             systemd.user.services.vayume-pet = {
               Unit = {

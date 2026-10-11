@@ -318,3 +318,7 @@ reopen the two-file config split this whole plugin exists to avoid.
 ---
 
 [← Index](CONFIGURATION.md)
+
+## Power page
+
+`ui/pages/PowerPage.qml` is the one page that is not just option rows: above the generic option cards (ultra power saver, idle, power buttons) it shows live hardware controls driven by `vayume power status` - power profile, battery charge limit, graphics mode, panel overdrive, auto brightness - and `VayumeModel.setPower` runs `vayume power <what> <value>` and reloads the status. See [system-power.md](system-power.md). Settings with a live hook show an "Applies now" badge and report "Applied now, and saved - a rebuild keeps it." ([live settings](core-settings.md#live-settings)).

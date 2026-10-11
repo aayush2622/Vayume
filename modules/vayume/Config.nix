@@ -1128,6 +1128,27 @@
             printf '%s' "$entry"
           }
 
+          settings_live() {
+            local path hook out
+            path=$1
+            shift
+            live_json=false
+            live_error=""
+            hook=$(jq -r --arg p "$path" '.[$p] // empty' "''${VAYUME_LIVE_HOOKS:-/etc/vayume/live.json}" 2>/dev/null || true)
+            [ -n "$hook" ] || return 0
+            if out=$("$hook" "$@" 2>&1); then
+              live_json=true
+            else
+              live_error=$(printf '%s' "$out" | tail -n 1)
+              [ -n "$live_error" ] || live_error="the live update failed"
+            fi
+          }
+
+          settings_result() {
+            jq -n --arg path "$1" --argjson live "$live_json" --arg err "$live_error" \
+              '{ok: true, path: $path, live: $live} + (if $err != "" then {liveError: $err} else {} end)'
+          }
+
           cmd_settings_set() {
             local path since entry kind value item min
             path=''${1:?setting path required}
@@ -1190,23 +1211,25 @@
             esac
 
             if settings_edit set "$path" "$value"; then
-              jq -n --arg path "$path" '{ok: true, path: $path}'
+              settings_live "$path" "''${items[@]}"
+              settings_result "$path"
             else
               exit 1
             fi
           }
 
           cmd_settings_reset() {
-            local path since
+            local path since entry
             path=''${1:?setting path required}
             since=""
             if [ "''${2:-}" = "--if-unmodified-since" ]; then
               since=''${3:?epoch required after --if-unmodified-since}
             fi
             check_since "$since"
-            settings_lookup "$path" >/dev/null
+            entry=$(settings_lookup "$path")
             if settings_edit reset "$path"; then
-              jq -n --arg path "$path" '{ok: true, path: $path}'
+              settings_live "$path" "$(jq -r 'if .base == null then empty elif (.base | type) == "array" then .base[] else (.base | tostring) end' <<<"$entry")"
+              settings_result "$path"
             else
               exit 1
             fi

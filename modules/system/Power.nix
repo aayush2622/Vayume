@@ -11,6 +11,12 @@
     in
     {
       options.vayume.power = {
+        ultraSaver = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = "Ultra power saver: turns off animations, blur, shadows, rounded corners, window transparency, the desktop pet and the shell's own effects, runs the shell at low priority and drops to the lowest power profile, so apps get everything. Takes effect immediately from Vayume Settings.";
+        };
+
         idleLock = lib.mkOption {
           type = lib.types.ints.unsigned;
           default = 600;
@@ -61,15 +67,22 @@
           HandleLidSwitchDocked = "ignore";
         };
 
-        vayume.settingsGroups."Screen & sleep" = {
+        vayume.settingsGroups."Ultra power saver" = {
           order = 1;
+          icon = "battery_saver";
+          description = "Strips the eye candy so the apps get all the power.";
+          page = "power";
+        };
+
+        vayume.settingsGroups."Screen & sleep" = {
+          order = 2;
           icon = "bedtime";
           description = "When the screen locks, turns off, and the system goes to sleep on idle.";
           page = "power";
         };
 
         vayume.settingsGroups."Power buttons" = {
-          order = 2;
+          order = 3;
           icon = "power_settings_new";
           description = "What pressing the power button or closing the laptop lid does.";
           page = "power";
@@ -87,6 +100,7 @@
             };
           in
           {
+            "power.ultraSaver" = e "Ultra power saver" "Ultra power saver" "battery_saver" 1;
             "power.idleLock" = e "Screen & sleep" "Lock screen after idle" "lock_clock" 1;
             "power.idleScreenOff" = e "Screen & sleep" "Screen off after idle" "tv_off" 2;
             "power.idleSuspend" = e "Screen & sleep" "Sleep after idle" "bedtime" 3;

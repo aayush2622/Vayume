@@ -90,6 +90,8 @@ rectangles move with the pet. Every skin and its kuroneko variant were
 traced. Real clicks through the mask and `follow` under Hyprland were not
 exercised there.
 
+`vayume.desktop.pet.enable` is a [live setting](core-settings.md#live-settings): toggling it in Vayume Settings starts or stops the service at once, once the pet has been built in. The ultra power saver keeps it off ([system-power.md](system-power.md)).
+
 ---
 
 [← SddmTheme.nix](desktop-sddm.md) · [Index](CONFIGURATION.md) · [Misc.nix →](system-misc.md)

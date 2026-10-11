@@ -21,7 +21,7 @@ def isunparsed: type == "object" and has("unparsed");
         applied: $s.value,
         value: $effective,
         configured: $configured,
-        pending: ($effective != $s.value),
+        pending: ($effective != $s.value and ($s.live | not)),
         unparsed: ($configured and ($p | isunparsed))
       }
   )

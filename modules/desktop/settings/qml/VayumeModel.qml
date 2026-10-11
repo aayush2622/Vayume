@@ -40,6 +40,12 @@ Scope {
     property bool settingsError: false
     readonly property bool settingsSaving: settingsSetProc.running
 
+    property var power: ({ backend: "none", profile: "", profiles: [], batteryLimit: null, gpu: null, gpuModes: [], panelOverdrive: null, autoBrightness: null })
+    property bool powerLoading: true
+    property string powerStatus: ""
+    property bool powerError: false
+    readonly property bool powerBusy: powerSetProc.running
+
     property var packageSearchResults: []
     readonly property bool packageSearching: packageSearchProc.running
     property string packageSearchError: ""
@@ -76,6 +82,7 @@ Scope {
     function refreshTheme() { themeLoading = true; themeGetProc.running = true; }
     function refreshUsers() { usersLoading = true; usersListProc.running = true; }
     function refreshDefaultApps() { defaultAppsLoading = true; defaultsGetProc.running = true; }
+    function refreshPower() { powerGetProc.running = true; }
     function refreshSettings() { settingsLoading = true; settingsGetProc.running = true; }
 
     function setSetting(path, values) {
@@ -86,6 +93,11 @@ Scope {
     function resetSetting(path) {
         settingsSetProc.command = ["vayume", "config", "settings", "reset", path];
         settingsSetProc.running = true;
+    }
+
+    function setPower(what, value) {
+        powerSetProc.command = ["vayume", "power", what, value];
+        powerSetProc.running = true;
     }
 
     function setDefaultApp(role, id) {
@@ -132,6 +144,7 @@ Scope {
         case "applications": refreshApps(); refreshSettings(); refreshActions(); break;
         case "defaults": refreshDefaultApps(); break;
         case "users": refreshUsers(); break;
+        case "power": refreshPower(); refreshSettings(); refreshActions(); break;
         case "pet": case "network": case "performance": case "updates": refreshSettings(); refreshActions(); break;
         case "storage": refreshSettings(); refreshActions(); refreshDisk(); break;
         case "search": refreshApps(); refreshDevelopment(); refreshSettings(); refreshActions(); break;
@@ -440,15 +453,58 @@ Scope {
         id: settingsSetProc
         running: false
         property string errorText: ""
-        onStarted: errorText = ""
+        property var result: ({})
+        onStarted: { errorText = ""; result = {}; }
         stderr: SplitParser { onRead: line => settingsSetProc.errorText = root.pickError(settingsSetProc.errorText, line) }
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    settingsSetProc.result = JSON.parse(text);
+                } catch (e) {
+                    settingsSetProc.result = ({});
+                }
+            }
+        }
         onExited: exitCode => {
             root.settingsError = exitCode !== 0;
-            root.settingsStatus = exitCode === 0
-                ? I18n.tr("Saved - rebuild to apply.")
-                : (settingsSetProc.errorText || I18n.tr("Couldn't change that setting."));
+            if (exitCode !== 0)
+                root.settingsStatus = settingsSetProc.errorText || I18n.tr("Couldn't change that setting.");
+            else if (result.live === true)
+                root.settingsStatus = I18n.tr("Applied now, and saved - a rebuild keeps it.");
+            else if (result.liveError)
+                root.settingsStatus = I18n.tr("Saved - rebuild to apply (%1).").arg(result.liveError);
+            else
+                root.settingsStatus = I18n.tr("Saved - rebuild to apply.");
             root.refreshSettings();
             root.refreshRepo();
+        }
+    }
+
+    Process {
+        id: powerGetProc
+        command: ["vayume", "power", "status"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.powerLoading = false;
+                try {
+                    root.power = JSON.parse(text);
+                } catch (e) {
+                }
+            }
+        }
+    }
+
+    Process {
+        id: powerSetProc
+        running: false
+        property string errorText: ""
+        onStarted: errorText = ""
+        stderr: SplitParser { onRead: line => powerSetProc.errorText = line.trim() || powerSetProc.errorText }
+        onExited: exitCode => {
+            root.powerError = exitCode !== 0;
+            root.powerStatus = exitCode === 0 ? "" : (powerSetProc.errorText || I18n.tr("Couldn't change that."));
+            root.refreshPower();
         }
     }
 

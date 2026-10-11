@@ -16,10 +16,13 @@
       lib,
       pkgs,
       self,
+      osConfig,
       vayumeTheme,
       ...
     }:
     let
+      effects = import ./_effects.nix;
+      saver = osConfig.vayume.power.ultraSaver;
       actions = lib.mapAttrs (_: lib.concatStringsSep " ") (self.vayumeLib.mkDesktopActions pkgs);
       lua = lib.generators.mkLuaInline;
 
@@ -169,12 +172,12 @@
             };
 
             decoration = {
-              rounding = 24;
+              rounding = if saver then 0 else effects.rounding;
 
-              active_opacity = 0.85;
-              inactive_opacity = 0.80;
+              active_opacity = if saver then 1.0 else effects.activeOpacity;
+              inactive_opacity = if saver then 1.0 else effects.inactiveOpacity;
               blur = {
-                enabled = true;
+                enabled = !saver;
                 brightness = 0.8;
                 passes = 3;
                 size = 7;
@@ -190,11 +193,13 @@
               };
 
               shadow = {
-                enabled = true;
+                enabled = !saver;
                 range = 30;
                 render_power = 4;
               };
             };
+
+            animations.enabled = !saver;
 
             dwindle.preserve_split = true;
 

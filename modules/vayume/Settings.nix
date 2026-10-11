@@ -9,6 +9,21 @@
         import ./_settings.nix { inherit lib options config; }
       );
 
+      config.environment.etc."vayume/live.json".text = builtins.toJSON config.vayume.settingsLive;
+
+      options.vayume.settingsLive = lib.mkOption {
+        default = { };
+        description = ''
+          Settings that also take effect in the running session when changed
+          in Vayume Settings, keyed by option path below `vayume.` (for
+          example `"power.ultraSaver"`). The value is an executable that gets
+          the new value as its first argument and changes the live system or
+          the real file the option ends up in. `_config.nix` is still edited,
+          so a rebuild lands on the same state. See docs/core-settings.md.
+        '';
+        type = lib.types.attrsOf lib.types.str;
+      };
+
       options.vayume.settingsMeta = lib.mkOption {
         default = { };
         description = ''

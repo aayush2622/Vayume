@@ -12,6 +12,7 @@ let
     "defaultApps"
     "defaultAppsResolved"
     "settingsGroups"
+    "settingsLive"
     "settingsMeta"
     "theme"
     "users"
@@ -169,6 +170,7 @@ let
             value = safe (lib.attrByPath rel null vayume);
             base = fromOtherFiles v;
             default = if v ? default then safe v.default else null;
+            live = vayume.settingsLive ? ${path};
             nullable = false;
             choices = null;
             min = null;

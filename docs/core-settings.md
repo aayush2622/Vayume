@@ -67,6 +67,16 @@ Two consequences worth knowing:
 - **The option must be overridable.** Anything `Host.nix` sets for one of these options has to use `lib.mkDefault`, otherwise `_config.nix` and `Host.nix` define the same option and the rebuild fails. The `vayume.network` block in `Host.nix` is written that way for this reason.
 - **A value set inside a nested block wins.** If you wrote `vayume.network = { tor.enable = true; };` by hand, the flat line the panel adds defines the same option a second time and the rebuild fails with a "defined multiple times" error. The list marks a setting as customized only when it finds a flat `vayume.<path> =` line, and shows a note if that line is a multi-line expression it can't display.
 
+### Live settings
+
+A setting that can take effect in the running session without a rebuild registers an executable in `vayume.settingsLive.<path>` (for example `"power.ultraSaver" = "${hook}"`). `Settings.nix` writes the table to `/etc/vayume/live.json`, the record gains `live = true`, and `vayume config settings set|reset` does two things in order: edit `_config.nix` as always, then run the hook with the new value as its only argument (on a reset, with the option's value without `_config.nix`, so the live state goes back to the default too). The answer is `{"ok": true, "live": true}`; if the hook fails the line is still saved and the answer carries `"live": false, "liveError": "<last line of output>"`, which Vayume Settings shows as "Saved - rebuild to apply" with the reason.
+
+Because the real file or the compositor is changed now and `_config.nix` is changed too, a later rebuild produces the same state - the hook and the rebuild read one option, and the modules that bake the option in (Hyprland, DMS, the pet service) use the same values as the hook. A live setting is never marked "Pending rebuild", since the running system already matches; it carries an "Applies now" badge instead. `VAYUME_LIVE_HOOKS` overrides the table path, which `tests/eval.sh` uses with a fake hook.
+
+Hooks run inside the caller's session (Vayume Settings starts them), so they can use `hyprctl`, `systemctl --user` and the user's own files. A hook that changes a file the rebuild owns - DMS's `settings.json`, a Nix store symlink - replaces the symlink with an editable copy and keeps what it overwrote; the next rebuild links the generated file back (`force = true`), which carries the same values because the option is set.
+
+Live today: `power.ultraSaver` and `desktop.pet.enable` ([system-power.md](system-power.md), [desktop-pet.md](desktop-pet.md)). Everything else still needs a rebuild.
+
 ### Distrobox
 
 `vayume.ubuntuBox.*` used to be a home-manager option, which the settings engine can't see. It's now declared at the NixOS level (`flake.nixosModules.DistroboxSettings`, imported by `Host.nix`) and the home-manager module reads it through `osConfig`, so it's set in `_config.nix` like everything else. Nothing changes for the commands; `homeDir` became `nullOr str` (`null` means `~/.local/share/vayume-boxes/<name>`) because its old default depended on a home-manager value that doesn't exist at the NixOS level.

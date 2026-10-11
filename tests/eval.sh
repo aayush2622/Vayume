@@ -244,6 +244,22 @@ vc_ settings set ubuntuBox.unshare ipc netns | jq -e '.ok' >/dev/null
 vc_ settings reset network.tor.enable | jq -e '.ok' >/dev/null
 vc_ settings list | jq -e '.[] | select(.path == "network.tor.enable") | .value == true and (.configured | not) and (.pending | not)' >/dev/null
 [ "$(VAYUME_SETTINGS_SNAPSHOT=/nonexistent HOME="$vc_home" "$vc" config settings list | jq length)" = "$(vc_ settings list | jq length)" ] || { echo "settings list without a snapshot disagrees with the snapshot" >&2; exit 1; }
+live_dir=$(mktemp -d)
+cat > "$live_dir/hook" <<EOS
+#!/bin/sh
+printf '%s' "\$1" > "$live_dir/value"
+EOS
+chmod +x "$live_dir/hook"
+jq -n --arg h "$live_dir/hook" '{"network.tor.enable": $h}' > "$live_dir/live.json"
+VAYUME_LIVE_HOOKS="$live_dir/live.json" vc_ settings set network.tor.enable false | jq -e '.ok and .live' >/dev/null
+[ "$(cat "$live_dir/value")" = false ] || { echo "the live hook did not get the new value" >&2; exit 1; }
+VAYUME_LIVE_HOOKS="$live_dir/live.json" vc_ settings reset network.tor.enable | jq -e '.ok and .live' >/dev/null
+[ "$(cat "$live_dir/value")" = true ] || { echo "the live hook did not get the default on reset" >&2; exit 1; }
+printf '%s\n' '#!/bin/sh' 'echo nope >&2' 'exit 1' > "$live_dir/hook"
+VAYUME_LIVE_HOOKS="$live_dir/live.json" vc_ settings set network.tor.enable false | jq -e '.ok and (.live | not) and .liveError == "nope"' >/dev/null
+vc_ settings reset network.tor.enable | jq -e '.ok and (.live | not)' >/dev/null
+rm -rf "$live_dir"
+vc_ settings list | jq -e '[.[] | select(.live)] | map(.path) | contains(["power.ultraSaver", "desktop.pet.enable"])' >/dev/null
 vc_ validate | jq -e '.ok' >/dev/null
 [ "$(stat -c %a "$cfg")" = 600 ] || { echo "vayume-config changed _config.nix's mode" >&2; exit 1; }
 [ -z "$(find "$(dirname "$cfg")" -name '_config.nix.*' ! -name '*.example')" ] || { echo "vayume-config left temp files" >&2; exit 1; }

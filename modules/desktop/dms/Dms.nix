@@ -122,6 +122,7 @@
             pkgs,
             lib,
             config,
+            osConfig,
             ...
           }:
           {
@@ -224,7 +225,11 @@
 
             systemd.user.services.dms = {
               Unit.StartLimitIntervalSec = 0;
-              Service.RestartSec = 2;
+              Service = {
+                RestartSec = 2;
+                CPUWeight = if osConfig.vayume.power.ultraSaver then 20 else 100;
+                IOWeight = if osConfig.vayume.power.ultraSaver then 20 else 100;
+              };
             };
 
             programs.dank-material-shell = {
@@ -764,7 +769,8 @@
                 frameOpacity = 0.45;
                 configVersion = 13;
               }
-              // barProfile.shell;
+              // barProfile.shell
+              // lib.optionalAttrs osConfig.vayume.power.ultraSaver (import ../_effects.nix).dmsSaver;
             };
           }
         );
