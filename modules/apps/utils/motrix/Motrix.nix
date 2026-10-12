@@ -34,7 +34,7 @@
             PartOf = [ "graphical-session.target" ];
           };
           Service = {
-            ExecStart = "${lib.getExe pkgs.motrix}";
+            ExecStart = "${lib.getExe pkgs.motrix} --opened-at-login=1";
             Restart = "on-failure";
             Environment = [
               "ELECTRON_OZONE_PLATFORM_HINT=auto"

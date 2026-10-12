@@ -66,7 +66,7 @@ Applied when `vayume.performance.gaming` is true:
 - `kernel.split_lock_mitigate = 0`: split-lock detection throttles a few games badly, and gamemode disables it anyway.
 - `kernel.sched_cfs_bandwidth_slice_us = 3000`: shorter CFS bandwidth slices, moved here from `Host.nix`.
 - `programs.gamemode.settings.general.renice = 10`: a stronger priority boost than gamemode's default of 4.
-- `programs.gamescope` with `capSysNice`, and Steam's gamescope session.
+- `programs.gamescope` with `capSysNice`. Steam's gamescope session is deliberately not enabled: it adds a "Steam (gamescope)" entry to the SDDM session chooser, and `gamescope-fhd`/`gamescope-fsr` cover running games under gamescope from the desktop.
 
 The `ntsync` module and its udev rule stay in `Host.nix`, since Wine uses them outside Steam too.
 

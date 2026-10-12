@@ -169,7 +169,6 @@
               enable = d true;
               capSysNice = d true;
             };
-            programs.steam.gamescopeSession.enable = d true;
           })
 
           (lib.mkIf (cfg.scheduler != "default") {
