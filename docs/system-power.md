@@ -12,11 +12,10 @@ These values live in the hardware services, which keep them across reboots and r
 
 ## Ultra power saver
 
-`vayume.power.ultraSaver` (off by default) strips everything decorative so the apps get the machine:
+`vayume.power.ultraSaver` (off by default) strips everything decorative so the apps get the machine. It saves resources, not performance, so the power profile is never changed (pick that yourself above):
 
 | What | How |
 | --- | --- |
-| Power profile | the lowest one (Quiet / power-saver); the previous profile is remembered and restored |
 | Hyprland | animations, blur, shadows off, rounding 0, window opacity 1 |
 | DMS | animation speed none, ripples, blur (bar, wallpaper, overview), elevation shadows, notification shadows and popup/dock transparency off; the audio visualizer (the `cava` processes), weather, the clock's seconds and the lock screen video off; every desktop widget disabled |
 | Matugen | no re-theming while it is on: DMS's `runUserMatugenTemplates` and `runDmsMatugenTemplates` are off, and `vayume theme` (what Noctalia and Caelestia call on a wallpaper change) exits without doing anything unless `VAYUME_THEME_FORCE=1`. The colours stay as they were |

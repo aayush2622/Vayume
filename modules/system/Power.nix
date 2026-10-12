@@ -14,7 +14,7 @@
         ultraSaver = lib.mkOption {
           type = lib.types.bool;
           default = false;
-          description = "Ultra power saver: turns off animations, blur, shadows, rounded corners, window transparency, the desktop pet, desktop widgets, the audio visualizer, weather and matugen re-theming, runs the shell at low priority and drops to the lowest power profile, so apps get everything. Takes effect immediately from Vayume Settings.";
+          description = "Ultra power saver: turns off animations, blur, shadows, rounded corners, window transparency, the desktop pet, desktop widgets, the audio visualizer, weather and matugen re-theming, and runs the shell at low priority, so apps get everything. The power profile is left alone. Takes effect immediately from Vayume Settings.";
         };
 
         idleLock = lib.mkOption {

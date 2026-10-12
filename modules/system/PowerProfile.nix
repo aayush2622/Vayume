@@ -82,13 +82,6 @@
             esac
           }
 
-          profile_lowest() {
-            case "$(backend)" in
-              asus) echo Quiet ;;
-              ppd) echo power-saver ;;
-            esac
-          }
-
           armoury_get() {
             asusctl armoury get "$1" 2>/dev/null | sed -n 's/.*current:.*(\s*\([0-9]*\)\s*).*/\1/p' | head -n 1
           }
@@ -151,14 +144,8 @@
           }
 
           saver_on() {
-            local lowest
             mkdir -p "$state"
             touch "$state/saver-active"
-            lowest=$(profile_lowest)
-            if [ -n "$lowest" ] && [ ! -f "$state/saver-profile" ]; then
-              profile_get > "$state/saver-profile"
-              profile_set "$lowest"
-            fi
             hypr_eval '${toLua (hyprland false)}'
             if [ ! -f "$state/saver-dms.json" ] && [ "$dms_shell" = true ] && [ -e "$dms_settings" ]; then
               jq --argjson keys '${builtins.toJSON dmsKeys}' \
