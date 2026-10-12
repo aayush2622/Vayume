@@ -12,6 +12,7 @@
       dms = config.vayume.desktop.shell == "dms";
 
       dmsSaver = effects.dmsSaver;
+      dmsKeys = builtins.attrNames dmsSaver ++ [ "desktopWidgetInstances" ];
 
       hyprland = enabled: {
         animations.enabled = enabled;
@@ -152,6 +153,7 @@
           saver_on() {
             local lowest
             mkdir -p "$state"
+            touch "$state/saver-active"
             lowest=$(profile_lowest)
             if [ -n "$lowest" ] && [ ! -f "$state/saver-profile" ]; then
               profile_get > "$state/saver-profile"
@@ -159,10 +161,10 @@
             fi
             hypr_eval '${toLua (hyprland false)}'
             if [ ! -f "$state/saver-dms.json" ] && [ "$dms_shell" = true ] && [ -e "$dms_settings" ]; then
-              jq --argjson keys '${builtins.toJSON (builtins.attrNames dmsSaver)}' \
+              jq --argjson keys '${builtins.toJSON dmsKeys}' \
                 '. as $s | $keys | map({key: ., value: $s[.]}) | from_entries' "$dms_settings" > "$state/saver-dms.json"
             fi
-            dms_edit --argjson set '${builtins.toJSON dmsSaver}' '. + $set'
+            dms_edit --argjson set '${builtins.toJSON dmsSaver}' '. + $set | if has("desktopWidgetInstances") then .desktopWidgetInstances |= map(.enabled = false) else . end'
             if systemctl --user is-active --quiet vayume-pet.service; then
               systemctl --user stop vayume-pet.service
               touch "$state/saver-pet"
@@ -174,6 +176,7 @@
 
           saver_off() {
             mkdir -p "$state"
+            rm -f "$state/saver-active"
             if [ -f "$state/saver-profile" ]; then
               [ -z "$(cat "$state/saver-profile")" ] || profile_set "$(cat "$state/saver-profile")"
               rm -f "$state/saver-profile"
@@ -235,6 +238,23 @@
     in
     {
       config = {
+        home-manager.users = lib.genAttrs (builtins.attrNames config.vayume.users) (
+          _:
+          { lib, ... }:
+          {
+            home.activation.vayumeSaverState = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              state="''${XDG_STATE_HOME:-$HOME/.local/state}/vayume"
+              run mkdir -p "$state"
+              ${
+                if config.vayume.power.ultraSaver then
+                  ''run touch "$state/saver-active"''
+                else
+                  ''run rm -f "$state/saver-active"''
+              }
+            '';
+          }
+        );
+
         vayume.commands.power = {
           command = "${power}/bin/vayume-power";
           description = "Power profile, battery limit, GPU mode and the ultra power saver";

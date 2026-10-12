@@ -618,141 +618,143 @@
                   valid = true;
                 };
 
-                desktopWidgetInstances = [
-                  {
-                    id = "dw_1790600000000_vyclock04";
-                    widgetType = "vayumeClock";
-                    name = "Vayume Clock";
-                    enabled = true;
-                    config = {
-                      displayPreferences = [ "all" ];
-                      showOnOverlay = false;
-                      showOnOverview = false;
-                      syncPositionAcrossScreens = true;
-                    };
-                    positions._synced = {
-                      x = 0.035;
-                      y = 0.04;
-                      width = 460;
-                      height = 520;
-                    };
-                  }
+                desktopWidgetInstances =
+                  map (w: w // lib.optionalAttrs osConfig.vayume.power.ultraSaver { enabled = false; })
+                    [
+                      {
+                        id = "dw_1790600000000_vyclock04";
+                        widgetType = "vayumeClock";
+                        name = "Vayume Clock";
+                        enabled = true;
+                        config = {
+                          displayPreferences = [ "all" ];
+                          showOnOverlay = false;
+                          showOnOverview = false;
+                          syncPositionAcrossScreens = true;
+                        };
+                        positions._synced = {
+                          x = 0.035;
+                          y = 0.04;
+                          width = 460;
+                          height = 520;
+                        };
+                      }
 
-                  {
-                    id = "dw_1790600000001_vymedia04";
-                    widgetType = "vayumeMedia";
-                    name = "Vayume Now Playing";
-                    enabled = true;
-                    config = {
-                      displayPreferences = [ "all" ];
-                      showOnOverlay = false;
-                      showOnOverview = false;
-                      syncPositionAcrossScreens = true;
-                    };
-                    positions._synced = {
-                      x = 0.83;
-                      y = 0.06;
-                      width = 300;
-                      height = 500;
-                    };
-                  }
+                      {
+                        id = "dw_1790600000001_vymedia04";
+                        widgetType = "vayumeMedia";
+                        name = "Vayume Now Playing";
+                        enabled = true;
+                        config = {
+                          displayPreferences = [ "all" ];
+                          showOnOverlay = false;
+                          showOnOverview = false;
+                          syncPositionAcrossScreens = true;
+                        };
+                        positions._synced = {
+                          x = 0.83;
+                          y = 0.06;
+                          width = 300;
+                          height = 500;
+                        };
+                      }
 
-                  {
-                    id = "dw_1790600000002_vyweather02";
-                    widgetType = "vayumeWeather";
-                    name = "Vayume Weather";
-                    enabled = true;
-                    config = {
-                      displayPreferences = [ "all" ];
-                      showOnOverlay = false;
-                      showOnOverview = false;
-                      syncPositionAcrossScreens = true;
-                    };
-                    positions._synced = {
-                      x = 0.035;
-                      y = 0.5;
-                      width = 300;
-                      height = 190;
-                    };
-                  }
+                      {
+                        id = "dw_1790600000002_vyweather02";
+                        widgetType = "vayumeWeather";
+                        name = "Vayume Weather";
+                        enabled = true;
+                        config = {
+                          displayPreferences = [ "all" ];
+                          showOnOverlay = false;
+                          showOnOverview = false;
+                          syncPositionAcrossScreens = true;
+                        };
+                        positions._synced = {
+                          x = 0.035;
+                          y = 0.5;
+                          width = 300;
+                          height = 190;
+                        };
+                      }
 
-                  {
-                    id = "dw_1790600000003_vysystem02";
-                    widgetType = "vayumeSystem";
-                    name = "Vayume System";
-                    enabled = true;
-                    config = {
-                      displayPreferences = [ "all" ];
-                      showOnOverlay = false;
-                      showOnOverview = false;
-                      syncPositionAcrossScreens = true;
-                    };
-                    positions._synced = {
-                      x = 0.83;
-                      y = 0.5;
-                      width = 300;
-                      height = 190;
-                    };
-                  }
+                      {
+                        id = "dw_1790600000003_vysystem02";
+                        widgetType = "vayumeSystem";
+                        name = "Vayume System";
+                        enabled = true;
+                        config = {
+                          displayPreferences = [ "all" ];
+                          showOnOverlay = false;
+                          showOnOverview = false;
+                          syncPositionAcrossScreens = true;
+                        };
+                        positions._synced = {
+                          x = 0.83;
+                          y = 0.5;
+                          width = 300;
+                          height = 190;
+                        };
+                      }
 
-                  {
-                    id = "dw_1788083196111_hpk1tmarl";
-                    widgetType = "pureLyrics";
-                    name = "Pure Lyrics";
-                    enabled = true;
+                      {
+                        id = "dw_1788083196111_hpk1tmarl";
+                        widgetType = "pureLyrics";
+                        name = "Pure Lyrics";
+                        enabled = true;
 
-                    config = {
-                      displayPreferences = [ "all" ];
-                      showOnOverlay = false;
-                      showOnOverview = false;
-                      clickThrough = true;
-                      borderOpacity = 0;
-                      backgroundOpacity = 0;
-                      colorMode = "primary";
-                      lineCount = "5";
-                      fontSize = 35;
-                      textAlign = "center";
-                      showOnOverviewOnly = false;
-                      syncPositionAcrossScreens = true;
-                    };
+                        config = {
+                          displayPreferences = [ "all" ];
+                          showOnOverlay = false;
+                          showOnOverview = false;
+                          clickThrough = true;
+                          borderOpacity = 0;
+                          backgroundOpacity = 0;
+                          colorMode = "primary";
+                          lineCount = "5";
+                          fontSize = 35;
+                          textAlign = "center";
+                          showOnOverviewOnly = false;
+                          syncPositionAcrossScreens = true;
+                        };
 
-                    positions._synced = {
-                      x = 0;
-                      width = 9999;
-                      height = 253;
-                    };
-                  }
+                        positions._synced = {
+                          x = 0;
+                          width = 9999;
+                          height = 253;
+                        };
+                      }
 
-                  {
-                    id = "dw_1789200000000_cavaviz01";
-                    widgetType = "cavaVisualizer";
-                    name = "Cava Visualizer";
-                    enabled = true;
+                      {
+                        id = "dw_1789200000000_cavaviz01";
+                        widgetType = "cavaVisualizer";
+                        name = "Cava Visualizer";
+                        enabled = true;
 
-                    config = {
-                      vizMode = "curve-outline";
-                      curvePoints = 24;
-                      curveLineWidth = 3;
-                      barCount = 20;
-                      barSpacing = 4;
-                      barWidth = 0;
-                      orientation = "bottom";
-                      sensitivity = 100;
-                      channels = "mono";
-                      colorChoice = "primary";
-                      silenceTimeout = 5;
-                      bgOpacity = 0;
-                      opacity = 100;
-                      syncPositionAcrossScreens = true;
-                    };
-                    positions._synced = {
-                      x = 0;
-                      y = 0.9;
-                      width = 9999;
-                      height = 120;
-                    };
-                  }
-                ];
+                        config = {
+                          vizMode = "curve-outline";
+                          curvePoints = 24;
+                          curveLineWidth = 3;
+                          barCount = 20;
+                          barSpacing = 4;
+                          barWidth = 0;
+                          orientation = "bottom";
+                          sensitivity = 100;
+                          channels = "mono";
+                          colorChoice = "primary";
+                          silenceTimeout = 5;
+                          bgOpacity = 0;
+                          opacity = 100;
+                          syncPositionAcrossScreens = true;
+                        };
+                        positions._synced = {
+                          x = 0;
+                          y = 0.9;
+                          width = 9999;
+                          height = 120;
+                        };
+                      }
+                    ];
 
                 builtInPluginSettings = {
                   dms_settings_search = {

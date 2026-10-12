@@ -13,5 +13,12 @@
     notificationPopupShadowEnabled = false;
     popupTransparency = 1;
     dockTransparency = 1;
+    runUserMatugenTemplates = false;
+    runDmsMatugenTemplates = false;
+    audioVisualizerEnabled = false;
+    weatherEnabled = false;
+    showWeather = false;
+    showSeconds = false;
+    lockScreenVideoEnabled = false;
   };
 }

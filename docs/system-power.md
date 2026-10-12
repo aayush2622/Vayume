@@ -18,11 +18,12 @@ These values live in the hardware services, which keep them across reboots and r
 | --- | --- |
 | Power profile | the lowest one (Quiet / power-saver); the previous profile is remembered and restored |
 | Hyprland | animations, blur, shadows off, rounding 0, window opacity 1 |
-| DMS | animation speed none, ripples, blur (bar, wallpaper, overview), elevation shadows, notification shadows and popup/dock transparency off |
+| DMS | animation speed none, ripples, blur (bar, wallpaper, overview), elevation shadows, notification shadows and popup/dock transparency off; the audio visualizer (the `cava` processes), weather, the clock's seconds and the lock screen video off; every desktop widget disabled |
+| Matugen | no re-theming while it is on: DMS's `runUserMatugenTemplates` and `runDmsMatugenTemplates` are off, and `vayume theme` (what Noctalia and Caelestia call on a wallpaper change) exits without doing anything unless `VAYUME_THEME_FORCE=1`. The colours stay as they were |
 | Desktop pet | stopped |
 | Shell priority | `dms`, `noctalia` and `caelestia` services at CPUWeight and IOWeight 20 instead of 100 |
 
-Turned on from Vayume Settings it is applied at once ([live settings](core-settings.md#live-settings)): `vayume power saver on` runs the steps above in the running session, writing the DMS `settings.json` it finds (the file DMS watches) and recording what it overwrote under `~/.local/state/vayume/` so turning it off puts everything back, including keys that did not exist. The same option is read by `Hyprland.nix`, `Dms.nix` (settings and the unit's CPU/IO weight) and `Pet.nix` (no service), so after a rebuild the generated files already hold the saver state and the session is identical to the live one.
+Turned on from Vayume Settings it is applied at once ([live settings](core-settings.md#live-settings)): `vayume power saver on` runs the steps above in the running session, creating `~/.local/state/vayume/saver-active` (the marker `vayume theme` checks; a rebuild syncs it to the option), writing the DMS `settings.json` it finds (the file DMS watches) and recording what it overwrote under `~/.local/state/vayume/` so turning it off puts everything back, including keys that did not exist. The same option is read by `Hyprland.nix`, `Dms.nix` (settings and the unit's CPU/IO weight) and `Pet.nix` (no service), so after a rebuild the generated files already hold the saver state and the session is identical to the live one.
 
 Not covered, by design of what can be reached from outside: niri's compositor effects (its configuration is built as a package without access to the system options, so there is nothing to bake - niri has no IPC for animations either), and Noctalia's and Caelestia's own effects. Under those only the profile, the pet, the shell priority and (on Hyprland) the compositor part apply.
 

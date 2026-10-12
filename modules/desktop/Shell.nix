@@ -101,6 +101,10 @@
       };
 
       themeScript = pkgs.writeShellScriptBin "vayume-theme" ''
+        if [ -e "''${XDG_STATE_HOME:-$HOME/.local/state}/vayume/saver-active" ] && [ "''${VAYUME_THEME_FORCE:-}" != 1 ]; then
+          echo "the ultra power saver is on - theme left as it is (VAYUME_THEME_FORCE=1 overrides)" >&2
+          exit 0
+        fi
         wall="''${1:-}"
         if [ -z "$wall" ]; then
           wall="$(${run cmds."wallpaper-get" or null} 2>/dev/null || true)"
