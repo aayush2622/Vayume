@@ -139,6 +139,8 @@ in
       zenPrefs = {
         "extensions.autoDisableScopes" = 0;
         "extensions.pocket.enabled" = false;
+        "browser.download.start_downloads_in_tmp_dir" = true;
+        "browser.helperApps.deleteTempFileOnExit" = true;
         "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
       };
 
