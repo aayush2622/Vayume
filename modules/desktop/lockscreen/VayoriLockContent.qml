@@ -46,8 +46,6 @@ FocusScope {
         }
     }
 
-    onVisibleChanged: if (visible) focusRetry.restart()
-
     Connections {
         target: root.Window.window
         ignoreUnknownSignals: true
@@ -123,7 +121,11 @@ FocusScope {
 
     Component.onDestruction: WeatherService.removeRef()
 
-    onVisibleChanged: maybeSend()
+    onVisibleChanged: {
+        maybeSend();
+        if (visible)
+            focusRetry.restart();
+    }
     onOpacityChanged: maybeSend()
 
     Connections {

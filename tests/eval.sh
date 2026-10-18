@@ -53,6 +53,11 @@ ui="$work/modules/desktop/settings/qml/ui/components"
 missing=$(for f in "$ui"/*.qml; do n=$(basename "$f" .qml); grep -qE "^(singleton )?$n [0-9.]+ $n\.qml$" "$ui/qmldir" || echo "$n"; done)
 [ -z "$missing" ] || { echo "missing from ui/components/qmldir, so unavailable as a type: $missing" >&2; exit 1; }
 
+step "no QML file sets the same signal handler twice at its top level"
+dups=$(for f in $(find "$work/modules" -name '*.qml'); do awk -v f="$f" '/^    on[A-Z][A-Za-z]*:/ { sub(/:.*/, ""); if (seen[$1]++) print f ": " $1 }' "$f"; done)
+[ -z "$dups" ] || { echo "$dups" >&2; exit 1; }
+echo "ok"
+
 step "markdown links"
 broken=0
 while IFS= read -r -d '' f; do
