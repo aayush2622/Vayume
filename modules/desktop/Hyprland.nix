@@ -123,6 +123,11 @@
 
         configType = "lua";
 
+        extraConfig = ''
+          local saver = loadfile(os.getenv("HOME") .. "/.config/hypr/vayume-saver.lua")
+          if saver then pcall(saver) end
+        '';
+
         systemd.variables = [ "--all" ];
 
         settings = {

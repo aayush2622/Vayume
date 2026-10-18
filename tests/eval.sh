@@ -54,7 +54,7 @@ missing=$(for f in "$ui"/*.qml; do n=$(basename "$f" .qml); grep -qE "^(singleto
 [ -z "$missing" ] || { echo "missing from ui/components/qmldir, so unavailable as a type: $missing" >&2; exit 1; }
 
 step "no QML file sets the same signal handler twice at its top level"
-dups=$(for f in $(find "$work/modules" -name '*.qml'); do awk -v f="$f" '/^    on[A-Z][A-Za-z]*:/ { sub(/:.*/, ""); if (seen[$1]++) print f ": " $1 }' "$f"; done)
+dups=$(find "$work/modules" -name '*.qml' -exec awk '/^    on[A-Z][A-Za-z]*:/ { sub(/:.*/, ""); if (seen[FILENAME SUBSEP $1]++) print FILENAME ": " $1 }' {} +)
 [ -z "$dups" ] || { echo "$dups" >&2; exit 1; }
 echo "ok"
 

@@ -16,7 +16,7 @@ These values live in the hardware services, which keep them across reboots and r
 
 | What | How |
 | --- | --- |
-| Hyprland | animations, blur, shadows off, rounding 0, window opacity 1 |
+| Hyprland | animations, blur, shadows off, rounding 0, window opacity 1. Written to `~/.config/hypr/vayume-saver.lua`, which the generated `hyprland.lua` loads last, then `hyprctl reload`; an `hyprctl eval` alone was wiped by the next reload, and DMS triggers one every time it regenerates its layout file |
 | DMS | animation speed none, ripples, blur (bar, wallpaper, overview), elevation shadows, notification shadows and popup/dock transparency off; the audio visualizer (the `cava` processes), weather, the clock's seconds and the lock screen video off; every desktop widget disabled |
 | Matugen | DMS's own switch: the `dms` unit runs with `DMS_DISABLE_MATUGEN=1`, which makes the shell skip matugen entirely (the colours stay as they were), plus `DMS_DISABLE_CAVA` (audio visualizer), `DMS_DISABLE_LAYER` (layer effects on popouts) and `DMS_DISABLE_HOT_RELOAD`. The settings flags `runUserMatugenTemplates` and `runDmsMatugenTemplates` alone only skip the per-app templates - DMS still ran `dms matugen queue` to colour itself, which is why the first version of the saver did not stop it. `vayume theme` (what Noctalia and Caelestia call on a wallpaper change) exits without doing anything unless `VAYUME_THEME_FORCE=1` |
 | Desktop pet | stopped |

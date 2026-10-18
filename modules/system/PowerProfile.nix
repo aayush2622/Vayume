@@ -139,9 +139,18 @@
             mv "$tmp" "$dms_settings"
           }
 
-          hypr_eval() {
-            [ -n "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && have hyprctl || return 0
-            hyprctl eval "hl.config($1)" >/dev/null
+          hypr_state() {
+            local dir sig
+            dir="$HOME/.config/hypr"
+            mkdir -p "$dir"
+            printf 'hl.config(%s)\n' "$1" > "$dir/vayume-saver.lua"
+            have hyprctl || return 0
+            sig="''${HYPRLAND_INSTANCE_SIGNATURE:-}"
+            if [ -z "$sig" ] && [ -d "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr" ]; then
+              sig=$(find "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' | sort -rn | head -n 1 | cut -d' ' -f2)
+            fi
+            [ -n "$sig" ] || return 0
+            HYPRLAND_INSTANCE_SIGNATURE="$sig" hyprctl reload >/dev/null
           }
 
           dms_env() {
@@ -160,7 +169,7 @@
           saver_on() {
             mkdir -p "$state"
             touch "$state/saver-active"
-            hypr_eval '${toLua (hyprland false)}'
+            hypr_state '${toLua (hyprland false)}'
             if [ ! -f "$state/saver-dms.json" ] && [ "$dms_shell" = true ] && [ -e "$dms_settings" ]; then
               jq --argjson keys '${builtins.toJSON dmsKeys}' \
                 '. as $s | $keys | map({key: ., value: $s[.]}) | from_entries' "$dms_settings" > "$state/saver-dms.json"
@@ -183,7 +192,7 @@
               [ -z "$(cat "$state/saver-profile")" ] || profile_set "$(cat "$state/saver-profile")"
               rm -f "$state/saver-profile"
             fi
-            hypr_eval '${toLua (hyprland true)}'
+            hypr_state '${toLua (hyprland true)}'
             if [ -f "$state/saver-dms.json" ]; then
               dms_edit --slurpfile prev "$state/saver-dms.json" \
                 '. as $s | ($prev[0] | to_entries) as $p | reduce $p[] as $e ($s; if $e.value == null then del(.[$e.key]) else .[$e.key] = $e.value end)'
