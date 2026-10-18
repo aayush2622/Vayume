@@ -10,6 +10,8 @@ import "vayori"
 FocusScope {
     id: root
 
+    focus: true
+
     property var sessionLock: null
     property string passwordBuffer: ""
     property bool demoMode: false
@@ -38,8 +40,35 @@ FocusScope {
     }
 
     function focusPasswordField() {
-        if (!demoMode)
+        if (!demoMode) {
+            root.forceActiveFocus();
             scene.focusPassword();
+        }
+    }
+
+    onVisibleChanged: if (visible) focusRetry.restart()
+
+    Connections {
+        target: root.Window.window
+        ignoreUnknownSignals: true
+        function onActiveChanged() {
+            if (root.Window.window && root.Window.window.active)
+                root.focusPasswordField();
+        }
+    }
+
+    Timer {
+        id: focusRetry
+        property int left: 8
+        interval: 150
+        repeat: true
+        running: true
+        onRunningChanged: if (running) left = 8
+        onTriggered: {
+            root.focusPasswordField();
+            if (--left <= 0)
+                stop();
+        }
     }
 
     function sendLockerReadyOnce() {

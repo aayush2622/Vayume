@@ -829,6 +829,20 @@ the scene focuses the field when it appears and whenever the field is enabled
 again after a failed attempt, and a key typed while something else has focus
 is moved into the field.
 
+**Focus that arrives late.** With a real session lock the surface can get
+keyboard focus a moment after it is shown (or only after a pointer event), and
+Qt only gives an item `activeFocus` once its window is active, so a one-shot
+`forceActiveFocus()` at creation lost the race and typing went nowhere.
+`VayoriLockContent` now has `focus: true` itself, refocuses the field whenever
+its window becomes active, and retries every 150 ms for about a second after
+it is shown.
+
+**The password field.** It is a pill with a 2px outline that turns to the
+accent when focused (red on a failed attempt), the floating "Password" label,
+an eye button that reveals the text (it hides again whenever the field is
+cleared), a Caps Lock glyph inside the field next to the eye, and a round
+submit button of the same height.
+
 ## Notes from the code
 
 Explanations that used to be comments in the source files.

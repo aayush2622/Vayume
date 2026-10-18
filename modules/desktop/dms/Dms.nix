@@ -229,6 +229,9 @@
                 RestartSec = 2;
                 CPUWeight = if osConfig.vayume.power.ultraSaver then 20 else 100;
                 IOWeight = if osConfig.vayume.power.ultraSaver then 20 else 100;
+                Environment = lib.optionals osConfig.vayume.power.ultraSaver (
+                  lib.mapAttrsToList (k: v: "${k}=${v}") (import ../_effects.nix).dmsSaverEnv
+                );
               };
             };
 

@@ -58,8 +58,11 @@ FocusScope {
     signal powerRequested(string id)
     signal nameClicked
 
+    property bool reveal: false
+
     function clearPassword() {
         passwordInput.text = "";
+        root.reveal = false;
     }
 
     function focusPassword() {
@@ -363,7 +366,7 @@ FocusScope {
                 Item {
                     id: fieldRow
                     width: parent.width
-                    height: 56 * root.s
+                    height: 60 * root.s
 
                     readonly property bool raised: passwordInput.activeFocus || passwordInput.text.length > 0
                     readonly property bool showError: root.messageIsError && root.message.length > 0
@@ -374,21 +377,23 @@ FocusScope {
                         anchors.right: go.left
                         anchors.rightMargin: 10 * root.s
                         height: parent.height
-                        radius: 16 * root.s
-                        color: root.scheme.surfaceContainerHighest
+                        radius: height / 2
+                        color: root.alpha(root.scheme.surfaceContainerHighest, 0.85)
                         clip: true
 
                         Rectangle {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            height: passwordInput.activeFocus || fieldRow.showError ? 2 : 1
-                            color: fieldRow.showError ? root.scheme.error : (passwordInput.activeFocus ? root.scheme.primary : root.scheme.outline)
+                            anchors.fill: parent
+                            radius: parent.radius
+                            color: "transparent"
+                            border.width: passwordInput.activeFocus || fieldRow.showError ? 2 : 1
+                            border.color: fieldRow.showError ? root.scheme.error : (passwordInput.activeFocus ? root.scheme.primary : root.alpha(root.scheme.outline, 0.6))
+
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
                         }
 
                         Text {
                             id: lockGlyph
-                            x: 16 * root.s
+                            x: 22 * root.s
                             anchors.verticalCenter: parent.verticalCenter
                             text: fieldRow.showError ? "error" : "lock"
                             font.family: root.iconFont
@@ -412,16 +417,16 @@ FocusScope {
                         TextInput {
                             id: passwordInput
                             anchors.left: label.left
-                            anchors.right: parent.right
-                            anchors.rightMargin: 16 * root.s
-                            y: 22 * root.s
+                            anchors.right: capsGlyph.visible ? capsGlyph.left : eye.left
+                            anchors.rightMargin: 8 * root.s
+                            y: 25 * root.s
                             height: 28 * root.s
                             verticalAlignment: TextInput.AlignVCenter
-                            echoMode: TextInput.Password
+                            echoMode: root.reveal ? TextInput.Normal : TextInput.Password
                             passwordCharacter: "•"
                             font.family: root.fontFamily
                             font.pixelSize: 18 * root.s
-                            font.letterSpacing: 3 * root.s
+                            font.letterSpacing: root.reveal ? 0 : 3 * root.s
                             color: root.scheme.onSurface
                             selectionColor: root.scheme.primary
                             clip: true
@@ -431,6 +436,39 @@ FocusScope {
                             onEnabledChanged: if (enabled) forceActiveFocus()
                             onAccepted: root.submit()
                             Keys.onEscapePressed: text = ""
+                        }
+
+                        Text {
+                            id: capsGlyph
+                            visible: root.capsLock
+                            anchors.right: eye.left
+                            anchors.rightMargin: 6 * root.s
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "keyboard_capslock"
+                            font.family: root.iconFont
+                            font.pixelSize: 22 * root.s
+                            color: root.scheme.tertiary
+                        }
+
+                        Text {
+                            id: eye
+                            anchors.right: parent.right
+                            anchors.rightMargin: 20 * root.s
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.reveal ? "visibility_off" : "visibility"
+                            font.family: root.iconFont
+                            font.pixelSize: 22 * root.s
+                            color: root.reveal ? root.scheme.primary : root.scheme.onSurfaceVariant
+
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -8 * root.s
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.reveal = !root.reveal;
+                                    passwordInput.forceActiveFocus();
+                                }
+                            }
                         }
 
                         Rectangle {
@@ -466,12 +504,12 @@ FocusScope {
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         s: root.s
-                        size: 56
+                        size: 60
                         scheme: root.scheme
                         iconFont: root.iconFont
                         icon: "arrow_forward"
                         variant: passwordInput.text.length > 0 && !root.busy ? "filled" : "tonal"
-                        corner: 16
+                        corner: 30
                         onClicked: root.submit()
                     }
                 }
@@ -480,7 +518,7 @@ FocusScope {
                     visible: root.message.length > 0 || root.capsLock
                     width: parent.width
                     spacing: 6 * root.s
-                    leftPadding: 16 * root.s
+                    leftPadding: 22 * root.s
 
                     Text {
                         text: root.message.length > 0 ? root.message : "Caps Lock is on"

@@ -12,6 +12,7 @@
       dms = config.vayume.desktop.shell == "dms";
 
       dmsSaver = effects.dmsSaver;
+      dmsEnv = lib.mapAttrsToList (k: v: "${k}=${v}") effects.dmsSaverEnv;
       dmsKeys = builtins.attrNames dmsSaver ++ [ "desktopWidgetInstances" ];
 
       hyprland = enabled: {
@@ -143,6 +144,19 @@
             hyprctl eval "hl.config($1)" >/dev/null
           }
 
+          dms_env() {
+            local unit_active=0
+            systemctl --user is-active --quiet dms.service && unit_active=1
+            if [ "$1" = on ]; then
+              systemctl --user set-environment ${lib.concatStringsSep " " dmsEnv}
+            else
+              systemctl --user unset-environment ${lib.concatStringsSep " " (builtins.attrNames effects.dmsSaverEnv)}
+            fi
+            if [ "$dms_shell" = true ] && [ "$unit_active" = 1 ]; then
+              systemctl --user restart dms.service
+            fi
+          }
+
           saver_on() {
             mkdir -p "$state"
             touch "$state/saver-active"
@@ -159,6 +173,7 @@
             for unit in $shell_units; do
               systemctl --user set-property --runtime "$unit.service" CPUWeight=20 IOWeight=20 2>/dev/null || true
             done
+            dms_env on
           }
 
           saver_off() {
@@ -181,6 +196,7 @@
             for unit in $shell_units; do
               systemctl --user set-property --runtime "$unit.service" CPUWeight=100 IOWeight=100 2>/dev/null || true
             done
+            dms_env off
           }
 
           onoff() {

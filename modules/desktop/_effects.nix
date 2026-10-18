@@ -21,4 +21,11 @@
     showSeconds = false;
     lockScreenVideoEnabled = false;
   };
+
+  dmsSaverEnv = {
+    DMS_DISABLE_MATUGEN = "1";
+    DMS_DISABLE_CAVA = "1";
+    DMS_DISABLE_LAYER = "1";
+    DMS_DISABLE_HOT_RELOAD = "1";
+  };
 }
