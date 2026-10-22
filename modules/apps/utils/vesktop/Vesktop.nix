@@ -24,7 +24,25 @@
         hash = "sha256-LWPhUqtAapGkihSD2sGCjbV63EtjWi8E2h9kgWB45AA=";
       };
 
-      vencordWithPlugins = pkgs.vencord.overrideAttrs (old: {
+      vencordWithPlugins = pkgs.vencord.overrideAttrs (old: rec {
+        version = "1.15.12";
+        src = pkgs.fetchFromGitHub {
+          owner = "Vendicated";
+          repo = "Vencord";
+          tag = "v${version}";
+          hash = "sha256-7UOyztToPBCHQo0lkt4Mr/OTORNRoXnRsWdTSY616Kk=";
+        };
+        pnpmDeps = pkgs.fetchPnpmDeps {
+          inherit (old) pname;
+          inherit
+            version
+            src
+            ;
+          inherit (old) patches postPatch;
+          pnpm = pkgs.pnpm_11;
+          fetcherVersion = 4;
+          hash = "sha256-LiAcWwGmZlpO+rr0tcMNpViBiBRhSHj+wvyHFIe32lw=";
+        };
         postPatch = (old.postPatch or "") + ''
           mkdir -p src/userplugins/fullFileViewer
           cp -r ${fullFileViewer}/plugin/. src/userplugins/fullFileViewer/
@@ -296,7 +314,7 @@
           enabled = true;
         };
         ShikiCodeblocks = {
-          enabled = true;
+          enabled = false;
           theme = "https://cdn.jsdelivr.net/gh/shikijs/textmate-grammars-themes@bc5436518111d87ea58eb56d97b3f9bec30e6b83/packages/tm-themes/themes/one-dark-pro.json";
           tryHljs = "SECONDARY";
           useDevIcon = "GREYSCALE";
