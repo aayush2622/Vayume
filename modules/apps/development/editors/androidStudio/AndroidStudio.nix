@@ -155,8 +155,6 @@ in
       androidStudioUnwrapped = pkgs.androidStudioPackages.stable.unwrapped;
       androidStudioJcef = androidStudioUnwrapped.overrideAttrs (old: {
         postFixup = (old.postFixup or "") + ''
-          rm -rf $out/jbr
-          ln -s ${pkgs.jetbrains.jdk}/lib/openjdk $out/jbr
           wrapProgram $out/bin/studio --prefix LD_LIBRARY_PATH : ${
             lib.makeLibraryPath [
               pkgs.atk

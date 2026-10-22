@@ -82,7 +82,17 @@ machine, pinned as real Nix packages instead of fetched live every time:
   exploded (non-jar) plugin is `classes/` + `lib/*.jar`, not the bare
   plugin directory (confirmed via `idea.log`: the plugin loaded fine,
   but logged "Cannot find theme resource" until moved here).
-- **JCEF (the embedded Chromium used for the Gemini/Assistant panel,
+- **JCEF is the "Web Browser (JCEF)" plugin on Studio 2026.2 and later,
+  and the old runtime swap below no longer applies there.** The JBR swap
+  described next was needed while Studio had to bring its own JCEF. With
+  the plugin installed it is harmful: the swapped-in JBR carries its own
+  `org.cef` classes and natives, the plugin carries a different set, and
+  the browser's native context never initialised (JCEF log: "can't invoke
+  native method ... before native context initialized", the panel stuck on
+  "taking longer than usual"). The stock Google JBR is used again and the
+  plugin supplies both halves. The rest of this entry is kept for older
+  Studio releases.
+- **(Before 2026.2) JCEF (the embedded Chromium used for the Gemini/Assistant panel,
   App Quality Insights, and any in-IDE browser preview) is swapped in.**
   Google's own Android Studio download ships a JBR with no JCEF at all -
   not the native Chromium bits, not even the `jcef-plugin` directory
