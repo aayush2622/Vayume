@@ -58,6 +58,12 @@ let
 
   otherManualPluginsSpec = [
     {
+      dirName = "jcef-plugin";
+      id = "com.intellij.modules.jcef";
+      version = "262.9437.22-linux-x86_64";
+      hash = "sha256-PAB9Hq2fIGC2XyW4LeWKomgbAPrqu/n7cUzk88wSKwI=";
+    }
+    {
       dirName = "github-copilot-intellij";
       id = "com.github.copilot";
       version = "1.18.0-251";

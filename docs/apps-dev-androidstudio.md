@@ -98,6 +98,15 @@ machine, pinned as real Nix packages instead of fetched live every time:
   subtlety: `jetbrains.jdk`'s own output is *not* a JBR root - it's one
   level above it, with `bin`/`include` symlinked down into `lib/openjdk`
   so plain `java` still resolves `java.home` correctly through them.
+- **From 2026.2 JCEF is also a separate plugin.** The IDE no longer
+  contains the Java side either; it moved into JetBrains' "Web Browser
+  (JCEF)" plugin (`com.intellij.modules.jcef`), which Android Studio does
+  not bundle, so JCEF panels such as the Claude Code GUI showed "This IDE
+  does not include JCEF" even with the swapped runtime. The plugin is one
+  of the manual plugins in `AndroidStudio.nix`, as the
+  `262.9437.22-linux-x86_64` build (it is built per platform and per IDE
+  build; the version must match the Studio build, `262.9437` for
+  2026.2.1.8, and is bumped together with Studio).
   Android Studio's native launcher doesn't do that same resolution - it
   opens `$IDE_ROOT/jbr/lib/server/libjvm.so` directly - so linking `jbr`
   straight to `jetbrains.jdk` leaves it looking one level too shallow
