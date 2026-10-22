@@ -84,6 +84,9 @@ grew enough config to earn its own module.
   up both colored *and* italic, matching the original intent plus the
   added color.
 
+
+**`settings.json` is writable.** Home Manager links it into the Nix store, which makes VS Code's own settings UI fail to save. An activation step (`vscodeWritableSettings`, after `linkGeneration`) replaces that link with a regular copy of the generated file, so VS Code can change it. The next rebuild moves the edited file aside (`settings.json.backup`) and links the generated one again, so edits made in VS Code last until then; put anything that should stay in `Vscode.nix`. `keybindings.json` is still a link.
+
 ---
 
 [← AndroidStudio.nix](apps-dev-androidstudio.md) · [Index](CONFIGURATION.md) · [Zed.nix →](apps-dev-zed.md)

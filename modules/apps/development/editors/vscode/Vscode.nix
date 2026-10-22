@@ -425,6 +425,14 @@ in
         ''
       );
 
+      home.activation.vscodeWritableSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        settings="$HOME/.config/Code/User/settings.json"
+        if [ -L "$settings" ]; then
+          run cp --remove-destination "$(readlink -f "$settings")" "$settings"
+          run chmod u+w "$settings"
+        fi
+      '';
+
       home.activation.vscodeWakatimeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] (
         lib.optionalString hasWakatime ''
           run ${pkgs.crudini}/bin/crudini --set "$HOME/.wakatime.cfg" settings api_key ${lib.escapeShellArg vayumeSecrets.WAKATIME_API_KEY}
