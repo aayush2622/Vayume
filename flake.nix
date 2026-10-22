@@ -71,14 +71,11 @@
       url = "github:JPyke3/hytale-launcher-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-wpe-webkit-bin = {
-      url = "github:aayush2622/nix-wpe-webkit-bin/915358b46fbf84a80ea97d3b964293f94cc4a1bc";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+
     dartotsu = {
-      url = "github:aayush2622/Dartotsu/rewrite-re";
+      url = "github:aayush2622/Dartotsu";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nix-wpe-webkit-bin.follows = "nix-wpe-webkit-bin";
+
     };
     sonora = {
       url = "github:sonorahq/sonora";
