@@ -111,7 +111,13 @@ machine, pinned as real Nix packages instead of fetched live every time:
   guide says to turn off the out-of-process browser, which the activation
   step does by appending `-Dide.browser.jcef.out-of-process.enabled=false`
   and `-Djcef.remote.enabled=false` to `studio64.vmoptions` (only when the
-  option name is not already in the file).
+  option name is not already in the file). The plugin's own
+  `libcef.so` is a prebuilt binary that needs `atk`, `at-spi2-core`,
+  `cairo`, `cups`, `pango` and `libgbm`, which Nixpkgs' Studio wrapper does
+  not put on `LD_LIBRARY_PATH` (it only lists glib, nss, nspr, the X
+  libraries and similar), so without them the embedded browser starts but
+  the page never renders; `androidStudioJcef` wraps `bin/studio` with
+  those six as well.
   Android Studio's native launcher doesn't do that same resolution - it
   opens `$IDE_ROOT/jbr/lib/server/libjvm.so` directly - so linking `jbr`
   straight to `jetbrains.jdk` leaves it looking one level too shallow

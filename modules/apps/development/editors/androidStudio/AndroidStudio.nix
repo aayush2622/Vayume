@@ -157,6 +157,16 @@ in
         postFixup = (old.postFixup or "") + ''
           rm -rf $out/jbr
           ln -s ${pkgs.jetbrains.jdk}/lib/openjdk $out/jbr
+          wrapProgram $out/bin/studio --prefix LD_LIBRARY_PATH : ${
+            lib.makeLibraryPath [
+              pkgs.atk
+              pkgs.at-spi2-core
+              pkgs.cairo
+              pkgs.cups
+              pkgs.pango
+              pkgs.libgbm
+            ]
+          }
         '';
       });
       androidStudioWithJcef = pkgs.androidStudioPackages.stable.overrideAttrs (old: {
