@@ -843,6 +843,8 @@ an eye button that reveals the text (it hides again whenever the field is
 cleared), a Caps Lock glyph inside the field next to the eye, and a round
 submit button of the same height.
 
+**`enableCalendarEvents = false`.** DMS's Home Manager module adds `pkgs.khal` when it is on, for calendar events read from a khal/vdirsyncer setup. Nothing here configures one, and after the 2026-10-22 flake update `khal` failed to build (its Sphinx step produced no `man` output), which stopped the whole rebuild. Turn it back on only together with a khal configuration.
+
 ## Notes from the code
 
 Explanations that used to be comments in the source files.

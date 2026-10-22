@@ -246,6 +246,7 @@
               enableSystemMonitoring = true;
               enableDynamicTheming = true;
               enableAudioWavelength = true;
+              enableCalendarEvents = false;
 
               plugins = {
                 wallpaperCarousel = {
