@@ -106,7 +106,12 @@ machine, pinned as real Nix packages instead of fetched live every time:
   of the manual plugins in `AndroidStudio.nix`, as the
   `262.9437.22-linux-x86_64` build (it is built per platform and per IDE
   build; the version must match the Studio build, `262.9437` for
-  2026.2.1.8, and is bumped together with Studio).
+  2026.2.1.8, and is bumped together with Studio). On Wayland the Claude
+  Code GUI then stalls on "The screen is taking longer than usual"; its own
+  guide says to turn off the out-of-process browser, which the activation
+  step does by appending `-Dide.browser.jcef.out-of-process.enabled=false`
+  and `-Djcef.remote.enabled=false` to `studio64.vmoptions` (only when the
+  option name is not already in the file).
   Android Studio's native launcher doesn't do that same resolution - it
   opens `$IDE_ROOT/jbr/lib/server/libjvm.so` directly - so linking `jbr`
   straight to `jetbrains.jdk` leaves it looking one level too shallow

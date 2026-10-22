@@ -301,9 +301,11 @@ in
 
       home.activation.androidStudioVmoptions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         vmopt="$HOME/.config/Google/${configDataDir}/studio64.vmoptions"
-        if ! grep -qF 'ide.browser.jcef.clipboard.enabled' "$vmopt" 2>/dev/null; then
-          run printf -- '-Dide.browser.jcef.clipboard.enabled=true\n' >> "$vmopt"
-        fi
+        for opt in ide.browser.jcef.clipboard.enabled=true ide.browser.jcef.out-of-process.enabled=false jcef.remote.enabled=false; do
+          if ! grep -qF "''${opt%%=*}" "$vmopt" 2>/dev/null; then
+            run printf -- '-D%s\n' "$opt" >> "$vmopt"
+          fi
+        done
         if ! grep -qF 'idea.filewatcher.disabled=true' "$vmopt" 2>/dev/null; then
           run printf -- '-Didea.filewatcher.disabled=true\n' >> "$vmopt"
         fi
