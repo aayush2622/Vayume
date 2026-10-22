@@ -249,6 +249,9 @@ Explanations that used to be comments in the source files.
 - Above `local chosen=""`: installs.ini's per-install Default= wins over profiles.ini's Default=1
 - Above `local realdefault="$PROFILE_DIR"`: $PROFILE_DIR may be the vayume-session symlink; act on its real target
 
+
+**The Zen tarball hash is pinned here.** The `zen-browser` flake input is the latest release (1.23.3b), but the flake's recorded hash for `zen.linux-x86_64.tar.xz` stopped matching on 2026-10-16 because the file at the release URL was replaced after the flake pinned it. `ZenBrowser.nix` therefore fetches the same URL with the hash of the file as it is now (`sha256-uyBF0+...`). When the flake input catches up the override can go; if Zen replaces the file again the build fails with a hash mismatch and the new hash goes into that one line.
+
 ---
 
 [← Gaming.nix](apps-gaming.md) · [Index](CONFIGURATION.md) · [Spicetify.nix →](apps-utils-spicetify.md)

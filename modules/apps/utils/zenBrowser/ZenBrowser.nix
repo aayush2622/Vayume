@@ -229,6 +229,10 @@ in
       zenUnwrapped =
         inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.zen-browser-unwrapped.overrideAttrs
           (old: {
+            src = pkgs.fetchurl {
+              url = builtins.head old.src.urls;
+              hash = "sha256-uyBF0+IWVNQP6EElAJLurf0sH8gx7vtQkiJ3PIvcoUk=";
+            };
             passthru = (old.passthru or { }) // {
               withFFmpeg = true;
             };
