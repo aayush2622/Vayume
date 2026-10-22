@@ -116,12 +116,14 @@ machine, pinned as real Nix packages instead of fetched live every time:
   of the manual plugins in `AndroidStudio.nix`, as the
   `262.9437.22-linux-x86_64` build (it is built per platform and per IDE
   build; the version must match the Studio build, `262.9437` for
-  2026.2.1.8, and is bumped together with Studio). On Wayland the Claude
-  Code GUI then stalls on "The screen is taking longer than usual"; its own
-  guide says to turn off the out-of-process browser, which the activation
-  step does by appending `-Dide.browser.jcef.out-of-process.enabled=false`
-  and `-Djcef.remote.enabled=false` to `studio64.vmoptions` (only when the
-  option name is not already in the file). The plugin's own
+  2026.2.1.8, and is bumped together with Studio). The Claude Code
+  GUI's own stall guide suggests `ide.browser.jcef.out-of-process.enabled=false`
+  and `jcef.remote.enabled=false` on Wayland; they were tried and removed,
+  because with them JCEF's native context never initialised (the JCEF log
+  showed only "CefApp: set state NEW" and then "can't invoke native method
+  ... before native context initialized"), while the plugin's `cef_server`
+  binary starts fine on its own, so the default out-of-process mode is the
+  one used. The plugin's own
   `libcef.so` is a prebuilt binary that needs `atk`, `at-spi2-core`,
   `cairo`, `cups`, `pango` and `libgbm`, which Nixpkgs' Studio wrapper does
   not put on `LD_LIBRARY_PATH` (it only lists glib, nss, nspr, the X

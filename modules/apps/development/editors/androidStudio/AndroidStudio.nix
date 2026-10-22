@@ -309,7 +309,7 @@ in
 
       home.activation.androidStudioVmoptions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         vmopt="$HOME/.config/Google/${configDataDir}/studio64.vmoptions"
-        for opt in ide.browser.jcef.clipboard.enabled=true ide.browser.jcef.out-of-process.enabled=false jcef.remote.enabled=false ide.browser.jcef.sandbox.enable=false; do
+        for opt in ide.browser.jcef.clipboard.enabled=true ide.browser.jcef.sandbox.enable=false; do
           if ! grep -qF "''${opt%%=*}" "$vmopt" 2>/dev/null; then
             run printf -- '-D%s\n' "$opt" >> "$vmopt"
           fi
