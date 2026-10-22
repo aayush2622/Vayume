@@ -79,7 +79,16 @@ in
               "flakes"
             ];
             nixpkgs.config.allowUnfree = true;
-            nixpkgs.overlays = [ inputs.nix-vscode-extensions.overlays.default ];
+            nixpkgs.overlays = [
+              inputs.nix-vscode-extensions.overlays.default
+              (_: prev: {
+                pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+                  (_: pp: {
+                    pyopenjtalk-plus = pp.pyopenjtalk-plus.overridePythonAttrs { doCheck = false; };
+                  })
+                ];
+              })
+            ];
 
             nix.optimise = {
               automatic = true;
