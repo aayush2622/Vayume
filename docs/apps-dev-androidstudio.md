@@ -117,7 +117,9 @@ machine, pinned as real Nix packages instead of fetched live every time:
   not put on `LD_LIBRARY_PATH` (it only lists glib, nss, nspr, the X
   libraries and similar), so without them the embedded browser starts but
   the page never renders; `androidStudioJcef` wraps `bin/studio` with
-  those six as well.
+  those six as well. Studio itself runs inside a bubblewrap FHS
+  environment, where Chromium's setuid sandbox (`chrome-sandbox`) cannot
+  work, so `-Dide.browser.jcef.sandbox.enable=false` is added too.
   Android Studio's native launcher doesn't do that same resolution - it
   opens `$IDE_ROOT/jbr/lib/server/libjvm.so` directly - so linking `jbr`
   straight to `jetbrains.jdk` leaves it looking one level too shallow
