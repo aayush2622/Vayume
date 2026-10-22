@@ -223,6 +223,22 @@
         "type": "github"
       }
     },
+    "full-file-viewer": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792609508,
+        "narHash": "sha256-LWPhUqtAapGkihSD2sGCjbV63EtjWi8E2h9kgWB45AA=",
+        "owner": "grayankit",
+        "repo": "vesktop-file-viewer",
+        "rev": "fe9c671b4d3d137421d803cb210ee6a725f4104f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "grayankit",
+        "repo": "vesktop-file-viewer",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -460,6 +476,7 @@
         "dms": "dms",
         "dms-plugin-registry": "dms-plugin-registry",
         "flake-parts": "flake-parts",
+        "full-file-viewer": "full-file-viewer",
         "home-manager": "home-manager",
         "hytale-launcher": "hytale-launcher",
         "import-tree": "import-tree",

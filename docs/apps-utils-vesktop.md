@@ -16,6 +16,17 @@ opaque `.json` files, so it reads like everything else in this repo.
   ignore lists, that kind of thing). Unlike JetBrains plugins, nothing
   here needed fetching - every Vencord plugin ships built into the app,
   so "installing" one is just flipping a boolean.
+- **Full File Viewer is the exception.** It is not a stock Vencord
+  plugin, so a boolean alone cannot install it. Nixpkgs' Vencord is
+  rebuilt with
+  [vesktop-file-viewer](https://github.com/grayankit/vesktop-file-viewer)
+  copied into `src/userplugins/fullFileViewer`, and Vesktop is pointed
+  at that package with `withSystemVencord`. `autoUpdate` is off because
+  that path lives in the Nix store. If `~/.config/vesktop/state.json`
+  still has `vencordDir` from a manual install, Vesktop ignores the
+  package until that key is removed. A Discord update can break the
+  plugin's patches; the fix is `nix flake update full-file-viewer`, not
+  a settings toggle.
 - **Vesktop's own settings** (tray behavior, update branch, spellcheck
   languages, splash colors) live in a separate, smaller file at a
   different path, captured the same way.

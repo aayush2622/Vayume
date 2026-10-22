@@ -84,6 +84,10 @@
       url = "github:sonorahq/sonora";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    full-file-viewer = {
+      url = "github:grayankit/vesktop-file-viewer";
+      flake = false;
+    };
 
     zsh-autosuggestions = {
       url = "github:zsh-users/zsh-autosuggestions";

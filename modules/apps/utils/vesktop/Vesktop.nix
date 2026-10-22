@@ -10,6 +10,7 @@
   flake.homeModules.apps.Vesktop =
     {
       self,
+      inputs,
       pkgs,
       lib,
       config,
@@ -17,6 +18,14 @@
       ...
     }:
     let
+      vencord = pkgs.vencord.overrideAttrs (old: {
+        preBuild = ''
+          ${old.preBuild or ""}
+          mkdir -p src/userplugins/fullFileViewer
+          cp -r ${inputs.full-file-viewer}/plugin/. src/userplugins/fullFileViewer/
+        '';
+      });
+
       discordTemplate =
         lib.replaceStrings [ "@@FONT@@" ] [ vayumeTheme.font ]
           self.matugenTemplates.discord;
@@ -35,8 +44,8 @@
       };
 
       vencordSettings = {
-        autoUpdate = true;
-        autoUpdateNotification = true;
+        autoUpdate = false;
+        autoUpdateNotification = false;
         useQuickCss = true;
         themeLinks = [ ];
         eagerPatches = false;
@@ -187,6 +196,11 @@
         };
         ForceOwnerCrown = {
           enabled = true;
+        };
+        FullFileViewer = {
+          enabled = true;
+          maxPreviewMB = 25;
+          showLineNumbers = true;
         };
         FriendsSince = {
           enabled = true;
@@ -352,6 +366,10 @@
     {
       programs.vesktop = {
         enable = true;
+        package = pkgs.vesktop.override {
+          withSystemVencord = true;
+          inherit vencord;
+        };
         settings = vesktopSettings;
         vencord.settings = vencordSettings // {
           plugins = vencordPlugins;
