@@ -17,6 +17,20 @@
       ...
     }:
     let
+      fullFileViewer = pkgs.fetchFromGitHub {
+        owner = "grayankit";
+        repo = "vesktop-file-viewer";
+        rev = "fe9c671b4d3d137421d803cb210ee6a725f4104f";
+        hash = "sha256-LWPhUqtAapGkihSD2sGCjbV63EtjWi8E2h9kgWB45AA=";
+      };
+
+      vencordWithPlugins = pkgs.vencord.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          mkdir -p src/userplugins/fullFileViewer
+          cp -r ${fullFileViewer}/plugin/. src/userplugins/fullFileViewer/
+        '';
+      });
+
       discordTemplate =
         lib.replaceStrings [ "@@FONT@@" ] [ vayumeTheme.font ]
           self.matugenTemplates.discord;
@@ -158,6 +172,11 @@
         Experiments = {
           enabled = true;
           toolbarDevMenu = false;
+        };
+        FullFileViewer = {
+          enabled = true;
+          maxPreviewMB = 25;
+          showLineNumbers = true;
         };
         FakeNitro = {
           enabled = true;
@@ -352,6 +371,8 @@
     {
       programs.vesktop = {
         enable = true;
+        package = pkgs.vesktop.override { vencord = vencordWithPlugins; };
+        vencord.useSystem = true;
         settings = vesktopSettings;
         vencord.settings = vencordSettings // {
           plugins = vencordPlugins;

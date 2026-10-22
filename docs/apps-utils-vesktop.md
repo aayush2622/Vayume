@@ -47,6 +47,9 @@ opaque `.json` files, so it reads like everything else in this repo.
   `quickCss.css` so it layers on top of DMS's own theme rather than
   needing DMS to know about this repo's font choice at all.
 
+
+**Full File Viewer.** [grayankit/vesktop-file-viewer](https://github.com/grayankit/vesktop-file-viewer) is a Vencord plugin that loads a whole text attachment instead of Discord's 50 KB preview (no more "(2 MB left)"), with a searchable, windowed viewer. Vesktop cannot load a loose plugin, and the repository's `install.sh` builds Vencord by hand and points `state.json` at it, so here the plugin is built in instead: `Vesktop.nix` fetches the repository at a pinned commit, copies `plugin/` into `src/userplugins/fullFileViewer` of a `pkgs.vencord.overrideAttrs`, and passes that Vencord to `pkgs.vesktop` with `vencord.useSystem = true`. The dependency download (`pnpmDeps`) is a fixed-output derivation with the same hash as stock Vencord, so it is not refetched. The plugin is enabled in `vencordPlugins` (`FullFileViewer`, size limit 25 MB, line numbers on). Because Vencord now comes from Nixpkgs, Vencord's own updater is off; update the plugin by changing `rev` and `hash`. Its patches match one Discord build (its source names 643186), so a Discord update can leave the plugin inert until the plugin is updated.
+
 ---
 
 [← Terminal.nix](apps-utils-terminal.md) · [Index](CONFIGURATION.md) · [Distrobox.nix →](apps-utils-distrobox.md)
