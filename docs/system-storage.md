@@ -32,7 +32,13 @@ So there is no system setting that frees 20 GB; most of it is your data and your
 
 ### `vayume disk`
 
-Read-only, about half a second. Shows the filesystem, the regenerable caches with sizes, the biggest other caches (managed by their apps and never touched), the size of the trash and the largest downloads, coredumps, journal size and how many system generations exist. `--full` also scans your project folders for build output and counts the Nix garbage `gc` would delete (slower). Each section is sorted largest first, and paths too long for the column are shortened in the middle so the sizes stay aligned. It is also a button on the Storage page in Vayume Settings, next to a bar showing how full the disk is.
+Read-only. It accounts for the whole disk, so a run takes about a minute (the Nix store alone is 40 seconds of `du`); nothing past the filesystem line prints until that scan is done, then the rest appears at once. `--quick` is the old half-second report without the first section, `--full` adds the project-folder scan and the Nix roots list, and `--top N` changes how many rows each list shows (15 by default; the rows left out are summed into one "N smaller ..." line, so every total is still complete). Sizes are space actually allocated per file (`du` blocks, so a sparse download counts what it really uses), before the filesystem's own compression.
+
+1. **Filesystem**: `df` used, size and free.
+2. **Where all the space goes**: the Nix store, your home and the rest of `/`, each with its total and its percent of the total counted. The store is split into what the current system and your profiles use, what old generations and other roots keep alive, and unreferenced garbage (package sizes, so slightly more than the store takes after hard-linking). Home lists its biggest entries, and any entry over 1 GB is opened one or two levels down (`~/.config` shows `vayume` and, below it, `cache` and `session`). System files lists `/var` and friends the same way. It ends with the total counted, what `df` says is used, and the difference: `du` cannot see btrfs compression or shared extents, so on a `compress=zstd` disk the counted total is larger than the used space, and the gap is what compression and sharing save.
+3. **Regenerable caches**, **Other caches**, **Your data** (trash, all of Downloads and its largest files) and **System** (coredumps, journal, generations), each with its own total.
+4. **All the sections above**: the four totals and their sum. These sections are subsets of the home and system lines in part 2, not extra space.
+5. With `--full`: project build artifacts with a total, and the GC roots that keep the most of the store alive (each root's closure, so they overlap and do not add up).
 
 ### `vayume clean`
 

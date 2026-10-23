@@ -31,6 +31,7 @@
           coreutils
           findutils
           gawk
+          gnugrep
           gnused
           nix
           systemd

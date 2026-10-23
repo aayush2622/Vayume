@@ -4,7 +4,7 @@ hr() { numfmt --to=iec --suffix=B "$1"; }
 
 size() {
   if [ -e "$1" ]; then
-    du -sxbD "$1" 2>/dev/null | cut -f1
+    { du -sxDB1 "$1" 2>/dev/null | cut -f1; } || true
   else
     echo 0
   fi
