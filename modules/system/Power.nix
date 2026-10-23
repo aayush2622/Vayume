@@ -4,13 +4,32 @@
     {
       config,
       lib,
+      pkgs,
       ...
     }:
     let
       cfg = config.vayume.power;
+      lidSleep = if cfg.lidClose == "hibernate" then "hibernate" else "suspend";
+      resuspend = pkgs.writeShellScript "vayume-lid-resuspend" ''
+        grep=${pkgs.gnugrep}/bin/grep
+        $grep -q closed /proc/acpi/button/lid/*/state || exit 0
+        for status in /sys/class/drm/*/status; do
+          case "$status" in
+            *eDP* | *LVDS* | *DSI*) continue ;;
+          esac
+          if $grep -q '^connected' "$status"; then exit 0; fi
+        done
+        exec ${pkgs.systemd}/bin/systemctl ${lidSleep}
+      '';
     in
     {
       options.vayume.power = {
+        usbWakeup = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = "Let USB devices, such as a mouse or an external keyboard, wake the laptop from sleep. Off by default, so a mouse that is clicked or knocked while the lid is closed cannot wake it inside a bag and drain the battery.";
+        };
+
         ultraSaver = lib.mkOption {
           type = lib.types.bool;
           default = false;
@@ -60,11 +79,24 @@
       };
 
       config = {
+        services.udev.extraRules = lib.mkIf (!cfg.usbWakeup) ''
+          ACTION=="add|change", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", TEST=="power/wakeup", ATTR{power/wakeup}="disabled"
+        '';
+
+        powerManagement.resumeCommands =
+          lib.mkIf
+            (builtins.elem cfg.lidClose [
+              "suspend"
+              "hibernate"
+            ])
+            "${pkgs.systemd}/bin/systemd-run --no-block --collect --unit=vayume-lid-resuspend --on-active=6 ${resuspend}";
+
         services.logind.settings.Login = {
           HandlePowerKey = cfg.powerButton;
           HandleLidSwitch = cfg.lidClose;
           HandleLidSwitchExternalPower = cfg.lidClose;
           HandleLidSwitchDocked = "ignore";
+          LidSwitchIgnoreInhibited = "yes";
         };
 
         vayume.settingsGroups."Ultra power saver" = {
@@ -106,6 +138,7 @@
             "power.idleSuspend" = e "Screen & sleep" "Sleep after idle" "bedtime" 3;
             "power.powerButton" = e "Power buttons" "Power button" "power_settings_new" 1;
             "power.lidClose" = e "Power buttons" "Lid close" "laptop" 2;
+            "power.usbWakeup" = e "Power buttons" "USB devices wake the laptop" "mouse" 3;
           };
       };
     };

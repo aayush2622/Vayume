@@ -30,6 +30,17 @@ Not covered, by design of what can be reached from outside: niri's compositor ef
 
 `desktop.pet.enable` starts and stops `vayume-pet.service` immediately (`vayume power pet on|off`). The unit exists only when the pet was enabled at the last rebuild, so switching it on for the first time reports "rebuild to apply" and the line is saved for the rebuild. While the ultra saver is on, the pet stays off.
 
+
+## Lid closed means asleep
+
+Three things keep a closed lid from being undone by a stray input, which is what drained the battery when a mouse click woke the laptop inside a bag:
+
+- **`vayume.power.usbWakeup`** (off by default): a udev rule sets `power/wakeup` to `disabled` on every USB device (`usb_device` nodes only, so internal I2C and PS/2 input, the lid and the power button still wake it). The 2.4G mouse receiver was `enabled` before; the ELAN device was already `disabled`. The rule is applied when a device is added or on a udev trigger, so after the first rebuild unplug and replug the receiver or reboot if it still reads `enabled` in `/sys/bus/usb/devices/*/power/wakeup`. Turn the option on to let a USB keyboard or mouse wake the machine again.
+- **Re-suspend after a wake with the lid closed**: `powerManagement.resumeCommands` schedules `vayume-lid-resuspend` six seconds after every resume (a transient `systemd-run` timer). It does nothing if the lid is open, or if an external display is connected (logind's own "docked" case, where a closed lid is meant to be ignored); otherwise it runs `systemctl suspend` (`hibernate` when `lidClose` is `hibernate`). It is only installed when `lidClose` is `suspend` or `hibernate`.
+- **`LidSwitchIgnoreInhibited = yes`** in logind, so no app's inhibitor can postpone the lid action.
+
+The first two are the actual fix; the third is a guard.
+
 ---
 
 [← Network.nix](system-network.md) · [Index](CONFIGURATION.md)
