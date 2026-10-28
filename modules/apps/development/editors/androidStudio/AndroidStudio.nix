@@ -167,9 +167,17 @@ in
           }
         '';
       });
+      staleLockCleanup = ''
+        if ! ${pkgs.procps}/bin/pgrep -u "$(id -u)" -f '[.]studio-wrapped' >/dev/null; then
+          rm -f "$HOME/.config/Google/${configDataDir}/.lock" "$HOME/.config/Google/${configDataDir}/.port" \
+            "$HOME/.cache/Google/${configDataDir}/.lock" "$HOME/.cache/Google/${configDataDir}/.port"
+        fi
+      '';
       androidStudioWithJcef = pkgs.androidStudioPackages.stable.overrideAttrs (old: {
         startScript =
-          builtins.replaceStrings [ "${androidStudioUnwrapped}" ] [ "${androidStudioJcef}" ]
+          builtins.replaceStrings
+            [ "${androidStudioUnwrapped}" "#!${pkgs.runtimeShell}\n" ]
+            [ "${androidStudioJcef}" "#!${pkgs.runtimeShell}\n${staleLockCleanup}" ]
             old.startScript;
         passthru = old.passthru // {
           unwrapped = androidStudioJcef;

@@ -165,6 +165,9 @@ machine, pinned as real Nix packages instead of fetched live every time:
   `lib.optionalString` - so there's no plugin sitting there pointed at a
   placeholder key that would just fail every heartbeat.
 
+
+**A stale lock after a reboot is cleared at launch.** Studio keeps `.lock` (a process ID) and `.port` (a socket) in its config and cache directories. After a reboot or a crash they are left behind, and Studio then refuses to start with "Process ... is still running and does not respond" (`DirectoryLock$CannotActivateException`, with "Address already in use" under it) because the old process ID now belongs to some other process, or to nothing. The launcher script (`startScript`) now runs `pgrep` for a `.studio-wrapped` process of your user first and, if there is none, deletes those four files before starting Studio. A running Studio is never touched.
+
 ---
 
 [← Network.nix](system-network.md) · [Index](CONFIGURATION.md) · [Vscode.nix →](apps-dev-vscode.md)
