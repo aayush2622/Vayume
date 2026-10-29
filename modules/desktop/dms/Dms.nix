@@ -138,10 +138,6 @@
             ];
             home.sessionVariables.QS_ICON_THEME = "MaterialOS";
 
-            home.activation.screenshotPlusCacheDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-              run mkdir -p "$HOME/.cache/screenshot-plus"
-            '';
-
             home.activation.materialOSIconFallback = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
               iconDir="$HOME/.local/share/icons/MaterialOS"
               stamp="$iconDir/.vayume-stamp"
@@ -172,8 +168,8 @@
             };
 
             xdg.configFile = {
-              "DankMaterialShell/settings.json".force = true;
-              "DankMaterialShell/plugin_settings.json".force = true;
+              "dms/settings.json".force = true;
+              "dms/plugin_settings.json".force = true;
             };
             home.activation.seedDmsSession =
               let
@@ -186,7 +182,7 @@
                 );
               in
               lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                sessionFile="$HOME/.local/state/DankMaterialShell/session.json"
+                sessionFile="$HOME/.local/state/dms/session.json"
                 if [ ! -e "$sessionFile" ]; then
                   run mkdir -p "$(dirname "$sessionFile")"
                   run cp "${defaultSession}" "$sessionFile"
@@ -214,7 +210,7 @@
                 );
               in
               lib.hm.dag.entryAfter [ "seedDmsSession" ] ''
-                sessionFile="$HOME/.local/state/DankMaterialShell/session.json"
+                sessionFile="$HOME/.local/state/dms/session.json"
                 if [ -e "$sessionFile" ]; then
                   tmp="$sessionFile.vayume-tmp"
                   run ${pkgs.jq}/bin/jq --slurpfile p ${positions} \
@@ -284,29 +280,7 @@
                   settings.runSourceMode = "latest_unstable";
                 };
 
-                screenshotPlus = {
-                  enable = true;
-                  src = lib.mkForce (
-                    pkgs.runCommand "dms-plugin-screenshot-plus-cache" { } ''
-                      cp -r ${
-                        (import "${inputs.dms-plugin-registry}/nix/default.nix" { inherit pkgs; }).screenshotPlus
-                      } $out
-                      chmod -R u+w $out
-                      cd $out
-                      substituteInPlace CaptureOverlay.qml \
-                        --replace-fail 'const path = "/tmp/screenshot-plus-" + Date.now()' \
-                          'const path = Quickshell.env("HOME") + "/.cache/screenshot-plus/screenshot-plus-" + Date.now()'
-                      substituteInPlace ScreenshotPlusDaemon.qml \
-                        --replace-fail 'const path = `/tmp/screenshot-plus-freeze-''${name}-''${stamp}.png`' \
-                          'const dir = Quickshell.env("HOME") + "/.cache/screenshot-plus"
-                              const path = `''${dir}/screenshot-plus-freeze-''${name}-''${stamp}.png`' \
-                        --replace-fail '"--dir", "/tmp", "--filename", path.slice(5)' \
-                          '"--dir", dir, "--filename", path.slice(dir.length + 1)' \
-                        --replace-fail 'Quickshell.execDetached(["sh", "-c", '"'"'sleep 10; rm -f -- "$1"'"'"', "sh", png])' \
-                          '// kept in ~/.cache so the clipboard entry stays valid'
-                    ''
-                  );
-                };
+                screenshotPlus.enable = true;
               };
 
               settings = {

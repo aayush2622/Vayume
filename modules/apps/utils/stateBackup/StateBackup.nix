@@ -28,7 +28,7 @@
         ".local/share/spotifast"
         ".config/heroic"
         ".config/lutris"
-        ".local/state/DankMaterialShell"
+        ".local/state/dms"
       ]
       ++ privatePaths;
 

@@ -54,7 +54,7 @@
     };
 
     dank-qml-common = {
-      url = "github:AvengeMedia/dank-qml-common/26396ce432d6c71c3f5367438f96f4a8d667e160";
+      url = "github:duxlabs-dev/dux-qml-common/ebf5e6c002da1bdaa4aaa2f319fea7b8507abc42";
       flake = false;
     };
 

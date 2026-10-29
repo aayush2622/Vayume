@@ -29,7 +29,7 @@ What's in it (`statePaths`):
 | `.config/spotify`, `.local/share/spotifast` | Spotify (Spicetify) login, Spotifast app state |
 | `.config/heroic`, `.config/lutris` | Epic/GOG logins and launcher config (not the games themselves) |
 | `.cc-switch` | Claude Code provider configs |
-| `.local/state/DankMaterialShell` | DMS session state - wallpaper and the like |
+| `.local/state/dms` | DMS session state - wallpaper and the like |
 
 Deliberately left out: anything that's a cache or re-downloadable
 (`~/.gradle`, Zed's downloaded toolchains, Lutris runners), and

@@ -79,7 +79,7 @@ let
           --replace-quiet "    LockScreenContent {" "    VayoriLockContent {"
         ${h.assertPatched "$out/share/quickshell/dms/Modules/Lock/LockSurface.qml" "VayoriLockContent {"}
         substituteInPlace $out/share/quickshell/dms/Modules/Lock/LockScreenDemo.qml \
-          --replace-quiet "sourceComponent: LockScreenContent {" "sourceComponent: VayoriLockContent {"
+          --replace-quiet "LockScreenContent {" "VayoriLockContent {"
         ${h.assertPatched "$out/share/quickshell/dms/Modules/Lock/LockScreenDemo.qml" "VayoriLockContent {"}
 
         substituteInPlace $out/bin/dms \

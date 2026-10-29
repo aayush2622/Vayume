@@ -10,7 +10,7 @@ The bar, the launcher, the lock screen, the notification center - one shell, Dan
 
 **The idle lock and the media inhibitor are no longer here.** They were DMS-only for no reason and moved to `Shell.nix`, where they serve every shell. DMS's own `lockBeforeSuspend` stays on; the idle service also locks before sleep, which is harmless when both fire.
 
-**screenshotPlus captures are kept in `~/.cache/screenshot-plus`.** Upstream writes each capture to `/tmp` and deletes it ten seconds after copying it to the clipboard, so a clipboard-history entry pasted later pointed at a file that no longer existed. The plugin source is copied and patched to use the cache directory and to skip the delete; the folder is created on activation and is not pruned.
+**screenshotPlus is used unpatched.** The earlier patch that kept captures in `~/.cache/screenshot-plus` was dropped: upstream now writes captures to `$XDG_RUNTIME_DIR/screenshot-plus`, and the plugin source no longer has the `/tmp` strings the patch replaced.
 
 **Applies to every user, not just one hardcoded account** - an earlier
 version had this hardcoded, and the bug it caused was exactly what you'd
@@ -41,7 +41,7 @@ older `default.settings = { ... }` shape looks plausible and just quietly
 does nothing if you type it by accident.
 
 **Wallpaper default**: seeded once into
-`~/.local/state/DankMaterialShell/session.json`, only if that file
+`~/.local/state/dms/session.json`, only if that file
 doesn't already exist - not force-declared the way `settings.json` is.
 That distinction actually matters: `session.json` is DMS's own live
 state, rewritten every time you pick a wallpaper or the carousel
@@ -71,7 +71,7 @@ needed a full restart to pick back up, immediately after this got
 turned on. Confirmed by re-reading the same source comment against the
 symptom rather than guessing: this repo doesn't ship anything
 zenbrowser-specific in the refresh path (DMS's `zenbrowser.toml`
-matugen target just rewrites `~/.config/DankMaterialShell/zen.css`
+matugen target just rewrites `~/.config/dms/zen.css`
 unconditionally on every run, symlinked to Zen's `userChrome.css` -
 that part was never broken), so the color-scheme round trip was the
 only thing in the chain new enough to be the cause. Left off; Nautilus
@@ -489,7 +489,7 @@ stable-wrapper rationale.
   passing `meta.mainProgram = "dms";` through explicitly on the patched
   derivation.
 - **That same rebuild also failed home-manager's own collision check**
-  on `~/.config/DankMaterialShell/plugins/cavaVisualizer` -
+  on `~/.config/dms/plugins/cavaVisualizer` -
   "existing file would be clobbered." Also self-inflicted: a manually
   created `ln -sfn` symlink from the same live-testing above, used to
   swap in test builds of the plugin without a full rebuild, pointed at
@@ -502,7 +502,7 @@ stable-wrapper rationale.
   QML hardcodes that exact (capital-N) path to read its config from,
   which happens to match this repo's own `xdg.configFile` declaration
   above (also capital-N, intentionally). DMS's plugin loader scans every
-  subdirectory under `~/.config/DankMaterialShell/plugins/` looking for
+  subdirectory under `~/.config/dms/plugins/` looking for
   a `plugin.json` in each; the *real* plugin installs lowercase at
   `plugins/nixMonitor/` (from the Nix attribute name), so the capital-N
   directory only ever has a bare `config.json` and no manifest - hence
@@ -777,7 +777,7 @@ not a DMS widget; see [desktop-pet.md](desktop-pet.md).
 
 **Positions are seeded into `session.json`.** DMS keeps instance positions in
 `SessionData.desktopWidgetInstancePositions` (the machine-specific
-`~/.local/state/DankMaterialShell/session.json`), not in `settings.json`. It
+`~/.local/state/dms/session.json`), not in `settings.json`. It
 imports the `positions` written in `settings.json` only while that session
 key is still empty, so a widget added later would appear centred at 200x200.
 `home.activation.seedDesktopWidgetPositions` merges the positions from

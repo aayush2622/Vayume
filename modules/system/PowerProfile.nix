@@ -48,7 +48,7 @@
         text = ''
           export PATH="$PATH:/run/current-system/sw/bin"
           state="''${XDG_STATE_HOME:-$HOME/.local/state}/vayume"
-          dms_settings="$HOME/.config/DankMaterialShell/settings.json"
+          dms_settings="$HOME/.config/dms/settings.json"
           dms_shell=${lib.boolToString dms}
           shell_units="dms noctalia caelestia"
 
