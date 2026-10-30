@@ -14,6 +14,8 @@ FocusScope {
 
     property var sessionLock: null
     property string passwordBuffer: ""
+    property bool inputRevealed: false
+    property bool greeterPreview: false
     property bool demoMode: false
     property var pam: null
     property string screenName: ""
@@ -21,6 +23,7 @@ FocusScope {
     property bool lockerReadySent: false
     property bool lockerReadyArmed: false
 
+    signal inputRevealRequested(bool revealed)
     signal unlockRequested
     signal passwordEdited(string text)
 
