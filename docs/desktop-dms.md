@@ -10,7 +10,7 @@ The bar, the launcher, the lock screen, the notification center - one shell, Dan
 
 **The idle lock and the media inhibitor are no longer here.** They were DMS-only for no reason and moved to `Shell.nix`, where they serve every shell. DMS's own `lockBeforeSuspend` stays on; the idle service also locks before sleep, which is harmless when both fire.
 
-**screenshotPlus is used unpatched.** The earlier patch that kept captures in `~/.cache/screenshot-plus` was dropped: upstream now writes captures to `$XDG_RUNTIME_DIR/screenshot-plus`, and the plugin source no longer has the `/tmp` strings the patch replaced.
+**screenshotPlus captures are kept in `~/.cache/screenshot-plus`.** Upstream writes each capture to `$XDG_RUNTIME_DIR/screenshot-plus` and deletes it ten seconds after copying it to the clipboard, so a clipboard-history entry pasted later pointed at a file that no longer existed. The plugin source is copied and patched to use the cache directory and to skip the delete; the folder is created by the plugin and is not pruned.
 
 **Applies to every user, not just one hardcoded account** - an earlier
 version had this hardcoded, and the bug it caused was exactly what you'd

@@ -224,9 +224,9 @@ FocusScope {
         onSubmitted: password => {
             if (root.demoMode || root.unlocking || !root.pam)
                 return;
-            if (root.pam.passwd.active || root.pam.u2fPending)
+            if (root.pam.authBusy || root.pam.u2fPending)
                 return;
-            root.pam.passwd.start();
+            root.pam.submitPassword();
         }
         onPowerRequested: id => {
             if (root.demoMode)

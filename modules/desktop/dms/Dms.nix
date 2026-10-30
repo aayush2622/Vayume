@@ -280,7 +280,23 @@
                   settings.runSourceMode = "latest_unstable";
                 };
 
-                screenshotPlus.enable = true;
+                screenshotPlus = {
+                  enable = true;
+                  src = lib.mkForce (
+                    pkgs.runCommand "dms-plugin-screenshot-plus-cache" { } ''
+                      cp -r ${
+                        (import "${inputs.dms-plugin-registry}/nix/default.nix" { inherit pkgs; }).screenshotPlus
+                      } $out
+                      chmod -R u+w $out
+                      cd $out
+                      substituteInPlace ScreenshotPlusDaemon.qml \
+                        --replace-fail 'Quickshell.env("XDG_RUNTIME_DIR") + "/screenshot-plus"' \
+                          'Quickshell.env("HOME") + "/.cache/screenshot-plus"' \
+                        --replace-fail 'Quickshell.execDetached(["sh", "-c", '"'"'sleep 10; rm -f -- "$1"'"'"', "sh", png])' \
+                          'void 0'
+                    ''
+                  );
+                };
               };
 
               settings = {
