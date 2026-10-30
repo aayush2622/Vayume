@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 
 Rectangle {
     id: root
@@ -25,14 +25,14 @@ Rectangle {
         height: 20
         y: root.tinted ? 12 : 0
 
-        DankSpinner {
+        DSpinner {
             visible: root.busy
             anchors.centerIn: parent
             size: 16
             strokeWidth: 2
         }
 
-        DankIcon {
+        DIcon {
             visible: !root.busy
             anchors.centerIn: parent
             name: root.tone === "error" ? "error" : (root.tone === "warning" ? "warning" : "info")

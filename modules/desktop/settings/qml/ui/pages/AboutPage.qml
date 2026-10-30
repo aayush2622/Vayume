@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 import "../components"
 
 Column {
@@ -49,7 +49,7 @@ Column {
                     radius: 20
                     color: Theme.withAlpha(Vayori.tone(stat.modelData.tone), stat.modelData.tone === "neutral" ? 0.12 : 0.18)
 
-                    DankIcon {
+                    DIcon {
                         anchors.centerIn: parent
                         name: stat.modelData.icon
                         size: 20

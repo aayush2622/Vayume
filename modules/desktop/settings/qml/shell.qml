@@ -3,7 +3,7 @@
 import QtQuick
 import Quickshell
 import qs.Common
-import qs.DankCommon.Common
+import qs.DCommon.Common
 import "./ui"
 
 ShellRoot {

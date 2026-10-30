@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 import "../components"
 
 Column {

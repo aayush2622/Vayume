@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 import "../components"
 
 Column {
@@ -41,7 +41,7 @@ Column {
             Row {
                 spacing: 14
 
-                DankIcon {
+                DIcon {
                     name: "hard_drive"
                     size: 28
                     color: Vayori.accent

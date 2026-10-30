@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 
 Rectangle {
     id: root
@@ -64,7 +64,7 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 8
 
-        DankIcon {
+        DIcon {
             visible: root.icon.length > 0
             name: root.icon
             size: 18

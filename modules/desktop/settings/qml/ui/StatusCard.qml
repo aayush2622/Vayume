@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 import "components"
 
 Rectangle {
@@ -55,7 +55,7 @@ Rectangle {
                     visible: !(root.vm.saving || root.vm.rebuildBusy)
                 }
 
-                DankSpinner {
+                DSpinner {
                     anchors.centerIn: parent
                     visible: root.vm.saving || root.vm.rebuildBusy
                     size: 14

@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 import "components"
 
 Item {
@@ -33,7 +33,7 @@ Item {
         FocusOutline { target: root }
     }
 
-    DankIcon {
+    DIcon {
         id: glyph
         x: 18
         anchors.verticalCenter: parent.verticalCenter

@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 
 Rectangle {
     id: root
@@ -72,7 +72,7 @@ Rectangle {
         wrapMode: Text.NoWrap
     }
 
-    DankIcon {
+    DIcon {
         id: chevron
         anchors.right: parent.right
         anchors.rightMargin: 10
@@ -91,7 +91,7 @@ Rectangle {
         onClicked: root.open()
     }
 
-    DankDropdown {
+    DDropdown {
         id: picker
         showTrigger: false
         popupAnchorItem: root

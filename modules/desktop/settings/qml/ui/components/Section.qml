@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 
 Item {
     id: root
@@ -103,7 +103,7 @@ Item {
                 height: 20
             }
 
-            DankIcon {
+            DIcon {
                 visible: root.collapsible
                 name: root.collapsed ? "expand_more" : "expand_less"
                 size: 20

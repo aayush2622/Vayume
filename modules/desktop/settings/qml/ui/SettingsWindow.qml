@@ -1,7 +1,7 @@
 import QtQuick
 import QtQml
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 import qs.Widgets
 import "components"
 import "pages"
@@ -187,7 +187,7 @@ DankFloatingWindow {
                     sourceComponent: headerComponent
                 }
 
-                DankFlickable {
+                DFlickable {
                     id: contentFlick
                     anchors.left: parent.left
                     anchors.right: parent.right

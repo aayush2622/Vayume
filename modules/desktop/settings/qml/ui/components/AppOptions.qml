@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 
 Column {
     id: root
@@ -50,7 +50,7 @@ Column {
             anchors.centerIn: parent
             spacing: 8
 
-            DankIcon {
+            DIcon {
                 name: "tune"
                 size: 16
                 color: Vayori.ink
@@ -81,7 +81,7 @@ Column {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            DankIcon {
+            DIcon {
                 name: root.collapsed ? "expand_more" : "expand_less"
                 size: 18
                 color: Vayori.inkMuted

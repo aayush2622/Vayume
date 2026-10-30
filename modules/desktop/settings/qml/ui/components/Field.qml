@@ -1,8 +1,8 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 
-DankTextField {
+DTextField {
     height: Vayori.controlHeight + 4
     cornerRadius: Vayori.radiusSmall + 2
     topPadding: 4

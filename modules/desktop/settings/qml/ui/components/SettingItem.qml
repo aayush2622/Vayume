@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 
 Item {
     id: root
@@ -82,7 +82,7 @@ Item {
             visible: status === Image.Ready
         }
 
-        DankIcon {
+        DIcon {
             anchors.centerIn: parent
             visible: picture.status !== Image.Ready
             name: root.icon.length > 0 ? root.icon : "apps"

@@ -1,6 +1,6 @@
 import QtQuick
 import qs.Common
-import qs.DankCommon.Widgets
+import qs.DCommon.Widgets
 import "../components"
 
 Column {
@@ -140,7 +140,7 @@ Column {
 
                 FocusOutline {}
 
-                DankIcon {
+                DIcon {
                     x: 18
                     y: 18
                     name: tile.modelData.icon
@@ -148,7 +148,7 @@ Column {
                     color: Vayori.accent
                 }
 
-                DankIcon {
+                DIcon {
                     anchors.right: parent.right
                     anchors.rightMargin: 14
                     y: 18
