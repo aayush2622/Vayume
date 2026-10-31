@@ -88,6 +88,25 @@
             </edit>
           </match>
 
+          <match target="scan">
+            <test name="family">
+              <string>Noto Color Emoji</string>
+            </test>
+            <edit name="charset" mode="assign">
+              <minus>
+                <name>charset</name>
+                <charset>
+                  <range>
+                    <int>0x20</int>
+                    <int>0x7e</int>
+                  </range>
+                  <int>0xa9</int>
+                  <int>0xae</int>
+                </charset>
+              </minus>
+            </edit>
+          </match>
+
           <match target="pattern">
             <test name="prgname">
               <string>WebKitWebProcess</string>

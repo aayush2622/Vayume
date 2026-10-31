@@ -133,3 +133,5 @@ Not covered: GRUB (its font is a converted bitmap in the theme), the text consol
 ---
 
 [← DefaultApps.nix](desktop-default-apps.md) · [Index](CONFIGURATION.md) · [Theming.nix →](desktop-theming.md)
+
+**Noto Color Emoji does not claim plain ASCII.** The emoji font covers `0-9`, `#`, `*` and the space for keycap emoji, and the blanket append above puts it second in every fallback list. Apps that choose a font per glyph (Compose Desktop on Skia) then drew digits and spaces from the emoji font - wide, dim, unevenly spaced next to JetBrains Mono letters. A `target="scan"` rule in `localConf` removes `U+0020-007E`, `U+00A9` and `U+00AE` from that font's charset, so it still serves emoji but no longer text characters.
